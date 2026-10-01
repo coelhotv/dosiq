@@ -225,6 +225,17 @@ describe('doseService adapter tests', () => {
       })
     })
 
+    it('071 PR3: edição leva change_kind + local como comportamento, e o payload do core não muda', async () => {
+      mockUpdateOrphanLog.mockResolvedValueOnce(LOG)
+      const eventProps = { change_kind: ['site'], site_set: true, site_panel_opened: true, site_panel_auto: true, site_input: 'list', site_change: 'added' }
+      await updateOrphanLog('log-1', { injection_site: 'coxa_e' }, { surface: 'mobile', eventProps })
+      expect(mockUpdateOrphanLog).toHaveBeenCalledWith('log-1', { injection_site: 'coxa_e' })
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+        action: 'update_orphan', medicine_id: MID, treatment_id: PID, surface: 'mobile', ...eventProps,
+      })
+      expect(JSON.stringify(mockLogEvent.mock.calls)).not.toContain('coxa')
+    })
+
     it('erro de rede → retorna offline error', async () => {
       mockUpdateOrphanLog.mockRejectedValueOnce(new Error('TypeError: fetch failed'))
 
@@ -289,6 +300,31 @@ describe('doseService adapter tests', () => {
         medicine_id: MID, treatment_id: PID, surface: 'mobile', entry_point: 'reminder',
       })
       expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, { count: 1, surface: 'mobile', entry_point: 'reminder' })
+    })
+
+    it('071 PR3: props de local por item (índice), contagens no agregado, nada no core', async () => {
+      const inj = { site_set: true, site_panel_opened: true, site_panel_auto: false, site_input: 'map' }
+      const injNoSite = { site_set: false, site_panel_opened: false, site_panel_auto: false }
+      mockRegisterDoseMany.mockResolvedValueOnce([
+        { success: true, instanceId: 'inst-a', data: { id: 'log-a', medicine_id: MID, protocol_id: PID } },
+        { success: false, instanceId: 'inst-b', error: 'x' },
+        { success: true, instanceId: 'inst-c', data: { id: 'log-c', medicine_id: MID, protocol_id: PID } },
+      ])
+      await registerDoseMany([
+        { ...INPUT, instance_id: 'inst-a', event_props: inj },
+        { ...INPUT, instance_id: 'inst-b', event_props: inj },
+        { ...INPUT, instance_id: 'inst-c', event_props: injNoSite },
+      ], { surface: 'mobile' })
+      const coreArg = mockRegisterDoseMany.mock.calls[0][0]
+      expect(coreArg.every((l) => !('event_props' in l))).toBe(true)
+      const doseEvents = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED).map(([, p]) => p)
+      expect(doseEvents).toEqual([
+        { medicine_id: MID, treatment_id: PID, surface: 'mobile', ...inj },
+        { medicine_id: MID, treatment_id: PID, surface: 'mobile', ...injNoSite },
+      ])
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, {
+        count: 2, injectable_count: 2, site_set_count: 1, surface: 'mobile',
+      })
     })
 
     it('lista vazia → retorna erro', async () => {

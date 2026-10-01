@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { isInjectable } from '@dosiq/core'
 import { getLastInjectionSite } from '../services/doseService'
+import { buildSiteEventProps, type SitePanelMeta } from './siteEventProps'
 
 // Formata data e hora para exibição amigável
 export function formatDateTime(d: Date | null | undefined): string {
@@ -110,7 +111,8 @@ export function _buildConfirmLogs(
   finalTakenAt: string,
   isBackdated: boolean,
   instancesByKey: Record<string, string> | null,
-  injectionSites: Record<string, string | null> = {}
+  injectionSites: Record<string, string | null> = {},
+  siteMetaById: Record<string, SitePanelMeta> = {}
 ): any[] {
   return selectedIds
     .map((id) => {
@@ -123,9 +125,8 @@ export function _buildConfirmLogs(
           (item.scheduledTime
             ? instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null
             : null))
-      const injection_site = isInjectable(p?.medicine)
-        ? injectionSites[id] ?? null
-        : null
+      const injectable = isInjectable(p?.medicine)
+      const injection_site = injectable ? injectionSites[id] ?? null : null
       return {
         protocol_id: p.id,
         medicine_id: p.medicine?.id ?? p.medicine_id,
@@ -133,6 +134,8 @@ export function _buildConfirmLogs(
         quantity_taken: p.dosage_per_intake ?? 1,
         injection_site,
         instance_id: instanceId,
+        // Analytics 071 PR3 — metadado, fora do schema (registerDoseMany lê por índice)
+        event_props: buildSiteEventProps({ injectable, site: injection_site, meta: siteMetaById[id] }),
       }
     })
     .filter(Boolean)

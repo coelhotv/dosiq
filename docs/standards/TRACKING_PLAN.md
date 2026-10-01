@@ -15,7 +15,7 @@ tags:
   - privacy
   - tracking-plan
 created_at: "2026-08-08"
-updated_at: "2026-08-08"
+updated_at: "2026-10-01"
 epic: "analytics-instrumentation"
 ---
 
@@ -322,9 +322,31 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
 | `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, `surface`, `entry_point: reminder` (**só** na modal aberta por um lembrete — 065 AD-8; ausente = abriu o app por conta própria) | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
-| `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, `surface`, `entry_point?` | catch-up de doses atrasadas |
+| `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, `surface`, `entry_point?` · **071:** `injectable_count`, `site_set_count` (só quando o lote tem injetável) | catch-up de doses atrasadas · o local é informado no lote? |
 | `dose_skipped` | ✅ mobile | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
 | `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). **Fase 2 (web)** — verificado 2026-08-09: **sem gatilho no mobile** (só KPI passivo `adherence30d`/`streak`); a celebração é web (`MilestoneCelebration`/`BadgeDisplay`). Gatilho no mobile = mecânica nova, fora de escopo |
+
+> **Local de aplicação (spec 071 PR3, 2026-10-01) — props de `dose_logged`, mobile.** Só em dose
+> **injetável**; nas demais as chaves não vão (ausente ≠ vazio) — `site_set` presente **é** o
+> denominador. Sem chave `injectable`: a forma chega pela `presentation` da spec 092 (D-1).
+>
+> | Prop | Valores | Pergunta |
+> |---|---|---|
+> | `site_set` | boolean | as pessoas informam o local? |
+> | `site_input` | `map` · `list` — só com `site_set`; meio do **último** toque de escolha | o mapa funciona, ou a lista (rota de acessibilidade) é que é usada? |
+> | `site_panel_opened` | boolean — o bloco esteve aberto | o accordion fechado (071 D-2) esconde demais? |
+> | `site_panel_auto` | boolean — nasceu aberto (edição D-2, lote com 1 injetável D-5) | separa abertura deliberada da automática |
+> | `site_change` | `added` · `changed` · `removed` — **só na edição**, ausente se o local não mudou | as pessoas voltam para informar/corrigir o local depois? |
+> | `change_kind` | lista ⊂ `time`·`quantity`·`site` — **só na edição** (padrão de `treatment_edited`) | o que se corrige num registro |
+>
+> **Edição de registro = `dose_logged {action: 'update_orphan'}`.** O nome é herdado e engana: cobre
+> **toda** edição de registro com log de apoio (órfão **ou** agendado já tomado), não só órfão. Série
+> viva — não renomear (§2.1). Edição de dose perdida/pendente sem log vira registro retroativo
+> (`dose_logged` sem `action`). Quem deriva adesão de `dose_logged` filtra `action` (já valia para
+> `undo`/`update_orphan`/`delete_orphan`).
+>
+> 🔴 **Fora, de propósito:** o **valor** do local (`abdomen_d`…) e "repetiu o último local" — dado
+> clínico (§6) e sinal de comportamento de rodízio, que a 071 recusou no app (linha SaMD).
 
 > **O score de adesão em si NÃO é evento.** É **derivado** de `dose_logged`/`dose_skipped` (que
 > carregam `treatment_id`) — emitir "score mudou" é contínuo, alto-cardinalidade e queima cota.
@@ -457,7 +479,7 @@ superfície.
 
 | # | Gap | Evidência | Impacto na pergunta | Prioridade / caminho |
 |---|---|---|---|---|
-| G-1 | **Wedge GLP-1 não é segmentável** (→ spec **092**). Nenhum evento de tratamento/dose carrega a forma (`presentation`: `injetavel`…) nem a classe do remédio | `treatment_created` = `medicine_id` UUID + `frequency`; `semanal` é proxy fraco | A tese 2026 (wedge GLP-1/injetáveis) não tem corte próprio no PostHog | 🔴 **alta** — decidir: `presentation` (enum de 7, categoria de forma, não de doença) em `treatment_created`/`dose_logged`, **ou** join `medicine_id`→`medicines` via data warehouse. Passa pela régua de postura do §5.7 |
+| G-1 | **Wedge GLP-1 não é segmentável** (→ spec **092**). ⚖️ **Decidido na 092 D-1 (PO, 2026-09-27)** — `presentation` em `treatment_created`/`treatment_edited`/`dose_logged`, forma e nunca classe; entrega pendente na 092. A 071 PR3 (2026-10-01, PO opção (a)) já revela a forma injetável implicitamente (props de local só existem em injetável), sem chave própria. Esta linha fica até a 092 mergear. Nenhum evento de tratamento/dose carrega a forma (`presentation`: `injetavel`…) nem a classe do remédio | `treatment_created` = `medicine_id` UUID + `frequency`; `semanal` é proxy fraco | A tese 2026 (wedge GLP-1/injetáveis) não tem corte próprio no PostHog | 🔴 **alta** — decidir: `presentation` (enum de 7, categoria de forma, não de doença) em `treatment_created`/`dose_logged`, **ou** join `medicine_id`→`medicines` via data warehouse. Passa pela régua de postura do §5.7 |
 | G-2 | **Persona ilegível para quem não escolheu densidade** — `mode = 'auto'` é decisão consciente da 065 (`productAnalytics.ts:140`: o adaptativo usa contagens diferentes por tela, não há valor efetivo único); a §3.2 abaixo está desatualizada | 30d: `['auto']` em quase todo evento | Segmentação por persona (Carlos × dona Maria) — o motivo de `mode` existir — não funciona para a maioria | 🔴 **alta** — spec **092** (unificar heurística e registrar efetivo, ou derivar persona por faixa de contagem) |
 | G-3 (→ 092) | **`surface` ausente** apesar de "obrigatória em todo evento" (§3) | 0% em `login`, `cold_start`, `stock_*` (044), `consent_*`, `account_deleted`, `biomarker_logged`, `ai_assistant_message_sent`, `profile_updated`, `mode_changed` | Baixo hoje (tudo é UI mobile), alto na Fase 2 (web/bot) — mistura superfícies | 🟡 média — ou emitir, ou rebaixar a regra para "obrigatória em evento que pode nascer em >1 superfície" (decisão de plano, não de código) |
 | G-4 (fora — 059/Fase 2) | **Sucesso silencioso fora do app é invisível.** Dose registrada pelo **bot/web** e lembretes **enviados** (denominador do AD-8) vivem só no servidor | `notification_log`/`dose_critical_events` fora do PostHog | "Lembrete funcionou?" só tem numerador; usuária de Telegram parece churn | 🟡 média — Fase 2 (§5.11) ou warehouse; gated pela `059`/v0.4 |

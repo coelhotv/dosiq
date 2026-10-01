@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, getInjectionSiteLabel } from '@dosiq/core'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
+import { buildSiteEventProps, buildEditChangeKind, EMPTY_SITE_META } from '@dose/utils/siteEventProps'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } = LucideIcons as any
@@ -168,7 +169,7 @@ function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, 
   )
 }
 
-function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, onChangeSite, lastInjectionSite, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
+function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, onChangeSite, onSiteMeta, lastInjectionSite, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
   const injectable = isInjectable(instance)
   return (
     <View style={styles.formView}>
@@ -215,6 +216,7 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, on
           defaultOpen
           value={injectionSite}
           onChange={onChangeSite}
+          onMetaChange={onSiteMeta}
           disabled={loading}
           lastInjectionSite={lastInjectionSite}
         />
@@ -384,6 +386,8 @@ function useDoseActionSheetState({
   const [quantityTaken, setQuantityTaken] = useState('')
   const [injectionSite, setInjectionSite] = useState(null)
   const [lastInjectionSite, setLastInjectionSite] = useState(null)
+  // Analytics 071 PR3: abertura do bloco e meio da escolha (nunca o local)
+  const [siteMeta, setSiteMeta] = useState(EMPTY_SITE_META)
 
   const {
     logId,
@@ -406,6 +410,7 @@ function useDoseActionSheetState({
         setTakenAtDate(src ? parseISO(src) : getNow())
         setQuantityTaken(String(quantity_taken ?? dosage_per_intake ?? 1))
         setInjectionSite(injection_site ?? null)
+        setSiteMeta(EMPTY_SITE_META)
       })
     }
   }, [visible, instance, taken_at, scheduled_for, quantity_taken, dosage_per_intake, injection_site])
@@ -448,8 +453,14 @@ function useDoseActionSheetState({
     // Dose com log de apoio (órfã OU agendada já tomada) → UPDATE atômico (não re-registrar:
     // register_dose_atomic rejeita duplicata com P0001). Sem logId (pending/missed) → registro
     // retroativo. AP — editar tomada não-órfã caía no registerRetro e batia em "Ocorrência já registrada".
+    // Analytics 071 PR3: o que mudou (lista, sem valor) + local como comportamento, nunca o valor.
+    const injectable = isInjectable(instance)
     if (logId) {
-      onUpdateLog?.(logId, payload)
+      const eventProps = {
+        change_kind: buildEditChangeKind({ taken_at, quantity_taken, injection_site }, payload),
+        ...buildSiteEventProps({ injectable, site, meta: siteMeta, previousSite: injection_site ?? null }),
+      }
+      onUpdateLog?.(logId, payload, eventProps)
     } else {
       onRegisterRetro?.(
         {
@@ -457,7 +468,8 @@ function useDoseActionSheetState({
           medicine_id,
           protocol_id,
         },
-        instanceId
+        instanceId,
+        buildSiteEventProps({ injectable, site, meta: siteMeta })
       )
     }
     onClose?.()
@@ -489,6 +501,7 @@ function useDoseActionSheetState({
     handleIOSConfirm,
     handleSaveEdit,
     handleDelete,
+    setSiteMeta,
   }
 }
 
@@ -565,6 +578,7 @@ export default function DoseActionSheet({
     handleIOSConfirm,
     handleSaveEdit,
     handleDelete,
+    setSiteMeta,
   } = useDoseActionSheetState({
     visible,
     instance,
@@ -629,6 +643,7 @@ export default function DoseActionSheet({
                 quantityTaken={quantityTaken}
                 injectionSite={injectionSite}
                 onChangeSite={setInjectionSite}
+                onSiteMeta={setSiteMeta}
                 lastInjectionSite={lastInjectionSite}
                 loading={loading}
                 onPickerPress={handleOpenPicker}

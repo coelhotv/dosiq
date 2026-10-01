@@ -32,19 +32,19 @@ describe('BodyMapSelector (RN)', () => {
   it('tocar região dorsal devolve o valor canônico gluteo_e', () => {
     const { getByTestId, onChange } = renderMap()
     fireEvent.press(getByTestId('bodymap-region-gluteo_e'))
-    expect(onChange).toHaveBeenCalledWith('gluteo_e')
+    expect(onChange).toHaveBeenCalledWith('gluteo_e', 'map')
   })
 
   it('D7: re-tocar a região selecionada devolve null', () => {
     const { getByTestId, onChange } = renderMap({ value: 'coxa_d' })
     fireEvent.press(getByTestId('bodymap-region-coxa_d'))
-    expect(onChange).toHaveBeenCalledWith(null)
+    expect(onChange).toHaveBeenCalledWith(null, 'map')
   })
 
   it('D7: "Não informar" devolve null', () => {
     const { getByText, onChange } = renderMap({ value: 'braco_e' })
     fireEvent.press(getByText('Não informar'))
-    expect(onChange).toHaveBeenCalledWith(null)
+    expect(onChange).toHaveBeenCalledWith(null, 'clear')
   })
 
   it('disabled: região, lista e "Não informar" não disparam onChange', () => {
@@ -75,7 +75,7 @@ describe('BodyMapSelector (RN)', () => {
       expect(item.props.accessibilityState.selected).toBe(site.value === 'gluteo_d')
     }
     fireEvent.press(getByTestId('bodymap-list-abdomen_e'))
-    expect(onChange).toHaveBeenCalledWith('abdomen_e')
+    expect(onChange).toHaveBeenCalledWith('abdomen_e', 'list')
   })
 
   it('repetido: alerta não-bloqueante + hint de absorção', () => {
@@ -115,5 +115,50 @@ describe('InjectionSitePicker (accordion)', () => {
   it('fechado com valor: subtexto é o valor escolhido', () => {
     const { getAllByText } = render(<InjectionSitePicker value="gluteo_e" onChange={jest.fn()} />)
     expect(getAllByText(getInjectionSiteLabel('gluteo_e')).length).toBeGreaterThan(0)
+  })
+})
+
+describe('InjectionSitePicker — meta de analytics (071 PR3)', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('reporta abertura por toque e o meio da escolha (mapa → lista → limpar)', () => {
+    const onMetaChange = jest.fn()
+    const Host = () => {
+      const [v, setV] = React.useState<string | null>(null)
+      const [, setMeta] = React.useState(null)
+      // Como o lote: arrow inline + setState no host. Com a callback nas deps do efeito do picker,
+      // isto é loop infinito (efeito → setState → render → nova arrow → efeito).
+      return (
+        <InjectionSitePicker
+          value={v}
+          onChange={setV}
+          onMetaChange={(m) => {
+            onMetaChange(m)
+            setMeta(m)
+          }}
+        />
+      )
+    }
+    const { getByTestId, getByText } = render(<Host />)
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: false, auto: false, input: null })
+    fireEvent.press(getByTestId('injection-site-toggle'))
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: true, auto: false, input: null })
+    fireEvent.press(getByTestId('bodymap-region-coxa_e'))
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: true, auto: false, input: 'map' })
+    fireEvent.press(getByText('Escolher pela lista'))
+    fireEvent.press(getByTestId('bodymap-list-braco_d'))
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: true, auto: false, input: 'list' })
+    fireEvent.press(getByText('Não informar'))
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: true, auto: false, input: null })
+    // sem loop: poucas chamadas, uma por mudança de valor
+    expect(onMetaChange.mock.calls.length).toBeLessThan(10)
+  })
+
+  it('defaultOpen reporta auto e opened desde a montagem', () => {
+    const onMetaChange = jest.fn()
+    render(<InjectionSitePicker value={null} onChange={jest.fn()} defaultOpen onMetaChange={onMetaChange} />)
+    expect(onMetaChange).toHaveBeenLastCalledWith({ opened: true, auto: true, input: null })
   })
 })
