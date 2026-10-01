@@ -28,6 +28,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   canal: build de loja). Nada muda na tela. O app passa a registrar no analytics, ao registrar ou
   editar a dose de um injetável, se o local de aplicação foi informado, se o bloco do desenho do corpo
   foi aberto e se a escolha foi feita pelo desenho ou pela lista — nunca qual foi o local.
+- **Mobile** (`patch` — correção; mesmo pacote `0.34.0`, build de loja). Ao registrar várias doses
+  de uma vez pelo botão "+" da tela Hoje, ou a partir de um lembrete, os injetáveis marcados não
+  mostravam o campo de local de aplicação. Agora mostram, como no registro de uma dose só.
 
 ### Histórico de doses mais rápido, rolagem livre e sem "0%" enquanto carrega
 
