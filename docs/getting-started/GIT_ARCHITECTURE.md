@@ -1,7 +1,7 @@
 ---
 title: "Arquitetura Git"
 description: "Especificação da arquitetura Git com isolamento de gitdir externo para contornar travamentos e lentidão do daemon iCloud."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: setup
 audience:
@@ -11,7 +11,7 @@ tags:
   - icloud
   - local-setup
 created_at: "2026-07-08"
-updated_at: "2026-07-08"
+updated_at: "2026-10-01"
 ---
 
 # Arquitetura Git — Mac Mini M2 (gitdir externo + iCloud)
@@ -37,22 +37,23 @@ iCloud sincroniza tudo em `~/git-icloud/`, causando locks em `index`/`COMMIT_EDI
 
 ## gsync — sincronização origin + bridge
 
+Função de shell em `~/.bashrc` (seção "GSYNC"), agnóstica de repo. Opera na branch atual.
+
 ```
-1. git fetch origin + bridge
-2. Auto-repair: se bridge SHA ≠ origin SHA → force-push origin → bridge
-3. git pull --rebase origin $branch  (origin é fonte da verdade)
-4. git push origin $branch
-5. git push bridge origin/$branch    (espelha SHAs — nunca rebasa para bridge)
+1. origin: git fetch origin $branch
+2. origin: git rebase origin/$branch          (origin é fonte da verdade; falha aborta)
+3. origin: git push origin $branch            (COM hooks — pre-push é o gate real)
+4. bridge: git push bridge origin/$branch:refs/heads/$branch --force --no-verify
 ```
 
-**Regra crítica:** bridge sempre espelha origin (mesmo SHA). Nunca `git pull bridge` como fonte.
+- **Gate:** o `.husky/pre-push` roda `npm run test:critical` e aborta o push se falhar. O `gsync` não altera o hook; agentes e `git push` manual seguem com a saída completa.
+- **Saída capturada:** o `gsync` redireciona a saída do push para um log (`mktemp`). Sucesso imprime uma linha com o caminho do log; falha imprime as últimas 60 linhas + o caminho.
+- **Bridge é espelho:** `--force` e `--no-verify` de propósito — o commit já passou pelo gate ao ir para o origin; re-rodar a suíte só custaria tempo. Sem `origin` configurado, faz push simples da branch para o bridge.
+- **Regra crítica:** bridge sempre espelha origin (mesmo SHA). Nunca `git pull bridge` como fonte.
 
-## gsync-native (`~/.local/bin/gsync-native.sh`)
+## gsync-native (legado)
 
-1. Valida `~/local_git/dosiq` acessível — **BLOQUEANTE**
-2. Chama `gsync` de `~/git-icloud/dosiq`
-3. Atualiza native worktree: `git fetch origin + reset --hard origin/$branch`
-4. Copia credenciais (`.env.*`, `google-services.json`) do iCloud para o worktree
+`~/.local/bin/gsync-native.sh` (alias `gsync-native`) ainda existe, mas está **obsoleto** desde 2026-05-24: o projeto saiu do iCloud e o smoke mobile roda direto de `~/git/dosiq/apps/mobile`. Fechar sprint mobile = commit + push (`gsync`).
 
 ## Diagnóstico rápido
 
@@ -68,4 +69,3 @@ source ~/.bashrc && gsync                            # re-sync completo
 
 - Nunca criar `.git/` como diretório em `~/git/dosiq/` — quebra gitdir, iCloud sincroniza objetos
 - Nunca `git push bridge $branch` diretamente — sempre via `gsync`
-- Nunca ignorar o check de `~/local_git/dosiq` no `gsync-native`
