@@ -1,15 +1,24 @@
 #!/bin/bash
 # build-ios.sh — Prepara certificados e roda eas build local
-# Uso: bash build-ios.sh [development|preview|production]
+# Uso: bash build-ios.sh [development|preview|device|production] [--no-install]
 #
 # Perfis (spec 051-A · canais de OTA declarados em eas.json):
 #   development → .app (simulador) · canal `development` · uso diário
 #   preview     → .app (simulador) · canal `preview`     · alvo do smoke de OTA
+#   device      → .ipa (ad hoc)    · canal `device`      · APARELHO FÍSICO registrado (065/PO-8)
 #   production  → .ipa             · canal `production`  · TestFlight/App Store
 #
-# ℹ️ preview no iOS sai como build de SIMULADOR (não exige Distribution Certificate). O smoke
+# ℹ️ development/preview no iOS saem como build de SIMULADOR (não exigem Distribution
+#    Certificate) — e simulador NÃO recebe push. Para qualquer smoke que dependa de
+#    notificação no iPhone, o perfil é `device`: ad hoc assinado para os UDIDs de
+#    `eas device:list`, sem passar pela Apple. O smoke
 #    do OTA em device real roda no Android (build-android.sh preview) — o mecanismo do
 #    expo-updates é o mesmo nas duas plataformas, e um device físico basta pra provar.
+#
+# Perfil `device` instala o .ipa no aparelho ao final (lib-install-device.sh; alvo em
+# DOSIQ_IOS_DEVICE). `--no-install` só gera o artefato.
+#
+# Log completo do build: ~/local/dev-builds/build-ios-<perfil>-v<versão>-<timestamp>.log
 
 set -euo pipefail
 
@@ -20,19 +29,26 @@ set -euo pipefail
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/lib-build-env.sh"
+
+# `npm ci` do EAS morre com EALLOWSCRIPTS por causa do ~/.npmrc do operador — detalhe e medição
+# em lib-build-env.sh.
+isolate_npm_userconfig
+
+parse_build_args "$@"
 
 # R-307: procedencia do binario de loja (tag no git + arvore limpa)
 . "$SCRIPT_DIR/lib-release-tag.sh"
+. "$SCRIPT_DIR/lib-install-device.sh"
 
 # Falhar cedo e explícito: perfil desconhecido só apareceria como erro do EAS depois do
 # prebuild + pod install (minutos perdidos).
 case "$PROFILE" in
-  development|preview|production) ;;
+  development|preview|device|production) ;;
   *)
     echo "❌ Perfil inválido: '$PROFILE'"
-    echo "   Use: development | preview | production"
+    echo "   Use: development | preview | device | production"
     exit 1
     ;;
 esac
@@ -41,7 +57,10 @@ esac
 BUNDLE_ID="com.coelhotv.dosiq"
 PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
-if [ "$PROFILE" = "production" ]; then
+# `device` (ad hoc) assina com o MESMO Apple Distribution certificate do production — só o
+# provisioning profile difere (lista de UDIDs em vez de App Store). Pular a verificação aqui
+# devolveria o erro no FIM do build, depois do prebuild + pod install.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   echo "🔍 Verificando Distribution Certificate no keychain..."
   CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "Antonio Coelho" | head -1)
 
@@ -58,7 +77,7 @@ if [ "$PROFILE" = "production" ]; then
   fi
   echo "   ✅ Certificado encontrado: $CERT"
 else
-  echo "ℹ️  Simulador detectado (perfil $PROFILE): Pulando verificação de certificado de distribuição."
+  echo "ℹ️  Simulador (perfil $PROFILE): Pulando verificação de certificado de distribuição."
 fi
 
 echo "🔐 Desbloqueando keychain..."
@@ -74,8 +93,17 @@ echo "🔐 Exportando credencial Firebase: $PLIST_FILE"
 export GOOGLE_SERVICES_PLIST_PATH="$PLIST_FILE"
 export EAS_BUILD_PROFILE="$PROFILE"
 
+# SENTRY_AUTH_TOKEN: os .env não chegam ao build (o .easignore corta dotfiles; o env do prebuild
+# morre antes do xcodebuild). Detalhe e evidência em lib-sentry-token.sh.
+# No iOS o que sobe é o dSYM — sem ele o crash nativo também chega sem símbolo. O perfil de
+# produção deixou de tolerar falha de upload, então a checagem vale para as duas plataformas.
+# shellcheck source=lib-sentry-token.sh
+. "$SCRIPT_DIR/lib-sentry-token.sh"
+load_sentry_auth_token "$SCRIPT_DIR" || true
+require_sentry_auth_token_for_production "$PROFILE"
+
 # 1. Extrair versão do app.config.js
-APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
+APP_VERSION=$(get_app_version "$SCRIPT_DIR")
 echo "📦 Versão detectada: v$APP_VERSION"
 
 # 2. Preparar diretório de saída
@@ -83,7 +111,9 @@ TARGET_DIR="$HOME/local/dev-builds"
 mkdir -p "$TARGET_DIR"
 
 # 3. Definir nome e extensão do arquivo
-if [ "$PROFILE" = "production" ]; then
+# `.ipa` para tudo que instala em aparelho FÍSICO (production via TestFlight, device via ad hoc);
+# `.app` só para os perfis de simulador.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   EXT="ipa"
 else
   EXT="app"
@@ -105,16 +135,18 @@ echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam n
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight ✈️)" || echo "NÃO (Apenas Local 💾)" )"
+if [ "$PROFILE" = "device" ]; then
+  echo "📲 Ad hoc:  instala em APARELHO FÍSICO registrado (eas device:list) — substitui o app da"
+  echo "            App Store no aparelho, mesmos dados. Para voltar ao real, reinstalar pela loja."
+fi
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
-# echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
-# Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
+# Apaga o ios/ gerado: o Swift da bridge/widget de um prebuild anterior conflita com o novo.
 rm -rf "$SCRIPT_DIR/ios"
-# rm -rf "$SCRIPT_DIR/android"
 
 echo "Gerando prebuild pro iOS..."
-# Prebuild sem instalar pacotes nativos automaticamente (evita erro de path com espaços no iCloud)
+# Prebuild sem instalar pacotes nativos automaticamente (o eas build local roda o pod install)
 if npx expo prebuild --platform ios --no-install ; then
   echo "✅ Código nativo regenerado com sucesso."
 else
@@ -122,33 +154,22 @@ else
   exit 1
 fi
 
-# Instalação manual de Pods (mais resiliente a caminhos com espaços)
-# echo "📦 Instalando dependências nativas (CocoaPods)..."
-# cd "$SCRIPT_DIR/ios"
-# if pod install ; then
-#   cd "$SCRIPT_DIR"
-#   echo "✅ CocoaPods concluído."
-# else
-#   echo "⚠️ Erro no pod install automático, tentando forçar com repo update..."
-#   pod install --repo-update || {
-#     echo "❌ Falha crítica no CocoaPods. Verifique o caminho iCloud para conflitos."
-#     exit 1
-#   }
-#   cd "$SCRIPT_DIR"
-# fi
-
 rm -f "$TEMP_OUTPUT"
 
 echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
 # Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
 # pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
-eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || true
+# A saída também vai para um log: o diretório temporário do EAS é apagado ao fim, então o log
+# é a única evidência de uma falha. pipefail + `|| true` mantêm a regra acima.
+BUILD_LOG="$(build_log_path "$TARGET_DIR" build-ios "$PROFILE" "$APP_VERSION")"
+echo "📝 Log do build: $BUILD_LOG"
+eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache 2>&1 | tee "$BUILD_LOG" || true
 
 if [ -f "$TEMP_OUTPUT" ]; then
   echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
 else
   echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
-  echo "Verifique os logs do EAS acima para entender o porquê da falha na compilação."
+  echo "Verifique os logs do EAS acima (ou $BUILD_LOG) para entender o porquê da falha na compilação."
   exit 1
 fi
 
@@ -156,8 +177,15 @@ fi
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
 
+# 4.0 Instalação automática no aparelho físico (só `device`; falha não derruba o script)
+if [ "$PROFILE" = "device" ] && [ "$NO_INSTALL" -eq 0 ]; then
+  install_ios_device "$FINAL_PATH"
+fi
+
 # 4.1 Extração automática para Simulador
-if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
+# Só os perfis de SIMULADOR saem como tar.gz a extrair. `device` é .ipa assinado — extrair
+# quebraria a assinatura, e antes esta condição era "tudo que não é production".
+if { [ "$PROFILE" = "development" ] || [ "$PROFILE" = "preview" ]; } && [ -f "$FINAL_PATH" ]; then
   # Verifica se é um arquivo comprimido (tar.gz)
   if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
     echo "📦 Detectado pacote comprimido. Iniciando extração para simulador..."

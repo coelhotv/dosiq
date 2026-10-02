@@ -1,6 +1,6 @@
 #!/bin/bash
 # publish-ota.sh — publica um update OTA assinado via EAS Update (spec 051-A · ADR-082/083)
-# Uso: bash publish-ota.sh <preview|production> "<mensagem>" [rollout-%]
+# Uso: bash publish-ota.sh <preview|device|production> "<mensagem>" [rollout-%]
 #
 # Existe para que o checklist pré-publish (FR-015) seja um GATE EXECUTADO, não uma lista que
 # alguém lê com pressa. Todo item abaixo já custou um incidente em algum projeto:
@@ -16,14 +16,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# release_tag_name, assert_clean_tree, head_is_pushed
+. "$SCRIPT_DIR/lib-release-tag.sh"
+. "$SCRIPT_DIR/lib-build-env.sh"
+
 CHANNEL="${1:-}"
 MESSAGE="${2:-}"
 ROLLOUT="${3:-}"
 
 usage() {
-  echo "Uso: bash publish-ota.sh <preview|production> \"<mensagem>\" [rollout-%]"
+  echo "Uso: bash publish-ota.sh <preview|device|production> \"<mensagem>\" [rollout-%]"
   echo ""
   echo "  preview     canal de staging — alvo do smoke, incl. teste destrutivo"
+  echo "  device      canal do build ad hoc em iPhone físico (build-ios.sh device)"
   echo "  production  usuários reais — exige confirmação explícita"
   echo ""
   echo "Exemplos:"
@@ -33,11 +38,30 @@ usage() {
 }
 
 case "$CHANNEL" in
-  preview|production) ;;
+  preview|device|production) ;;
   *) usage ;;
 esac
 
 [ -n "$MESSAGE" ] || usage
+
+# Rollout: inteiro de 1 a 100. Sem isto, `150` ou `abc` só estourariam no EAS — depois dos gates e
+# do prompt de confirmação.
+if [ -n "$ROLLOUT" ]; then
+  case "$ROLLOUT" in
+    ''|*[!0-9]*) echo "❌ Rollout inválido: '$ROLLOUT' (use um inteiro de 1 a 100)"; exit 1 ;;
+  esac
+  if [ "$ROLLOUT" -lt 1 ] || [ "$ROLLOUT" -gt 100 ]; then
+    echo "❌ Rollout inválido: '$ROLLOUT' (use um inteiro de 1 a 100)"
+    exit 1
+  fi
+fi
+
+# Mesma CLI dos builds (eas global). Antes era `npx eas-cli@latest`: uma versão nova da CLI podia
+# mudar flags no canal de produção sem ninguém ter pedido (ver a nota do --channel abaixo).
+command -v eas >/dev/null 2>&1 || {
+  echo "❌ eas-cli não encontrado no PATH. Instale: npm i -g eas-cli"
+  exit 1
+}
 
 # ── Code signing: DESATIVADO (emenda ao ADR-083, 2026-07-27) ─────────────────────────────
 # O EAS cobra assinatura de update no plano Enterprise, que o projeto não tem. Publicar com
@@ -46,7 +70,11 @@ esac
 # Enquanto isso a defesa do canal é: 2FA na conta Expo + publish manual PO-only + zero
 # EXPO_TOKEN em CI. Ver §1.4 do docs/operations/GUIA_OTA_EAS_UPDATE.md.
 
-# ── Gate 0: env público presente (096, backport da main) ───────────────────────────────────
+# ── Gate 0: env público presente ────────────────────────────────────────────────────────
+# O babel do Expo EMBUTE `process.env.EXPO_PUBLIC_*` no bundle na hora de empacotar. Sem o .env
+# (worktree novo: o arquivo é gitignored), sai `undefined` e o app morre no boot com
+# "Missing supabaseUrl in public config" — tela preta em todo device do canal (096, 2026-10-02).
+# Ordem de carga do Expo em production: .env.production.local · .env.local · .env.production · .env
 has_public_env() {
   local key="$1"
   [ -n "${!key:-}" ] && return 0
@@ -54,8 +82,9 @@ has_public_env() {
 }
 for key in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
   if ! has_public_env "$key"; then
-    echo "❌ $key não definido (nem no shell, nem em .env*) — o bundle sairia com undefined (tela preta)."
-    echo "   Copie o env da checkout principal:  cp <main>/apps/mobile/.env* ."
+    echo "❌ $key não definido (nem no shell, nem em .env*) em $SCRIPT_DIR."
+    echo "   O bundle sairia com undefined e o app abriria em tela preta."
+    echo "   Worktree novo? Copie o env da checkout principal:  cp <main>/apps/mobile/.env* ."
     exit 1
   fi
 done
@@ -63,18 +92,13 @@ done
 # ── Gate 1: árvore limpa ────────────────────────────────────────────────────────
 # O bundle publicado é fotografia da working tree AGORA. Working tree suja = código no ar que
 # não corresponde a nenhum commit — irreproduzível e irrastreável.
-if [ -n "$(git status --porcelain)" ]; then
-  echo "❌ Working tree suja. O bundle publicado seria código que não existe em nenhum commit."
-  echo ""
-  git status --short
-  echo ""
-  echo "   Commite ou stashe antes de publicar."
-  exit 1
-fi
+assert_clean_tree "Working tree suja." \
+  "O bundle publicado seria código que não existe em nenhum commit." \
+  "Commite ou stashe antes de publicar." || exit 1
 
 GIT_SHA="$(git rev-parse --short HEAD)"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-APP_VERSION="$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")"
+APP_VERSION="$(get_app_version "$SCRIPT_DIR")"
 
 # ── Gate 2: procedência do BUNDLE em production (R-307) ──────────────────────────────────
 # O `eas update` empacota a WORKING TREE, não um commit. Publicar de uma `main` que já andou
@@ -82,7 +106,7 @@ APP_VERSION="$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")"
 # chamando nativo que o binário instalado não tem (crash), e violação da Apple 3.3.1.
 # A árvore precisa voltar a ser o que está na loja: tag de release, ou hotfix cortado dela.
 if [ "$CHANNEL" = "production" ]; then
-  RELEASE_TAG="mobile-v$APP_VERSION"
+  RELEASE_TAG="$(release_tag_name "$APP_VERSION")"
   if ! git merge-base --is-ancestor "$RELEASE_TAG" HEAD 2>/dev/null; then
     echo "❌ HEAD não descende de $RELEASE_TAG — recusando publicar em production."
     echo ""
@@ -102,6 +126,27 @@ if [ "$CHANNEL" = "production" ]; then
     fi
     exit 1
   fi
+fi
+
+# ── Gate 3: o commit publicado precisa existir no origin ─────────────────────────────────
+# O SHA na mensagem é a trilha de auditoria (ADR-083 D4). Se o commit só existe nesta máquina, o
+# SHA não se resolve em lugar nenhum — o OTA foi ao ar e ninguém consegue ver o que era.
+# preview: só avisa (smoke local é legítimo) · production: bloqueia.
+PUSHED_RC=0
+head_is_pushed || PUSHED_RC=$?
+if [ "$PUSHED_RC" -ne 0 ]; then
+  if [ "$PUSHED_RC" -eq 2 ]; then
+    PUSHED_MSG="Não consegui consultar o origin (offline?) — não dá para confirmar que $GIT_SHA foi publicado."
+  else
+    PUSHED_MSG="O commit $GIT_SHA não está em nenhum branch do origin."
+  fi
+  if [ "$CHANNEL" = "production" ]; then
+    echo "❌ $PUSHED_MSG"
+    echo "   Publicar em production com SHA irrastreável anula a trilha de auditoria (ADR-083 D4)."
+    echo "   Faça:  git push -u origin $GIT_BRANCH"
+    exit 1
+  fi
+  echo "⚠️  $PUSHED_MSG (preview: seguindo)"
 fi
 
 # SHA sempre na mensagem — é a trilha de auditoria exigida pelo ADR-083 D4.
@@ -130,13 +175,13 @@ if [ "$CHANNEL" = "production" ]; then
   echo "   · a mudança é JS-only? (código nativo/SDK NÃO vai por OTA — exige build de loja)"
   echo "   · se pulou a escada de rollout, a justificativa está registrada?"
   echo ""
-  read -p "Digite PUBLICAR para confirmar: " CONFIRM
+  read -r -p "Digite PUBLICAR para confirmar: " CONFIRM
   if [ "$CONFIRM" != "PUBLICAR" ]; then
     echo "Cancelado."
     exit 1
   fi
 else
-  read -p "Confirma? (Enter para publicar / Ctrl+C para cancelar) "
+  read -r -p "Confirma? (Enter para publicar / Ctrl+C para cancelar) "
 fi
 
 # ── Publish ──────────────────────────────────────────────────────────────────────────────
@@ -146,22 +191,38 @@ fi
 # rollback ter repontado o canal para OUTRA branch (§4 do guia) — o update subiria com sucesso e
 # não alcançaria device nenhum. Falha silenciosa, logo após um incidente, que é quando menos se
 # pode pagar por uma.
+# --clear-cache SEMPRE: o Metro guarda a transformação com o valor de env da época. Um bundle
+# feito sem .env deixa `undefined` em cache, e o publish seguinte o reaproveita mesmo com o .env
+# já no lugar (096: o republish com env saiu tão quebrado quanto o primeiro). Custa ~1 min.
 ARGS=(update
   --channel "$CHANNEL"
   --message "$FULL_MESSAGE"
-  --clear-cache   # 096: cache do Metro guarda env antigo (bundle sem .env contamina o seguinte)
+  --clear-cache
 )
 
 if [ -n "$ROLLOUT" ]; then
   ARGS+=(--rollout-percentage "$ROLLOUT")
 fi
 
+# A saída também vai para um log: o updateId devolvido precisa ir para o CHANGELOG, e no scrollback
+# ele some. pipefail + set -e: falha do eas continua abortando o script.
+OTA_LOG="$(build_log_path "$HOME/local/dev-builds" ota "$CHANNEL" "$APP_VERSION")"
+mkdir -p "$(dirname "$OTA_LOG")"
+
 echo ""
-echo "🚀 Publicando..."
-npx eas-cli@latest "${ARGS[@]}"
+echo "🚀 Publicando... (log: $OTA_LOG)"
+eas "${ARGS[@]}" 2>&1 | tee "$OTA_LOG"
 
 echo ""
 echo "✅ Publicado."
+# O formato da saída do eas pode mudar; se nada casar, o log completo está no caminho abaixo.
+UPDATE_IDS="$(grep -iE 'update (group )?id' "$OTA_LOG" | sed 's/\x1b\[[0-9;]*m//g' || true)"
+if [ -n "$UPDATE_IDS" ]; then
+  echo "🆔 IDs do update:"
+  echo "$UPDATE_IDS" | sed 's/^/   /'
+else
+  echo "🆔 IDs do update: não identifiquei na saída — veja $OTA_LOG"
+fi
 echo "📋 Próximos passos:"
 echo "   1. Anotar o updateId devolvido acima no CHANGELOG como [$APP_VERSION+ota.N] (ADR-082 —"
 echo "      release OTA NÃO bumpa APP_VERSION)."
@@ -169,5 +230,5 @@ echo "   2. Reabrir o app 2x no device: o update baixa num launch e APLICA no se
 echo "   3. Conferir o updateId na tela de Perfil (deve bater com o dashboard EAS)."
 if [ "$CHANNEL" = "production" ] && [ -n "$ROLLOUT" ]; then
   echo "   4. Observar Sentry (erro por update_id) e PostHog (eventos chegando com o update novo)"
-  echo "      antes de avançar o degrau:  npx eas-cli@latest update:edit --branch production"
+  echo "      antes de avançar o degrau:  eas update:edit --branch production"
 fi
