@@ -26,6 +26,30 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   controlador. A versão segue `0.3`: o texto do tratamento não mudou e ninguém precisa aceitar
   de novo.
 
+### Peso registrado logo depois da dose (spec 069 A2)
+
+- **Mobile** (`minor` — funcionalidade nova no registro de dose; `APP_VERSION` `0.33.5` → `0.33.6`
+  só para build de produção no **TestFlight interno** — não é lançamento; entra no pacote de loja
+  `0.34.0`; canal: build de loja, R-314). Ao confirmar
+  a dose de um tratamento semanal ou injetável, o mesmo sheet passa a mostrar "Dose registrada" no
+  topo e pergunta, como opcional, o peso de hoje. A dose já está salva quando a pergunta aparece:
+  nada do que acontecer com o peso a desfaz. A pergunta aparece no máximo uma vez por semana
+  (segunda a domingo) e não aparece se já houver peso registrado nos últimos 7 dias. "Agora não"
+  ou fechar o sheet encerram a pergunta na semana; se o peso salvo for apagado (digitado errado),
+  a pergunta volta na próxima dose. Se o peso não salvar, o valor digitado continua
+  no campo, a mensagem diz se faltou internet (em até 15 segundos, mesmo com sinal ruim), e
+  "Fechar sem peso" deixa a pergunta voltar na próxima dose. "Tentar de novo" nunca grava o
+  mesmo peso duas vezes, mesmo quando a primeira tentativa chegou ao servidor sem resposta. No registro de várias doses de uma vez, a pergunta aparece uma só vez, quando ao
+  menos uma das doses é semanal ou injetável e todas foram registradas. Dose diária oral e registro
+  pelo alarme continuam como antes. Store note: "registre seu peso ao confirmar a dose".
+- **Core** (`patch`): a criação de medida aceita um `id` gerado pelo app; repetir a gravação com o
+  mesmo `id` devolve a medida já salva em vez de duplicar.
+- **Core + Web** (`patch` — sem bump). O peso passa a ser aceito só entre 20 e 200 kg, na criação e
+  na edição, no app e na web ("Use um valor entre 20 e 200 kg."). Nenhum peso já gravado está fora
+  dessa faixa (conferido no banco em 2026-10-02).
+- **Analytics**: `biomarker_logged` passa a levar `surface` e, quando nasce do pedido, `entry_point:
+  'dose_prompt'`; novos `measure_prompt_shown` e `measure_prompt_dismissed` (TRACKING_PLAN §5.7).
+
 ### Local da injeção escolhido no desenho do corpo (app)
 
 - **Mobile** (`minor` — funcionalidade nova no registro de dose; **sem bump neste PR**: entra no

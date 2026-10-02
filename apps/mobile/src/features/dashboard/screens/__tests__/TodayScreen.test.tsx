@@ -4,6 +4,11 @@ import { useTodayData } from '@dashboard/hooks/useTodayData';
 
 // Mock do hook de dados
 jest.mock('@dashboard/hooks/useTodayData');
+// 069 A2: medidas do dia (interleave na agenda) — refresh observável após registrar dose
+const mockRefreshMeasures = jest.fn();
+jest.mock('@measures/hooks/useTodayMeasures', () => ({
+  useTodayMeasures: () => ({ items: [], refresh: mockRefreshMeasures }),
+}));
 
 // Mock react-navigation — TodayScreen usa useFocusEffect (refresh on focus, Fase 4)
 // que exige um NavigationContainer; sem isto o render lança fora do container.
@@ -159,6 +164,34 @@ describe('TodayScreen', () => {
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('empty-state').props.title).toBe('Nenhuma dose hoje');
   });
+
+  // 069 A2 (smoke 02/10): o passo 2 da dose grava peso — fechar o sheet tem de recarregar as medidas
+  // da agenda, não só as doses (antes só o foco da tela e o speed-dial recarregavam).
+  describe('registro de dose recarrega a agenda E as medidas do dia (069 A2)', () => {
+    const withData = () => jest.mocked(useTodayData).mockReturnValue({
+      data: { ...baseMockData, protocols: [{ id: 'p1', medicine_id: 'm1' }], medicines: { m1: { name: 'Med' } },
+        timeline: [{ id: 'd1', scheduledTime: '08:00', timelineStatus: 'PROXIMA' }] },
+      loading: false, error: null, refresh: mockRefresh,
+    } as any)
+
+    it('dose única: onSuccess chama refresh e refresh das medidas', () => {
+      withData()
+      const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{ setParams: jest.fn() } as any} />)
+      mockRefresh.mockClear(); mockRefreshMeasures.mockClear()
+      act(() => { getByTestId('dose-modal').props.onSuccess() })
+      expect(mockRefresh).toHaveBeenCalledTimes(1)
+      expect(mockRefreshMeasures).toHaveBeenCalledTimes(1)
+    })
+
+    it('lote: onSuccess chama refresh e refresh das medidas', () => {
+      withData()
+      const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{ setParams: jest.fn() } as any} />)
+      mockRefresh.mockClear(); mockRefreshMeasures.mockClear()
+      act(() => { getByTestId('bulk-dose-modal').props.onSuccess({ successCount: 2 }) })
+      expect(mockRefresh).toHaveBeenCalledTimes(1)
+      expect(mockRefreshMeasures).toHaveBeenCalledTimes(1)
+    })
+  })
 
   // 065 AD-8: modal aberta por DEEPLINK (lembrete) → entryPoint 'reminder'; aberta pelo card → null.
   describe('entry_point reminder (065 AD-8)', () => {

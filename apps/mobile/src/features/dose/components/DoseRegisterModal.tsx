@@ -2,8 +2,9 @@
 // UX: modal simples com protocolo pré-seleccionado + quantidade + confirmação
 // R5-003: menor fricção possível — mínimo de toques
 // R5-008: online-first — doseService retorna erro claro se offline
+// 069 A2: dose salva + elegível ⇒ passo 2 (pedido de peso) no MESMO sheet; onSuccess só ao fechar.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Modal,
   View,
@@ -14,6 +15,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
 } from 'react-native'
 import {
   getNow,
@@ -22,8 +24,11 @@ import {
   formatIntakeDose,
   isInjectable,
   INTAKE_UNIT_LABELS,
+  getInjectionSiteLabel,
 } from '@dosiq/core'
 import { registerDose, getLastInjectionSite } from '../services/doseService'
+import { resolvePostDoseStep } from '../services/measurePrompt'
+import DoseWeightPrompt from './DoseWeightPrompt'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { buildSiteEventProps, EMPTY_SITE_META } from '../utils/siteEventProps'
@@ -49,6 +54,10 @@ export default function DoseRegisterModal({
   const [siteMeta, setSiteMeta] = useState(EMPTY_SITE_META)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  // 069 A2: passo 2 (pedido de peso) — { step, receipt } quando a dose salva pede medida
+  const [weightStep, setWeightStep] = useState(null)
+  const promptRef = useRef(null)
+  const [fade] = useState(() => new Animated.Value(1))
 
   const { isOnline } = useOnlineStatus()
 
@@ -98,7 +107,8 @@ export default function DoseRegisterModal({
     }
 
     // Padrão do projecto: timestamps sempre em UTC (getNow().toISOString())
-    const takenAt = getNow().toISOString()
+    const takenAtDate = getNow()
+    const takenAt = takenAtDate.toISOString()
 
     const result = await registerDose(
       {
@@ -117,26 +127,52 @@ export default function DoseRegisterModal({
       }
     )
 
-    setLoading(false)
-
     if (!result.success) {
+      setLoading(false)
       setError(result.error)
       return
     }
 
-    // Limpar estado e notificar tela pai
+    // INV-1: daqui em diante a dose está salva. O slot pós-dose nunca lança e tem teto de tempo.
+    const step = await resolvePostDoseStep({ items: [{ protocol }] })
+    setLoading(false)
+    if (!step) {
+      finishSuccess()
+      return
+    }
+    setWeightStep({ step, receipt: buildReceipt(takenAtDate) })
+    fade.setValue(0)
+    Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+  }
+
+  function buildReceipt(at) {
+    const hhmm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+    const site = injectable ? getInjectionSiteLabel(injectionSite) : null
+    return { title: 'Dose registrada', detail: [medicineName, hhmm, site].filter(Boolean).join(' · ') }
+  }
+
+  function resetForm() {
     setQuantity('')
     setInjectionSite(null)
     setSiteMeta(EMPTY_SITE_META)
     setError(null)
+    setWeightStep(null)
+  }
+
+  // Limpar estado e notificar tela pai (contrato do onSuccess inalterado — FR-001)
+  function finishSuccess() {
+    resetForm()
     onSuccess()
   }
 
   function handleClose() {
-    setQuantity('')
-    setInjectionSite(null)
-    setSiteMeta(EMPTY_SITE_META)
-    setError(null)
+    // Passo 2 aberto: fechar sem botão = dispensar (o prompt decide o motivo e chama onFinished)
+    if (weightStep) {
+      promptRef.current?.requestClose()
+      return
+    }
+    if (loading) return
+    resetForm()
     onClose()
   }
 
@@ -155,6 +191,20 @@ export default function DoseRegisterModal({
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
+          {weightStep ? (
+            <Animated.View style={{ opacity: fade }}>
+              <DoseWeightPrompt
+                ref={promptRef}
+                step={weightStep.step}
+                receipt={weightStep.receipt}
+                trigger="single"
+                treatmentId={protocol.id}
+                entryPoint={entryPoint}
+                onFinished={finishSuccess}
+              />
+            </Animated.View>
+          ) : (
+          <>
           <View style={styles.header}>
             <View style={styles.titleCol}>
               <Text style={styles.title}>Tomar dose</Text>
@@ -217,6 +267,8 @@ export default function DoseRegisterModal({
               }
             </Pressable>
           </View>
+          </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>

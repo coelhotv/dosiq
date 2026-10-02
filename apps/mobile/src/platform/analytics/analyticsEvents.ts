@@ -62,7 +62,10 @@ export const EVENTS = {
   STOCK_LOW_VIEWED: 'stock_low_viewed',
 
   // Famílias novas (065 US6) — só meta/tipo, NUNCA valor/texto/PII (FR-8, R-042).
-  BIOMARKER_LOGGED: 'biomarker_logged',               // biomarker_type: BIOMARKER_TYPES do core (glicemia|peso|pressao_arterial|batimentos) — NUNCA value/value_secondary
+  BIOMARKER_LOGGED: 'biomarker_logged',               // biomarker_type: BIOMARKER_TYPES do core (glicemia|peso|pressao_arterial|batimentos), surface, entry_point? (dose_prompt|measure_series) — NUNCA value/value_secondary
+  // Pedido de medida após a dose (spec 069 A2). Nomes genéricos de propósito (S-2): outro tipo reusa.
+  MEASURE_PROMPT_SHOWN: 'measure_prompt_shown',         // biomarker_type, trigger: single|bulk, treatment_id? (só single), entry_point? ('reminder'), surface
+  MEASURE_PROMPT_DISMISSED: 'measure_prompt_dismissed', // biomarker_type, reason: skip|swipe|close_after_error, trigger, surface
   AI_ASSISTANT_MESSAGE_SENT: 'ai_assistant_message_sent', // has_error: boolean — NUNCA a mensagem nem a resposta
   PROFILE_UPDATED: 'profile_updated',                 // {} — NUNCA display_name/birth_date/city/phone
   MODE_CHANGED: 'mode_changed',                       // mode: 'simple'|'complex'|'auto'
@@ -98,6 +101,16 @@ export const ENTRY_POINTS = {
   // 065 AD-8: dose registrada na modal que um lembrete abriu (deeplink). Separa "abriu pelo aviso
   // e tomou" de "abriu o app e tomou" — os dois saem `surface:'mobile'`.
   REMINDER: 'reminder',
+  // 069 A2: medida registrada no passo 2 do sheet de dose (pedido de peso).
+  DOSE_PROMPT: 'dose_prompt',
+}
+
+// Motivo de fechar o pedido de medida sem salvar (069 A2). `swipe` = fechar sem botão (fundo ou
+// voltar do Android): o sheet não tem gesto de arrastar (analysis-A2 G-6).
+export const PROMPT_DISMISS_REASONS = {
+  SKIP: 'skip',
+  SWIPE: 'swipe',
+  CLOSE_AFTER_ERROR: 'close_after_error',
 }
 
 // Origem do LEMBRETE (065 AD-8). Eixo diferente de `surface`: o mesmo aviso chega por canais

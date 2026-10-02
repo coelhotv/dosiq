@@ -36,6 +36,25 @@ export const BIOMARKER_TYPE_UNITS = {
   batimentos: 'bpm',
 }
 
+// Faixa plausível por tipo (069 A2 · FR-017 · S-4). Tipo ausente do mapa = só positive(), como antes.
+// Limites inclusivos. A mensagem é a copy da UI (passo 2 do pedido de peso) — vale p/ web e mobile.
+export const BIOMARKER_PLAUSIBLE_RANGES: Record<string, { min: number; max: number }> = {
+  peso: { min: 20, max: 200 },
+}
+
+function checkPlausibleRange(type: unknown, value: unknown, ctx: z.RefinementCtx) {
+  const range = BIOMARKER_PLAUSIBLE_RANGES[type as string]
+  if (!range || typeof value !== 'number' || Number.isNaN(value)) return
+  if (value < range.min || value > range.max) {
+    const unit = BIOMARKER_TYPE_UNITS[type as keyof typeof BIOMARKER_TYPE_UNITS]
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['value'],
+      message: `Use um valor entre ${range.min} e ${range.max} ${unit}.`,
+    })
+  }
+}
+
 // Contexto da medida. ADR-070: `context` é domínio EXTENSÍVEL por família (sem CHECK no DB —
 // Zod é autoridade única). A UI filtra por tipo; o Zod valida a UNIÃO; o refine cruza type↔família.
 
@@ -113,7 +132,8 @@ const biomarkerObject = z.object({
 
 // Regras compostas (aplicadas separadamente — ZodEffects não expõe .partial(), R-274):
 //  1. PA exige value_secondary; demais tipos não podem tê-lo.
-//  2. context só vale p/ a família do tipo (BIOMARKER_CONTEXTS_BY_TYPE) — ADR-070: Zod é o guard
+//  2. valor dentro da faixa plausível do tipo (BIOMARKER_PLAUSIBLE_RANGES — 069 A2).
+//  3. context só vale p/ a família do tipo (BIOMARKER_CONTEXTS_BY_TYPE) — ADR-070: Zod é o guard
 //     (sem CHECK no DB), então o cruzamento type↔família vive aqui.
 const applyPaRefine = <S extends typeof biomarkerObject>(schema: S) =>
   schema.superRefine((data: z.infer<typeof biomarkerObject>, ctx: z.RefinementCtx) => {
@@ -133,6 +153,8 @@ const applyPaRefine = <S extends typeof biomarkerObject>(schema: S) =>
       })
     }
 
+    checkPlausibleRange(data.type, data.value, ctx)
+
     // Guard type↔família de contexto. context é opcional; só valida quando presente.
     if (data.context != null) {
       const allowed = BIOMARKER_CONTEXTS_BY_TYPE[data.type as keyof typeof BIOMARKER_CONTEXTS_BY_TYPE]
@@ -146,14 +168,23 @@ const applyPaRefine = <S extends typeof biomarkerObject>(schema: S) =>
     }
   })
 
-export const biomarkerLogSchema = applyPaRefine(biomarkerObject)
+// `id` opcional SÓ na criação (069 A2): chave de idempotência gerada pelo cliente — o retry de uma
+// gravação cuja resposta se perdeu reusa o mesmo id e bate na PK em vez de duplicar. Fora do update
+// (PK não se edita) e fora do objeto base (senão o .partial() do update a herdaria).
+export const biomarkerLogSchema = applyPaRefine(
+  biomarkerObject.extend({ id: z.string().uuid('ID deve ser um UUID válido').optional() })
+)
 export const biomarkerLogCreateSchema = biomarkerLogSchema
 
 // Update: base parcial SEM refine (R-274) + sem reaplicar default em campos com .default().
-export const biomarkerLogUpdateSchema = biomarkerObject.partial().extend({
-  type: z.enum(BIOMARKER_TYPES).optional(),
-  source: z.enum(BIOMARKER_SOURCES).optional(),
-})
+// Faixa plausível também no update quando o patch traz o tipo (069 G-3); patch sem type = como antes.
+export const biomarkerLogUpdateSchema = biomarkerObject
+  .partial()
+  .extend({
+    type: z.enum(BIOMARKER_TYPES).optional(),
+    source: z.enum(BIOMARKER_SOURCES).optional(),
+  })
+  .superRefine((data, ctx) => checkPlausibleRange(data.type, data.value, ctx))
 
 export const biomarkerLogFullSchema = applyPaRefine(
   biomarkerObject.extend({

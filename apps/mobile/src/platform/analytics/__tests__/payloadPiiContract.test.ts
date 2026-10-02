@@ -33,14 +33,25 @@ afterEach(() => {
 })
 
 // Casca do measuresRepo: TodayScreen, HistoryScreen e useMeasures criam por aqui (C1.5 G-1).
-describe('PO-6 — biomarker_logged só com o tipo', () => {
-  it('create com valor/secundário/notas emite só { biomarker_type } da linha gravada', async () => {
+describe('PO-6 / 069 PO-19 — biomarker_logged só com tipo + origem', () => {
+  it('create com valor/secundário/notas emite só { biomarker_type, surface } da linha gravada', async () => {
     mockCreate.mockResolvedValue({ id: 'b1', type: 'pressao_arterial', value: 132, value_secondary: 85, notes: 'tontura' })
 
     await measuresRepo.create({ type: 'pressao_arterial', value: 132, value_secondary: 85, notes: 'tontura' })
 
-    expect(mockLogEvent.mock.calls).toEqual([[EVENTS.BIOMARKER_LOGGED, { biomarker_type: 'pressao_arterial' }]])
+    expect(mockLogEvent.mock.calls).toEqual([[EVENTS.BIOMARKER_LOGGED, { biomarker_type: 'pressao_arterial', surface: 'mobile' }]])
     expect(JSON.stringify(mockLogEvent.mock.calls)).not.toMatch(/132|85|tontura/)
+  })
+
+  it('create pelo pedido da dose carrega entry_point dose_prompt e nada do valor', async () => {
+    mockCreate.mockResolvedValue({ id: 'b2', type: 'peso', value: 82.5, unit: 'kg' })
+
+    await measuresRepo.create({ type: 'peso', value: 82.5 }, { entry_point: 'dose_prompt' })
+
+    expect(mockLogEvent.mock.calls).toEqual([
+      [EVENTS.BIOMARKER_LOGGED, { biomarker_type: 'peso', surface: 'mobile', entry_point: 'dose_prompt' }],
+    ])
+    expect(JSON.stringify(mockLogEvent.mock.calls)).not.toMatch(/82/)
   })
 
   it('create que falha NÃO emite e propaga o erro', async () => {

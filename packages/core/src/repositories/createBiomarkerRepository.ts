@@ -118,7 +118,20 @@ export function createBiomarkerRepository({ client, getUserId }: CreateBiomarker
         .select(SELECT_COLS)
         .single()
 
-      if (error) throw error
+      if (error) {
+        // Idempotência (069 A2): id do cliente já gravado = a tentativa anterior chegou e a resposta
+        // se perdeu. Devolve a linha SÓ se ela é do usuário (RLS + filtro); senão o erro original.
+        if (error.code === '23505' && row.id) {
+          const { data: existing } = await client
+            .from(TABLE)
+            .select(SELECT_COLS)
+            .eq('id', row.id as string)
+            .eq('user_id', userId)
+            .maybeSingle()
+          if (existing) return existing
+        }
+        throw error
+      }
       return data
     },
 
