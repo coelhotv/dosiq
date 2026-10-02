@@ -1,7 +1,7 @@
 ---
 title: "Expo.dev e EAS para Android"
 description: "Guia prático para configuração do ecossistema Expo.dev, EAS Build e geração de builds de produção e testes para Android no Dosiq."
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: operation
 audience:
@@ -12,7 +12,7 @@ tags:
   - eas
   - android
 created_at: "2026-04-14"
-updated_at: "2026-10-01"
+updated_at: "2026-10-02"
 ---
 
 # Guia Pratico - Expo.dev e EAS para Android
@@ -646,17 +646,20 @@ O que ele faz, na ordem:
 
 1. Valida o perfil, o Android SDK (`ANDROID_HOME`, padrão `~/Library/Android/sdk`) e a credencial
    Firebase `apps/mobile/google-services.json` (única para todos os perfis).
-2. `production`: exige working tree limpa e `SENTRY_AUTH_TOKEN`, e confere a tag `mobile-v<versão>`
-   **antes** de compilar (R-307 — ver `GUIA_OTA_EAS_UPDATE.md` §6).
+2. `production`: exige `SENTRY_AUTH_TOKEN` e, **antes** de compilar, working tree limpa, **commit já
+   publicado no origin** e tag `mobile-v<versão>` sem colisão (R-307 — ver `GUIA_OTA_EAS_UPDATE.md` §6).
 3. Mostra o resumo e pede confirmação (Enter).
 4. Apaga `android/` e roda `expo prebuild --platform android --clean`.
-5. `eas build --local` com `--clear-cache`. A saída vai também para um **log**:
-   `~/local/dev-builds/build-android-<perfil>-v<versão>-<timestamp>.log`.
-   O sucesso é decidido pela **existência do artefato**, não pelo código de saída — o `ENOTEMPTY` de
-   cleanup devolve 1 mesmo com build bom.
+5. `eas build --local` com `--clear-cache`. **Tudo** vai para o log
+   `~/local/dev-builds/build-android-<perfil>-v<versão>-<timestamp>.log`; o terminal mostra só as
+   fases, avisos e erros. O sucesso é decidido pela **existência do artefato**, não pelo código de
+   saída — o `ENOTEMPTY` de cleanup devolve 1 mesmo com build bom; se faltar, o script imprime o fim
+   do log. `DOSIQ_BUILD_VERBOSE=1` mostra a saída inteira.
 6. Move o artefato para `~/local/dev-builds/dosiq-v<versão>-<perfil>.<apk|aab>`.
 7. `development`/`preview`: **instala no aparelho** via `adb install -r` (ver abaixo).
-8. `production`: cria e publica a tag `mobile-v<versão>`.
+8. `production`: cria e publica a tag `mobile-v<versão>` (push com `--no-verify`; se a tag já está no
+   origin — build iOS do mesmo commit — não empurra de novo, e a suíte de testes não reroda).
+   **Não há submit para a Play Store:** o `.aab` fica em `~/local/dev-builds/` e o upload é manual.
 
 | Perfil | Saída | Canal OTA |
 |---|---|---|

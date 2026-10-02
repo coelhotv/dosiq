@@ -56,3 +56,26 @@ get_app_version() {
 build_log_path() {
   echo "$1/$2-$3-v$4-$(date +%Y%m%d-%H%M%S).log"
 }
+
+_BUILD_ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# run_logged <log> <phases|all> <regex-extra|''> <comando...>
+# Roda o comando com TUDO no log e só o essencial no terminal (lib-filter-build-output.pl).
+# Devolve o código de saída do comando (pipefail). DOSIQ_BUILD_VERBOSE=1 mostra a saída inteira —
+# para depurar, ou se o EAS pedir algo interativo (o filtro esconde prompts sem quebra de linha).
+run_logged() {
+  local log="$1" mode="$2" extra="$3"
+  shift 3
+  if [ "${DOSIQ_BUILD_VERBOSE:-0}" = "1" ]; then
+    "$@" 2>&1 | tee "$log"
+  else
+    "$@" 2>&1 | tee "$log" | perl "$_BUILD_ENV_DIR/lib-filter-build-output.pl" "$mode" "$extra"
+  fi
+}
+
+# eas_noninteractive_flag
+# No modo filtrado um prompt do EAS ficaria invisível (sem quebra de linha) e o script pareceria
+# travado: pedir ao EAS que falhe com mensagem em vez de perguntar. Vazio no modo verbose.
+eas_noninteractive_flag() {
+  [ "${DOSIQ_BUILD_VERBOSE:-0}" = "1" ] || echo "--non-interactive"
+}

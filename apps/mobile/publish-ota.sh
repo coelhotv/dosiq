@@ -180,14 +180,20 @@ if [ -n "$ROLLOUT" ]; then
   ARGS+=(--rollout-percentage "$ROLLOUT")
 fi
 
-# A saída também vai para um log: o updateId devolvido precisa ir para o CHANGELOG, e no scrollback
-# ele some. pipefail + set -e: falha do eas continua abortando o script.
+# Tudo vai para o log (o updateId devolvido precisa ir para o CHANGELOG, e no scrollback ele some).
+# O terminal mostra a saída sem spinner/barras/inventário de assets. DOSIQ_BUILD_VERBOSE=1 mostra tudo.
 OTA_LOG="$(build_log_path "$HOME/local/dev-builds" ota "$CHANNEL" "$APP_VERSION")"
 mkdir -p "$(dirname "$OTA_LOG")"
 
 echo ""
 echo "🚀 Publicando... (log: $OTA_LOG)"
-eas "${ARGS[@]}" 2>&1 | tee "$OTA_LOG"
+# shellcheck disable=SC2046  # flag vazia no modo verbose: precisa sumir, não virar argumento ""
+if ! run_logged "$OTA_LOG" all "" eas "${ARGS[@]}" $(eas_noninteractive_flag); then
+  echo ""
+  echo "❌ eas update falhou. Fim do log ($OTA_LOG):"
+  tail -40 "$OTA_LOG"
+  exit 1
+fi
 
 echo ""
 echo "✅ Publicado."

@@ -118,18 +118,24 @@ npx expo prebuild --platform android --clean
 echo "🚀 Iniciando build Android ($PROFILE) para v$APP_VERSION..."
 # Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
 # pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
-# A saída também vai para um log: o diretório temporário do EAS é apagado ao fim, então o log
-# é a única evidência de uma falha. pipefail + `|| true` mantêm a regra acima.
+# Tudo vai para o log (o diretório temporário do EAS é apagado ao fim, então ele é a única
+# evidência de uma falha); o terminal mostra só as fases, avisos e erros. DOSIQ_BUILD_VERBOSE=1
+# mostra tudo. pipefail + `|| true` mantêm a regra acima.
 BUILD_LOG="$(build_log_path "$TARGET_DIR" build-android "$PROFILE" "$APP_VERSION")"
 echo "📝 Log do build: $BUILD_LOG"
 rm -f "$TEMP_OUTPUT"  # resto de build anterior passaria pela checagem de existência abaixo
-eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache 2>&1 | tee "$BUILD_LOG" || true
+# shellcheck disable=SC2046  # flag vazia no modo verbose: precisa sumir, não virar argumento ""
+run_logged "$BUILD_LOG" phases "" \
+  eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache $(eas_noninteractive_flag) || true
 
 if [ -f "$TEMP_OUTPUT" ]; then
   echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
 else
   echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
-  echo "Verifique os logs do EAS acima (ou $BUILD_LOG) para entender o porquê da falha na compilação."
+  echo ""
+  echo "--- fim do log ($BUILD_LOG) ---"
+  tail -60 "$BUILD_LOG"
+  echo "--- o log completo está em: $BUILD_LOG ---"
   exit 1
 fi
 

@@ -1,7 +1,7 @@
 ---
 title: "OTA com EAS Update"
 description: "Runbook operacional para publicar, escalonar, auditar e reverter atualizações OTA do app mobile via EAS Update."
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: operation
 audience:
@@ -13,7 +13,7 @@ tags:
   - ota
   - mobile
 created_at: "2026-07-27"
-updated_at: "2026-10-01"
+updated_at: "2026-10-02"
 epic: "051"
 ---
 
@@ -123,9 +123,14 @@ variável, o script usa o único aparelho disponível, pergunta se houver vário
 `~/local/dev-builds/` e o script imprime o comando manual. `production` nunca instala sozinho.
 Cabo ou Wi-Fi funcionam no iOS (o `devicectl` resolve o transporte).
 
-📝 **Log de cada build:** `~/local/dev-builds/build-<android|ios>-<perfil>-v<versão>-<timestamp>.log`.
-O diretório temporário do EAS é apagado ao fim do build, então o log é a única evidência de uma
-falha. Para a saída bruta de um build, abra o log — não rode o build de novo.
+📝 **Saída e log:** o `eas` escreve **tudo** em `~/local/dev-builds/build-<android|ios>-<perfil>-v<versão>-<timestamp>.log`
+(o diretório temporário do EAS é apagado ao fim, então o log é a única evidência de uma falha). O
+terminal mostra só uma linha por **fase** (`▸ [mm:ss] INSTALL_PODS`…), avisos e erros — um build iOS
+production chega a ~2.300 linhas e a maior parte é ruído do `xcodebuild`. Se o build falhar, o script
+imprime o fim do log. `DOSIQ_BUILD_VERBOSE=1 bash build-….sh …` mostra a saída inteira (depuração, ou
+se o EAS pedir algo interativo: no modo filtrado o script passa `--non-interactive`, e um prompt
+viraria erro em vez de pergunta).
+Para a saída bruta de um build, abra o log — não rode o build de novo.
 
 🔴 **O canal é declarado em DOIS lugares, e os dois são obrigatórios** — cada um serve a uma ponta:
 
@@ -264,10 +269,11 @@ da mensagem não se resolve em lugar nenhum e a trilha de auditoria perde o sent
 O script usa o **`eas` global** (a mesma CLI dos builds locais), não `npx eas-cli@latest`: uma
 versão nova da CLI não muda flags no canal de produção sem você pedir. Instalação: `npm i -g eas-cli`.
 
-📝 **Log e `updateId`:** a saída do `eas update` vai também para
-`~/local/dev-builds/ota-<canal>-v<versão>-<timestamp>.log`, e o script re-imprime ao final as linhas
-com o ID do update — é ele que vai para o CHANGELOG (§7). Se o script não reconhecer o formato da
-saída, ele avisa e aponta o log.
+📝 **Log e `updateId`:** a saída do `eas update` vai para
+`~/local/dev-builds/ota-<canal>-v<versão>-<timestamp>.log`; o terminal mostra a mesma saída **sem
+spinners, barras de progresso e inventário de assets** (`DOSIQ_BUILD_VERBOSE=1` mostra tudo). Ao final
+o script re-imprime as linhas `Update group ID` / `Android update ID` / `iOS update ID` — é o ID que
+vai para o CHANGELOG (§7). Se o `eas update` falhar, o script mostra o fim do log.
 
 ### Escada de rollout: 0 → 1 → 10 → 100%
 
@@ -537,7 +543,12 @@ não configura nada: a árvore certa produz o runtime certo.
 `build-android.sh production` e `build-ios.sh production` criam `mobile-v<APP_VERSION>` e a
 publicam no origin automaticamente (R-307). Eles também **recusam buildar de árvore suja** — um
 binário compilado de um estado que não existe em commit nenhum não tem como ser marcado com
-honestidade.
+honestidade — e **exigem o commit já publicado no origin** (`git push` antes do build).
+
+O push da tag roda com `--no-verify`: o hook `pre-push` executa a suíte de testes inteira e não olha
+o que está sendo enviado; como o commit já passou por ela ao ser publicado, repetir a suíte para uma
+tag seria ~2 min perdidos (e acontecia **duas vezes**, uma por plataforma). O segundo script a rodar
+vê a tag já no origin e não empurra de novo.
 
 O `publish-ota.sh` recusa `production` quando o `HEAD` não descende da tag daquela versão, e avisa
 explicitamente quando a tag **não existe** (build feito antes da R-307, ou de outra máquina sem

@@ -1,7 +1,7 @@
 ---
 title: "Expo.dev e EAS para iOS"
 description: "Guia prático de configuração de perfis, EAS Build e provisionamento de certificados para geração de builds iOS (ipa) no Dosiq."
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: operation
 audience:
@@ -12,7 +12,7 @@ tags:
   - eas
   - ios
 created_at: "2026-04-22"
-updated_at: "2026-10-01"
+updated_at: "2026-10-02"
 ---
 
 # Guia Pratico - Expo.dev e EAS para iOS
@@ -110,18 +110,22 @@ O que ele faz, na ordem:
 1. Valida o perfil e, em `device`/`production`, a presença do **Apple Distribution certificate** no
    keychain (`device` assina com o mesmo certificado do production — só o provisioning profile
    difere). Desbloqueia o keychain.
-2. Valida `GoogleService-Info.plist` (§4.1). `production`: exige `SENTRY_AUTH_TOKEN` e confere a tag
-   `mobile-v<versão>` com working tree limpa **antes** de compilar (R-307).
+2. Valida `GoogleService-Info.plist` (§4.1). `production`: exige `SENTRY_AUTH_TOKEN` e, **antes** de
+   compilar, working tree limpa, **commit já publicado no origin** e tag `mobile-v<versão>` sem
+   colisão (R-307).
 3. Mostra o resumo e pede confirmação (Enter).
 4. Apaga `ios/` e roda `expo prebuild --platform ios --no-install`. O `rm -rf ios` é **intencional**:
    o Swift da bridge/widget de um prebuild anterior conflita com o novo.
-5. `eas build --local --clear-cache`. A saída vai também para um **log**:
-   `~/local/dev-builds/build-ios-<perfil>-v<versão>-<timestamp>.log`. O sucesso é decidido pela
-   existência do artefato (o `ENOTEMPTY` de cleanup devolve 1 mesmo com build bom).
+5. `eas build --local --clear-cache`. **Tudo** vai para o log
+   `~/local/dev-builds/build-ios-<perfil>-v<versão>-<timestamp>.log`; o terminal mostra só as fases,
+   avisos e erros (~30 linhas em vez de ~2.300). O sucesso é decidido pela existência do artefato (o
+   `ENOTEMPTY` de cleanup devolve 1 mesmo com build bom); se faltar, o script imprime o fim do log.
+   `DOSIQ_BUILD_VERBOSE=1` mostra a saída inteira.
 6. Move o artefato para `~/local/dev-builds/dosiq-v<versão>-<perfil>.<app|ipa>`. Em
    `development`/`preview` o resultado é um `tar.gz` que o script **extrai** para um `.app`.
 7. `device`: **instala o `.ipa` no iPhone** via `xcrun devicectl device install app` (ver abaixo).
-8. `production`: `eas submit` para o TestFlight e, depois, cria/publica a tag `mobile-v<versão>`.
+8. `production`: `eas submit` para o TestFlight e, depois, cria/publica a tag `mobile-v<versão>`
+   (push com `--no-verify`, sem reexecutar a suíte; pulado se a tag já está no origin).
 
 **Simulador não recebe push.** Qualquer smoke que dependa de notificação no iPhone usa o perfil
 `device` (ad hoc, assinado para os UDIDs de `eas device:list`).
