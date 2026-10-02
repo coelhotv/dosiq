@@ -50,7 +50,7 @@ Esta Política explica quais dados o dosiq trata, para quê, com que base legal,
 
 ## 2. Responsável pelo tratamento dos dados
 
-**Controlador**: Antonio Carlos do C. G. Coelho (pessoa física), CPF 199.366.348-70.
+**Controlador**: Antonio Carlos do C. G. Coelho (pessoa física).
 
 **Encarregado (DPO)**: Antonio Carlos do C. G. Coelho — mesmo contato.
 
