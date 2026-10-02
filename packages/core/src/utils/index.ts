@@ -25,6 +25,7 @@ export {
   getStartOfDayISO,
   getEndOfDayISO,
   addMonths,
+  mondayOf,
   cloneDate,
   getLastDayOfMonth,
   parseLocalDatetime,

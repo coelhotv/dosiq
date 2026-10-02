@@ -6,7 +6,7 @@
 // v1: glicemia + peso (Planning 2026-06-14). PA fora da UI (schema-ready no core).
 
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Modal, Pressable, TouchableOpacity, TextInput, StyleSheet, Platform, StatusBar, KeyboardAvoidingView } from 'react-native'
+import { View, Text, Modal, Pressable, TouchableOpacity, StyleSheet, Platform, StatusBar, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
@@ -25,6 +25,7 @@ import {
   BIOMARKER_PA_CONTEXTS,
   BIOMARKER_PA_CONTEXT_LABELS,
 } from '@dosiq/core'
+import MeasureValueFields from './MeasureValueFields'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
@@ -357,43 +358,15 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
             handleSelectType={handleSelectType}
           />
 
-          <View style={styles.valueRow}>
-            <View style={styles.paField}>
-              <TextInput
-                style={[isPa ? styles.paInput : styles.valueInput, errorMsg && styles.valueInputError]}
-                value={value}
-                onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
-                keyboardType="decimal-pad"
-                placeholder="0"
-                placeholderTextColor={colors.neutral[300]}
-                maxLength={isPa ? 3 : 6}
-                autoFocus
-                accessibilityLabel={isPa ? 'Sistólica em mmHg' : `Valor da medida em ${unit}`}
-              />
-              {isPa && <Text style={styles.paFieldLabel}>Sistólica</Text>}
-            </View>
-            {isPa && (
-              <>
-                <Text style={styles.paSep}>por</Text>
-                <View style={styles.paField}>
-                  <TextInput
-                    style={[styles.paInput, errorMsg && styles.valueInputError]}
-                    value={valueSec}
-                    onChangeText={(v) => { setValueSec(v); if (errorMsg) setErrorMsg(null) }}
-                    keyboardType="decimal-pad"
-                    placeholder="0"
-                    placeholderTextColor={colors.neutral[300]}
-                    maxLength={3}
-                    accessibilityLabel="Diastólica em mmHg"
-                  />
-                  <Text style={styles.paFieldLabel}>Diastólica</Text>
-                </View>
-              </>
-            )}
-            <Text style={styles.unit}>{unit}</Text>
-          </View>
-
-          <Text style={[styles.caption, !errorMsg && styles.captionHidden]}>{errorMsg || ' '}</Text>
+          <MeasureValueFields
+            unit={unit}
+            isPa={isPa}
+            value={value}
+            onChangeValue={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
+            valueSec={valueSec}
+            onChangeValueSec={(v) => { setValueSec(v); if (errorMsg) setErrorMsg(null) }}
+            errorMsg={errorMsg}
+          />
 
           <MeasureContextGrid
             showContext={showContext}
@@ -459,23 +432,6 @@ const styles = StyleSheet.create({
   typeChipActive: { backgroundColor: colors.status.info },
   typeChipText: { fontSize: 15, fontWeight: '600', color: colors.text.secondary },
   typeChipTextActive: { color: colors.text.inverse },
-  valueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: spacing[2] },
-  valueInput: {
-    fontSize: 64, fontWeight: '700', color: colors.text.primary, textAlign: 'center', minWidth: 120,
-    padding: 0, fontFamily: typography.fontFamily.bold,
-  },
-  valueInputError: { color: colors.status.error },
-  unit: { fontSize: 22, fontWeight: '600', color: colors.text.muted },
-  // PA — 2 campos (sistólica "por" diastólica), unidade à direita. Reusa valueRow no container.
-  paField: { alignItems: 'center' },
-  paInput: {
-    fontSize: 48, fontWeight: '700', color: colors.text.primary, textAlign: 'center', minWidth: 72,
-    padding: 0, fontFamily: typography.fontFamily.bold,
-  },
-  paFieldLabel: { fontSize: 12, color: colors.text.muted, marginTop: spacing[1] },
-  paSep: { fontSize: 20, fontWeight: '600', color: colors.text.muted },
-  caption: { fontSize: 12, color: colors.status.error, textAlign: 'center', marginTop: spacing[1], minHeight: 16 },
-  captionHidden: { opacity: 0 },
   ctxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], justifyContent: 'center', marginTop: spacing[3] },
   ctxChip: {
     paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: borderRadius.full,

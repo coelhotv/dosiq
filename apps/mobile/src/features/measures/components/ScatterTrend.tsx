@@ -9,26 +9,13 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, ChevronRight } = LucideIcons as any
-import { addDays, parseISO, getRawNow } from '@dosiq/core'
+import { addDays, parseISO, getRawNow, mondayOf } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const CHART_H = 132
 const Y_AXIS_W = 34
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-
-function startOfDay(d) {
-  const x = addDays(d, 0) // cópia da Date (evita new Date — R-020)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-// Segunda-feira da semana que contém `d`.
-function mondayOf(d) {
-  const x = startOfDay(d)
-  const wd = (x.getDay() + 6) % 7 // 0=segunda
-  x.setDate(x.getDate() - wd)
-  return x
-}
 
 // "Passo bonito" p/ a escala do eixo Y (1/2/5 × 10ⁿ).
 function niceStep(raw) {
