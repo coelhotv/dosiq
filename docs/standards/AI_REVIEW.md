@@ -13,7 +13,7 @@ tags:
   - rc5
   - rc6
 created_at: "2026-07-18"
-updated_at: "2026-08-30"
+updated_at: "2026-10-02"
 epic: "056"
 ---
 
@@ -113,6 +113,7 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | `RC6_AUTO_FILTER_ABOVE` | `150000` | limiar (bytes de payload do chunk) que dispara o `auto`. Empírico: o agy amostra em silêncio acima de ~160K |
 | `RC6_MEASURE` | `0` | `=1` monta preâmbulo+chunks, imprime bytes (preâmbulo, packs in/out, payload por chunk) e **PARA antes do engine** — medir sem gastar quota (o `--dry-run` AINDA chama engine) |
 | `RC6_KEEP_PREAMBLE` | `0` | `=1` (com MEASURE) dumpa o preâmbulo em `/tmp/rc6_preamble.txt` para auditar o filtro |
+| `RC6_MAX_CHUNKS` | `6` | teto de chunks revisados. Acima dele um **ranking de risco** escolhe quais entram e a cobertura fica `partial` (`not_reviewed` no JSON lista o que ficou de fora). Suba (ex.: `8`) quando o arquivo central do PR cair fora — #852: o componente principal da 069 A2 ficou fora do top-6; re-run com `=8` deu `coverage=full`. Re-run assim é exceção à regra 1×/PR e vai declarado no PR |
 | `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
 | `RC6_PASSB_TIMEOUT` | `480` | teto wall-clock (s) do claude no Pass B; um claude que HANGA (esperando quota liberar) é morto e cai no fallback agy — não wedgeia o RC6 |
 | `RC6_MAIN` | **auto** (`baseRefName` do PR) | branch-base do diff. **Desde 2026-07-29 é derivada do próprio PR** (`gh pr view --json baseRefName`), não mais `main` fixo. Só defina à mão para revisar contra outra base |
@@ -294,8 +295,8 @@ sobre um diff não-confiável). Absorvemos as estratégias:
   "pra confirmar" só queima quota (caso #757: 5 runs = >30% da quota 5h do claude, 3 resultados
   disjuntos). Resultado com aviso de budget no stderr = **advisory**: julgar findings no mérito.
 - **PR grande: chunking automático.** Acima de ~150KB o script fatia o diff por arquivo e roda
-  1 chamada agy por chunk (merge consolida; label `agy (N chunks)`). Cap de 6 chunks — além disso
-  a coverage fica PARCIAL com aviso; o fix é fatiar o PR. Causa: >160KB o agy AMOSTRA o input
+  1 chamada agy por chunk (merge consolida; label `agy (N chunks)`). Cap de 6 chunks (`RC6_MAX_CHUNKS`) — além disso a coverage fica PARCIAL com aviso: confira
+  `not_reviewed`; se o arquivo central do PR estiver lá, suba o teto ou fatie o PR. Causa: >160KB o agy AMOSTRA o input
   em silêncio (bisect 2026-07-17: 160K ok, 200K degrada com exit 0).
 - **Motor "quebrado" em 100% dos chunks → desconfie do PAYLOAD antes do motor.** Falha uniforme não
   é característica de quota (que degrada), nem de rede (que varia): é característica de entrada
