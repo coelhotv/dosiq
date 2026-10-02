@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Política nova não pede o aceite de novo a quem já aceitou (spec 096)
+
+- **Mobile + Web + Core** (`patch` — correção; **sem bump**: nada muda na tela hoje, a versão
+  da política segue `0.3`; mobile pelo canal **OTA** sobre os binários de loja, sem bump de
+  `APP_VERSION` — releases `[0.30.0+ota.2]` e `[0.30.1+ota.1]`, updateIds registrados no
+  publish). O app passava a pedir a regularização do consentimento sempre que a versão aceita
+  fosse *diferente* da que ele conhece. Como o servidor registra no aceite a versão vigente,
+  um app antigo, depois de uma política nova, via o próprio aceite como pendente e pedia de
+  novo, sem fim. Agora só pede quando a versão aceita é *mais antiga* que a do app, comparando
+  por número (`0.10` vem depois de `0.9`). Versão ausente ou ilegível continua pedindo a
+  regularização, como antes. Prepara a política v0.4.
+- **Web** (`patch` — sem bump). A política de privacidade publicada deixa de exibir o CPF do
+  controlador. A versão segue `0.3`: o texto do tratamento não mudou e ninguém precisa aceitar
+  de novo.
+
 ### Local da injeção escolhido no desenho do corpo (app)
 
 - **Mobile** (`minor` — funcionalidade nova no registro de dose; **sem bump neste PR**: entra no
