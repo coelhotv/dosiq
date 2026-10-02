@@ -5,6 +5,7 @@
 // consentimento seriam, na prática, dois consentimentos diferentes (e o titular aceitou um só).
 
 import { z } from 'zod'
+import { compareSemver } from '../utils/semver'
 
 /** Tipos de consentimento registrados. Espelha o CHECK de `consent_log.consent_type`. */
 export const CONSENT_TYPES = ['health_data', 'terms_privacy'] as const
@@ -135,12 +136,16 @@ export function deriveConsentState(events: ConsentEvent[]): ConsentState {
 
   const granted = last.action === 'granted'
   const policyVersion = last.policy_version ?? null
+  const cmp = compareSemver(policyVersion, CURRENT_POLICY_VERSION)
 
   return {
     status: granted ? 'granted' : 'revoked',
     policyVersion,
     updatedAt: last.created_at,
-    stale: granted && policyVersion !== CURRENT_POLICY_VERSION,
+    // Só versão aceita MENOR que a do app pede regularização. O servidor carimba a vigente: um app
+    // com constante antiga recebe aceite mais novo e não pode tratá-lo como pendente (loop — 096).
+    // Versão ilegível (null) cai no lado seguro: pede regularização, como sempre pediu.
+    stale: granted && (cmp === null || cmp < 0),
   }
 }
 

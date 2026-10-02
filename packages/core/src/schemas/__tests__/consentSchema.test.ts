@@ -118,6 +118,33 @@ describe('deriveConsentState', () => {
     expect(state).toMatchObject({ status: 'granted', policyVersion: '0.1', stale: true })
   })
 
+  // 096 — o servidor carimba a versão VIGENTE no aceite. App com constante antiga que recebe um
+  // aceite carimbado com versão mais nova não pode tratá-lo como "diferente" (loop de regularização).
+  describe('ordem de versão (096)', () => {
+    const [major, minor] = CURRENT_POLICY_VERSION.split('.').map(Number)
+    const newer = `${major}.${minor + 1}`
+
+    it('aceite mais novo que o app ⇒ não stale', () => {
+      const state = deriveConsentState([{ ...base, policy_version: newer }])
+      expect(state).toMatchObject({ status: 'granted', policyVersion: newer, stale: false })
+    })
+
+    it('aceite na mesma versão do app ⇒ não stale', () => {
+      const state = deriveConsentState([{ ...base, policy_version: CURRENT_POLICY_VERSION }])
+      expect(state.stale).toBe(false)
+    })
+
+    it('ordem numérica, não lexical (segmento de 2 dígitos, ex. 0.13 > 0.3)', () => {
+      const state = deriveConsentState([{ ...base, policy_version: `${major}.${minor + 10}` }])
+      expect(state.stale).toBe(false)
+    })
+
+    it.each(['', 'abc', '4', null])('versão aceita ilegível (%j) ⇒ stale (lado seguro)', (v) => {
+      const state = deriveConsentState([{ ...base, policy_version: v as string }])
+      expect(state).toMatchObject({ status: 'granted', stale: true })
+    })
+  })
+
   it('revoked nunca é stale (não há o que revalidar num consentimento retirado)', () => {
     const state = deriveConsentState([{ ...base, action: 'revoked', policy_version: '0.1' }])
     expect(state.status).toBe('revoked')
