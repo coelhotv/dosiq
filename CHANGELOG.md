@@ -11,8 +11,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 - **Mobile + Web + Core** (`patch` — correção; **sem bump**: nada muda na tela hoje, a versão
   da política segue `0.3`; mobile pelo canal **OTA** sobre os binários de loja, sem bump de
-  `APP_VERSION` — releases `[0.30.0+ota.2]` e `[0.30.1+ota.1]`, updateIds registrados no
-  publish). O app passava a pedir a regularização do consentimento sempre que a versão aceita
+  `APP_VERSION`). Releases publicadas em production em 2026-10-02:
+  `[0.30.1+ota.1]` group `dd6d8a44-2a61-4979-9e9d-9abc1122b708` (android
+  `01a0fac6-132e-7cc3-afa2-f86eb63ebfb7`, ios `01a0fac6-132e-7df8-bf9d-270847fd8445`), branch
+  `hotfix/ota-0.30.1` @ `aded8d83`; `[0.30.0+ota.2]` group `eea192db-de76-4c20-bc0a-625127778083`
+  (android `01a0facc-7fe5-7b84-916a-d4c149bfd78b`, ios `01a0facc-7fe5-7d86-86aa-3b242e6d30e0`),
+  branch `hotfix/ota-0.30.0` @ `310edd3d`. Fix de código = `0e2eeb49` (squash `f49fdb37`, #849). O app passava a pedir a regularização do consentimento sempre que a versão aceita
   fosse *diferente* da que ele conhece. Como o servidor registra no aceite a versão vigente,
   um app antigo, depois de uma política nova, via o próprio aceite como pendente e pedia de
   novo, sem fim. Agora só pede quando a versão aceita é *mais antiga* que a do app, comparando
