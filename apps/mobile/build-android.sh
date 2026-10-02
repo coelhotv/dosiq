@@ -1,6 +1,6 @@
 #!/bin/bash
 # build-android.sh — Prepara credenciais e roda eas build local para Android
-# Uso: bash build-android.sh [development|preview|production]
+# Uso: bash build-android.sh [development|preview|production] [--no-install]
 #
 # Perfis (spec 051-A · canais de OTA declarados em eas.json):
 #   development → .apk  · canal `development` · uso diário de desenvolvimento
@@ -12,8 +12,20 @@
 # ⚠️ Mesmo bundle ID (com.coelhotv.dosiq) nos três: o APK local é assinado por esta máquina e o
 #    app da Play Store pelo Google — assinaturas diferentes, o Android RECUSA instalar por cima.
 #    Para instalar um build preview/development: desinstale o Dosiq da loja antes.
+#
+# Perfis development/preview instalam o .apk no aparelho ao final (lib-install-device.sh; alvo em
+# DOSIQ_ANDROID_SERIAL). `--no-install` só gera o artefato.
+#
+# Log completo do build: ~/local/dev-builds/build-android-<perfil>-v<versão>-<timestamp>.log
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/lib-build-env.sh"
+
+# `npm ci` do EAS morre com EALLOWSCRIPTS por causa do ~/.npmrc do operador — detalhe e medição
+# em lib-build-env.sh.
+isolate_npm_userconfig
 
 # Garantir que o Android SDK é encontrado pelo Gradle
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
@@ -25,11 +37,11 @@ if [ ! -d "$ANDROID_HOME" ]; then
   exit 1
 fi
 
-PROFILE="${1:-development}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+parse_build_args "$@"
 
 # R-307: procedencia do binario de loja (tag no git + arvore limpa)
 . "$SCRIPT_DIR/lib-release-tag.sh"
+. "$SCRIPT_DIR/lib-install-device.sh"
 
 # Falhar cedo e explícito: perfil desconhecido só apareceria lá na frente como erro do EAS,
 # depois do prebuild e do --clear-cache (minutos perdidos).
@@ -43,7 +55,7 @@ case "$PROFILE" in
 esac
 
 # 1. Extrair versão do app.config.js
-APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
+APP_VERSION=$(get_app_version "$SCRIPT_DIR")
 echo "📦 Versão detectada: v$APP_VERSION"
 
 # 2. Configurar credenciais (Arquivo único)
@@ -97,8 +109,7 @@ export EAS_BUILD_PROFILE="$PROFILE"
 load_sentry_auth_token "$SCRIPT_DIR" || true
 require_sentry_auth_token_for_production "$PROFILE"
 
-# echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
-# Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
+# Apaga o android/ gerado antes do prebuild (mantido: bridge/widget de dose, como no iOS).
 rm -rf "$SCRIPT_DIR/android"
 
 echo "🧹 Limpando cache e regenerando diretório nativo..."
@@ -107,19 +118,29 @@ npx expo prebuild --platform android --clean
 echo "🚀 Iniciando build Android ($PROFILE) para v$APP_VERSION..."
 # Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
 # pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
-eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || true
+# A saída também vai para um log: o diretório temporário do EAS é apagado ao fim, então o log
+# é a única evidência de uma falha. pipefail + `|| true` mantêm a regra acima.
+BUILD_LOG="$(build_log_path "$TARGET_DIR" build-android "$PROFILE" "$APP_VERSION")"
+echo "📝 Log do build: $BUILD_LOG"
+rm -f "$TEMP_OUTPUT"  # resto de build anterior passaria pela checagem de existência abaixo
+eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache 2>&1 | tee "$BUILD_LOG" || true
 
 if [ -f "$TEMP_OUTPUT" ]; then
   echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
 else
   echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
-  echo "Verifique os logs do EAS acima para entender o porquê da falha na compilação."
+  echo "Verifique os logs do EAS acima (ou $BUILD_LOG) para entender o porquê da falha na compilação."
   exit 1
 fi
 
 # 4. Mover e renomear
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+# Instalação automática no aparelho (só APK de teste; falha não derruba o script)
+if [ "$PROFILE" != "production" ] && [ "$NO_INSTALL" -eq 0 ]; then
+  install_android_device "$FINAL_PATH"
+fi
 
 # R-307: marcar o commit que virou este binário. Só agora, com o artefato em mãos — tag de build
 # que falhou é mentira sobre o que existe.
