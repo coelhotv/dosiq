@@ -98,6 +98,20 @@ export function addDays(date: Date | string, days: number): Date {
 }
 
 /**
+ * Segunda-feira 00:00 LOCAL da semana que contém `date` (semana começa na segunda).
+ * Promovido do ScatterTrend (web + mobile) na 069 A1 — chave de semana do pedido de peso.
+ * @param {Date} date - Instante de referência
+ * @returns {Date} Nova Date na segunda-feira da semana, 00:00:00.000 local
+ */
+export function mondayOf(date: Date): Date {
+  const monday = addDays(date, 0) // cópia da Date (evita new Date — R-020)
+  monday.setHours(0, 0, 0, 0)
+  const weekday = (monday.getDay() + 6) % 7 // 0 = segunda
+  monday.setDate(monday.getDate() - weekday)
+  return monday
+}
+
+/**
  * Calcula a diferença em dias entre duas datas
  * @param {Date|string} date1 - Primeira data
  * @param {Date|string} date2 - Segunda data

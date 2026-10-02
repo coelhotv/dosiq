@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { addDays, parseISO, getRawNow } from '@dosiq/core'
+import { addDays, parseISO, getRawNow, mondayOf } from '@dosiq/core'
 import './ScatterTrend.css'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -13,17 +13,6 @@ const VB_W = 320
 const VB_H = 132
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
-function startOfDay(d) {
-  const x = addDays(d, 0) // cópia da Date (evita new Date — R-020)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-function mondayOf(d) {
-  const x = startOfDay(d)
-  const wd = (x.getDay() + 6) % 7 // 0=segunda
-  x.setDate(x.getDate() - wd)
-  return x
-}
 function niceStep(raw) {
   if (raw <= 0) return 10
   const pow = Math.pow(10, Math.floor(Math.log10(raw)))

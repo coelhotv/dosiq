@@ -56,3 +56,49 @@ describe('DoseRegisterModal — quantidade', () => {
     expect(jest.mocked(registerDose).mock.calls[0][0]).toMatchObject({ quantity_taken: 1.5 })
   })
 })
+
+// 069 A1 — caracterização: congela o contrato ATUAL de saída do modal antes do passo 2 (A2).
+describe('DoseRegisterModal — caracterização (069 A1)', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  const renderWith = (onSuccess = jest.fn(), onClose = jest.fn()) => ({
+    onSuccess,
+    onClose,
+    ...render(
+      <DoseRegisterModal visible protocol={PROTOCOL} scheduledTime="08:00" medicineName="Stima" onClose={onClose} onSuccess={onSuccess} />
+    ),
+  })
+
+  it('renderiza título, medicamento e horário', () => {
+    const { getByText } = renderWith()
+    expect(getByText('Tomar dose')).toBeTruthy()
+    expect(getByText('Stima')).toBeTruthy()
+    expect(getByText('08:00')).toBeTruthy()
+  })
+
+  it('confirmar com sucesso chama onSuccess 1× e não chama onClose', async () => {
+    jest.mocked(registerDose).mockResolvedValue({ success: true, data: {} } as any)
+    const { getByText, onSuccess, onClose } = renderWith()
+    fireEvent.press(getByText('Confirmar'))
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1))
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('erro do registerDose aparece no modal e onSuccess não é chamado', async () => {
+    jest.mocked(registerDose).mockResolvedValue({ success: false, error: 'Falha ao registrar dose' } as any)
+    const { getByText, findByText, onSuccess } = renderWith()
+    fireEvent.press(getByText('Confirmar'))
+    expect(await findByText('Falha ao registrar dose')).toBeTruthy()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('Cancelar chama onClose sem registrar', () => {
+    const { getByText, onClose } = renderWith()
+    fireEvent.press(getByText('Cancelar'))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(registerDose).not.toHaveBeenCalled()
+  })
+})
