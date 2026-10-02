@@ -6,6 +6,7 @@ import {
   BIOMARKER_CONTEXTS,
   BIOMARKER_PA_CONTEXTS,
   BIOMARKER_TYPE_UNITS,
+  BIOMARKER_PLAUSIBLE_RANGES,
 } from '../index'
 
 // 012 Fase C — biomarkerLogSchema (ADR-060). Enums PT, value_secondary (PA), failure modes.
@@ -92,5 +93,39 @@ describe('biomarkerLogUpdate — parcial sem refine (R-274)', () => {
   it('patch só de value (sem type) valida', () => {
     const r = validateBiomarkerLogUpdate({ value: 99 })
     expect(r.success).toBe(true)
+  })
+})
+
+// 069 A2 (FR-017 · R-4 · S-4) — faixa de plausibilidade por tipo; tipo fora do mapa = só positive().
+describe('biomarkerLogSchema — faixa plausível (BIOMARKER_PLAUSIBLE_RANGES)', () => {
+  const peso = (value: unknown) => validateBiomarkerLog({ type: 'peso', value, unit: 'kg' })
+
+  it('mapa só tem peso 20–200', () => {
+    expect(BIOMARKER_PLAUSIBLE_RANGES).toEqual({ peso: { min: 20, max: 200 } })
+  })
+  it('peso 19,9 rejeitado com a copy da UI', () => {
+    const r = peso(19.9)
+    expect(r.success).toBe(false)
+    expect(r.errors).toEqual([{ field: 'value', message: 'Use um valor entre 20 e 200 kg.' }])
+  })
+  it('peso 200,1 rejeitado', () => {
+    expect(peso(200.1).success).toBe(false)
+  })
+  it('peso 20 e 200 aceitos (limites inclusivos)', () => {
+    expect(peso(20).success).toBe(true)
+    expect(peso(200).success).toBe(true)
+  })
+  it("peso '' segue barrado pelo positive (nunca vira 0)", () => {
+    const r = peso('')
+    expect(r.success).toBe(false)
+  })
+  it('glicemia 250 segue aceita (tipo fora do mapa)', () => {
+    expect(validateBiomarkerLog({ type: 'glicemia', value: 250, unit: 'mg/dL' }).success).toBe(true)
+  })
+  it('update com type peso fora da faixa → rejeitado (G-3)', () => {
+    expect(validateBiomarkerLogUpdate({ type: 'peso', value: 500 }).success).toBe(false)
+  })
+  it('update parcial sem type → só positive (inalterado)', () => {
+    expect(validateBiomarkerLogUpdate({ value: 500 }).success).toBe(true)
   })
 })

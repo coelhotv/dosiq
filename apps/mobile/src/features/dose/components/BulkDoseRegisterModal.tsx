@@ -2,7 +2,7 @@
 // Usado após tap em push notification ou FAB da tela de hoje (modo 'active')
 // R-010: estados → effects → handlers
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Platform,
   TouchableOpacity,
+  Animated,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
@@ -26,8 +27,10 @@ import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable } from '@dosiq/core'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { useToast } from '@shared/components/feedback/Toast'
+import { resolvePostDoseStep } from '../services/measurePrompt'
+import DoseWeightPrompt from './DoseWeightPrompt'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
-import { formatDateTime, buildBulkOutcome, useBulkLastSite, _buildConfirmLogs, _expandDoseItems } from '../utils/bulkDoseHelpers'
+import { formatDateTime, buildBulkOutcome, buildBatchReceipt, useBulkLastSite, _buildConfirmLogs, _expandDoseItems } from '../utils/bulkDoseHelpers'
 
 
 /**
@@ -384,6 +387,10 @@ export default function BulkDoseRegisterModal({
   entryPoint = null,
 }) {
   const { show } = useToast()
+  // 069 A2: passo 2 (pedido de peso) — { step, receipt, successCount }; 1× por lote
+  const [weightStep, setWeightStep] = useState(null)
+  const promptRef = useRef(null)
+  const [fade] = useState(() => new Animated.Value(1))
 
   const bypassLoad = !!(initialProtocols || instancedItems)
   const { protocols: loadedProtocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
@@ -464,15 +471,40 @@ export default function BulkDoseRegisterModal({
     const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites, siteMetaById)
 
     const result = await registerDoseMany(logsData, { surface: SURFACES.MOBILE, entryPoint })
-    setLoading(false)
-
     const outcome = buildBulkOutcome(result)
+
+    // 069 A2 (analysis G-2): pedido só com sucesso TOTAL — no parcial o erro precisa ficar visível.
+    // O recibo do passo 2 substitui o toast de lote (DESIGN A-6b).
+    if (outcome.variant === 'success') {
+      const doneItems = selectedIds.map((id) => expandedDoseItems.find((i) => i.id === id)).filter(Boolean)
+      const step = await resolvePostDoseStep({ items: doneItems })
+      if (step) {
+        setLoading(false)
+        setWeightStep({ step, receipt: buildBatchReceipt(doneItems, takenAtDate || now), successCount: outcome.successCount })
+        fade.setValue(0)
+        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+        return
+      }
+    }
+
+    setLoading(false)
     if (outcome.variant !== 'success') setError(outcome.msg)
     show(outcome.msg, { variant: outcome.variant, duration: outcome.duration })
     if (outcome.successCount > 0) onSuccess({ successCount: outcome.successCount })
   }
 
+  // Passo 2 encerrado por qualquer caminho: contrato do onSuccess inalterado
+  function handleWeightFinished() {
+    const successCount = weightStep?.successCount ?? 0
+    setWeightStep(null)
+    onSuccess({ successCount })
+  }
+
   function handleClose() {
+    if (weightStep) {
+      promptRef.current?.requestClose()
+      return
+    }
     if (loading) return
     onClose()
   }
@@ -498,6 +530,19 @@ export default function BulkDoseRegisterModal({
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
+          {weightStep ? (
+            <Animated.View style={{ opacity: fade }}>
+              <DoseWeightPrompt
+                ref={promptRef}
+                step={weightStep.step}
+                receipt={weightStep.receipt}
+                trigger="bulk"
+                entryPoint={entryPoint}
+                onFinished={handleWeightFinished}
+              />
+            </Animated.View>
+          ) : (
+          <>
           <BulkDoseHeader header={header} scheduledTime={scheduledTime} />
 
           <BulkDoseRetroactivePicker
@@ -535,6 +580,8 @@ export default function BulkDoseRegisterModal({
             onCancel={handleClose}
             onConfirm={handleConfirm}
           />
+          </>
+          )}
         </View>
 
         {/* Overlay do picker DENTRO da Modal bulk (mesma superfície) — não Modal aninhada. */}

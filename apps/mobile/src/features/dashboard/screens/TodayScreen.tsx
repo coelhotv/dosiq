@@ -223,6 +223,7 @@ function TodayModals({
   instancesByKey,
   setBulkModal,
   refresh,
+  refreshTodayMeasures,
 }) {
   return (
     <>
@@ -249,7 +250,7 @@ function TodayModals({
         instancedItems={bulkModal?.items ?? null}
         entryPoint={bulkModal?.entryPoint ?? null}
         onClose={() => setBulkModal(null)}
-        onSuccess={() => { setBulkModal(null); refresh() }}
+        onSuccess={() => { setBulkModal(null); refresh(); refreshTodayMeasures?.() }}
       />
     </>
   )
@@ -539,6 +540,7 @@ function TodayScreenContent({
         instancesByKey={instancesByKey}
         setBulkModal={setBulkModal}
         refresh={refresh}
+        refreshTodayMeasures={refreshTodayMeasures}
       />
     </ScreenContainer>
   )
@@ -784,7 +786,9 @@ export default function TodayScreen({ route, navigation }) {
     setModalInstanceId(null)
     setModalEntryPoint(null)
     refresh()
-  }, [refresh])
+    // 069 A2: o sheet da dose pode ter gravado peso (passo 2) — a agenda intercala medidas
+    refreshTodayMeasures()
+  }, [refresh, refreshTodayMeasures])
 
   if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
   if (error && !data) return <ErrorState message={error} onRetry={refresh} />

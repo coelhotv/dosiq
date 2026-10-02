@@ -166,3 +166,14 @@ export function _expandDoseItems(protocols: any[], instancedItems: any[] | null)
 
   return items
 }
+
+// Recibo do lote no passo 2 (069 A2 · DESIGN §2.5): "{N} doses registradas · {A} e {B} · {hh:mm}";
+// 3+ nomes: "{A}, {B} e mais {n}". Nomes distintos, na ordem da lista.
+export function buildBatchReceipt(items: any[], at: Date): { title: string; detail: string } {
+  const names = [...new Set(items.map((i) => i.protocol?.medicine?.name ?? i.protocol?.name ?? 'Medicamento'))]
+  const who =
+    names.length <= 2 ? names.join(' e ') : `${names[0]}, ${names[1]} e mais ${names.length - 2}`
+  const hhmm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+  const title = items.length === 1 ? 'Dose registrada' : `${items.length} doses registradas`
+  return { title, detail: `${who} · ${hhmm}` }
+}
