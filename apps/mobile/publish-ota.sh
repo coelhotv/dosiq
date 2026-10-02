@@ -69,6 +69,25 @@ command -v eas >/dev/null 2>&1 || {
 # Enquanto isso a defesa do canal é: 2FA na conta Expo + publish manual PO-only + zero
 # EXPO_TOKEN em CI. Ver §1.4 do docs/operations/GUIA_OTA_EAS_UPDATE.md.
 
+# ── Gate 0: env público presente ────────────────────────────────────────────────────────
+# O babel do Expo EMBUTE `process.env.EXPO_PUBLIC_*` no bundle na hora de empacotar. Sem o .env
+# (worktree novo: o arquivo é gitignored), sai `undefined` e o app morre no boot com
+# "Missing supabaseUrl in public config" — tela preta em todo device do canal (096, 2026-10-02).
+# Ordem de carga do Expo em production: .env.production.local · .env.local · .env.production · .env
+has_public_env() {
+  local key="$1"
+  [ -n "${!key:-}" ] && return 0
+  grep -qsE "^${key}=.+" .env.production.local .env.local .env.production .env
+}
+for key in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
+  if ! has_public_env "$key"; then
+    echo "❌ $key não definido (nem no shell, nem em .env*) em $SCRIPT_DIR."
+    echo "   O bundle sairia com undefined e o app abriria em tela preta."
+    echo "   Worktree novo? Copie o env da checkout principal:  cp <main>/apps/mobile/.env* ."
+    exit 1
+  fi
+done
+
 # ── Gate 1: árvore limpa ────────────────────────────────────────────────────────
 # O bundle publicado é fotografia da working tree AGORA. Working tree suja = código no ar que
 # não corresponde a nenhum commit — irreproduzível e irrastreável.
@@ -171,9 +190,13 @@ fi
 # rollback ter repontado o canal para OUTRA branch (§4 do guia) — o update subiria com sucesso e
 # não alcançaria device nenhum. Falha silenciosa, logo após um incidente, que é quando menos se
 # pode pagar por uma.
+# --clear-cache SEMPRE: o Metro guarda a transformação com o valor de env da época. Um bundle
+# feito sem .env deixa `undefined` em cache, e o publish seguinte o reaproveita mesmo com o .env
+# já no lugar (096: o republish com env saiu tão quebrado quanto o primeiro). Custa ~1 min.
 ARGS=(update
   --channel "$CHANNEL"
   --message "$FULL_MESSAGE"
+  --clear-cache
 )
 
 if [ -n "$ROLLOUT" ]; then
