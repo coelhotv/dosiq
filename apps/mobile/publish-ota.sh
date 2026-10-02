@@ -46,6 +46,20 @@ esac
 # Enquanto isso a defesa do canal é: 2FA na conta Expo + publish manual PO-only + zero
 # EXPO_TOKEN em CI. Ver §1.4 do docs/operations/GUIA_OTA_EAS_UPDATE.md.
 
+# ── Gate 0: env público presente (096, backport da main) ───────────────────────────────────
+has_public_env() {
+  local key="$1"
+  [ -n "${!key:-}" ] && return 0
+  grep -qsE "^${key}=.+" .env.production.local .env.local .env.production .env
+}
+for key in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
+  if ! has_public_env "$key"; then
+    echo "❌ $key não definido (nem no shell, nem em .env*) — o bundle sairia com undefined (tela preta)."
+    echo "   Copie o env da checkout principal:  cp <main>/apps/mobile/.env* ."
+    exit 1
+  fi
+done
+
 # ── Gate 1: árvore limpa ────────────────────────────────────────────────────────
 # O bundle publicado é fotografia da working tree AGORA. Working tree suja = código no ar que
 # não corresponde a nenhum commit — irreproduzível e irrastreável.
@@ -135,6 +149,7 @@ fi
 ARGS=(update
   --channel "$CHANNEL"
   --message "$FULL_MESSAGE"
+  --clear-cache   # 096: cache do Metro guarda env antigo (bundle sem .env contamina o seguinte)
 )
 
 if [ -n "$ROLLOUT" ]; then
