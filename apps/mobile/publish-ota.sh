@@ -1,6 +1,6 @@
 #!/bin/bash
 # publish-ota.sh — publica um update OTA assinado via EAS Update (spec 051-A · ADR-082/083)
-# Uso: bash publish-ota.sh <preview|production> "<mensagem>" [rollout-%]
+# Uso: bash publish-ota.sh <preview|device|production> "<mensagem>" [rollout-%]
 #
 # Existe para que o checklist pré-publish (FR-015) seja um GATE EXECUTADO, não uma lista que
 # alguém lê com pressa. Todo item abaixo já custou um incidente em algum projeto:
@@ -25,9 +25,10 @@ MESSAGE="${2:-}"
 ROLLOUT="${3:-}"
 
 usage() {
-  echo "Uso: bash publish-ota.sh <preview|production> \"<mensagem>\" [rollout-%]"
+  echo "Uso: bash publish-ota.sh <preview|device|production> \"<mensagem>\" [rollout-%]"
   echo ""
   echo "  preview     canal de staging — alvo do smoke, incl. teste destrutivo"
+  echo "  device      canal do build ad hoc em iPhone físico (build-ios.sh device)"
   echo "  production  usuários reais — exige confirmação explícita"
   echo ""
   echo "Exemplos:"
@@ -37,7 +38,7 @@ usage() {
 }
 
 case "$CHANNEL" in
-  preview|production) ;;
+  preview|device|production) ;;
   *) usage ;;
 esac
 
