@@ -198,6 +198,21 @@ describe('buildReportModel — seções históricas pelo fato (PO-2b, R-299)', (
     expect(met).toMatchObject({ taken: 0, expected: 0, percent: null })
   })
 
+  it.each([
+    ['2026-09-29', 'encerrado', false],
+    ['2026-09-30', 'em uso', true],
+    ['2026-10-01', 'em uso', true],
+  ])('borda do término: end_date %s ⇒ %s, e as duas seções concordam (RC6 #856)', (endDate, _label, inUse) => {
+    const base = fixture()
+    const inputs = { ...base, protocols: base.protocols.map((p) => (p.id === 'p_met' ? { ...p, end_date: endDate } : p)) }
+    const m = buildReportModel(inputs, { generatedAt: GEN })
+    const current = m.medications.some((r) => r.protocolId === 'p_met')
+    const ended = m.intakes.ended.some((r) => r.protocolId === 'p_met')
+    expect(current).toBe(inUse)
+    expect(ended).toBe(!inUse)
+    expect(m.intakes.active.some((r) => r.protocolId === 'p_met')).toBe(inUse)
+  })
+
   it('mudanças datadas: pausa (faixa) e exclusão', () => {
     const { changes } = buildReportModel(fixture(), { generatedAt: GEN })
     expect(changes).toContainEqual(expect.objectContaining({ kind: 'paused', protocolId: 'p_lev', day: '2026-09-27', until: '2026-09-28' }))
