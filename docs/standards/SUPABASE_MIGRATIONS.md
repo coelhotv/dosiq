@@ -13,7 +13,7 @@ tags:
   - sql
   - database
 created_at: "2026-07-18"
-updated_at: "2026-07-30"
+updated_at: "2026-10-03"
 ---
 
 > 🔴 **Migração escrita ≠ migração aplicada.** Quando uma migração (ou uma PARTE dela) fica no repo
@@ -91,3 +91,7 @@ vontade de fechar o épico. Essa pressão de fechamento foi ingrediente causal d
 3. Assinatura única por função (overload = AP-227; `DROP FUNCTION` da antiga na mesma migração).
 4. Teste `BEGIN..ROLLBACK` contra o banco real antes de aplicar (padrão PO-SEC).
 5. `npm run supabase:types` após aplicar (regen `database.types.ts` — R-289).
+6. Varredura de DEFINER aberta (AP-278, emenda 098) — em TODA migração, não só na que cria função:
+   `SELECT p.oid::regprocedure FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.prosecdef AND (p.proacl IS NULL OR array_to_string(p.proacl, ',') ~ '(^|,)(=|anon=)X');`
+   → 0 linhas, ou cada uma justificada no PR. Política RLS se audita por `roles`/`qual`, nunca pelo nome.
