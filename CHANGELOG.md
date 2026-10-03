@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Crash de OTA chega simbolizado no Sentry
+
+- **Mobile** (`patch` — observabilidade, sem mudança de comportamento para o usuário; **sem bump**:
+  só JS e config de bundler, sem nada nativo; vale a partir do próximo OTA ou build). O bundle passa
+  a levar o Debug ID do Sentry (`getSentryExpoConfig` no metro) e o `publish-ota.sh` envia os
+  sourcemaps do update logo após publicar. Antes, só o build de loja subia sourcemap; o crash vindo
+  de um OTA chegava minificado. A raiz do app passa por `Sentry.wrap`. Init do Sentry inalterado
+  (DSN por env, fail-silent, sem tracing — ADR-090).
+
 ### Política nova não pede o aceite de novo a quem já aceitou (spec 096)
 
 - **Mobile + Web + Core** (`patch` — correção; **sem bump**: nada muda na tela hoje, a versão

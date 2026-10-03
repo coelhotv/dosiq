@@ -101,5 +101,8 @@
   "overrides": {
     "esbuild": "^0.26.0",
     "react-native-safe-area-context": "5.6.0"
+  },
+  "allowScripts": {
+    "@sentry/cli@2.55.0": true
   }
 }

@@ -19,6 +19,7 @@ cd "$SCRIPT_DIR"
 # release_tag_name, assert_clean_tree, head_is_pushed
 . "$SCRIPT_DIR/lib-release-tag.sh"
 . "$SCRIPT_DIR/lib-build-env.sh"
+. "$SCRIPT_DIR/lib-sentry-token.sh"
 
 CHANNEL="${1:-}"
 MESSAGE="${2:-}"
@@ -210,6 +211,26 @@ if [ -n "$UPDATE_IDS" ]; then
 else
   echo "🆔 IDs do update: não identifiquei na saída — veja $OTA_LOG"
 fi
+
+# ── Sourcemaps no Sentry ─────────────────────────────────────────────────────────────────────
+# O build de loja sobe o sourcemap do bundle embarcado; o `eas update` gera um bundle NOVO (em
+# dist/) que o Sentry não conhece — sem este passo, crash vindo de OTA chega minificado, justo o
+# crash que decide avançar ou reverter a escada. O metro (getSentryExpoConfig) grava o Debug ID
+# que casa bundle↔sourcemap. Não fatal: o update JÁ foi publicado; falha aqui = reenviar à mão.
+if load_sentry_auth_token "$SCRIPT_DIR"; then
+  # Log próprio: run_logged usa `tee` (sobrescreve) e o $OTA_LOG guarda o updateId.
+  SOURCEMAP_LOG="${OTA_LOG%.log}-sourcemaps.log"
+  echo "🗺️  Enviando sourcemaps ao Sentry... (log: $SOURCEMAP_LOG)"
+  if run_logged "$SOURCEMAP_LOG" all "" npx sentry-expo-upload-sourcemaps dist; then
+    echo "✅ Sourcemaps enviados."
+  else
+    echo "⚠️  Upload de sourcemaps falhou (update publicado mesmo assim). Reenviar:"
+    echo "      cd apps/mobile && npx sentry-expo-upload-sourcemaps dist"
+  fi
+else
+  echo "⚠️  SENTRY_AUTH_TOKEN ausente — sourcemaps NÃO enviados; crash deste update chega minificado."
+fi
+
 echo "📋 Próximos passos:"
 echo "   1. Anotar o updateId devolvido acima no CHANGELOG como [$APP_VERSION+ota.N] (ADR-082 —"
 echo "      release OTA NÃO bumpa APP_VERSION)."
