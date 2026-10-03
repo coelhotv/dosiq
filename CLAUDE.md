@@ -21,7 +21,7 @@ Versões atuais: topo do `CHANGELOG.md` — não confiar em versão hardcoded em
 
 ```
 apps/web/src/      features/ schemas/(Zod, único local) services/api/ shared/ utils/
-                   views/(composição, todas lazy exceto Dashboard — R-279/R-117;
+                   views/(composição, todas lazy exceto Dashboard — R-117;
                           lógica de domínio desce p/ @dosiq/core ou features/)
 apps/mobile/       Expo; configs Expo ficam .js (app.config.js, eas.json, metro, babel)
 packages/          core/(compartilhado web↔mobile) config/ design-tokens/ shared-data/ storage/
@@ -91,12 +91,18 @@ SEMPRE `parseLocalDate()` de `@utils/dateUtils`; NUNCA `new Date('YYYY-MM-DD')` 
 ### Zod (R-021)
 Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em §Schemas) · `safeParse()` p/ validação não-bloqueante · nullable = `.nullable().optional()`, nunca só `.optional()` · na dúvida `pg_get_constraintdef` é a verdade.
 
+### Preflight de migração/RPC/SQL e schema numérico (R-270)
+Antes de migração, RPC, função SQL **ou** schema Zod/serviço com lógica numérica/coerção: tabela de Failure Modes no `analysis.md` (T2) ou no C2 (T1) — NULL, divisor 0, JOIN/FK ausente, `z.coerce('')→0`… cada linha PASS explícito, não "parece ok". Detalhe: `.agent/memory/rules/data_and_schema/R-270.md`.
+
+### Entidade com CRUD em web E mobile (R-231)
+Factory em `@dosiq/core/repositories/` (DI de `client`/`getUserId`/selects); validação Zod canônica do core. NUNCA duplicar o repositório por app — gera drift silencioso.
+
 ### Dosagem
 `quantity_taken` em comprimidos, não mg (limite Zod 100) · `dosage_per_intake` = cp/dose · `dosage_per_pill` = mg/cp · **ordem: Validar → Registrar → Decrementar estoque** · LogForm retorna array (plan/bulk) ou objeto (protocol/single) — checar `Array.isArray()`.
 
 ### Plataforma (ponteiros obrigatórios)
 - **Mobile/lazy**: views lazy + `ViewSkeleton` (R-117); perf: `docs/standards/MOBILE_PERFORMANCE.md`.
-- **Telegram bot**: callback <64 bytes, `escapeMarkdownV2` (escapar `\` primeiro) — R-031.
+- **Telegram bot**: callback <64 bytes, `escapeMarkdownV2` (escapar `\` primeiro).
 - **Migrações Supabase**: template de grants + SECURITY DEFINER **obrigatório** — `docs/standards/SUPABASE_MIGRATIONS.md` (novas tabelas NÃO ganham grants automáticos).
 - **Vercel api/** (R-090): máx 12 funções (utilitários em `api/_prefixo/`); NUNCA `process.exit()`; SEMPRE `res.status(code).json(body)` (lint barra); env fallback `process.env.X || process.env.VITE_X`. Ver `api/CLAUDE.md`.
 
