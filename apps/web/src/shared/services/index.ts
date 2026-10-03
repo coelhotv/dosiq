@@ -19,7 +19,6 @@ export { protocolService } from '@protocols/services/protocolService'
 export { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 export { stockService } from '@stock/services/stockService'
 export { logService } from '@shared/services/api/logService'
-export { migrationService } from '@shared/services/migrationService'
 export { adherenceService } from '@services/api/adherenceService'
 
 // Services com cache SWR (recomendado para novos usos)

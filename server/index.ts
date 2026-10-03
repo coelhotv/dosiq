@@ -20,7 +20,6 @@ import { handlePausar, handleRetomar } from './bot/commands/protocols.js';
 import { handleChatbotMessage } from './bot/commands/chatbot.js';
 import { handleCallbacks } from './bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from './bot/callbacks/conversational.js';
-import { handleInlineQueries } from './bot/inlineQuery.js';
 import { startScheduler, startDailyDigest, startDoseInstanceGeneration } from './bot/scheduler.js';
 import { startStockAlerts, startAdherenceReports, startTitrationAlerts, startMonthlyReport } from './bot/alerts.js';
 import { startAutoCleanup } from './services/sessionManager.js';
@@ -80,9 +79,6 @@ bot.onText(/\/retomar(?:\s+(.+))?/, (msg, match) => handleRetomar(bot, msg, matc
 // Register callback handlers
 handleCallbacks(bot);
 handleConversationalCallbacks(bot);
-
-// Register inline query handler (Phase 2.2)
-handleInlineQueries(bot);
 
 // Chatbot IA: mensagens de texto não-comando encaminhadas para Groq (Sprint 8.3.2)
 bot.on('message', (msg) => handleChatbotMessage(bot, msg));

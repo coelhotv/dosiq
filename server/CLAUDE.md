@@ -13,7 +13,6 @@ server/bot/
   logger.ts            # Logging estruturado
   correlationLogger.ts  # UUID tracing para requests
   alerts.ts            # Orquestrador de alertas inteligentes
-  inlineQuery.ts       # Handlers de busca inline
   _adherenceHelpers.ts # Helpers internos de adesão
   reminders/           # Lembretes por domínio (dose, digest, estoque, titulação, receita)
   callbacks/           # Handlers de callback (botões inline)
