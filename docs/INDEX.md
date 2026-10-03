@@ -158,6 +158,7 @@ Procedimentos operacionais de infraestrutura, bancos, publicação nas lojas e c
 | [`operations/GUIA_KILL_SWITCH_VERSAO_MINIMA.md`](operations/GUIA_KILL_SWITCH_VERSAO_MINIMA.md) | Ativação, confirmação e desativação do bloqueio de boot por versão mínima |
 | [`operations/GUIA_NUDGE_BANNERS.md`](operations/GUIA_NUDGE_BANNERS.md) | Administração e publicação de banners informativos/avisos do sistema |
 | [`operations/GUIA_OTA_EAS_UPDATE.md`](operations/GUIA_OTA_EAS_UPDATE.md) | Publicação, rollout escalonado, rollback e versionamento de updates OTA |
+| [`operations/GUIA_RELEASE_TRAIN.md`](operations/GUIA_RELEASE_TRAIN.md) | Release train mobile: builds alpha (TestFlight/closed testing) × fechamento com tag `mobile-v<versão>`, ledger de procedência e `release-tag.sh` |
 | [`operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md`](operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md) | ETL e upload dos dados da ANVISA para o Supabase Storage |
 | [`operations/supabase-email-config.md`](operations/supabase-email-config.md) | Configuração de SMTP personalizado e templates de e-mail no Supabase |
 | [`operations/email_boas_vindas.md`](operations/email_boas_vindas.md) | Template HTML de e-mail de boas-vindas (Android Closed Testing) |

@@ -85,6 +85,9 @@ APP_VERSION="$(get_app_version "$SCRIPT_DIR")"
 # entrega TODAS as features não lançadas junto do fix — código não revisado, possivelmente
 # chamando nativo que o binário instalado não tem (crash), e violação da Apple 3.3.1.
 # A árvore precisa voltar a ser o que está na loja: tag de release, ou hotfix cortado dela.
+# A tag é do FECHAMENTO do release train (release-tag.sh), não de cada build alpha: versão ainda
+# sem tag = train aberto, e OTA de produção não sai. Para testar o mecanismo de OTA, use os canais
+# `preview` e `device`. Guia: docs/operations/GUIA_RELEASE_TRAIN.md
 if [ "$CHANNEL" = "production" ]; then
   RELEASE_TAG="$(release_tag_name "$APP_VERSION")"
   if ! git merge-base --is-ancestor "$RELEASE_TAG" HEAD 2>/dev/null; then
@@ -100,9 +103,11 @@ if [ "$CHANNEL" = "production" ]; then
     echo "     bash publish-ota.sh production \"...\""
     echo ""
     if ! git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-      echo "   ⚠️ A tag $RELEASE_TAG NÃO EXISTE. O build de loja desta versão foi feito antes"
-      echo "      da R-307, ou de outra máquina sem push da tag. Sem ela não há de onde partir:"
-      echo "      identifique o commit do build e crie a tag antes de publicar."
+      echo "   ⚠️ A tag $RELEASE_TAG NÃO EXISTE. Ou o release train de $APP_VERSION ainda está"
+      echo "      aberto (builds alpha não criam tag), ou o build foi feito antes da R-307 / de outra"
+      echo "      máquina sem push da tag. Sem ela não há de onde partir:"
+      echo "        · train fechado/promovido → bash release-tag.sh $APP_VERSION   (ou --commit <sha>)"
+      echo "        · só testando OTA        → use o canal preview ou device, não production"
     fi
     exit 1
   fi

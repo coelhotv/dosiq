@@ -82,10 +82,11 @@ TEMP_OUTPUT="$SCRIPT_DIR/build-temp.$EXT"
 FINAL_NAME="dosiq-v$APP_VERSION-$PROFILE.$EXT"
 FINAL_PATH="$TARGET_DIR/$FINAL_NAME"
 
-# R-307: build de loja precisa de procedência. Checar ANTES de compilar — falhar depois de 20 min
-# de gradle é desperdício, e falhar depois do submit é tarde demais.
+# R-307: build de loja precisa de procedência — árvore limpa + commit publicado. Checar ANTES de
+# compilar: falhar depois de 20 min de gradle é desperdício. (Tag NÃO: é do fechamento do release
+# train, release-tag.sh.)
 if [ "$PROFILE" = "production" ]; then
-  assert_taggable_build "$APP_VERSION" || exit 1
+  assert_store_build_ready "$APP_VERSION" || exit 1
 fi
 
 echo ""
@@ -95,6 +96,9 @@ echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam n
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Formato: $EXT"
+if [ "$PROFILE" = "production" ]; then
+  echo "🏷️  Tag:     NÃO — build alpha/loja só registra procedência; tag = fechar o train (release-tag.sh)"
+fi
 echo "------------------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
@@ -148,10 +152,11 @@ if [ "$PROFILE" != "production" ] && [ "$NO_INSTALL" -eq 0 ]; then
   install_android_device "$FINAL_PATH"
 fi
 
-# R-307: marcar o commit que virou este binário. Só agora, com o artefato em mãos — tag de build
-# que falhou é mentira sobre o que existe.
+# R-307: registrar QUAL COMMIT virou este binário (no lugar da tag — ver lib-release-tag.sh). Só
+# agora, com o artefato em mãos — registro de build que falhou é mentira sobre o que existe.
 if [ "$PROFILE" = "production" ]; then
-  create_release_tag "$APP_VERSION"
+  record_build_provenance android "$PROFILE" "$APP_VERSION" "$FINAL_PATH"
+  echo "ℹ️  Release train: tag mobile-v$APP_VERSION NÃO criada. Ao fechar o train: bash release-tag.sh $APP_VERSION"
 fi
 
 echo "✨ Processo finalizado com sucesso!"

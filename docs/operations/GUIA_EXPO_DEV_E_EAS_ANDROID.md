@@ -1,7 +1,7 @@
 ---
 title: "Expo.dev e EAS para Android"
 description: "Guia prático para configuração do ecossistema Expo.dev, EAS Build e geração de builds de produção e testes para Android no Dosiq."
-version: "1.2.0"
+version: "1.3.0"
 status: active
 category: operation
 audience:
@@ -647,7 +647,8 @@ O que ele faz, na ordem:
 1. Valida o perfil, o Android SDK (`ANDROID_HOME`, padrão `~/Library/Android/sdk`) e a credencial
    Firebase `apps/mobile/google-services.json` (única para todos os perfis).
 2. `production`: exige `SENTRY_AUTH_TOKEN` e, **antes** de compilar, working tree limpa, **commit já
-   publicado no origin** e tag `mobile-v<versão>` sem colisão (R-307 — ver `GUIA_OTA_EAS_UPDATE.md` §6).
+   publicado no origin** (R-307). Não olha tag: ela é do fechamento do release train
+   (`GUIA_RELEASE_TRAIN.md`).
 3. Mostra o resumo e pede confirmação (Enter).
 4. Apaga `android/` e roda `expo prebuild --platform android --clean`.
 5. `eas build --local` com `--clear-cache`. **Tudo** vai para o log
@@ -657,9 +658,11 @@ O que ele faz, na ordem:
    do log. `DOSIQ_BUILD_VERBOSE=1` mostra a saída inteira.
 6. Move o artefato para `~/local/dev-builds/dosiq-v<versão>-<perfil>.<apk|aab>`.
 7. `development`/`preview`: **instala no aparelho** via `adb install -r` (ver abaixo).
-8. `production`: cria e publica a tag `mobile-v<versão>` (push com `--no-verify`; se a tag já está no
-   origin — build iOS do mesmo commit — não empurra de novo, e a suíte de testes não reroda).
-   **Não há submit para a Play Store:** o `.aab` fica em `~/local/dev-builds/` e o upload é manual.
+8. `production`: **não cria tag** — o perfil serve também a builds alpha (closed testing). Registra a
+   **procedência** (qual commit virou o `.aab`): sidecar `<aab>.json` + `~/local/dev-builds/builds.jsonl`.
+   A tag `mobile-v<versão>` só nasce ao fechar o train: `bash release-tag.sh <versão>`
+   (`GUIA_RELEASE_TRAIN.md`). **Não há submit para a Play Store:** o `.aab` fica em
+   `~/local/dev-builds/` e o upload é manual.
 
 | Perfil | Saída | Canal OTA |
 |---|---|---|

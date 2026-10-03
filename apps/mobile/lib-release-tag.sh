@@ -1,17 +1,30 @@
 #!/bin/bash
-# lib-release-tag.sh — procedência de binário de loja (R-307)
+# lib-release-tag.sh — procedência de binário de loja e tag de release train (R-307)
 #
-# Sourced por build-android.sh e build-ios.sh. Não executar direto.
+# Sourced por build-ios.sh, build-android.sh, publish-ota.sh e release-tag.sh. Não executar direto.
+# Guia completo: docs/operations/GUIA_RELEASE_TRAIN.md
 #
-# POR QUE EXISTE: `APP_VERSION` diz QUAL versão foi publicada, e nada diz QUAL CÓDIGO virou aquela
-# versão. Sem esse elo, "rebuildar a 0.28.3 para investigar um bug" é arqueologia de git com
-# chute de data — e publicar um hotfix por OTA é impossível, porque não há de onde partir (o OTA
-# empacota a working tree, então ela precisa voltar a ser exatamente o que está na loja).
+# MODELO (emenda 2026-10-02 à R-307): "build de loja" e "release" são coisas diferentes.
 #
-# A tag é criada NO MOMENTO DO BUILD porque é o único instante em que a informação existe sem
-# ambiguidade. Reconstruir isso semanas depois é adivinhação.
+#   · BUILD `production` (TestFlight / closed testing / alpha) → NÃO cria tag. Exige árvore limpa e
+#     commit já publicado, e REGISTRA a procedência (sidecar .json + ledger builds.jsonl) —
+#     `record_build_provenance`. Assim "qual commit virou este binário?" tem resposta sem tag.
+#   · FECHAMENTO DO RELEASE TRAIN → cria a tag `mobile-v<versão>` no commit que foi COMPILADO e
+#     promovido — `release-tag.sh` → `create_release_tag`. A tag é o marco do release, não do build.
+#
+# Por que a tag saiu do build: o mesmo perfil `production` serve a builds alpha repetidos de uma
+# versão em desenvolvimento; tag no build obrigava a bumpar versão ou a conviver com colisão a cada
+# alpha, e a tag (que o gate do OTA de produção usa como âncora) deixava de significar "release".
+#
+# A tag continua respondendo UMA pergunta (R-307 §3b): qual código virou este binário. Por isso ela
+# marca o commit compilado, nunca o HEAD do dia.
 
-# Nome canônico da tag de um build de loja.
+# Ledger local de builds de loja (um JSON por linha). Sobrescrevível para teste.
+build_ledger_path() {
+  echo "${DOSIQ_BUILD_LEDGER:-$HOME/local/dev-builds/builds.jsonl}"
+}
+
+# Nome canônico da tag de um release.
 release_tag_name() {
   echo "mobile-v$1"
 }
@@ -41,23 +54,23 @@ head_is_pushed() {
   [ -n "$(git branch -r --contains HEAD 2>/dev/null)" ]
 }
 
-# Pré-condições de um build de loja. Chamar ANTES de compilar — falhar depois de 20 minutos de
-# gradle é desperdício, e falhar DEPOIS do submit é tarde demais.
-assert_taggable_build() {
+# Pré-condições de um build de loja (alpha ou release). Chamar ANTES de compilar — falhar depois de
+# 20 minutos de gradle é desperdício.
+#
+# Não toca em tag: tag é do fechamento do release train (release-tag.sh).
+assert_store_build_ready() {
   local app_version="$1"
-  local tag; tag="$(release_tag_name "$app_version")"
 
-  # 1. Árvore limpa. Binário compilado de árvore suja é irrastreável: a tag apontaria para um
-  #    commit cujo código NÃO é o que está no aparelho do usuário. Mesma classe do gate do
+  # 1. Árvore limpa. Binário compilado de árvore suja é irrastreável: o SHA registrado apontaria
+  #    para um commit cujo código NÃO é o que está no aparelho do testador. Mesma classe do gate do
   #    publish-ota.sh — e aqui é pior, porque binário de loja não se corrige por OTA.
-  assert_clean_tree "Build de PRODUÇÃO exige working tree limpa." \
-    "O binário seria compilado de um estado que não existe em commit nenhum — e a tag
-   $tag apontaria para um código diferente do que vai para a loja." \
+  assert_clean_tree "Build de loja exige working tree limpa." \
+    "O binário seria compilado de um estado que não existe em commit nenhum — e o SHA registrado
+   para v$app_version apontaria para um código diferente do que vai para a loja." \
     "Commite ou stashe antes de buildar." || return 1
 
-  # 1b. HEAD precisa existir no origin. O push da tag (create_release_tag) roda com --no-verify —
-  #     a suíte de testes já foi o gate do push do commit — e isso só é seguro se a tag não
-  #     carregar commit novo junto. Offline também bloqueia: não dá para provar.
+  # 2. HEAD precisa existir no origin: o SHA registrado só ajuda se resolver em outra máquina, e o
+  #    release-tag.sh depois só aceita commit publicado. Offline também bloqueia: não dá para provar.
   local pushed_rc=0
   head_is_pushed || pushed_rc=$?
   if [ "$pushed_rc" -ne 0 ]; then
@@ -72,60 +85,79 @@ assert_taggable_build() {
     return 1
   fi
 
-  # 2. Colisão de tag = versão não bumpada. Se a tag já existe em OUTRO commit, alguém mudou
-  #    código sem bumpar APP_VERSION — e duas builds diferentes passariam a se chamar igual,
-  #    destruindo justamente a rastreabilidade que a tag existe para dar (R-221 §4).
-  # `^{}` desreferencia a tag: sem isso, uma tag ANOTADA resolve para o objeto de tag (sha próprio,
-  # nunca igual a um commit) e toda revalidação do mesmo commit acusaria colisão falsa — bloqueando
-  # justamente o build da segunda plataforma, que é o caso idempotente que este gate deve permitir.
-  local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag^{}" 2>/dev/null || true)"
-  local head_sha; head_sha="$(git rev-parse HEAD)"
-
-  if [ -n "$existing" ] && [ "$existing" != "$head_sha" ]; then
-    echo ""
-    echo "❌ A tag $tag já existe em OUTRO commit:"
-    echo "   tag aponta para : $existing"
-    echo "   HEAD atual      : $head_sha"
-    echo ""
-    echo "   Isso significa que o código mudou desde aquele build mas APP_VERSION não bumpou."
-    echo "   Bumpe APP_VERSION no app.config.js (R-221 §4) — não mova a tag."
-    return 1
-  fi
-
   return 0
 }
 
-# Cria (idempotente) e publica a tag. Chamar DEPOIS do build ter gerado o artefato.
-# Idempotência importa: iOS e Android do MESMO commit compartilham UMA tag; o segundo script a
-# rodar encontra a tag já criada e apenas confirma.
+# ledger_latest_sha <versão> <ios|android>
+# SHA do build `production` mais recente dessa versão e plataforma (vazio se nunca houve).
+# Ordem dos campos no ledger é fixa (ver record_build_provenance) — por isso o grep literal.
+ledger_latest_sha() {
+  local ledger; ledger="$(build_ledger_path)"
+  [ -f "$ledger" ] || return 0
+  grep -F "\"version\":\"$1\",\"platform\":\"$2\",\"profile\":\"production\"" "$ledger" \
+    | tail -1 | sed -n 's/.*"sha":"\([0-9a-f]*\)".*/\1/p' || true
+}
+
+# record_build_provenance <ios|android> <perfil> <versão> <caminho-do-artefato>
+# Registra QUAL COMMIT virou este binário — no lugar da tag, que agora é do fechamento do train.
+# Grava um sidecar `<artefato>.json` e uma linha em builds.jsonl. Se o último build da OUTRA
+# plataforma da mesma versão veio de outro commit, AVISA (não bloqueia): era a colisão de tag da
+# R-307 antiga, agora informativa — o release-tag.sh é quem exige coerência ao fechar o train.
+record_build_provenance() {
+  local platform="$1" profile="$2" version="$3" artifact="$4"
+  local sha branch ts ledger sidecar line
+  sha="$(git rev-parse HEAD)"
+  branch="$(git rev-parse --abbrev-ref HEAD)"
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  ledger="$(build_ledger_path)"
+  sidecar="$artifact.json"
+
+  line="{\"ts\":\"$ts\",\"version\":\"$version\",\"platform\":\"$platform\",\"profile\":\"$profile\",\"sha\":\"$sha\",\"branch\":\"$branch\",\"artifact\":\"$(basename "$artifact")\"}"
+
+  mkdir -p "$(dirname "$ledger")"
+  echo "$line" >> "$ledger"
+  echo "$line" > "$sidecar"
+  echo "🧾 Procedência registrada: v$version ($platform) = $(git rev-parse --short HEAD) [$branch]"
+  echo "   sidecar: $sidecar"
+  echo "   ledger:  $ledger"
+
+  local other other_sha
+  if [ "$platform" = "ios" ]; then other="android"; else other="ios"; fi
+  other_sha="$(ledger_latest_sha "$version" "$other")"
+  if [ -n "$other_sha" ] && [ "$other_sha" != "$sha" ]; then
+    echo "⚠️  O build $other de v$version foi feito de OUTRO commit ($(echo "$other_sha" | cut -c1-8))."
+    echo "   Ao fechar o release train, release-tag.sh vai exigir que você escolha o commit (--commit)."
+  fi
+}
+
+# create_release_tag <versão> [commit]
+# Cria (idempotente) e publica `mobile-v<versão>` no commit dado (padrão: HEAD). Chamado pelo
+# release-tag.sh. Tag só local é tag perdida: some com a máquina — falha de rede avisa e segue, com
+# o comando pronto para repetir.
 create_release_tag() {
-  local app_version="$1"
+  local app_version="$1" commit="${2:-HEAD}"
   local tag; tag="$(release_tag_name "$app_version")"
-  local head_sha; head_sha="$(git rev-parse HEAD)"
+  local sha; sha="$(git rev-parse --verify "$commit^{commit}")"
   local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag^{}" 2>/dev/null || true)"
 
-  if [ "$existing" = "$head_sha" ]; then
-    echo "🏷️  Tag $tag já existe neste commit (build da outra plataforma) — nada a fazer."
+  if [ "$existing" = "$sha" ]; then
+    echo "🏷️  Tag $tag já existe neste commit — nada a criar."
   else
-    git tag -a "$tag" -m "Build de loja mobile $app_version"
-    echo "🏷️  Tag $tag criada em $(git rev-parse --short HEAD)"
+    git tag -a "$tag" "$sha" -m "Release mobile $app_version"
+    echo "🏷️  Tag $tag criada em $(git rev-parse --short "$sha")"
   fi
 
-  # Tag só local é tag perdida: some com a máquina e não existe para mais ninguém. Falha de rede
-  # não pode derrubar um build que já terminou — avisa e segue, com o comando pronto para repetir.
-  #
-  # Já está no origin neste commit (build da outra plataforma)? Nada a empurrar. Antes o push era
-  # incondicional e, como a tag dispara o hook pre-push, a suíte inteira rodava de novo (~2 min).
+  # Já está no origin neste commit? Nada a empurrar.
   local remote_sha
   remote_sha="$(git ls-remote origin "refs/tags/$tag^{}" 2>/dev/null | awk '{print $1}')"
-  if [ -n "$remote_sha" ] && [ "$remote_sha" = "$head_sha" ]; then
+  if [ -n "$remote_sha" ] && [ "$remote_sha" = "$sha" ]; then
     echo "🏷️  Tag $tag já publicada no origin — nada a empurrar."
     return 0
   fi
 
   # --no-verify: o hook pre-push roda `test:critical` e não olha o que está sendo enviado. Aqui o
-  # push é só da tag, e assert_taggable_build já exigiu o commit publicado (que passou pelo hook).
-  # Saída capturada: o motivo real da falha não pode ser engolido (antes: 2>/dev/null).
+  # push é só da tag, e o release-tag.sh já exigiu o commit publicado (que passou pelo hook).
+  # Saída capturada: o motivo real da falha não pode ser engolido.
   local push_out
   if push_out="$(git push --no-verify origin "$tag" 2>&1)"; then
     echo "🏷️  Tag $tag publicada no origin"

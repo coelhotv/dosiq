@@ -1,7 +1,7 @@
 ---
 title: "OTA com EAS Update"
 description: "Runbook operacional para publicar, escalonar, auditar e reverter atualizações OTA do app mobile via EAS Update."
-version: "1.2.0"
+version: "1.3.0"
 status: active
 category: operation
 audience:
@@ -529,7 +529,8 @@ bash publish-ota.sh preview "fix do cálculo de estoque"
 bash publish-ota.sh production "fix do cálculo de estoque"
 
 # 4. marcar o novo estado, para o PRÓXIMO hotfix partir daqui
-git tag mobile-v0.30.0-ota.1 && git push origin mobile-v0.30.0-ota.1
+#    (--no-verify: o push só leva a tag; o commit já passou pelo pre-push no passo 2)
+git tag mobile-v0.30.0-ota.1 && git push --no-verify origin mobile-v0.30.0-ota.1
 ```
 
 O `runtimeVersion` sai `0.30.0` sozinho — o `app.config.js` **daquele commit** dizia `0.30.0`. Você
@@ -540,26 +541,31 @@ não configura nada: a árvore certa produz o runtime certo.
 
 ### De onde vem a tag
 
-`build-android.sh production` e `build-ios.sh production` criam `mobile-v<APP_VERSION>` e a
-publicam no origin automaticamente (R-307). Eles também **recusam buildar de árvore suja** — um
-binário compilado de um estado que não existe em commit nenhum não tem como ser marcado com
-honestidade — e **exigem o commit já publicado no origin** (`git push` antes do build).
+⚠️ **A tag NÃO é criada pelo build.** `build-*.sh production` serve também a builds **alpha**
+(TestFlight / closed testing) e, desde 2026-10-02, só **registra a procedência** (qual commit virou o
+binário). A tag `mobile-v<APP_VERSION>` nasce no **fechamento do release train**:
 
-O push da tag roda com `--no-verify`: o hook `pre-push` executa a suíte de testes inteira e não olha
-o que está sendo enviado; como o commit já passou por ela ao ser publicado, repetir a suíte para uma
-tag seria ~2 min perdidos (e acontecia **duas vezes**, uma por plataforma). O segundo script a rodar
-vê a tag já no origin e não empurra de novo.
+```bash
+bash release-tag.sh <versão>      # cria e publica a tag no commit COMPILADO (ledger) — GUIA_RELEASE_TRAIN.md
+```
 
-O `publish-ota.sh` recusa `production` quando o `HEAD` não descende da tag daquela versão, e avisa
-explicitamente quando a tag **não existe** (build feito antes da R-307, ou de outra máquina sem
-push da tag). Recusa também quando o `HEAD` não está no origin (veja o `git push -u` do fluxo acima).
+Os builds de loja continuam **recusando árvore suja** e **exigindo o commit já publicado no origin**.
+O `release-tag.sh` empurra a tag com `--no-verify` (o commit já passou pela suíte do `pre-push` ao ser
+publicado — rodá-la de novo para uma tag seria ~2 min perdidos).
+
+O `publish-ota.sh` recusa `production` quando o `HEAD` não descende da tag daquela versão. **Versão
+sem tag = release train ainda aberto**: o OTA de produção não sai — para testar o mecanismo de OTA use
+os canais `preview` e `device`. O script diferencia esse caso de "build antigo sem tag" na mensagem.
+Recusa também quando o `HEAD` não está no origin (veja o `git push -u` do fluxo acima).
+
+📘 Modelo completo, ledger, casos especiais e troubleshooting: **`GUIA_RELEASE_TRAIN.md`**.
 
 ### Bônus: reproduzir um build antigo
 
 O mesmo mecanismo responde *"como refaço o build 2803 para investigar um bug?"*:
 
 ```bash
-git checkout mobile-v0.28.3
+git checkout mobile-v0.28.3   # versão FECHADA: tag. Build alpha (sem tag): SHA do ledger — GUIA_RELEASE_TRAIN.md §3.4
 npm ci                        # package-lock.json é versionado
 bash apps/mobile/build-android.sh production
 ```

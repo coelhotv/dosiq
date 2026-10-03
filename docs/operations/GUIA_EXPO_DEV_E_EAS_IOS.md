@@ -1,7 +1,7 @@
 ---
 title: "Expo.dev e EAS para iOS"
 description: "Guia prático de configuração de perfis, EAS Build e provisionamento de certificados para geração de builds iOS (ipa) no Dosiq."
-version: "1.2.0"
+version: "1.3.0"
 status: active
 category: operation
 audience:
@@ -111,8 +111,8 @@ O que ele faz, na ordem:
    keychain (`device` assina com o mesmo certificado do production — só o provisioning profile
    difere). Desbloqueia o keychain.
 2. Valida `GoogleService-Info.plist` (§4.1). `production`: exige `SENTRY_AUTH_TOKEN` e, **antes** de
-   compilar, working tree limpa, **commit já publicado no origin** e tag `mobile-v<versão>` sem
-   colisão (R-307).
+   compilar, working tree limpa e **commit já publicado no origin** (R-307). Não olha tag: ela é do
+   fechamento do release train (`GUIA_RELEASE_TRAIN.md`).
 3. Mostra o resumo e pede confirmação (Enter).
 4. Apaga `ios/` e roda `expo prebuild --platform ios --no-install`. O `rm -rf ios` é **intencional**:
    o Swift da bridge/widget de um prebuild anterior conflita com o novo.
@@ -124,8 +124,10 @@ O que ele faz, na ordem:
 6. Move o artefato para `~/local/dev-builds/dosiq-v<versão>-<perfil>.<app|ipa>`. Em
    `development`/`preview` o resultado é um `tar.gz` que o script **extrai** para um `.app`.
 7. `device`: **instala o `.ipa` no iPhone** via `xcrun devicectl device install app` (ver abaixo).
-8. `production`: `eas submit` para o TestFlight e, depois, cria/publica a tag `mobile-v<versão>`
-   (push com `--no-verify`, sem reexecutar a suíte; pulado se a tag já está no origin).
+8. `production`: `eas submit` para o TestFlight. **Não cria tag** — o perfil serve também a builds
+   alpha. Em vez disso, logo depois de gerar o `.ipa`, registra a **procedência** (qual commit virou o
+   binário): sidecar `<ipa>.json` + `~/local/dev-builds/builds.jsonl`. A tag `mobile-v<versão>` só
+   nasce ao fechar o train: `bash release-tag.sh <versão>` (`GUIA_RELEASE_TRAIN.md`).
 
 **Simulador não recebe push.** Qualquer smoke que dependa de notificação no iPhone usa o perfil
 `device` (ad hoc, assinado para os UDIDs de `eas device:list`).
