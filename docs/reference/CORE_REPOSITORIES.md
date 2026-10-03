@@ -193,8 +193,11 @@ O principal gestor dos tratamentos do usuário. Controla a criação (start), pa
 | Método | Argumentos de Entrada | Retorno (Saída) | Descrição |
 |--------|-----------------------|-----------------|-----------|
 | `getActive` | `date: string` | `Array` protocolos | Seleciona os regimes posológicos válidos e ativos em uma data específica. |
+| `getAll` / `getByMedicineId` | — / `medicineId` | `Array` protocolos | Superfície viva: ativos, pausados e encerrados, **nunca arquivados** (`archived_at IS NULL`, spec 094). |
 | `create` | `protocol: Record` | Protocolo final | Valida no Zod, persiste a configuração de tratamento e atualiza instâncias na máquina de estados de agendamento. |
 | `update` | `id`, `updates` | Protocolo final | Modifica a posologia local, rebatendo também no futuro de tomadas projetado. |
+
+> **Excluir = arquivar** (spec 094, CON-039): o `DELETE` em `protocols`/`medicines` é convertido em arquivamento pelo banco e retorna sucesso com 0 linhas afetadas. Leitor de histórico (doses, adesão, relatório) não filtra `archived_at`; leitor de lista/seletor filtra.
 
 A tabela de seleção padrão deste repository é extensa de propósito. Modificações de estrutura no Supabase devem observar os relacionamentos `medicine` e `treatment_plan`.
 
@@ -291,7 +294,7 @@ Controla a lista local de medicamentos customizados (inventário visual) cadastr
 
 | Método | Argumentos de Entrada | Retorno (Saída) | Descrição |
 |--------|-----------------------|-----------------|-----------|
-| `getAll` | `void` | Lista Medicamentos | Recupera registros crus listados alfabeticamente. |
+| `getAll` | `void` | Lista Medicamentos | Recupera os medicamentos **não arquivados** (`archived_at IS NULL`, spec 094). |
 | `create` | `medicine: Record` | Medicamento instanciado | Persiste um comprimido/líquido novo amarrando ao `user_id`. |
 | `update` | `id`, `updates` | Medicamento editado | Modifica propriedades da droga (concentração, unidade, tipo visual). |
 

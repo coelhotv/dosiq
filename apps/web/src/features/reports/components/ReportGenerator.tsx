@@ -311,7 +311,7 @@ export default function ReportGenerator(props: any = {}) {
     } finally {
       setIsGenerating(false)
     }
-  }, [consultationData, dailyAdherence, dashboardData, period])
+  }, [consultationData, dashboardData, period])
 
   const handleDownload = useCallback(() => {
     if (!pdfBlob) return
