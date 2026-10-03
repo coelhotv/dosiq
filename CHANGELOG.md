@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Relatório clínico: base de dados do novo relatório (spec 097, Slice A1)
+
+- **Backend** (banco — migração `20261003_report_dose_days.sql`). Nova função que conta as doses de
+  cada tratamento por dia e horário, no fuso do usuário, só com os dados da própria conta. Ainda não
+  é usada por nenhuma tela.
+- **Core**. Coleta e montagem do novo relatório em PDF (tratamentos em uso, tomadas por dia e horário,
+  tratamentos encerrados, mudanças, escadas de titulação com peso por etapa e estoque), iguais para web
+  e mobile. Sem mudança visível: o relatório novo chega nos próximos slices. Sem bump de versão
+  (nenhum app muda de comportamento).
+
 ### Segurança: cada conta só acessa os próprios dados (spec 098)
 
 - **Backend** (banco — migração `20261003_rls_pilot_policy_removal.sql`). Removidas 32 regras de acesso

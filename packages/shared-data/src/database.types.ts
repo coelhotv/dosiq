@@ -1975,6 +1975,20 @@ export type Database = {
         }
         Returns: Json
       }
+      report_dose_days: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          day: string
+          medicine_id: string
+          missed_count: number
+          paused_count: number
+          pending_count: number
+          protocol_id: string
+          skipped_count: number
+          slot: string
+          taken_count: number
+        }[]
+      }
       restore_stock_for_log: {
         Args: {
           p_medicine_log_id: string
