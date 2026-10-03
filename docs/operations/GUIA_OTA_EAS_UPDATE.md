@@ -533,6 +533,15 @@ bash publish-ota.sh production "fix do cálculo de estoque"
 git tag mobile-v0.30.0-ota.1 && git push --no-verify origin mobile-v0.30.0-ota.1
 ```
 
+⚠️ **Worktree ou clone novo não tem `.env`** (é gitignored). O babel do Expo embute
+`EXPO_PUBLIC_*` no bundle na hora de empacotar: sem o arquivo, sai `undefined` e o app abre em
+tela preta (`Missing supabaseUrl in public config`). Copie antes de publicar
+(`cp <checkout-principal>/apps/mobile/.env* apps/mobile/`). O `publish-ota.sh` recusa publicar sem
+as duas chaves do Supabase (gate 0) e sempre passa `--clear-cache`: o Metro guarda a transformação
+com o env da época, e um bundle feito sem `.env` contamina o cache do publish seguinte (096,
+2026-10-02 — o republish com env saiu tão quebrado quanto o primeiro). Tags anteriores a esta
+correção trazem o script velho: na branch `hotfix/ota-*`, aplique as duas travas antes de publicar.
+
 O `runtimeVersion` sai `0.30.0` sozinho — o `app.config.js` **daquele commit** dizia `0.30.0`. Você
 não configura nada: a árvore certa produz o runtime certo.
 
