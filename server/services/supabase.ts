@@ -26,5 +26,3 @@ if (!supabaseUrl || (!supabaseAnonKey && !supabaseServiceKey)) {
 export const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
   realtime: { transport: ws as any },
 });
-
-export const MOCK_USER_ID = process.env.MOCK_USER_ID || '00000000-0000-0000-0000-000000000000';

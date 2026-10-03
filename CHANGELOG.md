@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Segurança: cada conta só acessa os próprios dados (spec 098)
+
+- **Backend** (banco — migração `20261003_rls_pilot_policy_removal.sql`). Removidas 32 regras de acesso
+  herdadas do piloto que deixavam qualquer conta, e até um visitante sem login, ler e gravar dados em
+  nome de um usuário de teste. Elas foram trocadas por regras que só deixam cada conta acessar as
+  próprias linhas, na mesma transação. As sessões de conversa do bot do Telegram deixam de poder ser
+  lidas ou gravadas pelo app: só o servidor do bot as usa. Apagada a função antiga que transferia os
+  dados do piloto (e que, se chamada, apagava as configurações de quem chamava), e fechado o acesso
+  anônimo a três funções do banco. Nenhuma mudança para o uso normal do app ou do bot.
+- **Web** (`patch` — correção de segurança, sem mudança visível; `4.27.1` → `4.27.2`). Removido o
+  código morto que chamava a função do piloto.
+- **Bot** (servidor local `server/index.ts`, fora do webhook de produção). Removida a busca inline,
+  que respondia sempre com os remédios de uma conta fixa de teste em vez dos de quem perguntava.
+- **Mobile**: nenhuma mudança (sem bump, sem nota de loja).
+
 ### Excluir tratamento ou medicamento não apaga mais o histórico (spec 094)
 
 - **Backend** (banco — migração `20261002_archive_on_delete.sql`, aplicada junto do deploy web).

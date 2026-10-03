@@ -1956,7 +1956,6 @@ export type Database = {
           total_quantity: number
         }[]
       }
-      migrate_pilot_data: { Args: never; Returns: undefined }
       prune_notification_outbox: {
         Args: { retention_days?: number }
         Returns: number

@@ -179,5 +179,3 @@ export const captureDeviceTimezone = async () => {
     console.error('Erro ao capturar fuso do device:', error)
   }
 }
-
-export const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001'
