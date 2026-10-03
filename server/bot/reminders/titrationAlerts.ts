@@ -39,9 +39,20 @@ const TITRATION_STEPS_SELECT = `
   steps:titration_steps (
     id, position, medicine_id, dose, intake_unit, duration_days, status,
     started_at, protocol_id,
-    medicine:medicine_id (name, dosage_unit, dosage_per_pill, concentration_volume_ml)
+    medicine:medicine_id (name, dosage_unit, dosage_per_pill, concentration_volume_ml),
+    protocol:protocol_id (archived_at)
   )
 `;
+
+/**
+ * 094 (C1.5 G2): escada de tratamento EXCLUÍDO (arquivado) congela como histórico — não avança,
+ * não notifica, não regera doses. Morta = tem executor vinculado e TODOS estão arquivados (espelha
+ * o trigger `medicines_archive_on_delete`). Escada sem executor vinculado não é decidida aqui.
+ */
+export function isTitrationArchived(steps: any[]): boolean {
+  const linked = (steps || []).filter((s) => s?.protocol_id != null);
+  return linked.length > 0 && linked.every((s) => s?.protocol?.archived_at != null);
+}
 
 /**
  * Reprojeta a janela futura do protocolo executor após o `dose_change` automático (052 T006).
@@ -65,7 +76,8 @@ async function _resyncProtocolAfterDoseChange(protocolId, correlationId) {
       .select('*, titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
       .eq('id', protocolId)
       .single();
-    if (error || !protocol) return;
+    // 094: tratamento arquivado nunca regera doses (INV-3) — o planner não olha `archived_at`.
+    if (error || !protocol || protocol.archived_at) return;
 
     // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4) —
     // mesmo cast de fronteira do doseInstanceScheduler.
@@ -281,6 +293,7 @@ async function _processUserTitrationsN2(userId, tz, dispatcher, correlationId) {
   for (const titration of titrations) {
     try {
       const steps = Array.isArray(titration.steps) ? titration.steps : [];
+      if (isTitrationArchived(steps)) continue; // 094: escada de tratamento excluído congela
       const plan = resolveTitrationAdvance(steps, todayLocal, tz);
       if (!plan) continue; // nada venceu (inclui a titulação dormente: 'current' sem started_at)
 

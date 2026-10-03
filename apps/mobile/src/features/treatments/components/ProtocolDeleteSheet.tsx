@@ -105,8 +105,8 @@ export default function ProtocolDeleteSheet({
           <View style={styles.banner}>
             <Info size={16} color={colors.status.warning} strokeWidth={2} />
             <Text style={styles.bannerText}>
-              Excluir o tratamento NÃO apaga o histórico de doses já registradas, nem
-              o cadastro do medicamento.
+              Os lembretes param e o tratamento sai da lista. O seu histórico de
+              doses continua salvo.
             </Text>
           </View>
 

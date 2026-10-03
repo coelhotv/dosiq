@@ -94,7 +94,10 @@ describe('protocolService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+            // 094: lista viva filtra archived_at IS NULL
+            is: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+            }),
           }),
         }),
       })
@@ -110,7 +113,10 @@ describe('protocolService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') }),
+            // 094: lista viva filtra archived_at IS NULL
+            is: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') }),
+            }),
           }),
         }),
       })
@@ -305,7 +311,9 @@ describe('protocolService', () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockResolvedValue({ data: mockProtocols, error: null }),
+            }),
           }),
         }),
       })

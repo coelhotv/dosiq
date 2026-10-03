@@ -300,7 +300,8 @@ function useMedicineDetailState() {
 
   const protocols = useMemo(() => {
     if (!protocolsData || !Array.isArray(protocolsData)) return []
-    return protocolsData
+    // 094: tratamento excluído (arquivado) não é "tratamento associado" — só histórico.
+    return protocolsData.filter((p) => p?.archived_at == null)
   }, [protocolsData])
 
   const protocolsSummary = useMemo(() => {
@@ -482,7 +483,7 @@ export default function MedicineDetailScreen() {
       <DeleteConfirmation
         visible={state.deleteOpen}
         title="Remover medicamento"
-        description="Esta ação não pode ser desfeita."
+        description="O medicamento sai da lista e do estoque. O seu histórico de doses continua salvo."
         itemName={state.name}
         confirmLabel="Remover"
         isLoading={state.deleteLoading}

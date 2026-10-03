@@ -160,6 +160,29 @@ describe('ReportGenerator', () => {
     })
   })
 
+  it('094 FR-014: período 7d também lê a adesão do fato (view de dose_instances), não da lista viva', async () => {
+    const { cachedAdherenceService } = await import('@shared/services/cachedServices')
+    render(<ReportGenerator onClose={vi.fn()} />)
+    await waitFor(() => {
+      expect(mocks.getUser).toHaveBeenCalled()
+    })
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '7d' } })
+    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
+
+    await waitFor(() => {
+      expect(cachedAdherenceService.getDailyAdherenceFromView).toHaveBeenCalledWith(7)
+      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
+        expect.objectContaining({
+          period: '7d',
+          dashboardData: expect.objectContaining({
+            dailyAdherence: expect.arrayContaining([expect.objectContaining({ date: '2026-03-01', taken: 10 })]),
+          }),
+        })
+      )
+    })
+  })
+
   it('044 (smoke 085 C2): usuário dose-only ⇒ o PDF recebe stockTrackingEnabled=false', async () => {
     mocks.stockTracking.enabled = false
     render(<ReportGenerator onClose={vi.fn()} />)

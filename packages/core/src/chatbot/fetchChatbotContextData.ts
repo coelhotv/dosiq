@@ -129,11 +129,14 @@ export async function fetchChatbotContextData({
 
   // Selects canônicos — uma definição, paralelos.
   const [medicinesRes, protocolsRes, logsRes, plansRes, profileRes, doseInstances, stats] = await Promise.all([
-    supabase.from('medicines').select('*, stock(*)').eq('user_id', userId),
+    // 094 FR-013: arquivado não sai para o LLM — o filtro na query é a única camada (o montador só
+    // vê o que estas duas queries trazem).
+    supabase.from('medicines').select('*, stock(*)').eq('user_id', userId).is('archived_at', null),
     supabase
       .from('protocols')
       .select('*, treatment_plan:treatment_plans(id, name, emoji, color)')
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      .is('archived_at', null),
     supabase.from('medicine_logs').select('protocol_id, taken_at').eq('user_id', userId).gte('taken_at', yesterdayIso),
     supabase.from('treatment_plans').select('id, name').eq('user_id', userId),
     // Perfil leve (nome/idade) p/ personalizar tom — DADO SECUNDÁRIO: degrada gracioso

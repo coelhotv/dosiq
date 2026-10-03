@@ -83,7 +83,7 @@ export default function TreatmentModals({
       <ConfirmDialog
         isOpen={!!deleteTreatmentTarget}
         title={`Excluir tratamento "${deleteTreatmentTarget?.medicineName}"?`}
-        message="Esta ação não pode ser desfeita. O histórico de doses associado será mantido."
+        message="Os lembretes param e o tratamento sai da lista. O seu histórico de doses continua salvo."
         confirmLabel="Excluir" variant="danger"
         onConfirm={handleDeleteTreatmentConfirm}
         onCancel={() => setDeleteTreatmentTarget(null)}

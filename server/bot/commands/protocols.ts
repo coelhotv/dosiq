@@ -63,7 +63,9 @@ export async function handleRetomar(bot, msg, match) {
         .from('protocols')
         .select('id, medicine:medicines(name)')
         .eq('user_id', userId)
-        .eq('active', false);
+        .eq('active', false)
+        // 094: arquivado (excluído) não é "pausado" — retomá-lo é bloqueado no banco (DQ942).
+        .is('archived_at', null);
 
       if (!protocols || protocols.length === 0) {
         return bot.sendMessage(chatId, 'Você não possui protocolos pausados\\.');
@@ -103,6 +105,7 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
       .from('medicines')
       .select('id, name')
       .eq('user_id', userId)
+      .is('archived_at', null)
       .ilike('name', `%${medicineName}%`);
 
     if (!medicines || medicines.length === 0) {
@@ -117,6 +120,7 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
       .update({ active })
       .in('medicine_id', medicineIds)
       .eq('user_id', userId)
+      .is('archived_at', null)
       .select('medicine:medicines(name)')
       .single();
 

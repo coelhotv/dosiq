@@ -757,6 +757,7 @@ export type Database = {
       medicines: {
         Row: {
           active_ingredient: string | null
+          archived_at: string | null
           concentration_volume_ml: number | null
           created_at: string | null
           dosage_per_pill: number | null
@@ -775,6 +776,7 @@ export type Database = {
         }
         Insert: {
           active_ingredient?: string | null
+          archived_at?: string | null
           concentration_volume_ml?: number | null
           created_at?: string | null
           dosage_per_pill?: number | null
@@ -793,6 +795,7 @@ export type Database = {
         }
         Update: {
           active_ingredient?: string | null
+          archived_at?: string | null
           concentration_volume_ml?: number | null
           created_at?: string | null
           dosage_per_pill?: number | null
@@ -1005,6 +1008,7 @@ export type Database = {
       protocols: {
         Row: {
           active: boolean | null
+          archived_at: string | null
           created_at: string | null
           critical_alarm: boolean
           current_stage_index: number | null
@@ -1034,6 +1038,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          archived_at?: string | null
           created_at?: string | null
           critical_alarm?: boolean
           current_stage_index?: number | null
@@ -1063,6 +1068,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          archived_at?: string | null
           created_at?: string | null
           critical_alarm?: boolean
           current_stage_index?: number | null

@@ -92,9 +92,11 @@ function ReportSuccessActions({ isGenerating, shareLoading, onDownload, onShare,
 const PERIOD_DAYS_MAP = { '7d': 7, '30d': 30, '90d': 90, all: 90 }
 
 /** Resolve a aderência diária de acordo com o período selecionado. */
-async function resolveAdherence(period, dailyAdherence) {
+// 094 FR-014: todo período lê a adesão do FATO (`v_daily_adherence` ← dose_instances). O atalho
+// de 7d usava o `dailyAdherence` do dashboard (lista VIVA de tratamentos × logs): tratamento
+// excluído/pausado sumia do esperado e suas tomadas inflavam o dia (R-299).
+async function resolveAdherence(period) {
   const days = PERIOD_DAYS_MAP[period] || 30
-  if (days <= 7) return dailyAdherence || []
   return cachedAdherenceService.getDailyAdherenceFromView(days)
 }
 
@@ -296,7 +298,7 @@ export default function ReportGenerator(props: any = {}) {
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true); setError(null); setPdfBlob(null); setShareUrl(null); setShareError(null)
     try {
-      const resolvedDailyAdherence = await resolveAdherence(period, dailyAdherence)
+      const resolvedDailyAdherence = await resolveAdherence(period)
       const blob = await generateConsultationPDF({
         consultationData, dashboardData: { ...dashboardData, dailyAdherence: resolvedDailyAdherence }, period, title: 'Dosiq - Consulta Médica',
       })

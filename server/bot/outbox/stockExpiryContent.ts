@@ -44,7 +44,7 @@ export async function buildStockExpiryContent(
   // usuário se o `subject_id` vier corrompido.
   const { data: lot, error: lotErr } = await supabase
     .from('stock')
-    .select('id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days)')
+    .select('id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, archived_at)')
     .eq('id', subjectId)
     .eq('user_id', userId)
     .maybeSingle();
@@ -52,6 +52,8 @@ export async function buildStockExpiryContent(
   if (lotErr) throw new Error(`buildStockExpiryContent.stock: ${lotErr.message}`);
   // Lote apagado entre o enqueue e o envio.
   if (!lot) return null;
+  // 094: medicamento excluído (arquivado) entre o enqueue e o envio — não alerta.
+  if ((lot as any).medicine?.archived_at != null) return null;
   // Lote consumido — mesmo predicado do enqueue e do legado.
   if (Number(lot.quantity || 0) <= 0) return null;
 

@@ -25,7 +25,8 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
 
   const selectMock = jest.fn(() => ({
     eq: jest.fn((field) => {
-      if (field === 'user_id') return { order: orderMock }
+      // 094: getAll filtra archived_at IS NULL antes do order
+      if (field === 'user_id') return { order: orderMock, is: jest.fn(() => ({ order: orderMock })) }
       // id then user_id chain
       return { eq: eqGetById2Mock, order: orderMock, single: singleGetByIdMock }
     }),

@@ -4,10 +4,15 @@
 import { describe, it, expect, afterEach } from '@jest/globals'
 
 const mockSelect = jest.fn()
+const mockIs = jest.fn()
 
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
   const orderMock = () => Promise.resolve({ data: [], error: null })
-  const eqMock = () => ({ order: orderMock })
+  const isMock = (...args) => {
+    mockIs(...args)
+    return { order: orderMock }
+  }
+  const eqMock = () => ({ is: isMock })
   return {
     supabase: {
       from: () => ({
@@ -20,7 +25,7 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
   }
 })
 
-import { getActiveTreatments } from '../treatmentsService'
+import { getActiveTreatments, getAllTreatments } from '../treatmentsService'
 
 describe('getActiveTreatments — select', () => {
   afterEach(() => {
@@ -33,5 +38,10 @@ describe('getActiveTreatments — select', () => {
     expect(res.success).toBe(true)
     const select = String(mockSelect.mock.calls[0][0]).replace(/\s+/g, '')
     expect(select).toMatch(/medicine:medicine_id\([^)]*\bpresentation\b/)
+  })
+
+  it('094 PO-2: tratamento arquivado (excluído) fica fora da lista viva', async () => {
+    await getAllTreatments('11111111-1111-4111-8111-111111111111')
+    expect(mockIs).toHaveBeenCalledWith('archived_at', null)
   })
 })

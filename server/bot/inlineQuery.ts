@@ -15,6 +15,7 @@ export function handleInlineQueries(bot) {
           protocols!protocols_medicine_id_fkey(*)
         `)
         .eq('user_id', MOCK_USER_ID)
+        .is('archived_at', null)
         .ilike('name', `%${searchTerm}%`)
         .limit(10);
 

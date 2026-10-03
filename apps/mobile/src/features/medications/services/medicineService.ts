@@ -40,7 +40,7 @@ const repo = createMedicineRepository({
     stock(*),
     purchases(*),
     protocols(*),
-    titration_steps(id, position, status, titration_id, protocol_id)
+    titration_steps(id, position, status, titration_id, protocol_id, titration:titrations(titration_steps(protocol_id, protocol:protocols(archived_at))))
   `,
 })
 

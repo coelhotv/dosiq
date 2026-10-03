@@ -85,7 +85,13 @@ export default function Medicines({ onNavigateToProtocol, onBack }) {
       showSuccess('Medicamento excluído com sucesso!')
       refresh({ force: true })
     } catch (err) {
-      setError('Erro ao excluir medicamento: ' + err.message)
+      // 094: o banco recusa (DQ941) se ainda há tratamento ou evolução em andamento.
+      const inUse = err?.code === 'DQ941' || err?.message === 'medicine_in_use'
+      setError(
+        inUse
+          ? 'Este medicamento ainda tem tratamento ou evolução em andamento. Exclua o tratamento antes.'
+          : 'Erro ao excluir medicamento: ' + err.message
+      )
     } finally {
       setDeleteTarget(null)
     }

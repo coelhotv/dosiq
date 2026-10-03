@@ -19,6 +19,7 @@ function makeBuilder(result: any) {
     update:      vi.fn(function (...a) { this._calls.push(['update', a]); return this }),
     delete:      vi.fn(function (...a) { this._calls.push(['delete', a]); return this }),
     eq:          vi.fn(function (...a) { this._calls.push(['eq', a]); return this }),
+    is:          vi.fn(function (...a) { this._calls.push(['is', a]); return this }),
     lte:         vi.fn(function (...a) { this._calls.push(['lte', a]); return this }),
     in:          vi.fn(function (...a) { this._calls.push(['in', a]); return this }),
     order:       vi.fn(function (...a) { this._calls.push(['order', a]); return this }),

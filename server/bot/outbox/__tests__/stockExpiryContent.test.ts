@@ -76,6 +76,15 @@ describe('buildStockExpiryContent — validade biológica por lote (050 PR 2)', 
     expect(data).toEqual({ medicineName: 'Ozempic', daysLeft: 3 });
   });
 
+  it('094: medicamento excluído (arquivado) entre enqueue e envio → null', async () => {
+    queueReads(
+      { stock_tracking_enabled: true },
+      lot(3, { medicine: { name: 'Ozempic', shelf_life_days: SHELF, archived_at: '2026-08-19T12:00:00Z' } }),
+    );
+
+    expect(await buildStockExpiryContent({ userId: USER, subjectId: LOT })).toBeNull();
+  });
+
   it('lote vencendo hoje → daysLeft 0', async () => {
     queueReads({ stock_tracking_enabled: true }, lot(0));
 

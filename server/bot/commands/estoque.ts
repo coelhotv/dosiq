@@ -22,6 +22,7 @@ export async function handleEstoque(bot, msg) {
         protocols!protocols_medicine_id_fkey(*)
       `)
       .eq('user_id', userId)
+      .is('archived_at', null) // 094: medicamento excluído (arquivado) não é estoque vivo
       .order('name');
 
     if (medError) throw medError;

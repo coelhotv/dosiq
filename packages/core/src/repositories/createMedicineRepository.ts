@@ -52,6 +52,8 @@ export function createMedicineRepository({
         .from('medicines')
         .select(listSelect)
         .eq('user_id', userId)
+        // 094/CON-038: medicamento arquivado sai do catálogo; só o histórico o mostra.
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
 
       if (error) throw error
