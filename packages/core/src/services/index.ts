@@ -91,3 +91,23 @@ export {
   CONSENT_ALLOWED_MOBILE_ROUTES,
 } from './consentGate'
 export type { ConsentGateMode, ConsentGateDecision } from './consentGate'
+
+// Relatório clínico (spec 097 A1 — coletor + montador; template no A2)
+export * from './report/index'
+
+// Medida × etapa do tratamento (contrato 069 FR-010/FR-012; criado pela 097 DS-7)
+export {
+  buildTreatmentMeasureSeries,
+  pickMeasureSeriesState,
+  MEASURE_SERIES_MIN_POINTS,
+  MEASURE_SERIES_MIN_SPAN_DAYS,
+} from './treatmentMeasureSeries'
+export type {
+  BuildTreatmentMeasureSeriesArgs,
+  DoseDayCount,
+  MeasureInput,
+  MeasureSeriesState,
+  MeasureSeriesStep,
+  MeasureStepInput,
+  TreatmentMeasureSeries,
+} from './treatmentMeasureSeries'
