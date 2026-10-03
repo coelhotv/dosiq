@@ -31,7 +31,6 @@ HITS=$(grep -rEn "\.(filter|find|some|every)\((\([^)]*\)|[A-Za-z_]+) =>[^)]*\b[A
   apps/web/src/features/stock apps/web/src/features/dashboard \
   apps/web/src/features/emergency apps/web/src/features/consultation \
   apps/web/src/views/Stock.tsx \
-  apps/web/src/features/reports/services/consultationPdfDataBuilder.ts \
   server/bot/commands \
   --include='*.ts' --include='*.tsx' 2>/dev/null \
   | grep -v __tests__ | grep -v '\.test\.')

@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Relatório clínico novo na web, sem link público (spec 097, Slice A2)
+
+- **Web** (`minor` — relatório novo e remoção do link de compartilhamento; `4.27.2` → `4.28.0`). O
+  "Gerar PDF Clínico" do Perfil e os botões do Modo Consulta passam a gerar o relatório novo:
+  tratamentos em uso com vigência e término ("contínuo" quando não há), tomadas de cada tratamento dia
+  a dia e por horário ("28 de 30 doses"; horários antigos somados em "outros horários"), mudanças no
+  período, escadas de titulação completas (com o medicamento de cada etapa quando a caneta muda, e o
+  peso médio por etapa quando há pesagem — gráfico só com pesagens suficientes), tratamentos
+  encerrados e estoque, sem custo. Todos os números se referem ao período escolhido; se os registros
+  começam depois do início do período, o relatório começa neles e avisa ("registros a partir de …"). Saem o medidor, os cartões de adesão de 30 e 90 dias fixos e
+  a "mensagem executiva". Períodos: 7, 30, 90 ou 180 dias; "Todo o período" saiu (entregava só 90).
+  O PDF chega pronto: "Baixar PDF" e, no celular, "Compartilhar" com o arquivo (WhatsApp, e-mail).
+  Saiu o "Compartilhar link", que deixava o PDF público por endereço. Corrigido o seletor de período,
+  que ficava ilegível com o sistema em modo escuro.
+- **Backend**. Novo endpoint `api/report.ts` que gera o PDF no servidor (Chromium), com os dados lidos
+  pela sessão do próprio usuário; nada é guardado. Mesmo documento em qualquer navegador e aparelho.
+  Removido o endpoint `api/share.ts` (segue em 7 de 12 funções). Nenhum PDF enviado por link ficou
+  guardado: o armazenamento (privado) não tinha nenhum arquivo de relatório (conferidos os 3.323
+  arquivos, todos de outro uso).
+- **Core**. Template HTML único do relatório, disponível em `@dosiq/core/services/report` (também no
+  build para Node, usado pelo endpoint).
+- **Mobile**: nenhuma mudança (sem bump, sem nota de loja).
+
 ### Relatório clínico: base de dados do novo relatório (spec 097, Slice A1)
 
 - **Backend** (banco — migração `20261003_report_dose_days.sql`). Nova função que conta as doses de

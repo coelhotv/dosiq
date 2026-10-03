@@ -23,6 +23,9 @@ import type { ReportDoseDayRow, ReportInputs, ReportProtocolRow } from '../repor
 /** Estado de um dia na faixa (§3.4). Categórico, legível em preto e branco. */
 export type DayCellState = 'full' | 'partial' | 'none' | 'paused' | 'empty'
 
+/** Rótulo do agrupamento dos horários que não estão na agenda atual do tratamento. */
+export const OTHER_SLOTS_LABEL = 'outros horários'
+
 export interface SlotCount {
   slot: string
   taken: number
@@ -78,6 +81,15 @@ export function endedOnInWindow(protocol: ReportProtocolRow, to: string, tz: str
   return candidates.sort()[0]
 }
 
+/**
+ * Só os horários da agenda atual aparecem um a um; os antigos (agenda mudou no período) somam em
+ * "outros horários" — dezenas de horários soltos não dizem nada na consulta (smoke 097 A2).
+ */
+function _slotKeyFor(protocol: ReportProtocolRow | null): (slot: string) => string {
+  const schedule = new Set((protocol?.time_schedule ?? []).filter((t) => typeof t === 'string' && /^\d{2}:\d{2}$/.test(t)))
+  return (slot) => (schedule.size === 0 || schedule.has(slot) ? slot : OTHER_SLOTS_LABEL)
+}
+
 function _buildRow(
   protocolId: string,
   rows: ReportDoseDayRow[],
@@ -89,6 +101,7 @@ function _buildRow(
   const medicineId = rows[0].medicine_id
   const medicine = inputs.medicines.find((m) => m.id === medicineId) ?? (protocol ? medicineOf(protocol, inputs.medicines) : null)
 
+  const slotKey = _slotKeyFor(protocol)
   const byDay = new Map<string, DayTotals>()
   const bySlot = new Map<string, SlotCount>()
   let taken = 0
@@ -99,15 +112,17 @@ function _buildRow(
     d.missed += r.missed_count
     d.paused += r.paused_count
     byDay.set(r.day, d)
-    const s = bySlot.get(r.slot) ?? { slot: r.slot, taken: 0, expected: 0 }
+    const key = slotKey(r.slot)
+    const s = bySlot.get(key) ?? { slot: key, taken: 0, expected: 0 }
     s.taken += r.taken_count
     s.expected += r.taken_count + r.missed_count
-    bySlot.set(r.slot, s)
+    bySlot.set(key, s)
     taken += r.taken_count
     missed += r.missed_count
   }
   const expected = taken + missed
-  const slots = [...bySlot.values()].filter((s) => s.expected > 0).sort((a, b) => (a.slot < b.slot ? -1 : 1))
+  const rank = (slot: string) => (slot === OTHER_SLOTS_LABEL ? '~' : slot)
+  const slots = [...bySlot.values()].filter((s) => s.expected > 0).sort((a, b) => (rank(a.slot) < rank(b.slot) ? -1 : 1))
 
   return {
     protocolId,

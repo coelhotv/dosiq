@@ -4,6 +4,7 @@
  * a lista não mudar (PO-1). Dose na unidade da tomada (INV-3), dose total no ciclo (085), término
  * por tratamento (DS-6), forma injetável e validade após aberto como informação (FR-006).
  */
+import { PRESENTATION_LABELS } from '../../../schemas/medicineSchema'
 import { formatFrequencyLabel, FREQUENCY_LABELS } from '../../../schemas/protocolSchema'
 import { isProtocolVigentOn } from '../../../utils/adherenceLogic'
 import { formatMedicineConcentration } from '../../../utils/doseUnit'
@@ -39,7 +40,6 @@ export interface MedicationRow {
   endStatus: EndStatus
   injectable: boolean
   /** Validade após aberto (dias), só como informação (FR-006). */
-  shelfLifeDays: number | null
   /** "Titulação 2/4" — da escada registrada, nunca de `titration_schedule`. */
   titrationChip: string | null
 }
@@ -52,6 +52,16 @@ export function isCurrentOn(protocol: ReportProtocolRow, asOf: string): boolean 
 function _frequencyLabel(protocol: ReportProtocolRow): string {
   if (!protocol.frequency) return FREQUENCY_LABELS['diário']
   return formatFrequencyLabel(protocol.frequency, protocol.interval_days)
+}
+
+/**
+ * Forma do medicamento na linha de detalhe, para todos ("comprimido", "injetável"). `outro` e vazio
+ * não aparecem. Validade após aberto saiu: campo manual opcional, sem conferência (smoke 097 A2).
+ */
+function _presentationLabel(presentation: string | null | undefined): string | null {
+  if (!presentation || presentation === 'outro') return null
+  const label = (PRESENTATION_LABELS as Record<string, string>)[presentation]
+  return label ? label.toLowerCase() : null
 }
 
 export function buildMedicationRows(inputs: ReportInputs, ladders: Ladder[]): MedicationRow[] {
@@ -72,7 +82,7 @@ export function buildMedicationRows(inputs: ReportInputs, ladders: Ladder[]): Me
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         name: treatmentName(protocol, medicine),
-        detail: [ingredient, concentration].filter(Boolean).join(' · '),
+        detail: [ingredient, concentration, _presentationLabel(medicine?.presentation)].filter(Boolean).join(' · '),
         dosePerIntake: formatDosePerIntake(protocol, medicine),
         frequencyLabel: protocol.frequency === 'quando_necessário' ? FREQUENCY_LABELS['quando_necessário'] : _frequencyLabel(protocol),
         times,
@@ -81,8 +91,7 @@ export function buildMedicationRows(inputs: ReportInputs, ladders: Ladder[]): Me
         endDate: protocol.end_date,
         endStatus,
         injectable: isInjectable(medicine),
-        shelfLifeDays: medicine?.shelf_life_days ?? null,
-        titrationChip: ladder ? `Titulação ${(ladder.currentIndex ?? 0) + 1}/${ladder.steps.length}` : null,
+        titrationChip: ladder && ladder.steps.length > 1 ? `Titulação ${(ladder.currentIndex ?? 0) + 1}/${ladder.steps.length}` : null,
         firstSlot: firstSlot(protocol),
       }
     })

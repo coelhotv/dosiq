@@ -13,8 +13,7 @@ import { getConsultationData } from '@features/consultation/services/consultatio
 import ConsultationView from '@features/consultation/components/ConsultationView'
 import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
-import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
-import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { getNow } from '@utils/dateUtils'
 import { attachFullLadders } from '@dosiq/core'
 import './Consultation.css'
 
@@ -78,23 +77,16 @@ export default function Consultation({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
   const [consultationData, setConsultationData] = useState(null)
   const [error, setError] = useState(null)
-  // 073/F-24: os tratamentos com a escada COMPLETA (não o recorte do embed) alimentam a
-  // consulta E o PDF — os dois têm de contar a mesma história sobre a mesma escada.
-  const [protocolsWithLadders, setProtocolsWithLadders] = useState(null)
 
   const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
   const { enabled: stockTrackingEnabled } = useStockTracking()
 
-  // `stockTrackingEnabled` é ALLOWLIST explícita do payload do PDF (consultationPdfDataBuilder):
-  // campo novo não viaja sozinho — sem ele o PDF do usuário dose-only imprimiria a tabela de
-  // estoque em vez da linha "Estoque: não controlado".
+  // `stockTrackingEnabled` viaja explícito para a tela da consulta (dose-only, 044). O PDF lê o
+  // próprio ajuste no coletor do core (097).
   const dashboardData = useMemo(
     () => ({ medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled }),
     [medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled]
   )
-
-  // Create single 'now' instance for temporal consistency across PDF export, share, and filename generation
-  const now = useMemo(() => getNow(), [])
 
   useEffect(() => {
     let isMounted = true
@@ -119,7 +111,6 @@ export default function Consultation({ onBack }) {
         if (!isMounted) return
         const ladderProtocols = await fetchProtocolsWithLadders(dashboardData.protocols)
         if (!isMounted) return
-        setProtocolsWithLadders(ladderProtocols)
         const data = getConsultationData(
           { ...dashboardData, protocols: ladderProtocols },
           resolvedName, null, resolvedEmail, user?.id, adherenceSummaries
@@ -139,90 +130,41 @@ export default function Consultation({ onBack }) {
     }
   }, [dashboardData])
 
+  // 097 A2 (D-A2-2): o mesmo fluxo do Perfil — PDF gerado no servidor, 30 dias. "Gerar PDF" baixa o
+  // arquivo; "Compartilhar" abre o menu nativo com o arquivo (cai no download quando o navegador não
+  // compartilha arquivos).
+  useEffect(() => {
+    import('@features/reports/services/reportDownloadFlow')
+      .then((flow) => flow.warmReportEndpoint())
+      .catch(() => {})
+  }, [])
+
   const handleGeneratePDF = useCallback(async () => {
     try {
       analyticsService.track('consultation_pdf_generated', { timestamp: getNow().getTime() })
-      const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
-      const pdfBlob = await generateConsultationPDF({
-        consultationData,
-        dashboardData: {
-          ...dashboardData,
-          protocols: protocolsWithLadders ?? dashboardData.protocols,
-          dailyAdherence: resolvedDailyAdherence,
-        },
-        period: '30d',
-      })
-      const url = URL.createObjectURL(pdfBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `consulta-medica-${formatLocalDate(now)}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error)
+      const flow = await import('@features/reports/services/reportDownloadFlow')
+      flow.downloadReportFile(await flow.fetchClinicalReport(30))
+    } catch {
       alert('Erro ao gerar PDF. Tente novamente.')
     }
-  }, [consultationData, dashboardData, protocolsWithLadders, now])
+  }, [])
 
   const handleShare = useCallback(async () => {
     try {
       analyticsService.track('consultation_share_initiated', { timestamp: getNow().getTime() })
-      const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
-      const pdfBlob = await generateConsultationPDF({
-        consultationData,
-        dashboardData: {
-          ...dashboardData,
-          protocols: protocolsWithLadders ?? dashboardData.protocols,
-          dailyAdherence: resolvedDailyAdherence,
-        },
-        period: '30d',
-      })
-      const fileName = `consulta-medica-${formatLocalDate(now)}.pdf`
-
-      // 1. Tentar Web Share API (mobile nativo)
-      if (navigator.share && navigator.canShare) {
-        try {
-          const file = new File([pdfBlob], fileName, { type: 'application/pdf' })
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: 'Dados da Consulta Médica',
-              text: 'Relatório de tratamento e adesão aos medicamentos',
-              files: [file],
-            })
-            analyticsService.track('consultation_shared', { method: 'web_share_api' })
-            return
-          }
-        } catch (shareErr) {
-          // Se usuário cancelou a share sheet, trata como no-op
-          if (shareErr.name === 'AbortError') {
-            return
-          }
-          // Caso contrário, fallback para download
-          console.warn('Web Share API failed, falling back to download:', shareErr)
-        }
+      const flow = await import('@features/reports/services/reportDownloadFlow')
+      const report = await flow.fetchClinicalReport(30)
+      if (flow.canShareReportFile(report)) {
+        await flow.shareReportFile(report)
+        analyticsService.track('consultation_shared', { method: 'web_share_api' })
+      } else {
+        flow.downloadReportFile(report)
+        analyticsService.track('consultation_shared', { method: 'download' })
       }
-
-      // 2. Fallback: Download direto do PDF
-      const url = URL.createObjectURL(pdfBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      alert('PDF baixado com sucesso! Você pode compartilhá-lo manualmente.')
-      analyticsService.track('consultation_shared', { method: 'download' })
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Share error:', error)
-        alert('Erro ao compartilhar. Tente novamente.')
-      }
+    } catch {
+      alert('Erro ao compartilhar. Tente novamente.')
     }
-  }, [consultationData, dashboardData, protocolsWithLadders, now])
+  }, [])
 
   const handleBack = useCallback(() => {
     analyticsService.track('consultation_mode_closed', { timestamp: getNow().getTime() })

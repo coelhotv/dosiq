@@ -1,15 +1,16 @@
 /**
  * §3.5 Mudanças no período — só fatos com fonte DATADA no banco (DESIGN_DECISOES §6, RC3-F8):
  * etapa iniciada (`titration_steps.started_at`), pausa (dias `skipped_paused` do agregado — não
- * `paused_at`, que a retomada apaga), início (`start_date`), término (`end_date`) e exclusão
- * (`archived_at`, 094). Mudança sem fonte datada não entra.
+ * `paused_at`, que a retomada apaga), início (`start_date`) e término (`end_date`). Mudança sem
+ * fonte datada não entra. Exclusão (`archived_at`, 094) é gesto de cadastro do usuário, não fato
+ * clínico: não entra aqui; o tratamento aparece em "encerrados" com a data (smoke 097 A2).
  */
-import { localDayOf, medicineOf, shiftDay, treatmentName } from '../reportFormat'
+import { medicineOf, shiftDay, treatmentName } from '../reportFormat'
 import type { ReportInputs } from '../reportTypes'
 import type { IntakesSection } from './intakes'
 import type { Ladder } from './ladders'
 
-export type ChangeKind = 'titration_step' | 'paused' | 'started' | 'ended' | 'archived'
+export type ChangeKind = 'titration_step' | 'paused' | 'started' | 'ended'
 
 export interface ChangeItem {
   day: string
@@ -18,7 +19,8 @@ export interface ChangeItem {
   name: string
   /** Para pausa: último dia da pausa. */
   until: string | null
-  /** Para etapa: dose anterior e nova. */
+  /** Para etapa: número da etapa iniciada (1-based), dose anterior e nova. */
+  step: number | null
   fromDose: string | null
   toDose: string | null
 }
@@ -39,7 +41,7 @@ export function buildChanges(inputs: ReportInputs, intakes: IntakesSection, ladd
   const { from, to } = inputs.window
   const inWindow = (d: string | null): d is string => d !== null && d >= from && d <= to
   const items: ChangeItem[] = []
-  const base = { until: null, fromDose: null, toDose: null }
+  const base = { until: null, step: null, fromDose: null, toDose: null }
 
   for (const ladder of ladders) {
     ladder.steps.forEach((step, i) => {
@@ -50,6 +52,7 @@ export function buildChanges(inputs: ReportInputs, intakes: IntakesSection, ladd
         kind: 'titration_step',
         protocolId: ladder.protocolId,
         name: ladder.name,
+        step: step.position,
         fromDose: ladder.steps[i - 1].doseLabel,
         toDose: step.doseLabel,
       })
@@ -66,10 +69,8 @@ export function buildChanges(inputs: ReportInputs, intakes: IntakesSection, ladd
     const name = treatmentName(protocol, medicineOf(protocol, inputs.medicines))
     if (inWindow(protocol.start_date)) items.push({ ...base, day: protocol.start_date, kind: 'started', protocolId: protocol.id, name })
     if (inWindow(protocol.end_date)) items.push({ ...base, day: protocol.end_date, kind: 'ended', protocolId: protocol.id, name })
-    const archived = localDayOf(protocol.archived_at, inputs.timezone)
-    if (inWindow(archived)) items.push({ ...base, day: archived, kind: 'archived', protocolId: protocol.id, name })
   }
 
-  const order: Record<ChangeKind, number> = { started: 0, titration_step: 1, paused: 2, ended: 3, archived: 4 }
+  const order: Record<ChangeKind, number> = { started: 0, titration_step: 1, paused: 2, ended: 3 }
   return items.sort((a, b) => (a.day === b.day ? order[a.kind] - order[b.kind] : a.day < b.day ? -1 : 1))
 }

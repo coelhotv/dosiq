@@ -17,7 +17,7 @@ Cada arquivo `.ts` (ou `.js` legado) na raiz do diretório `api/` conta como uma
 | 3 | `api/chatbot.ts` | Chatbot AI Endpoint | default |
 | 4 | `api/generate-doses.ts` | Geração batch de doses (cron de suporte) | 60s |
 | 5 | `api/notify.ts` | Cron orchestrator (reminders, digests, reports) | 60s |
-| 6 | `api/share.ts` | PDF sharing via Vercel Blob | default |
+| 6 | `api/report.ts` | Relatório clínico em PDF (Chromium headless, JWT do usuário — spec 097) | 30s · 2 GB |
 | 7 | `api/telegram.ts` | Telegram webhook | 10s |
 
 **Total: 7/12 funções → 5 slots livres**
@@ -227,10 +227,10 @@ api/
   chatbot.ts                         ← FUNÇÃO 3
   generate-doses.ts                  ← FUNÇÃO 4 (maxDuration: 60)
   notify.ts                          ← FUNÇÃO 5 (maxDuration: 60)
-  share.ts                           ← FUNÇÃO 6
+  report.ts                          ← FUNÇÃO 6 (relatório PDF; lógica em _report/)
   telegram.ts                        ← FUNÇÃO 7 (maxDuration: 10)
 ```
 
 ---
 
-*Última atualização: 2026-07-09*
+*Última atualização: 2026-10-03*

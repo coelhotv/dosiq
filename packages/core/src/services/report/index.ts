@@ -1,5 +1,5 @@
 /**
- * Relatório clínico (spec 097) — coletor, montador e tipos. Template HTML entra no Slice A2.
+ * Relatório clínico (spec 097) — coletor, montador, tipos e o template HTML único.
  */
 export * from './reportTypes'
 export { buildReportWindow, createReportCollector, parseEmergencyCard, type CreateReportCollectorDeps } from './reportCollector'
@@ -13,3 +13,15 @@ export type { ReportHeader, VisitItem, VisitItemKind } from './reportSections/he
 export { STOCK_SOON_DAYS } from './reportSections/stock'
 export { FOR_THIS_VISIT_MAX } from './reportSections/header'
 export { formatCycleDoseLabel } from './reportFormat'
+export { renderReportFooter, renderReportHtml, reportFileBaseName } from './reportTemplate'
+export { escapeAttr, escapeHtml } from './reportHtmlEscape'
+export {
+  REPORT_ERROR_CODES,
+  REPORT_EVENT_KEYS,
+  reportSectionsOf,
+  reportSizeBucket,
+  toReportEventPayload,
+  type ReportErrorCode,
+  type ReportEventKey,
+  type ReportEventPayload,
+} from './reportAnalytics'

@@ -6,14 +6,17 @@
  * partir do fim previsto da anterior (`duration_days`). Cada degrau carrega o próprio medicamento
  * (R-299: escada cross-medicamento troca de cadastro no meio).
  */
+import { formatMedicineConcentration } from '../../../utils/doseUnit'
 import { formatStepDose, localDayOf, medicineOf, shiftDay, treatmentName } from '../reportFormat'
-import type { ReportInputs, ReportProtocolRow, ReportTitrationStepRow } from '../reportTypes'
+import type { ReportInputs, ReportMedicineRow, ReportProtocolRow, ReportTitrationStepRow } from '../reportTypes'
 
 export type LadderStepState = 'completed' | 'current' | 'planned'
 
 export interface LadderStep {
   position: number
   doseLabel: string
+  /** Medicamento do degrau ("Mounjaro · 5 mg"); só quando a escada usa mais de um cadastro. */
+  medicineLabel: string | null
   /** `null` = contínua (última etapa sem fim). */
   durationDays: number | null
   state: LadderStepState
@@ -51,7 +54,17 @@ function _protocolOfLadder(steps: ReportTitrationStepRow[], protocols: ReportPro
   return null
 }
 
-/** Uma escada por titulação ligada a um tratamento do usuário. Escada vazia não entra. */
+function _medicineLabel(medicine: ReportMedicineRow | null): string | null {
+  if (!medicine) return null
+  // Mesmo rótulo de concentração da tabela de medicamentos ("5 mg / 0,5 mL").
+  const strength = formatMedicineConcentration(medicine)
+  return strength ? `${medicine.name} · ${strength}` : medicine.name
+}
+
+/**
+ * Uma escada por titulação ligada a um tratamento do usuário. Escada de uma etapa só não é
+ * titulação (é uma dose) e não entra (smoke 097 A2).
+ */
 export function buildLadders(inputs: ReportInputs): Ladder[] {
   const byTitration = new Map<string, ReportTitrationStepRow[]>()
   for (const step of inputs.titrationSteps) {
@@ -62,16 +75,20 @@ export function buildLadders(inputs: ReportInputs): Ladder[] {
 
   const ladders: Ladder[] = []
   for (const [titrationId, raw] of byTitration) {
+    if (raw.length < 2) continue
     const ordered = [...raw].sort((a, b) => a.position - b.position)
     const protocol = _protocolOfLadder(ordered, inputs.protocols)
     if (!protocol) continue
     const protoMedicine = medicineOf(protocol, inputs.medicines)
+    // Troca de cadastro no meio da escada (ex.: caneta de outra concentração): cada degrau diz qual
+    // medicamento usa (smoke 097 A2).
+    const medicineIds = new Set(ordered.map((st) => st.medicine_id ?? protocol.medicine_id))
+    const showMedicine = medicineIds.size > 1
 
     let prevEnd: string | null = null
     const steps: LadderStep[] = ordered.map((step, index) => {
       const stepMedicine = inputs.medicines.find((m) => m.id === step.medicine_id) ?? protoMedicine
       const dose = formatStepDose(step, protocol, stepMedicine) ?? '-'
-      const cross = stepMedicine && protoMedicine && stepMedicine.id !== protoMedicine.id
       const duration = Number(step.duration_days)
       const durationDays = Number.isFinite(duration) && duration > 0 ? duration : null
       const startedDay = localDayOf(step.started_at, inputs.timezone)
@@ -81,7 +98,8 @@ export function buildLadders(inputs: ReportInputs): Ladder[] {
       prevEnd = end
       return {
         position: index + 1,
-        doseLabel: cross ? `${stepMedicine.name} · ${dose}` : dose,
+        doseLabel: dose,
+        medicineLabel: showMedicine ? _medicineLabel(stepMedicine) : null,
         durationDays,
         state: _state(step),
         start,

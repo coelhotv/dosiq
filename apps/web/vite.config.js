@@ -30,8 +30,10 @@ export default defineConfig(({ mode }) => {
               ...(bypassSecret
                 ? {
                     headers: {
+                      // Só o header, a cada requisição. `x-vercel-set-bypass-cookie` faria a Vercel
+                      // responder 307 + cookie `Secure`, que o navegador rejeita fora de localhost
+                      // (celular via IP da rede) → loop de redirect e fetch falha (smoke 097 A2).
                       'x-vercel-protection-bypass': bypassSecret,
-                      'x-vercel-set-bypass-cookie': 'true',
                     },
                   }
                 : {}),
@@ -71,7 +73,6 @@ export default defineConfig(({ mode }) => {
           'vendor-framer': ['framer-motion'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-virtuoso': ['react-virtuoso'],
-          'vendor-pdf': ['jspdf', 'html2canvas'],
 
           // Feature chunks — carregados apenas quando a view é acessada
           'feature-history': [
