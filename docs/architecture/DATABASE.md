@@ -12,7 +12,7 @@ tags:
   - supabase
   - postgresql
 created_at: "2026-02-01"
-updated_at: "2026-06-01"
+updated_at: "2026-10-03"
 ---
 
 # 🗄️ Esquema do Banco de Dados
@@ -314,6 +314,9 @@ pelo helper `resolveInstanceMedicine` (`@dosiq/core`). Ver [DOSE_INSTANCES.md](D
 | `presentation` | `text` | Yes | `'comprimido'::text` |
 | `shelf_life_days` | `integer` | Yes | `None` |
 | `concentration_volume_ml` | `numeric` | Yes | `None` |
+| `archived_at` | `timestamp with time zone` | Yes | `None` |
+
+> **Excluir = arquivar** (spec 094, ADR-106/CON-039). `DELETE` de cliente vira `archived_at = now()` (trigger `BEFORE DELETE`); bloqueado com `DQ941` se houver tratamento não arquivado ou etapa de escada viva. Lotes de `stock` ficam. Superfície viva filtra `archived_at IS NULL`; histórico não filtra.
 
 ---
 
@@ -392,6 +395,9 @@ pelo helper `resolveInstanceMedicine` (`@dosiq/core`). Ver [DOSE_INSTANCES.md](D
 | `paused_at` | `timestamp with time zone` | Yes | `None` |
 | `critical_alarm` | `boolean` | No | `false` |
 | `intake_unit` | `text` | Yes | `None` |
+| `archived_at` | `timestamp with time zone` | Yes | `None` |
+
+> **Excluir = arquivar** (spec 094, ADR-106/CON-039). `DELETE` de cliente vira `archived_at = now()` + `active = false` e remove só as `dose_instances` `pending`/`skipped_paused` futuras; passado, adesão e escada ficam. `CHECK (archived_at IS NULL OR active = false)`; arquivado é terminal (`DQ942`). DELETE efetivo (e os `ON DELETE CASCADE` das tabelas de fatos) só na exclusão de conta — GUC `dosiq.hard_delete` dentro de `_delete_user_account_core`.
 
 ---
 

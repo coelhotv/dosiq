@@ -7,6 +7,31 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Excluir tratamento ou medicamento não apaga mais o histórico (spec 094)
+
+- **Backend** (banco — migração `20261002_archive_on_delete.sql`, aplicada junto do deploy web).
+  Excluir um tratamento ou um medicamento passa a **arquivá-lo**: ele some das listas, do Hoje, do
+  estoque, dos seletores, do bot (inclusive dos alertas de estoque e de validade de lote) e do contexto
+  do assistente, mas as doses já registradas, as
+  perdidas, as puladas e a adesão do período continuam iguais no histórico, no calendário e no
+  relatório. Antes, excluir apagava em cascata as doses agendadas e a adesão do tratamento (e, ao
+  excluir o medicamento, também as tomadas). As próximas doses do tratamento excluído são canceladas
+  e não geram lembrete. A evolução de dose (titulação) dele fica parada como histórico. Vale para
+  qualquer versão do app, inclusive as antigas: o banco converte a exclusão em arquivamento.
+  Tratamento excluído não pode ser retomado. Apagar de fato todos os dados continua sendo pela
+  exclusão da conta, que segue eliminando tudo, inclusive o que foi arquivado.
+- **Web** (`patch` — correção; `4.27.0` → `4.27.1`). Excluir medicamento passa a ser bloqueado
+  enquanto ele tiver tratamento (como já era no app), e os avisos de exclusão dizem o que acontece
+  de fato. O relatório de 7 dias passa a calcular a adesão pelas doses registradas, como os de 30 e
+  90 dias.
+- **Mobile** (`patch` — correção, só JS; **sem bump neste PR**: entra no pacote de loja `0.34.0`;
+  canal: build de loja, R-314). Lista de tratamentos e detalhe do medicamento deixam de mostrar o que
+  foi excluído; excluir medicamento deixa de ser bloqueado por evolução de dose já concluída ou de
+  tratamento excluído; avisos de exclusão atualizados. Em versões anteriores à `0.34.0`, o histórico
+  já fica protegido, mas o tratamento excluído aparece como inativo e o medicamento excluído continua
+  na lista até atualizar. Store note: "Excluir tratamento ou medicamento não apaga mais o histórico
+  de doses".
+
 ### Crash de OTA chega simbolizado no Sentry
 
 - **Mobile** (`patch` — observabilidade, sem mudança de comportamento para o usuário; **sem bump**:
@@ -152,9 +177,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   "Estoque Baixo" volta a aparecer no Hoje quando um remédio tem 7 dias ou menos, com os mesmos
   dias mostrados na aba Estoque, e tocar nele abre o estoque daquele remédio. A densidade escolhida (simples ou completa) passa a valer na aba
   Tratamentos e aparece marcada nas Configurações — antes era ignorada.
-- **Backend** (banco). Toda conta nova já nasce com as configurações salvas. Excluir um tratamento
-  leva junto a evolução de dose que era só dele, em vez de deixá-la solta. Quem tem evolução de
-  dose (titulação) voltou a conseguir excluir a conta — a exclusão falhava por inteiro.
+- **Backend** (banco). Toda conta nova já nasce com as configurações salvas. Quem tem evolução de
+  dose (titulação) voltou a conseguir excluir a conta — a exclusão falhava por inteiro. (A limpeza
+  da evolução ao excluir um tratamento foi substituída pela 094: a evolução agora fica como
+  histórico.)
 
 ### Sair da conta apaga o que é seu do aparelho; conta excluída não fica aberta
 

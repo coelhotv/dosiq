@@ -78,7 +78,7 @@ vi.mock('@dosiq/core', async () => ({
   resolveUserTz: vi.fn(async () => 'America/Sao_Paulo'),
 }));
 
-import { _applyTitrationPlan } from '../reminders/titrationAlerts.js';
+import { _applyTitrationPlan, isTitrationArchived } from '../reminders/titrationAlerts.js';
 
 const PLAN_DOSE_CHANGE = {
   transition: 'dose_change',
@@ -228,5 +228,34 @@ describe('_applyTitrationPlan — medicine_switch não encerra a vigente', () =>
     expect(writes.some((w) => w.payload?.status === 'completed')).toBe(false);
     expect(writes.some((w) => w.table === 'protocols')).toBe(false); // dose intocada
     expect(ok).toBe(true);
+  });
+});
+
+// 094 (C1.5 G2): tratamento excluído (arquivado) — a escada congela como histórico.
+describe('094 — escada de tratamento arquivado', () => {
+  it('resync nunca regera doses de protocolo arquivado (INV-3)', async () => {
+    protocolFetchResult = { data: { id: 'proto-1', user_id: 'u1', archived_at: '2026-10-01T12:00:00Z' }, error: null };
+    await _applyTitrationPlan('u1', 'tit-1', PLAN_DOSE_CHANGE, new Map(), 'c1');
+    expect(mockResync).not.toHaveBeenCalled();
+  });
+
+  it('isTitrationArchived: todo executor vinculado arquivado ⇒ morta', () => {
+    const archived = { protocol: { archived_at: '2026-10-01T12:00:00Z' } };
+    expect(isTitrationArchived([
+      { protocol_id: 'p1', ...archived },
+      { protocol_id: null }, // etapa futura sem vínculo não segura a escada
+    ])).toBe(true);
+  });
+
+  it('isTitrationArchived: algum executor vivo ⇒ viva', () => {
+    expect(isTitrationArchived([
+      { protocol_id: 'p1', protocol: { archived_at: '2026-10-01T12:00:00Z' } },
+      { protocol_id: 'p2', protocol: { archived_at: null } },
+    ])).toBe(false);
+  });
+
+  it('isTitrationArchived: sem executor vinculado ⇒ não decide (viva)', () => {
+    expect(isTitrationArchived([{ protocol_id: null }])).toBe(false);
+    expect(isTitrationArchived([])).toBe(false);
   });
 });

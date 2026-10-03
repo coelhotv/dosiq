@@ -11,7 +11,7 @@ async function fetchMedicines(userId, medicineName = null) {
     .from('medicines')
     .select('id, name, dosage_unit');
 
-  query = query.eq('user_id', userId);
+  query = query.eq('user_id', userId).is('archived_at', null); // 094: arquivado fora dos seletores
 
   if (medicineName) {
     query = query.ilike('name', `%${medicineName}%`);

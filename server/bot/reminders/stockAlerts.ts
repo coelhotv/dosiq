@@ -213,11 +213,14 @@ export async function _scanStockAlertCandidates(users, correlationId) {
   // validade (1 alerta por lote). Sem ele o `subject_id` viria `undefined`, todas as linhas do
   // dia colidiriam na UNIQUE como `(user, kind, dia, NULL)` e o usuário receberia UM alerta de
   // validade em vez de N — exatamente o Gap 1 que a spec 050 existe para fechar.
-  const allStock = await _fetchAllPagesByUsers(
+  // 094: medicamento excluído é ARQUIVADO e seus lotes ficam (antes o CASCADE os apagava). O eixo
+  // de validade não passa por protocolo — sem este filtro, lote aberto de remédio excluído ainda
+  // geraria "vence em 3 dias". Filtra na origem: vale para volume e validade, legado e outbox.
+  const allStock = (await _fetchAllPagesByUsers(
     'stock',
-    'id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)',
+    'id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill, archived_at)',
     userIds
-  );
+  )).filter((lot) => lot?.medicine?.archived_at == null);
 
   const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);
   logger.info('Varredura de candidatos a alerta de estoque concluída', {

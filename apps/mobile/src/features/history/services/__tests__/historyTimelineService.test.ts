@@ -221,6 +221,32 @@ describe('mapToMobileShape', () => {
   })
 })
 
+// ─── 094 PO-4: tratamento excluído (arquivado) segue no histórico ─────────────
+
+describe('094 — histórico com tratamento arquivado', () => {
+  const ARCHIVED = { ...PROTOCOL, active: false, archived_at: '2026-10-01T12:00:00Z' }
+
+  test('buildProtocolsById NÃO filtra archived_at (leitor de histórico)', async () => {
+    const chain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValue({ data: [ARCHIVED], error: null }),
+    }
+    jest.mocked(supabase.from).mockReturnValue(chain as any)
+    const result = await buildProtocolsById('user-1')
+    expect(result).toEqual({ p1: ARCHIVED })
+    expect(chain).not.toHaveProperty('is')
+  })
+
+  test('dose de tratamento arquivado renderiza igual à de antes da exclusão', () => {
+    const [before] = mapToMobileShape([DOSE_EVENT], { p1: PROTOCOL })
+    const [after] = mapToMobileShape([DOSE_EVENT], { p1: ARCHIVED })
+    expect(after).toEqual(before)
+    expect(after.medicine_name).toBe('Metformina')
+    expect(after.status).toBe('taken')
+    expect(after.scheduled_for).toBe('2026-06-16T11:00:00Z')
+  })
+})
+
 // ─── getHistoryTimeline ───────────────────────────────────────────────────────
 
 describe('getHistoryTimeline', () => {

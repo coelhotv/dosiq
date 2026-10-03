@@ -118,6 +118,8 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
         )
       `)
         .eq('user_id', userId)
+        // 094/CON-038: arquivado não é estoque vivo (some de estoque e seletores).
+        .is('archived_at', null)
         .order('name')
 
       if (error) throw error

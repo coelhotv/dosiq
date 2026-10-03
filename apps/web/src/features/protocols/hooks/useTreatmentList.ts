@@ -31,6 +31,8 @@ export function useTreatmentList() {
         .from('protocols')
         .select('*, medicine:medicines(*), treatment_plan:treatment_plans(id, name, emoji, color)')
         .eq('user_id', userId)
+        // 094/CON-038: excluir = arquivar; arquivado sai da lista (aba pausado inclusa).
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
       if (pErr) throw pErr
 

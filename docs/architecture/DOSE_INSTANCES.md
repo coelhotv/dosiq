@@ -180,6 +180,7 @@ Lógica pura compartilhada em `@dosiq/core`:
 | Pausar (`active=false`) | Marca pendentes das próximas 24h como `skipped_paused` + `paused_at` (trabalho leve) |
 | Pausado > 1 dia (cron) | Wipe do future pending restante |
 | Religar | HWM regenera JIT na próxima leitura |
+| Excluir tratamento (094 — arquiva) | Trigger do banco: `archived_at`+`active=false`; remove `pending`/`skipped_paused` com `scheduled_for > now`; passado fica. Arquivado nunca religa (`DQ942`) |
 | Leitura crítica (dashboard/scheduler) | Se `generated_through < now` → gera o gap on-the-fly |
 | Backfill (one-shot, escopado por `userId`) | Materializa o passado + casa logs; órfão = round-down |
 
@@ -326,6 +327,9 @@ A âncora original fica **travada** (Q-E): editar `taken_at` não re-ancora; rea
    não cai no snap se falhar (AP-193).
 5. **Builder/adapter/zonas são puros** (sem I/O); só services tocam o client. Reuso core (R-231).
 6. **Janela em UTC real**; tz só deriva dia local. Armazenar IANA, DST por nome.
+7. **Excluir não apaga fato** (094, ADR-106/CON-039): `DELETE` de cliente em `protocols`/`medicines` vira
+   arquivamento — as instâncias passadas e a adesão do tratamento excluído continuam. Só a exclusão de
+   conta apaga (GUC `dosiq.hard_delete`). Leitor de fato não filtra `archived_at`; superfície viva filtra.
 
 ---
 

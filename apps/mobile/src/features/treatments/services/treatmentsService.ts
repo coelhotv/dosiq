@@ -121,6 +121,8 @@ export async function getAllTreatments(userId) {
         )
       `)
       .eq('user_id', userId)
+      // 094/CON-038: excluir = arquivar; arquivado sai da lista (pausado/encerrado continuam).
+      .is('archived_at', null)
       .order('name')
 
     if (error) {

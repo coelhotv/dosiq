@@ -15,6 +15,7 @@ const { mockSupabase } = vi.hoisted(() => {
     from: vi.fn(function (this: any, table: string) { m._tables.push(table); return this; }),
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(() => Promise.resolve(mockDataQueue.shift() || { data: null, error: null })),
     then: vi.fn((onFulfilled: any) =>

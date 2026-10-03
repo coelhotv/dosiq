@@ -308,6 +308,20 @@ describe('enqueueStockAlerts — fan-out do stock_alert (050 PR 1b)', () => {
       expect(repo.inserted).toHaveLength(1); // nenhuma nova — UNIQUE (user, kind, dia, lote)
     });
 
+    it('094: lote D-3 de medicamento EXCLUÍDO (arquivado) não alerta; o do vivo alerta', async () => {
+      // Excluir medicamento arquiva e mantém os lotes (antes o CASCADE os apagava). O eixo de
+      // validade não passa por protocolo — o filtro tem de estar na varredura.
+      const archivedLot = lotFor('lote-arq', MEDS[1], 3);
+      archivedLot.medicine = { ...archivedLot.medicine, archived_at: '2026-08-19T12:00:00Z' } as any;
+      queueFetches([userRow()], [protocolFor(MEDS[0])], [lotFor('lote-vivo', MEDS[0], 3), archivedLot]);
+      const repo = makeRepo();
+
+      const result = await enqueueStockAlerts({ repo, kinds: KINDS_BOTH, now: NOW });
+
+      expect(result.attemptedExpiry).toBe(1);
+      expect(repo.inserted.map((e: any) => e.subjectId)).toEqual(['lote-vivo']);
+    });
+
     it('fora da cadência (D-5, D-1, vencido há dias) e lote consumido → 0 linhas', async () => {
       queueFetches(
         [userRow()],

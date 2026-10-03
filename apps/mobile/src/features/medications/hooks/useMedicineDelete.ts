@@ -16,6 +16,19 @@ import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 import { medicineService } from '../services/medicineService'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
 
+// 094/CON-038: excluir medicamento ARQUIVA no banco. O banco recusa (DQ941) quando ainda há
+// tratamento não arquivado ou etapa por vir de escada viva — mesma regra do precheck abaixo.
+export const MEDICINE_IN_USE_CODE = 'DQ941'
+export const MEDICINE_IN_USE_MESSAGE =
+  'Este medicamento ainda tem tratamento ou evolução em andamento. Exclua o tratamento antes.'
+
+// Escada viva = alguma etapa ligada a tratamento NÃO arquivado (espelha o trigger do banco).
+function isLiveTitration(step) {
+  const siblings = step?.titration?.titration_steps
+  if (!Array.isArray(siblings)) return true // sem a escada carregada: conservador (bloqueia)
+  return siblings.some((s) => s?.protocol_id != null && s?.protocol?.archived_at == null)
+}
+
 const MEDICINES_CACHE_KEY = '@dosiq/medicines-snapshot'
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
@@ -26,7 +39,7 @@ const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
  * e, com controle de estoque ligado, stock > 0). Quando passa o pre-check:
  *   - sem protocols → nada em treatments-snapshot/today-snapshot
  * MAS no modo dose-only (stockTrackingEnabled=false) o estoque deixa de bloquear:
- * o CASCADE do FK apaga lotes que podiam estar no snapshot. Logo invalida:
+ * o medicamento é arquivado (094) e seus lotes saem das telas vivas. Logo invalida:
  *   - @dosiq/medicines-snapshot
  *   - @dosiq/stock-snapshot
  *
@@ -39,7 +52,9 @@ export function useMedicineDelete(medicine, stockTrackingEnabled = true) {
   const [isLoading, setIsLoading] = useState(false)
 
   const preCheck = useMemo(() => {
-    const protocols = Array.isArray(medicine?.protocols) ? medicine.protocols : []
+    // 094: tratamento arquivado (excluído) nunca bloqueia — é histórico.
+    const protocols = (Array.isArray(medicine?.protocols) ? medicine.protocols : [])
+      .filter((p) => p?.archived_at == null)
     const stock = Array.isArray(medicine?.stock) ? medicine.stock : []
 
     const stockUnits = stock.reduce((acc, s) => acc + (Number(s?.quantity) || 0), 0)
@@ -51,8 +66,11 @@ export function useMedicineDelete(medicine, stockTrackingEnabled = true) {
     // nem em `stock`, o precheck liberava, e a exclusão morria no FK
     // `titration_steps_medicine_id_fkey` (sem ON DELETE ⇒ RESTRICT) com `23503` cru na cara do
     // usuário. Bloquear ANTES é o §7.3: "nunca beco sem saída" (Constituição IX).
-    // Etapas já `completed` também contam: apagar o medicamento apagaria o histórico da escada.
-    const titrationSteps = Array.isArray(medicine?.titration_steps) ? medicine.titration_steps : []
+    // (Antes da 094 as `completed` também contavam porque o DELETE apagava a escada; arquivar não apaga.)
+    // 094 (C1.5 G5a): etapa já concluída, ou de escada cujo tratamento foi excluído, é histórico —
+    // não bloqueia (senão excluir o tratamento deixaria o medicamento num beco sem saída).
+    const titrationSteps = (Array.isArray(medicine?.titration_steps) ? medicine.titration_steps : [])
+      .filter((s) => s?.status !== 'completed' && isLiveTitration(s))
 
     // 044 F3: no modo dose-only o estoque é superfície invisível — o sheet de bloqueio
     // esconde o card de estoque, então bloquear por `stockUnits > 0` produzia um beco sem
@@ -85,7 +103,8 @@ export function useMedicineDelete(medicine, stockTrackingEnabled = true) {
       return true
     } catch (err) {
       errorHaptic()
-      show(err?.message ?? 'Erro ao remover medicamento', { variant: 'error' })
+      const inUse = err?.code === MEDICINE_IN_USE_CODE || err?.message === 'medicine_in_use'
+      show(inUse ? MEDICINE_IN_USE_MESSAGE : (err?.message ?? 'Erro ao remover medicamento'), { variant: 'error' })
       return false
     } finally {
       setIsLoading(false)

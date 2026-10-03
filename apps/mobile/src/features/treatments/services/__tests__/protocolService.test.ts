@@ -37,6 +37,8 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
           return {
             order: orderMock,
             eq: eqActive2Mock,
+            // 094: getAll filtra archived_at IS NULL antes do order
+            is: jest.fn(() => ({ order: orderMock })),
           }
         }
         if (field === 'id') {
@@ -45,7 +47,7 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
         }
         if (field === 'medicine_id') {
           // getByMedicineId: medicine_id→user_id
-          return { eq: eqByMedInnerMock }
+          return { eq: (...args) => ({ is: () => eqByMedInnerMock(...args) }) }
         }
         return {}
       }),

@@ -183,12 +183,17 @@ export function createProtocolRepository({
   }
 
   return {
+    /**
+     * Superfície viva: tratamentos não arquivados (ativos, pausados, encerrados). 094/CON-038 —
+     * excluir arquiva no banco; arquivado só aparece nos leitores de fato (dose_instances/logs).
+     */
     async getAll() {
       const userId = await getUserId()
       const { data, error } = await client
         .from('protocols')
         .select(listSelect)
         .eq('user_id', userId)
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -237,6 +242,7 @@ export function createProtocolRepository({
         .select('*')
         .eq('medicine_id', medicineId)
         .eq('user_id', userId)
+        .is('archived_at', null)
 
       if (error) throw error
       return data ?? []

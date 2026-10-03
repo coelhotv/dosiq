@@ -19,6 +19,7 @@ function makeBuilder(result: any) {
     update: vi.fn(function (...args) { this._calls.push(['update', args]); return this }),
     delete: vi.fn(function (...args) { this._calls.push(['delete', args]); return this }),
     eq:     vi.fn(function (...args) { this._calls.push(['eq', args]); return this }),
+    is:     vi.fn(function (...args) { this._calls.push(['is', args]); return this }),
     lte:    vi.fn(function (...args) { this._calls.push(['lte', args]); return this }),
     or:     vi.fn(function (...args) { this._calls.push(['or', args]); return this }),
     order:  vi.fn(function (...args) { this._calls.push(['order', args]); return this }),
@@ -84,6 +85,7 @@ describe('createProtocolRepository — parity', () => {
       expect(calls).toEqual([
         ['select', [expect.stringContaining('medicine:medicines')]],
         ['eq', ['user_id', FAKE_USER]],
+        ['is', ['archived_at', null]],
         ['order', ['created_at', { ascending: false }]],
       ])
     })
