@@ -23,6 +23,7 @@ export default createReportHandler({
   renderPdf,
   warmUp,
   rateLimiter: createRateLimiter({ max: 5, windowMs: 60_000 }),
+  warmLimiter: createRateLimiter({ max: 10, windowMs: 60_000 }),
   // Instante UTC bruto: o dia local do usuário vem do corpo (`to`) e do fuso de user_settings.
   now: getRawNow,
 })

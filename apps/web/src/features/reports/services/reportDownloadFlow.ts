@@ -35,11 +35,17 @@ export interface ReportFile {
   filename: string
 }
 
-/** Sobe o Chromium do servidor enquanto o usuário escolhe o período (sem dado, sem auth). */
+/** Sobe o Chromium do servidor enquanto o usuário escolhe o período (sem dado; exige sessão). */
 export function warmReportEndpoint(): void {
-  fetch(`${ENDPOINT}?warm=1`).catch(() => {
-    // Aquecimento é otimização; falha aqui não aparece para o usuário.
-  })
+  supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      const token = data.session?.access_token
+      if (token) return fetch(`${ENDPOINT}?warm=1`, { headers: { Authorization: `Bearer ${token}` } })
+    })
+    .catch(() => {
+      // Aquecimento é otimização; falha aqui não aparece para o usuário.
+    })
 }
 
 function filenameFrom(header: string | null, days: ReportPeriodDays, to: string): string {

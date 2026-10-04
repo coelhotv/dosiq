@@ -157,7 +157,8 @@ export function buildReportModel(original: ReportInputs, { generatedAt }: { gene
     forThisVisit: buildForThisVisit(medications, stock, ladders, asOf),
     medications,
     intakes,
-    changes: buildChanges(inputs, intakes, ladders),
+    // Mudanças são fatos datados: valem no período PEDIDO, não só no trecho com registro (RC6 #857).
+    changes: buildChanges({ ...inputs, window: original.window }, intakes, ladders),
     ladders,
     stock,
   }

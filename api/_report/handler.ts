@@ -4,7 +4,8 @@
  * Regras (vinculantes):
  * - Dados lidos com o JWT de QUEM CHAMA (chave anon + `Authorization`): a RLS do próprio usuário vale.
  *   Nunca service role.
- * - `GET ?warm=1` só sobe o Chromium (pré-aquecimento ao abrir a tela): sem auth, sem I/O de dado.
+ * - `GET ?warm=1` só sobe o Chromium (pré-aquecimento ao abrir a tela): exige o header Bearer (sem
+ *   validar — validar seria I/O) e tem limite por IP, para não virar gatilho anônimo de custo (RC6 #857).
  * - Mesmo coletor/montador/template do `@dosiq/core` que o resto do app — nada é calculado aqui.
  * - Nada é guardado. Erro responde e loga só o código da etapa (PO-SEC-5), nunca conteúdo.
  */
@@ -31,6 +32,8 @@ export interface ReportHandlerDeps {
   renderPdf: (html: string, footer: string) => Promise<Uint8Array>
   warmUp: () => Promise<void>
   rateLimiter: RateLimiter
+  /** Limite do `?warm` por IP. */
+  warmLimiter: RateLimiter
   now: () => Date
 }
 
@@ -52,16 +55,27 @@ function parseBody(body: unknown, now: Date): { days: ReportPeriodDays; to: stri
   return { days: days as ReportPeriodDays, to }
 }
 
+function clientIp(req: VercelRequest): string {
+  const fwd = req.headers?.['x-forwarded-for']
+  const first = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim()
+  return first || 'unknown'
+}
+
+async function warm(req: VercelRequest, res: VercelResponse, deps: ReportHandlerDeps) {
+  const bearer = req.headers?.authorization
+  if (typeof bearer !== 'string' || !bearer.startsWith('Bearer ')) return res.status(401).json({ error: 'unauthorized' })
+  if (!deps.warmLimiter.take(`warm:${clientIp(req)}`)) return res.status(429).json({ error: 'too_many_requests' })
+  try {
+    await deps.warmUp()
+  } catch {
+    // Aquecimento é otimização: falhar aqui não pode virar erro na tela.
+  }
+  return res.status(204).end()
+}
+
 export function createReportHandler(deps: ReportHandlerDeps) {
   return async function handler(req: VercelRequest, res: VercelResponse) {
-    if (req.method === 'GET' && req.query?.warm) {
-      try {
-        await deps.warmUp()
-      } catch {
-        // Aquecimento é otimização: falhar aqui não pode virar erro na tela.
-      }
-      return res.status(204).end()
-    }
+    if (req.method === 'GET' && req.query?.warm) return warm(req, res, deps)
     if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' })
 
     const auth = req.headers?.authorization

@@ -86,9 +86,14 @@ function PeriodPanel({ period, isGenerating, onPeriodChange }: { period: PeriodD
  */
 type ReportFileT = import('@/features/reports/services/reportDownloadFlow').ReportFile
 
-// Uma importação só por sessão: o aquecimento e o clique compartilham a mesma promessa.
+// Uma importação só por sessão: o aquecimento e o clique compartilham a mesma promessa. Falha não
+// fica guardada — a próxima tentativa importa de novo (offline → online, RC6 #857).
 let flowPromise: Promise<typeof import('@/features/reports/services/reportDownloadFlow')> | null = null
-const loadFlow = () => (flowPromise ??= import('@/features/reports/services/reportDownloadFlow'))
+const loadFlow = () =>
+  (flowPromise ??= import('@/features/reports/services/reportDownloadFlow').catch((err: unknown) => {
+    flowPromise = null
+    throw err
+  }))
 
 /** Mensagem simples por código (nunca o detalhe técnico — FR-016). */
 function errorMessage(code: string | undefined): string {

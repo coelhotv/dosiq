@@ -75,10 +75,17 @@ describe('reportDownloadFlow', () => {
     expect((err as ReportFlowError).code).toBe('collect')
   })
 
-  it('warm dispara GET sem auth e engole falha', async () => {
+  it('warm dispara GET com o JWT da sessão e engole falha', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('x')))
     expect(() => warmReportEndpoint()).not.toThrow()
-    expect(fetch).toHaveBeenCalledWith('/api/report?warm=1')
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/report?warm=1', { headers: { Authorization: 'Bearer jwt-a' } }))
+  })
+
+  it('warm sem sessão não chama o servidor', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: null } })
+    warmReportEndpoint()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('compartilhar: cancelar não é erro; outra falha vira "share"', async () => {

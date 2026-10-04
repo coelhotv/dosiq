@@ -80,6 +80,7 @@ beforeEach(() => {
     renderPdf: vi.fn().mockResolvedValue(new Uint8Array([37, 80, 68, 70])),
     warmUp: vi.fn().mockResolvedValue(undefined),
     rateLimiter: createRateLimiter({ max: 5, windowMs: 60_000, now: () => 1_000 }),
+    warmLimiter: createRateLimiter({ max: 10, windowMs: 60_000, now: () => 1_000 }),
     now: () => new Date('2026-10-03T15:00:00Z'),
   } as typeof deps
 })
@@ -139,9 +140,26 @@ describe('api/report — PO-SEC-6', () => {
     expect(html).toContain('Relatório de acompanhamento')
   })
 
-  it('(d) GET ?warm=1 → 204 sem client nem leitura de banco', async () => {
+  it('(d) GET ?warm=1 sem Bearer → 401, sem subir o Chromium (RC6 #857)', async () => {
     const res = fakeRes()
     await createReportHandler(deps)(req({ method: 'GET', headers: {}, query: { warm: '1' }, body: undefined }) as never, res as never)
+    expect(res.statusCode).toBe(401)
+    expect(deps.warmUp).not.toHaveBeenCalled()
+  })
+
+  it('(d) GET ?warm=1 acima de 10/min do mesmo IP → 429', async () => {
+    const h = { authorization: 'Bearer x', 'x-forwarded-for': '1.2.3.4, 10.0.0.1' }
+    const handler = createReportHandler(deps)
+    for (let i = 0; i < 10; i += 1) await handler(req({ method: 'GET', headers: h, query: { warm: '1' }, body: undefined }) as never, fakeRes() as never)
+    const res = fakeRes()
+    await handler(req({ method: 'GET', headers: h, query: { warm: '1' }, body: undefined }) as never, res as never)
+    expect(res.statusCode).toBe(429)
+    expect(deps.warmUp).toHaveBeenCalledTimes(10)
+  })
+
+  it('(d) GET ?warm=1 → 204 sem client nem leitura de banco', async () => {
+    const res = fakeRes()
+    await createReportHandler(deps)(req({ method: 'GET', headers: { authorization: 'Bearer x' }, query: { warm: '1' }, body: undefined }) as never, res as never)
     expect(res.statusCode).toBe(204)
     expect(deps.warmUp).toHaveBeenCalled()
     expect(deps.createClient).not.toHaveBeenCalled()

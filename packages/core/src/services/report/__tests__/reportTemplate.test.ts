@@ -458,3 +458,18 @@ describe('doses fora das etapas registradas (smoke 097 A2)', () => {
     expect(renderReportHtml(m)).toContain('Fora das etapas registradas — Doses tomadas: 1 de 1')
   })
 })
+
+describe('mudanças no período pedido, não só no trecho com registro (RC6 #857)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  it('início de tratamento antes do 1º registro continua nas mudanças', () => {
+    const base = fixture()
+    const protocols = base.protocols.map((p) => (p.id === 'p_met' ? { ...p, start_date: '2026-08-10' } : p))
+    const m = buildReportModel({ ...base, protocols, window: { from: '2026-07-03', to: '2026-09-30', days: 90 } }, { generatedAt: GEN })
+    expect(m.header.dataWindow.from > '2026-08-10').toBe(true)
+    expect(m.changes).toContainEqual(expect.objectContaining({ kind: 'started', protocolId: 'p_met', day: '2026-08-10' }))
+  })
+})
