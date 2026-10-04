@@ -14,7 +14,7 @@ import {
   pickMeasureSeriesState,
   type TreatmentMeasureSeries,
 } from '../treatmentMeasureSeries'
-import { daysBetween, localDayOf, medicineOf } from './reportFormat'
+import { localDayOf, medicineOf } from './reportFormat'
 import type { ReportInputs, ReportWindow } from './reportTypes'
 import { buildChanges, pausedRanges, type ChangeItem } from './reportSections/changes'
 import { buildForThisVisit, buildHeader, type ReportHeader, type VisitItem } from './reportSections/header'
@@ -88,12 +88,11 @@ function _weightSeries(ladder: Ladder, inputs: ReportInputs): Pick<ReportLadder,
 }
 
 /**
- * Trecho do período com registro: começa no primeiro dia com dose prevista (tomada, perdida ou
- * pausada) ou com medida. Antes disso não havia nada no app — dia vazio ali não é falta, é ausência
- * de registro, e não entra nas faixas nem nos denominadores (smoke 097 A2). Sem registro nenhum,
- * fica o período inteiro.
+ * Primeiro dia do período com dose prevista (tomada, perdida ou pausada) ou com medida, se for
+ * depois do 1º dia do período; senão `null`. Só alimenta o aviso "registros a partir de …" do
+ * cabeçalho — o eixo das faixas e os denominadores são sempre o período inteiro (smoke 097 B).
  */
-export function dataWindowOf(inputs: ReportInputs): ReportWindow {
+export function firstRecordDayOf(inputs: ReportInputs): string | null {
   const { from, to } = inputs.window
   let first: string | null = null
   for (const r of inputs.doseDays) {
@@ -106,8 +105,7 @@ export function dataWindowOf(inputs: ReportInputs): ReportWindow {
     if (!day || day < from || day > to) continue
     if (first === null || day < first) first = day
   }
-  if (first === null || first <= from) return inputs.window
-  return { from: first, to, days: daysBetween(first, to) + 1 }
+  return first !== null && first > from ? first : null
 }
 
 function _outsideSteps(
@@ -123,8 +121,7 @@ function _outsideSteps(
   return expected > 0 ? { taken: Math.max(0, taken), expected } : null
 }
 
-export function buildReportModel(original: ReportInputs, { generatedAt }: { generatedAt: string }): ReportModel {
-  const inputs: ReportInputs = { ...original, window: dataWindowOf(original) }
+export function buildReportModel(inputs: ReportInputs, { generatedAt }: { generatedAt: string }): ReportModel {
   const asOf = inputs.window.to
   const intakes = buildIntakesSection(inputs)
   const allLadders = buildLadders(inputs)
@@ -153,12 +150,11 @@ export function buildReportModel(original: ReportInputs, { generatedAt }: { gene
   return {
     generatedAt,
     timezone: inputs.timezone,
-    header: { ...buildHeader(inputs, intakes), window: original.window, dataWindow: inputs.window },
+    header: { ...buildHeader(inputs, intakes), recordsFrom: firstRecordDayOf(inputs) },
     forThisVisit: buildForThisVisit(medications, stock, ladders, asOf),
     medications,
     intakes,
-    // Mudanças são fatos datados: valem no período PEDIDO, não só no trecho com registro (RC6 #857).
-    changes: buildChanges({ ...inputs, window: original.window }, intakes, ladders),
+    changes: buildChanges(inputs, intakes, ladders),
     ladders,
     stock,
   }

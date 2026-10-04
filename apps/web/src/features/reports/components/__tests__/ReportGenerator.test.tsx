@@ -31,10 +31,10 @@ describe('ReportGenerator', () => {
     await waitFor(() => expect(mocks.warmReportEndpoint).toHaveBeenCalledTimes(1))
   })
 
-  it('oferece só 7/30/90/180 dias, padrão 30, sem "Todo o período" nem link', () => {
+  it('oferece só 7/30/90 dias, padrão 30, sem "Todo o período" nem link', () => {
     render(<ReportGenerator />)
     const select = screen.getByLabelText('Período') as HTMLSelectElement
-    expect([...select.options].map((o) => o.value)).toEqual(['7', '30', '90', '180'])
+    expect([...select.options].map((o) => o.value)).toEqual(['7', '30', '90'])
     expect(select.value).toBe('30')
     expect(screen.queryByText('Todo o período')).toBeNull()
     expect(screen.queryByText(/72 horas|Copiar/)).toBeNull()

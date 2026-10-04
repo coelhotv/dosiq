@@ -65,11 +65,16 @@ describe('HealthConsentCheckbox', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('abre a política via Linking.openURL', () => {
+  it('abre a política no visualizador do app, sem sair para o navegador (097 B-1)', () => {
     render(<HealthConsentCheckbox checked={false} onChange={jest.fn()} />)
 
     fireEvent.press(screen.getByText('Ver política de privacidade'))
 
-    expect(openURLSpy).toHaveBeenCalledWith('https://dosiq.app/politica-de-privacidade')
+    expect(screen.getByTestId('document-viewer-webview').props.source).toEqual({
+      uri: 'https://dosiq.app/politica-de-privacidade',
+    })
+    expect(openURLSpy).not.toHaveBeenCalled()
+    fireEvent.press(screen.getByLabelText('Fechar'))
+    expect(screen.queryByTestId('document-viewer-webview')).toBeNull()
   })
 })

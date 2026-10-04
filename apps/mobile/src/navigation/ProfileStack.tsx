@@ -13,6 +13,7 @@ import NotificationInboxScreen from '../features/notifications/screens/Notificat
 import FeedbackScreen from '../features/profile/screens/FeedbackScreen'
 import HistoryScreen from '../features/history/screens/HistoryScreen'
 import MeasuresScreen from '../features/measures/screens/MeasuresScreen'
+import ReportScreen from '../features/reports/screens/ReportScreen'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
 const Stack = createStackNavigator<any>()
@@ -35,6 +36,8 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.FEEDBACK} component={FeedbackScreen} />
       <Stack.Screen name={ROUTES.DOSE_HISTORY} component={HistoryScreen} />
       <Stack.Screen name={ROUTES.MEASURES} component={MeasuresScreen} />
+      {/* Spec 097 Slice B — relatório clínico em PDF */}
+      <Stack.Screen name={ROUTES.CLINICAL_REPORT} component={ReportScreen} />
       {/* F4b/T017 — Settings (useStockToggle) e upsell chegam por aqui via source param */}
     </Stack.Navigator>
   )

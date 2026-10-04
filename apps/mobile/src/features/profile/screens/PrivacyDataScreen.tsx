@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import * as WebBrowser from 'expo-web-browser'
+import DocumentViewer from '@shared/components/ui/DocumentViewer'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, ChevronRight, ShieldCheck, FileDown, TriangleAlert } = LucideIcons as any
@@ -121,6 +121,7 @@ export default function PrivacyDataScreen() {
   // usuário não ter que caçar o botão depois de pedir "exportar antes de apagar".
   const openExportParam = !!(route.params as { openExport?: boolean } | undefined)?.openExport
   const [exportSheetOpen, setExportSheetOpen] = useState(openExportParam)
+  const [policyOpen, setPolicyOpen] = useState(false)
 
   // O param é uma ORDEM, não estado da tela: consumir na chegada. Se ficar no state da
   // navegação, qualquer volta futura pra este hub (back, deep link) reabriria o sheet sozinho.
@@ -132,7 +133,8 @@ export default function PrivacyDataScreen() {
   const openExportSheet = () => setExportSheetOpen(true)
   const closeExportSheet = () => setExportSheetOpen(false)
   const goToDeleteAccount = () => (navigation.navigate as any)(ROUTES.DELETE_ACCOUNT)
-  const openPrivacyPolicy = () => WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
+  // 097 B-1: visualizador único do app (antes expo-web-browser).
+  const openPrivacyPolicy = () => setPolicyOpen(true)
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -155,6 +157,11 @@ export default function PrivacyDataScreen() {
           da vez passada silenciaria uma seção inteira do bundle sem o usuário pedir. Resetar
           por remontagem, nunca por effect (AP-285). */}
       {exportSheetOpen ? <ExportSheet visible onClose={closeExportSheet} /> : null}
+      <DocumentViewer
+        source={policyOpen ? { kind: 'web', url: EXTERNAL_URLS.PRIVACY_POLICY } : null}
+        title="Política de privacidade"
+        onClose={() => setPolicyOpen(false)}
+      />
     </SafeAreaView>
   )
 }

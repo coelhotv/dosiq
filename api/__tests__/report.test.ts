@@ -106,7 +106,7 @@ describe('api/report — PO-SEC-6', () => {
     expect(deps.collect).not.toHaveBeenCalled()
   })
 
-  it.each([[{ days: 45, to: '2026-10-03' }], [{ days: 30, to: '03/10/2026' }], [{ days: 30, to: '2026-12-25' }], [null]])(
+  it.each([[{ days: 45, to: '2026-10-03' }], [{ days: 180, to: '2026-10-03' }], [{ days: 30, to: '03/10/2026' }], [{ days: 30, to: '2026-12-25' }], [null]])(
     '(b) corpo inválido %j → 400',
     async (body) => {
       const res = fakeRes()

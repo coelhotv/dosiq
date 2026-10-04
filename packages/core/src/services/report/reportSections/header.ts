@@ -21,10 +21,12 @@ export interface ReportHeader {
   /** Período pedido (cabeçalho, rodapé, nome do arquivo). */
   window: ReportWindow
   /**
-   * Trecho com registro: do primeiro dia com dose prevista ou medida até o fim do período. Igual a
-   * `window` quando há registro desde o início. Faixas e contagens usam este (smoke 097 A2).
+   * Primeiro dia do período com dose prevista ou medida, quando é depois do início do período —
+   * informação clínica ("registros a partir de …", desde quando o paciente usa o app). `null` quando
+   * há registro desde o 1º dia ou nenhum. Só o cabeçalho usa: faixas, contagens e denominadores
+   * seguem o período inteiro (smoke 097 B, 2026-10-04 — o recorte do A2 desfeito).
    */
-  dataWindow: ReportWindow
+  recordsFrom: string | null
   allergies: string[]
   bloodType: string | null
   daysWithDose: { count: number; of: number }
@@ -59,7 +61,7 @@ export function buildHeader(inputs: ReportInputs, intakes: IntakesSection): Repo
     patientName: inputs.profile.displayName,
     age: calculateAge(inputs.profile.birthDate),
     window,
-    dataWindow: window,
+    recordsFrom: null,
     allergies: inputs.profile.allergies,
     bloodType: inputs.profile.bloodType,
     daysWithDose: { count: doseDays.size, of: window.days },
@@ -80,7 +82,7 @@ export function buildForThisVisit(
     }
   }
   for (const s of stock ?? []) {
-    if (s.soon && s.runsOutOn) items.push({ kind: 'estoque', name: s.name, day: s.runsOutOn, status: null, doseLabel: null })
+    if (s.soon && s.runsOutOn) items.push({ kind: 'estoque', name: s.label, day: s.runsOutOn, status: null, doseLabel: null })
   }
   const currentIds = new Set(medications.map((m) => m.protocolId))
   for (const ladder of ladders) {

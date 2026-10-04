@@ -45,7 +45,43 @@ describe('buildReportModel — seções do presente (INV-1)', () => {
     const met = m.stock?.find((s) => s.medicineId === 'm_met')
     expect(met).toMatchObject({ quantity: 20, dailyIntake: 2, daysRemaining: 10, runsOutOn: '2026-10-10', soon: true })
     expect(JSON.stringify(m)).not.toMatch(/price|preço|custo|R\$/i)
-    expect(m.forThisVisit).toContainEqual({ kind: 'estoque', name: 'Glifage', day: '2026-10-10', status: null, doseLabel: null })
+    expect(m.forThisVisit).toContainEqual({ kind: 'estoque', name: 'Glifage · 850 mg', day: '2026-10-10', status: null, doseLabel: null })
+  })
+
+  it('estoque: linha por cadastro com concentração e consumo no ciclo do tratamento (smoke 097 B)', () => {
+    const base = fixture()
+    const r3 = med({ id: 'm_ryb3', name: 'Rybelsus', dosage_per_pill: 3 })
+    const r7 = med({ id: 'm_ryb7', name: 'Rybelsus', dosage_per_pill: 7 })
+    const alt = med({ id: 'm_alt', name: 'Alternado', dosage_per_pill: 10 })
+    const mix = med({ id: 'm_mix', name: 'Misto', dosage_per_pill: 5 })
+    const m = buildReportModel(
+      {
+        ...base,
+        medicines: [...base.medicines, r3, r7, alt, mix],
+        protocols: [
+          ...base.protocols,
+          proto({ id: 'p_ryb', medicine_id: 'm_ryb3', frequency: 'semanal', time_schedule: ['20:30'] }),
+          proto({ id: 'p_alt', medicine_id: 'm_alt', frequency: 'dias_alternados' }),
+          proto({ id: 'p_mix1', medicine_id: 'm_mix' }),
+          proto({ id: 'p_mix2', medicine_id: 'm_mix', frequency: 'semanal' }),
+        ],
+        stockTotals: [
+          ...base.stockTotals,
+          { medicine_id: 'm_ryb3', total_quantity: 4 },
+          { medicine_id: 'm_ryb7', total_quantity: 4 },
+          { medicine_id: 'm_alt', total_quantity: 10 },
+          { medicine_id: 'm_mix', total_quantity: 30 },
+        ],
+      },
+      { generatedAt: GEN }
+    )
+    const row = (id: string) => m.stock?.find((s) => s.medicineId === id)
+    expect(row('m_ryb3')).toMatchObject({ label: 'Rybelsus · 3 mg', consumptionLabel: '1 un./semana', runsOutOn: '2026-10-28' })
+    expect(row('m_ryb7')).toMatchObject({ label: 'Rybelsus · 7 mg', consumptionLabel: '-', runsOutOn: null })
+    expect(row('m_met')).toMatchObject({ label: 'Glifage · 850 mg', consumptionLabel: '2 un./dia' })
+    expect(row('m_alt')).toMatchObject({ consumptionLabel: '1 un. a cada 2 dias' })
+    // Ciclos diferentes no mesmo cadastro: soma por semana (7×1 + 1 = 8).
+    expect(row('m_mix')).toMatchObject({ consumptionLabel: '≈ 8 un./semana' })
   })
 
   it('dose-only (stockTrackingEnabled=false): sem seção nem item de estoque (PO-2a, FR-007)', () => {
@@ -186,8 +222,8 @@ describe('buildReportModel — escada de titulação (DS-5, AP-311) e peso por e
     )
     expect(ok.ladders[0].weightSeries?.points).toHaveLength(3)
     expect(ok.ladders[0].weightChart).toBe(true)
-    // Recorte (smoke 097 A2): o 1º registro é a pesagem de 02/09; a etapa começa recortada ali.
-    expect(ok.ladders[0].weightSeries?.steps[0]).toMatchObject({ start: '2026-09-02', clipped: true })
+    // Eixo = período inteiro (smoke 097 B): a etapa anterior ao período começa recortada no 1º dia dele.
+    expect(ok.ladders[0].weightSeries?.steps[0]).toMatchObject({ start: '2026-09-01', clipped: true })
 
     const few = buildReportModel(
       fixture({ window, titrationSteps: steps, biomarkers: [peso('2026-09-02', 90), peso('2026-09-09', 89)] }),

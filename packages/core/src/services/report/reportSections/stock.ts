@@ -7,7 +7,8 @@
  * período terminava hoje; aqui sempre se recalcula em `asOf` (uma fonte só, web e mobile iguais).
  */
 import { calculateDailyIntake } from '../../../utils/adherenceLogic'
-import { formatNumberPtBR, roundForDisplay, stockUnitLabel } from '../../../utils/doseUnit'
+import { formatMedicineConcentration, formatNumberPtBR, roundForDisplay, stockUnitLabel } from '../../../utils/doseUnit'
+import { getDoseCycle } from '../../../utils/doseCycle'
 import { shiftDay } from '../reportFormat'
 import type { ReportInputs } from '../reportTypes'
 import { isCurrentOn } from './medications'
@@ -18,10 +19,14 @@ export const STOCK_SOON_DAYS = 14
 export interface StockRow {
   medicineId: string
   name: string
+  /** "Nome · concentração" (cada concentração é um cadastro e uma linha — smoke 097 B). */
+  label: string
   quantity: number
   quantityLabel: string
+  /** Média diária: só para projetar "dura até". Nunca é mostrada (0,14 comprimido não existe). */
   dailyIntake: number
-  dailyIntakeLabel: string
+  /** Consumo no ciclo do tratamento ("1 un./semana"); ciclos misturados: "≈ N un./semana". */
+  consumptionLabel: string
   /** Dias inteiros de estoque no ritmo atual; `null` sem consumo. */
   daysRemaining: number | null
   /** Dia local em que acaba; `null` sem consumo. */
@@ -33,6 +38,30 @@ function _amount(qty: number, medicine: Parameters<typeof stockUnitLabel>[0]): s
   const rounded = roundForDisplay(qty)
   if (rounded === null) return '-'
   return `${formatNumberPtBR(rounded)} ${stockUnitLabel(medicine)}`
+}
+
+/**
+ * Consumo na cadência do tratamento: a média diária vezes os dias do ciclo. Um cadastro com
+ * tratamentos de ciclos diferentes (diário + semanal) não tem ciclo único: soma por semana.
+ */
+function _consumptionLabel(
+  medicineId: string,
+  current: ReportInputs['protocols'],
+  medicine: Parameters<typeof stockUnitLabel>[0],
+  dailyIntake: number
+): string {
+  if (dailyIntake <= 0) return '-'
+  const cycles = new Map<number, string>()
+  for (const p of current) {
+    if (p.medicine_id !== medicineId) continue
+    const cycle = getDoseCycle(p)
+    if (cycle) cycles.set(cycle.days, cycle.suffix)
+  }
+  if (cycles.size === 1) {
+    const [[days, suffix]] = [...cycles]
+    return `${_amount(dailyIntake * days, medicine)}${suffix}`
+  }
+  return `≈ ${_amount(dailyIntake * 7, medicine)}/semana`
 }
 
 /** `null` quando o rastreio está desligado: a seção não existe (≠ lista vazia). */
@@ -51,14 +80,15 @@ export function buildStockRows(inputs: ReportInputs): StockRow[] | null {
     rows.push({
       medicineId: id,
       name: medicine.name,
+      label: formatMedicineConcentration(medicine) ? `${medicine.name} · ${formatMedicineConcentration(medicine)}` : medicine.name,
       quantity,
       quantityLabel: _amount(quantity, medicine),
       dailyIntake,
-      dailyIntakeLabel: _amount(dailyIntake, medicine),
+      consumptionLabel: _consumptionLabel(id, current, medicine, dailyIntake),
       daysRemaining,
       runsOutOn: daysRemaining === null ? null : shiftDay(asOf, daysRemaining),
       soon: daysRemaining !== null && daysRemaining < STOCK_SOON_DAYS,
     })
   }
-  return rows.sort((a, b) => (a.daysRemaining ?? Infinity) - (b.daysRemaining ?? Infinity) || a.name.localeCompare(b.name, 'pt-BR'))
+  return rows.sort((a, b) => (a.daysRemaining ?? Infinity) - (b.daysRemaining ?? Infinity) || a.label.localeCompare(b.label, 'pt-BR'))
 }

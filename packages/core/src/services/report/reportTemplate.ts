@@ -58,7 +58,6 @@ td{border-bottom:1px solid var(--line);padding:4px;vertical-align:top}
 .irow.side .who{flex:0 0 42%}.irow.side .strips{flex:1 1 auto}
 .strip{display:flex;flex-wrap:nowrap;gap:.2mm;margin-top:2px}
 .c{flex:1 1 0;min-width:0;height:14px;border:.6px solid var(--teal)}
-.d180 .c{height:12px}
 .c.full{background:var(--teal)}
 .c.partial{background:linear-gradient(135deg,var(--teal) 50%,#fff 50%)}
 .c.paused{border:none;border-top:2px solid var(--mute);height:8px;margin-top:3px}
@@ -116,7 +115,7 @@ function renderHeader(model: ReportModel): string {
   const meta = [
     ...who,
     `${fullDate(h.window.from)} a ${fullDate(h.window.to)} (${h.window.days} dias)`,
-    h.dataWindow.from !== h.window.from ? `<b>registros a partir de ${fullDate(h.dataWindow.from)}</b>` : null,
+    h.recordsFrom ? `<b>registros a partir de ${fullDate(h.recordsFrom)}</b>` : null,
     `gerado em ${e(generatedLabel(model.generatedAt, model.timezone))}`,
   ].filter(Boolean)
   const allergies = h.allergies.length ? e(h.allergies.join(', ')) : '<span class="mute">nenhuma registrada</span>'
@@ -186,16 +185,21 @@ function medicationsFlow(rows: ReportMedicationRow[]): FlowItem[] {
 // ── §3.4 Tomadas / §3.6 Encerrados ────────────────────────────────────────────
 const CELL: Record<DayCellState, string> = { full: 'full', partial: 'partial', none: 'none', paused: 'paused', empty: 'empty' }
 
-/** `pad` completa a linha com células invisíveis: duas linhas, mesma largura de célula. */
-function strip(days: IntakeRow['days'], pad = 0): string {
-  const cells = days.map((d) => `<span class="c ${CELL[d.state]}"></span>`).join('')
-  return `<div class="strip">${cells}${'<span class="c empty"></span>'.repeat(pad)}</div>`
+function strip(days: IntakeRow['days']): string {
+  return `<div class="strip">${days.map((d) => `<span class="c ${CELL[d.state]}"></span>`).join('')}</div>`
 }
 
 function ticks(days: IntakeRow['days']): string {
-  if (days.length < 2) return ''
-  const mid = days[Math.floor(days.length / 2)].day
-  return `<div class="ticks num"><span>${dm(days[0].day)}</span><span>${dm(mid)}</span><span>${dm(days[days.length - 1].day)}</span></div>`
+  if (!days.length) return ''
+  const first = days[0].day
+  const last = days[days.length - 1].day
+  const marks = days.length < 3 ? [...new Set([first, last])] : [first, days[Math.floor(days.length / 2)].day, last]
+  return `<div class="ticks num">${marks.map((d) => `<span>${dm(d)}</span>`).join('')}</div>`
+}
+
+/** Faixa + escala de datas: a célula estica para preencher a linha (7 retângulos no 7 dias). */
+function stripBox(days: IntakeRow['days']): string {
+  return `<div class="sbox">${strip(days)}${ticks(days)}</div>`
 }
 
 function countLabel(row: IntakeRow): string {
@@ -213,13 +217,8 @@ function intakeRow(row: IntakeRow, periodDays: number, ended: boolean): string {
     (slots ? `<div class="small mute num">${slots}</div>` : '') +
     '</div>'
   const attr = `data-protocol="${escapeAttr(row.protocolId)}"`
-  if (periodDays <= 30) return `<div class="irow side" ${attr}>${who}<div class="strips">${strip(row.days)}</div></div>`
-  if (periodDays <= 90) return `<div class="irow" ${attr}>${who}${strip(row.days)}${ticks(row.days)}</div>`
-  // Acima de 90 dias: duas faixas com metade dos dias cada e a mesma escala (uma célula por dia,
-  // sempre — §3.4); a segunda é completada com células vazias se o total for ímpar.
-  const half = Math.ceil(row.days.length / 2)
-  const halves = [row.days.slice(0, half), row.days.slice(half)]
-  return `<div class="irow d180" ${attr}>${who}${halves.map((h) => strip(h, half - h.length) + ticks(h)).join('')}</div>`
+  if (periodDays <= 30) return `<div class="irow side" ${attr}>${who}<div class="strips">${stripBox(row.days)}</div></div>`
+  return `<div class="irow" ${attr}>${who}${stripBox(row.days)}</div>`
 }
 
 const LEGEND_KEYS: [DayCellState, string][] = [
@@ -237,7 +236,7 @@ const LEGEND =
   '</div>'
 
 function intakesFlow(model: ReportModel): FlowItem[] {
-  const days = model.header.dataWindow.days
+  const days = model.header.window.days
   const title: FlowItem = { html: '<h2>Tomadas no período</h2>' }
   if (!model.intakes.active.length) {
     return [title, { html: '<p class="mute">Nenhum registro no período.</p>'}]
@@ -252,7 +251,7 @@ function intakesFlow(model: ReportModel): FlowItem[] {
 function endedFlow(model: ReportModel): FlowItem[] {
   const rows = model.intakes.ended
   if (!rows.length) return []
-  const days = model.header.dataWindow.days
+  const days = model.header.window.days
   return [
     { html: '<h2>Tratamentos encerrados no período</h2>' },
     ...rows.map((r) => ({ html: intakeRow(r, days, true)})),
@@ -319,12 +318,12 @@ function weightLines(ladder: ReportLadder): string {
 }
 
 /** Peso × etapa na gramática da 069-B: faixa neutra por etapa, pontos sem linha, sem média desenhada. */
-function weightChart(ladder: ReportLadder, dataWindow: ReportWindow): string {
+function weightChart(ladder: ReportLadder, period: ReportWindow): string {
   const series = ladder.weightSeries
   if (!series) return ''
   // Eixo próprio: da 1ª etapa (recortada ao período) ao fim — a escada não fica espremida na ponta.
   const first = series.steps[0]?.start
-  const window = first && first > dataWindow.from ? { ...dataWindow, from: first } : dataWindow
+  const window = first && first > period.from ? { ...period, from: first } : period
   const span = Math.max(1, daysBetween(window.from, window.to))
   const x = (day: string) => PAD_L + (Math.min(span, Math.max(0, daysBetween(window.from, day))) / span) * (CHART_W - PAD_L - 4)
   const kgs = series.points.map((p) => p.kg)
@@ -377,7 +376,7 @@ function laddersFlow(model: ReportModel): FlowItem[] {
           `<div class="mute">${s.durationDays ? `${s.durationDays} dias` : 'contínua'}</div></div>`
       )
       .join('')
-    const chart = weightChart(ladder, model.header.dataWindow)
+    const chart = weightChart(ladder, model.header.window)
     items.push({
       html: `<div class="ladder"><b>${e(ladder.name)}</b><div class="steps">${steps}</div>${chart}</div>`,
     })
@@ -388,7 +387,7 @@ function laddersFlow(model: ReportModel): FlowItem[] {
 // ── §3.8b Estoque (anexo, sem custo) ──────────────────────────────────────────
 const STOCK_TABLE: FlowTable = {
   id: 'stock',
-  open: '<table><thead><tr><th>Medicamento</th><th>Quantidade atual</th><th>Consumo por dia</th><th>Dura até</th></tr></thead><tbody>',
+  open: '<table><thead><tr><th>Medicamento</th><th>Quantidade atual</th><th>Consumo</th><th>Dura até</th></tr></thead><tbody>',
   close: '</tbody></table>',
 }
 
@@ -401,7 +400,7 @@ function stockFlow(stock: StockRow[] | null): FlowItem[] {
       const until = s.runsOutOn ? short(s.runsOutOn) : '<span class="mute">sem consumo</span>'
       return {
         html:
-          `<tr><td>${e(s.name)}</td><td class="num">${e(s.quantityLabel)}</td><td class="num">${e(s.dailyIntakeLabel)}</td>` +
+          `<tr><td>${e(s.label)}</td><td class="num">${e(s.quantityLabel)}</td><td class="num">${e(s.consumptionLabel)}</td>` +
           `<td class="num">${s.soon ? `<b>${until}</b>` : until}</td></tr>`,
         table: STOCK_TABLE,
       }

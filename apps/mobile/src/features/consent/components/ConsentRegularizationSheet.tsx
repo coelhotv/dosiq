@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import * as WebBrowser from 'expo-web-browser'
+import DocumentViewer from '@shared/components/ui/DocumentViewer'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { ShieldCheck, FileText } = LucideIcons as any
@@ -33,20 +33,22 @@ export default function ConsentRegularizationSheet({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Não se pode pedir novo aceite sem dar como ler a nova política. "Aceitar" fica travado até o
-  // titular ABRIR e FECHAR a webview da política (openBrowserAsync resolve no fechamento) — assim
-  // o aceite carimbado no consent_log corresponde a alguém que teve a política diante dos olhos.
+  // titular ABRIR e FECHAR o visualizador da política (097 B-1: DocumentViewer em overlay dentro
+  // deste Modal) — assim o aceite carimbado no consent_log corresponde a alguém que teve a política
+  // diante dos olhos.
   const [hasRead, setHasRead] = useState(false)
+  const [policyOpen, setPolicyOpen] = useState(false)
 
   if (!visible) return null
 
-  const handleOpenPolicy = async () => {
+  const handleOpenPolicy = () => {
     setError(null)
-    try {
-      await WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
-      setHasRead(true)
-    } catch {
-      setError('Não foi possível abrir a política agora. Tente de novo.')
-    }
+    setPolicyOpen(true)
+  }
+
+  const handleClosePolicy = () => {
+    setPolicyOpen(false)
+    setHasRead(true)
   }
 
   const handleAccept = async () => {
@@ -128,6 +130,14 @@ export default function ConsentRegularizationSheet({
           <Text style={styles.btnDismissText}>Agora não</Text>
         </Pressable>
       </SafeAreaView>
+
+      {/* Overlay DENTRO deste Modal (Modal sobre Modal no iOS engole os gestos). */}
+      <DocumentViewer
+        source={policyOpen ? { kind: 'web', url: EXTERNAL_URLS.PRIVACY_POLICY } : null}
+        title="Política de privacidade"
+        onClose={handleClosePolicy}
+        presentation="overlay"
+      />
     </Modal>
   )
 }
