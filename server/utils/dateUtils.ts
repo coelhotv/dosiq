@@ -216,3 +216,18 @@ export function getEndOfDayISO(dateStr) {
 export function getLastDayOfMonth(year, month) {
   return new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
 }
+
+/**
+ * 088 (FR-009, RC3 E-2): janela do pré-filtro de período nas queries de protocolo.
+ * A query roda em lote para usuárias de fusos diferentes, então não pode usar o "hoje" de nenhuma
+ * delas: alarga ±1 dia em torno do hoje de SP (cobre todo fuso a até 24h de SP) e deixa a decisão
+ * exata para o motor do core, que confere o período no dia da usuária.
+ * @returns {{ startOnOrBefore: string, endOnOrAfter: string }} datas YYYY-MM-DD
+ */
+export function getProtocolPeriodPrefilter() {
+  const today = parseLocalDate(getTodayLocal());
+  return {
+    startOnOrBefore: formatLocalDate(addDays(today, 1)),
+    endOnOrAfter: formatLocalDate(addDays(today, -1)),
+  };
+}

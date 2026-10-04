@@ -1,13 +1,14 @@
 import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
 import { shouldSendGroupedNotification } from '../../services/notificationDeduplicator.js';
-import { getCurrentTime, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js';
+import { getCurrentTime, getProtocolPeriodPrefilter, getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { isProtocolActiveOnWeekday } from '../../utils/protocolActiveHelper.js';
 import { dispatchLiveActivityStarts } from '../../notifications/apns/dispatchLiveActivityStarts.js';
 import { dispatchLiveActivityLifecycle } from '../../notifications/apns/dispatchLiveActivityLifecycle.js';
 import {
   resolveInstanceMedicine,
+  isProtocolActiveOnDate,
+  getTodayLocal as getTodayLocalInTz,
 } from '@dosiq/core';
 import {
   findInstancesWithAlarmEvidence,
@@ -21,18 +22,18 @@ async function _fetchProtocolsForUsers(userIdsByHHMM: Record<string, string[]>, 
   for (const [hhmm, ids] of Object.entries(userIdsByHHMM)) {
     for (let i = 0; i < ids.length; i += 50) {
       const chunk = ids.slice(i, i + 50);
-      const today = getTodayLocal();
+      const { startOnOrBefore, endOnOrAfter } = getProtocolPeriodPrefilter();
       const { data, error } = await supabase
         .from('protocols')
         .select(`
-          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, interval_days, weekdays, start_date,
+          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, interval_days, weekdays, start_date, end_date,
           medicine:medicines(name, dosage_unit, dosage_per_pill),
           treatment_plan:treatment_plans(id, name)
         `)
         .in('user_id', chunk)
         .eq('active', true)
-        .lte('start_date', today)
-        .or(`end_date.is.null,end_date.gte.${today}`)
+        .lte('start_date', startOnOrBefore)
+        .or(`end_date.is.null,end_date.gte.${endOnOrAfter}`)
         .contains('time_schedule', JSON.stringify([hhmm])); 
 
       if (error) {
@@ -637,11 +638,11 @@ async function _dispatchLegacyRemindersForUser(
   correlationId
 ) {
   const timezone = user.timezone || 'America/Sao_Paulo';
-  const { weekday } = getCurrentDatePartsInTimezone(timezone);
-  const todayStr = getTodayLocal();
+  // 088 (FR-003/004): data única no fuso da usuária; o motor do core decide recorrência e período.
+  const todayStr = getTodayLocalInTz(timezone);
 
   const dosesNow = protocols
-    .filter(p => (p.time_schedule || []).includes(currentHHMM) && isProtocolActiveOnWeekday(p, weekday, todayStr))
+    .filter(p => (p.time_schedule || []).includes(currentHHMM) && isProtocolActiveOnDate(p, todayStr))
     .map(p => ({
       protocolId: p.id,
       protocolName: p.name,

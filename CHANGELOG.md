@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Bot e resumo diário decidem o dia de dose como o app (spec 088)
+
+- **Servidor** (sem versão própria). O comando `/hoje` do bot deixa de listar tratamento já
+  encerrado ou que ainda não começou. Bot, resumo diário e lembrete passam a decidir "tem dose hoje?"
+  pela mesma regra do app (antes havia uma segunda cópia no servidor, que precisava ser mantida à
+  mão a cada frequência nova). Para quem usa um fuso diferente do de São Paulo, o `/hoje` e o
+  resumo diário usam o dia, a hora e as doses tomadas do fuso da pessoa, também perto da meia-noite.
+
 ### Dia certo à noite: dose, cartão de emergência e notificações (spec 077)
 
 - **Web** (`patch` — correção visível; `4.29.0` → `4.29.1`). Uma dose tomada entre 21h e meia-noite
