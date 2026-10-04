@@ -3,7 +3,7 @@
  * @module features/emergency/components/__tests__/EmergencyQRCode
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import QRCode from 'qrcode'
 import EmergencyQRCode from '@/features/emergency/components/EmergencyQRCode'
@@ -16,6 +16,11 @@ vi.mock('qrcode', () => ({
 }))
 
 describe('EmergencyQRCode', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
   const mockCardData = {
     name: 'João Silva',
     blood_type: 'A+',
@@ -119,5 +124,26 @@ describe('EmergencyQRCode', () => {
     const calls = (QRCode.toDataURL as unknown as { mock: { calls: unknown[][] } }).mock.calls
     const payload = JSON.parse(decodeURIComponent(escape(atob(String(calls[calls.length - 1][0])))))
     expect(payload.m.map((m: { f: string }) => m.f)).toEqual(['Diário', 'Quando Necessário', 'A cada 90 dias'])
+  })
+  it('077 AC-4.2: dt é o dia de SP do lastUpdated (22:30 de 01/09 → 2026-09-01)', async () => {
+    render(<EmergencyQRCode cardData={mockCardData} medications={mockMedications} lastUpdated="2026-09-02T01:30:00.000Z" />)
+    await waitFor(() => expect(QRCode.toDataURL).toHaveBeenCalled())
+    const calls = (QRCode.toDataURL as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    const payload = JSON.parse(decodeURIComponent(escape(atob(String(calls[calls.length - 1][0])))))
+    expect(payload.dt).toBe('2026-09-01')
+  })
+
+  it('077 AC-4.2: sem lastUpdated, dt é o hoje de SP (22:30 de 01/09 → 2026-09-01)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-02T01:30:00.000Z'))
+    try {
+      render(<EmergencyQRCode cardData={mockCardData} medications={mockMedications} />)
+      await waitFor(() => expect(QRCode.toDataURL).toHaveBeenCalled())
+      const calls = (QRCode.toDataURL as unknown as { mock: { calls: unknown[][] } }).mock.calls
+      const payload = JSON.parse(decodeURIComponent(escape(atob(String(calls[calls.length - 1][0])))))
+      expect(payload.dt).toBe('2026-09-01')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

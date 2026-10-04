@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Dia certo à noite: dose, cartão de emergência e notificações (spec 077)
+
+- **Web** (`patch` — correção visível; `4.29.0` → `4.29.1`). Uma dose tomada entre 21h e meia-noite
+  passa a contar no próprio dia no padrão de adesão por dia da semana (antes podia contar no dia
+  seguinte e distorcer o padrão). A data de atualização gravada no QR do cartão de emergência passa a
+  ser o dia de São Paulo: atualizar o cartão à noite não grava mais o dia seguinte.
+- **Mobile** (`patch`, só JavaScript; sem bump próprio de `APP_VERSION`, segue no pacote de loja
+  `0.34.0`; canal: **build de loja**, R-314). Na caixa de notificações, uma notificação enviada entre
+  21h e meia-noite aparece em "Hoje" (antes caía num grupo errado). Abrir o app sem internet à noite
+  não descarta mais as doses do dia num registro salvo em versão antiga do app.
+- **Servidor** (sem versão própria; produção sem mudança). O dia e a hora usados pelo bot e pelos
+  lembretes ficam corretos também fora do fuso UTC (antes só davam certo porque o servidor roda em
+  UTC). Uma regra de lint barra o corte de data ISO (`toISOString().split/slice`, `split('T')`), e o
+  `validate:agent` roda os testes de dia e hora também no fuso de São Paulo.
+
 ### Relatório clínico: medidas e locais de aplicação (spec 097, Slice C)
 
 - **Web** (`minor` — seções novas no documento; `4.28.1` → `4.29.0`) e **Mobile** (o mesmo PDF vem

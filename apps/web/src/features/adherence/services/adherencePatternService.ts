@@ -207,7 +207,7 @@ export function analyzeAdherencePatterns({ logs, protocols }) {
   const uniqueDates = new Set()
   logs.forEach((log) => {
     const spDate = getSaoPauloTime(parseISO(log.taken_at))
-    const dateStr = spDate.toISOString().split('T')[0] // YYYY-MM-DD
+    const dateStr = formatLocalDate(spDate) // YYYY-MM-DD do dia de SP (getters locais — AP-342)
     
     if (!uniqueDates.has(dateStr)) {
       uniqueDates.add(dateStr)

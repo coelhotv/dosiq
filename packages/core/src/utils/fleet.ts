@@ -205,5 +205,6 @@ export function countAffectedInstalls(
 export function fleetWindowStart(now: Date, windowDays: number = FLEET_WINDOW_DAYS): string {
   // eslint-disable-next-line no-restricted-syntax -- aritmética de instante UTC absoluto, não parse de date-string (R-020)
   const start = new Date(now.getTime() - windowDays * 24 * 60 * 60 * 1000)
+  // eslint-disable-next-line no-restricted-syntax -- janela de instante UTC absoluto, não dia de parede (spec 077)
   return start.toISOString().slice(0, 10)
 }

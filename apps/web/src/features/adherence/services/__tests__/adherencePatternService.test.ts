@@ -38,6 +38,18 @@ describe('adherencePatternService', () => {
       start_date: startDate,
     })
 
+    it('077 AC-4.1: log das 22:30 de SP conta no próprio dia, em qualquer fuso de runtime', () => {
+      const medicineId = randomUUID()
+      const protocolId = randomUUID()
+      const logs = [
+        { ...createLog(medicineId, protocolId, 1, '2026-09-01', 15) }, // 12:00 SP de 01/09
+        { ...createLog(medicineId, protocolId, 1, '2026-09-01'), taken_at: '2026-09-02T01:30:00Z' }, // 22:30 SP de 01/09
+      ]
+      const result = analyzeAdherencePatterns({ logs, protocols: [createProtocol(protocolId, medicineId)] })
+      // Mesmo dia de SP → 1 ocorrência só; com o corte do ISO, sob -03 a 2ª caía em 02/09 (2 ocorrências)
+      expect(result.dayOccurrences.reduce((a, b) => a + b, 0)).toBe(1)
+    })
+
     it('retorna hasEnoughData=false com < 21 dias de dados', () => {
       const medicineId = randomUUID()
       const protocolId = randomUUID()

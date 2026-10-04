@@ -5,6 +5,8 @@ import {
   getTodayLocal,
   getNow,
   parseISO,
+  formatLocalDate,
+  getUserTime,
   describeLoadFailure
 } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
@@ -80,7 +82,9 @@ export function useTodayData() {
     // F4.3f.1: virada de dia no fuso do snapshot (não SP fixo) — segregação correta p/ expat.
     const tz = parsed.timezone || 'America/Sao_Paulo'
     const today = getTodayLocal(tz)
-    const snapshotDay = parsed.localDay || (parsed.capturedAt ?? '').split('T')[0]
+    // Sem localDay (snapshot antigo): dia do capturedAt no fuso do snapshot — o corte do ISO dava o
+    // dia UTC e segregava à noite (AP-342, spec 077). Sem capturedAt → '' (não segrega), como antes.
+    const snapshotDay = parsed.localDay || (parsed.capturedAt ? formatLocalDate(getUserTime(parseISO(parsed.capturedAt), tz)) : '')
 
     if (snapshotDay && snapshotDay !== today) {
       parsed.logs = []

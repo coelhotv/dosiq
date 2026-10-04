@@ -1,6 +1,6 @@
 {
   "name": "@dosiq/web",
-  "version": "4.29.0",
+  "version": "4.29.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +19,7 @@
     "test:fast": "vitest run",
     "test:lowram": "vitest run --config vitest.lowram.config.js",
     "validate:quick": "node ../../scripts/run-tests-with-timeout.mjs 300 npx vitest run --changed HEAD --bail=1",
-    "validate:agent": "node ../../scripts/run-tests-with-timeout.mjs 600 npx vitest run --config vitest.critical.config.js --bail=1",
+    "validate:agent": "node ../../scripts/run-tests-with-timeout.mjs 600 npx vitest run --config vitest.critical.config.js --bail=1 && npx vitest run --config vitest.tz-sp.config.js --bail=1",
     "validate:full": "node ../../scripts/run-tests-with-timeout.mjs 900 npx vitest run --config vitest.ci.config.js && npm run build"
   },
   "dependencies": {
