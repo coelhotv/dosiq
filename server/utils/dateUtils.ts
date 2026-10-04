@@ -1,4 +1,5 @@
 /* eslint-disable no-restricted-syntax */
+import { formatLocalDate } from '@dosiq/core';
 
 /**
  * Date Utilities - Funções utilitárias para manipulação de datas no Servidor
@@ -71,9 +72,11 @@ export function parseLocalDate(dateStr) {
  * @returns {string} Data no formato YYYY-MM-DD
  */
 export function getTodayLocal(date = getNow()) {
-  // R-020: Como date já é shifted para SP via getNow/getSaoPauloTime, 
-  // o toISOString reflete o "tempo de parede" de SP.
-  return date.toISOString().split('T')[0];
+  // date já carrega a hora de parede de SP (getNow/getSaoPauloTime): lê-se por getters LOCAIS.
+  // toISOString/getUTC* só coincidem com a parede num runtime UTC (AP-342, spec 077).
+  // NÃO trocar pelo getTodayLocal(tz) do core: ele reaplica o fuso e desloca duas vezes.
+  if (isNaN(date.getTime())) throw new RangeError('Invalid time value');
+  return formatLocalDate(date);
 }
 
 /**
@@ -150,8 +153,8 @@ export function getCurrentTime() {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
   
-  // R-020: date já é shifted, toISOString reflete tempo de parede de SP
-  return now.toISOString().slice(11, 16);
+  // now carrega a hora de parede de SP: getters locais, nunca UTC (AP-342, spec 077)
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 
 /**

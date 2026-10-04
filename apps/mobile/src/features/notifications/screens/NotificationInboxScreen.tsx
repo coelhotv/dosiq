@@ -18,7 +18,7 @@ import * as LucideIcons from 'lucide-react-native'
 const { ArrowLeft, BellOff, Settings, WifiOff } = LucideIcons as any
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
-import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays, getServerTimestamp } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays, getServerTimestamp, formatLocalDate, getUserTime } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
@@ -157,7 +157,7 @@ function _buildNavParams(item) {
 
 // ─── Agrupamento temporal ──────────────────────────────────────────────────────
 
-function groupByDay(notifications) {
+export function groupByDay(notifications) {
   const todayStr = getTodayLocal()
 
   const buckets = [
@@ -169,7 +169,8 @@ function groupByDay(notifications) {
 
   for (const n of notifications) {
     if (!n.sent_at) continue
-    const diff = daysDifference(n.sent_at.split('T')[0], todayStr)
+    // Dia de SP do instante (casa com todayStr) — o corte do ISO dava o dia UTC (AP-342, spec 077)
+    const diff = daysDifference(formatLocalDate(getUserTime(parseISO(n.sent_at))), todayStr)
     
     if      (diff === 0) buckets[0].data.push(n)
     else if (diff === 1) buckets[1].data.push(n)

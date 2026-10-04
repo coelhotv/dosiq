@@ -61,6 +61,7 @@ function nthOccurrenceDate(protocol: Protocol, baseDate: Date, tz: string): stri
   const cursor = parseISO(formatLocalDate(getUserTime(baseDate, tz)) + 'T00:00:00Z')
   let found = 0
   for (let i = 0; i < OCCURRENCE_SEARCH_DAYS; i++) {
+    // eslint-disable-next-line no-restricted-syntax -- cursor ancorado em T00:00:00Z de propósito (imune a DST); o dia UTC É o dia do calendário (spec 077)
     const dateStr = cursor.toISOString().slice(0, 10)
     if (isProtocolActiveOnDate(protocol as Parameters<typeof isProtocolActiveOnDate>[0], dateStr)) {
       found += 1

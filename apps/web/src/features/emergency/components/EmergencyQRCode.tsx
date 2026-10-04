@@ -34,7 +34,7 @@ function QRErrorState({ error, onRetry }) {
     </div>
   )
 }
-import { getServerTimestamp, parseISO } from '@utils/dateUtils'
+import { getSaoPauloTime, getTodayLocal, formatLocalDate, parseISO } from '@utils/dateUtils'
 import { formatConcentration } from '@dosiq/core'
 import './EmergencyQRCode.css'
 
@@ -96,9 +96,10 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }: 
           f: formatFrequencyLabel(med.frequency, med.intervalDays),
         })) || [],
       a: cardData.allergies || [],
+      // Dia de SP do instante — corte do ISO daria o dia UTC (21h–00h viraria o dia seguinte, AP-342)
       dt: lastUpdated
-        ? parseISO(lastUpdated).toISOString().split('T')[0]
-        : getServerTimestamp().split('T')[0],
+        ? formatLocalDate(getSaoPauloTime(parseISO(lastUpdated)))
+        : getTodayLocal(),
     }
 
     // Adiciona tipo sanguíneo apenas se não for desconhecido

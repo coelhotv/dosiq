@@ -113,6 +113,16 @@ export default [
           selector: 'NewExpression[callee.name="Date"]',
           message: 'Não use "new Date()". Use "parseLocalDate()" de @utils/dateUtils para evitar bugs de timezone (R-020).'
         },
+        // R-020/AP-342 (spec 077): dia/hora a partir do corte de uma string ISO é a leitura UTC.
+        // Sobre Date de parede só coincide com SP num runtime UTC; sobre instante dá o dia UTC.
+        {
+          selector: 'CallExpression[callee.property.name=/^(split|slice|substring|substr)$/][callee.object.callee.property.name="toISOString"]',
+          message: 'toISOString() recortado devolve dia/hora UTC, não o de SP. Use formatLocalDate(getUserTime(...)) / getTodayLocal() de @dosiq/core (R-020, AP-342). Caso legítimo (instante UTC de propósito): eslint-disable-next-line com o motivo.'
+        },
+        {
+          selector: 'CallExpression[callee.property.name="split"][arguments.0.value="T"]',
+          message: 'split("T") corta uma data ISO e devolve o dia UTC do instante. Use formatLocalDate(getUserTime(parseISO(x), tz)) de @dosiq/core (R-020, AP-342).'
+        },
         // R-020: Proibir bibliotecas de data externas sem centralização
         {
           selector: 'ImportDeclaration[source.value="dayjs"], ImportDeclaration[source.value="moment"]',

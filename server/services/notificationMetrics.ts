@@ -64,6 +64,7 @@ class MetricsStore {
    */
   cleanup() {
     const cutoff = addMinutes(-METRICS_RETENTION_MINUTES);
+    // eslint-disable-next-line no-restricted-syntax -- chave interna; escrita e leitura usam o mesmo deslocamento (spec 077 Non-Goal)
     const cutoffKey = cutoff.toISOString().slice(0, 16);
 
     const cleanMap = (map) => {
@@ -209,6 +210,7 @@ export function getMetrics(windowMinutes = 5) {
   // Gerar chaves dos últimos N minutos
   for (let i = 0; i < windowMinutes; i++) {
     const d = addMinutes(-i, now);
+    // eslint-disable-next-line no-restricted-syntax -- chave interna; escrita e leitura usam o mesmo deslocamento (spec 077 Non-Goal)
     keys.push(d.toISOString().slice(0, 16));
   }
 

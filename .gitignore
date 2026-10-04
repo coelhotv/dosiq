@@ -35,6 +35,7 @@ tsconfig.tsbuildinfo
 # Cache
 .vitest-cache/
 .vitest-cache-critical/
+.vitest-cache-tz-sp/
 .vitest-cache-lowram/
 .vercel
 

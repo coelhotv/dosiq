@@ -137,6 +137,29 @@ describe('useTodayData', () => {
       expect(result.current.data).toBeNull();
     }, 20000);
 
+    // Spec 077 PO-9 (AC-5.2): sem localDay, o dia do snapshot sai do capturedAt no fuso do snapshot —
+    // o corte do ISO dava o dia UTC (22:30 de SP = 01:30Z do dia seguinte) e descartava os registros.
+    it('snapshot sem localDay capturado às 22:30 de SP, aberto no mesmo dia ⇒ não segrega', async () => {
+      jest.useFakeTimers({ now: new Date('2026-09-02T01:45:00Z'), doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask'] });
+      try {
+        mockedDashboardService.getActiveProtocols.mockRejectedValue(networkErr);
+        mockedAsyncStorage.getItem.mockResolvedValue(JSON.stringify({
+          protocols: [{ id: 'p1' }],
+          logs: [{ id: 'l1' }],
+          medicines: {},
+          user: { id: 'user-123' },
+          timezone: 'America/Sao_Paulo',
+          capturedAt: '2026-09-02T01:30:00.000Z',
+        }));
+        const { result } = renderHook(() => useTodayData());
+        await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+        expect(result.current.isDaySegregated).toBe(false);
+        expect(result.current.data.logs).toHaveLength(1);
+      } finally {
+        jest.useRealTimers();
+      }
+    }, 20000);
+
     it('erro de autenticação ⇒ sem snapshot, nem lê o cache', async () => {
       mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
       mockedSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
