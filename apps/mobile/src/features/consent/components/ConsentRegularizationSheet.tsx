@@ -46,9 +46,12 @@ export default function ConsentRegularizationSheet({
     setPolicyOpen(true)
   }
 
-  const handleClosePolicy = () => {
+  // Só destrava se a política carregou de fato: fechar a tela de erro (offline, HTTP) não conta como
+  // leitura (RC6 #858) — mesma garantia do caminho antigo, que só destravava após abrir com sucesso.
+  const handleClosePolicy = ({ loaded }: { loaded: boolean }) => {
     setPolicyOpen(false)
-    setHasRead(true)
+    if (loaded) setHasRead(true)
+    else setError('Não foi possível abrir a política agora. Tente de novo.')
   }
 
   const handleAccept = async () => {

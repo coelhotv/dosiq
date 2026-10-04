@@ -12,7 +12,7 @@
 //   gestos — mesmo bug do picker do ExportSheet). O host renderiza este componente por último,
 //   dentro do próprio Modal. Fora disso, `modal` (padrão).
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, ActivityIndicator, Linking, Platform, StatusBar } from 'react-native'
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics, type Metrics } from 'react-native-safe-area-context'
 import { WebView, type WebViewNavigation } from 'react-native-webview'
@@ -24,7 +24,9 @@ interface DocumentViewerProps {
   /** null = fechado */
   source: DocumentSource | null
   title: string
-  onClose: () => void
+  /** `loaded`: o documento chegou a carregar sem erro antes de fechar (o aceite de consentimento
+   *  só destrava assim — RC6 #858). */
+  onClose: (info: { loaded: boolean }) => void
   presentation?: 'modal' | 'overlay'
 }
 
@@ -49,9 +51,25 @@ export function shouldLoadInViewer(source: DocumentSource, url: string): boolean
   return host !== null && ALLOWED_WEB_HOSTS.includes(host)
 }
 
-function ViewerBody({ source, title, onClose }: { source: DocumentSource; title: string; onClose: () => void }) {
+function ViewerBody({
+  source,
+  title,
+  onClose,
+  onLoaded,
+}: {
+  source: DocumentSource
+  title: string
+  onClose: () => void
+  onLoaded: () => void
+}) {
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+  // onLoadEnd dispara também depois de erro: a ref diz se houve falha antes dele.
+  const failedRef = useRef(false)
+  const markFailed = () => {
+    failedRef.current = true
+    setFailed(true)
+  }
 
   const handleShouldStart = (req: WebViewNavigation & { isTopFrame?: boolean }) => {
     // iOS consulta também os iframes da página; a trava vale para a navegação principal.
@@ -99,9 +117,12 @@ function ViewerBody({ source, title, onClose }: { source: DocumentSource; title:
             allowFileAccess={isPdf}
             incognito
             onShouldStartLoadWithRequest={handleShouldStart}
-            onLoadEnd={() => setLoading(false)}
-            onError={() => setFailed(true)}
-            onHttpError={() => setFailed(true)}
+            onLoadEnd={() => {
+              setLoading(false)
+              if (!failedRef.current) onLoaded()
+            }}
+            onError={markFailed}
+            onHttpError={markFailed}
           />
           {loading ? (
             <View style={styles.loadingOverlay} pointerEvents="none">
@@ -115,25 +136,35 @@ function ViewerBody({ source, title, onClose }: { source: DocumentSource; title:
 }
 
 export default function DocumentViewer({ source, title, onClose, presentation = 'modal' }: DocumentViewerProps) {
+  const loadedRef = useRef(false)
+  // Cada abertura começa sem carga confirmada.
+  useEffect(() => {
+    loadedRef.current = false
+  }, [source])
+
   if (!source) return null
+  const handleLoaded = () => {
+    loadedRef.current = true
+  }
+  const handleClose = () => onClose({ loaded: loadedRef.current })
 
   if (presentation === 'overlay') {
     return (
       <View style={styles.overlay}>
         <SafeAreaProvider initialMetrics={VIEWER_METRICS}>
-          <ViewerBody source={source} title={title} onClose={onClose} />
+          <ViewerBody source={source} title={title} onClose={handleClose} onLoaded={handleLoaded} />
         </SafeAreaProvider>
       </View>
     )
   }
 
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible animationType="slide" onRequestClose={handleClose} statusBarTranslucent>
       {Platform.OS === 'android' ? <View style={{ height: StatusBar.currentHeight ?? 0, backgroundColor: colors.bg.card }} /> : null}
       {/* Provider próprio: no iOS o Modal é outra janela e o provider da raiz devolve topo 0 —
           o cabeçalho ficava sob a Dynamic Island (smoke 097 B). */}
       <SafeAreaProvider initialMetrics={VIEWER_METRICS}>
-        <ViewerBody source={source} title={title} onClose={onClose} />
+        <ViewerBody source={source} title={title} onClose={handleClose} onLoaded={handleLoaded} />
       </SafeAreaProvider>
     </Modal>
   )

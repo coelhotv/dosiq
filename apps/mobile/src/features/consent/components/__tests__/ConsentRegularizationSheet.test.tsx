@@ -33,6 +33,7 @@ describe('ConsentRegularizationSheet', () => {
       uri: 'https://dosiq.app/politica-de-privacidade',
     })
     expect(screen.queryByText('Política lida ✓')).toBeNull()
+    fireEvent(screen.getByTestId('document-viewer-webview'), 'onLoadEnd')
     fireEvent.press(screen.getByLabelText('Fechar'))
     expect(await screen.findByText('Política lida ✓')).toBeTruthy()
     expect(screen.queryByTestId('document-viewer-webview')).toBeNull()
@@ -77,6 +78,19 @@ describe('ConsentRegularizationSheet', () => {
     await readPolicy()
 
     expect(screen.getByText('Política lida ✓')).toBeTruthy()
+  })
+
+  it('política que falhou ao carregar não destrava o aceite (RC6 #858)', () => {
+    render(<ConsentRegularizationSheet visible onDismiss={jest.fn()} onConfirmed={jest.fn()} />)
+    fireEvent.press(screen.getByLabelText('Ler a nova política de privacidade'))
+    const web = screen.getByTestId('document-viewer-webview')
+    fireEvent(web, 'onError')
+    fireEvent.press(screen.getByLabelText('Fechar'))
+
+    expect(screen.queryByText('Política lida ✓')).toBeNull()
+    expect(screen.getByText('Não foi possível abrir a política agora. Tente de novo.')).toBeTruthy()
+    fireEvent.press(screen.getByLabelText('Aceitar a nova versão'))
+    expect(mockGrant).not.toHaveBeenCalled()
   })
 
   it('"Aceitar a nova versão" (após ler) chama consent_grant (RPC), nunca insert direto', async () => {

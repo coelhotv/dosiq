@@ -46,7 +46,23 @@ describe('DocumentViewer', () => {
     const onClose = jest.fn()
     render(<DocumentViewer source={{ kind: 'web', url: POLICY }} title="Política" onClose={onClose} presentation="overlay" />)
     fireEvent.press(screen.getByLabelText('Fechar'))
-    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenCalledWith({ loaded: false })
+  })
+
+  it('onClose informa se o documento carregou: sucesso → true; erro antes do onLoadEnd → false', () => {
+    const onClose = jest.fn()
+    const { unmount } = render(<DocumentViewer source={{ kind: 'web', url: POLICY }} title="Política" onClose={onClose} />)
+    fireEvent(screen.getByTestId('document-viewer-webview'), 'onLoadEnd')
+    fireEvent.press(screen.getByLabelText('Fechar'))
+    expect(onClose).toHaveBeenLastCalledWith({ loaded: true })
+    unmount()
+
+    render(<DocumentViewer source={{ kind: 'web', url: POLICY }} title="Política" onClose={onClose} />)
+    const web = screen.getByTestId('document-viewer-webview')
+    fireEvent(web, 'onHttpError')
+    fireEvent(web, 'onLoadEnd')
+    fireEvent.press(screen.getByLabelText('Fechar'))
+    expect(onClose).toHaveBeenLastCalledWith({ loaded: false })
   })
 
   it('erro de carga mostra mensagem na tela', () => {
