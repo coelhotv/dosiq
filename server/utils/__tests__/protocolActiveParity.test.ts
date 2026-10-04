@@ -1,10 +1,10 @@
-// protocolActiveParity.test.ts — 085 Slice B (analysis-b §3a): o servidor tem um SEGUNDO motor de
-// recorrência (`isProtocolActiveOnWeekday`) usado pelo lembrete legado, /hoje e digest. Este teste
-// TRAVA a paridade com o core onde ela existe e DECLARA onde ela não existe. Consolidar os dois
-// motores é a spec 088 (recurrence-engine) — não este slice.
+// protocolActiveParity.test.ts — spec 088: o servidor NÃO tem mais motor de recorrência próprio. Os 3
+// chamadores (lembrete legado, /hoje, digest) decidem por `isProtocolActiveOnDate` do core — os testes
+// de cada chamador estão em server/bot/__tests__/*Recurrence.test.ts. Aqui fica a trava de que os
+// apelidos que o antigo motor do servidor aceitava continuam aceitos (FR-006) e as decisões que eram
+// "divergências declaradas" na 085 passam a ter UMA resposta, a do core (FR-005, FR-007).
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { isProtocolActiveOnDate, FREQUENCIES } from '@dosiq/core'
-import { isProtocolActiveOnWeekday } from '../protocolActiveHelper.js'
+import { isProtocolActiveOnDate } from '@dosiq/core'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -20,54 +20,54 @@ const base = {
   weekdays: ['segunda', 'quarta'],
 }
 
-// 14 dias a partir do start_date (datas locais, AP-270). 2026-05-01 é sexta.
-const DATES = Array.from({ length: 14 }, (_, i) => `2026-05-${String(i + 1).padStart(2, '0')}`)
-const weekdayOf = (d: string) => new Date(`${d}T12:00:00`).getDay()
+// Apelidos do antigo `protocolActiveHelper.ts` (removido na 088), com o calendário esperado em
+// 2026-05-01 (sex) … 2026-05-06 (qua). Valor que o core deixar de reconhecer cai no fallback `true`
+// e quebra as linhas de semanal/alternado — o teste fica vermelho, não silencioso.
+const DATES = ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06']
+const SERVER_ALIASES: Array<[string, boolean[]]> = [
+  ['diário', [true, true, true, true, true, true]],
+  ['diariamente', [true, true, true, true, true, true]],
+  ['daily', [true, true, true, true, true, true]],
+  ['semanal', [false, false, false, true, false, true]],
+  ['semanalmente', [false, false, false, true, false, true]],
+  ['weekly', [false, false, false, true, false, true]],
+  ['dias_alternados', [true, false, true, false, true, false]],
+  ['dia_sim_dia_nao', [true, false, true, false, true, false]],
+  ['every_other_day', [true, false, true, false, true, false]],
+  ['alternating', [true, false, true, false, true, false]],
+]
 
-describe('paridade core × servidor — frequências do enum', () => {
-  // 085 C1: itera o ENUM do core, não uma lista literal — valor novo no CHECK sem ramo no servidor
-  // fica vermelho aqui (foi assim que `intervalo_dias` quase nasceu silencioso no servidor, H-2).
-  it.each([...FREQUENCIES])(
-    '%s: os dois motores concordam em todos os dias',
-    (frequency) => {
-      const p = { ...base, frequency, interval_days: frequency === 'intervalo_dias' ? 3 : null }
-      for (const d of DATES) {
-        expect([d, isProtocolActiveOnWeekday(p, weekdayOf(d), d)]).toEqual([d, isProtocolActiveOnDate(p, d)])
-      }
-    }
-  )
+describe('apelidos do antigo motor do servidor ∈ FREQUENCY_MATCHERS (FR-006)', () => {
+  it.each(SERVER_ALIASES)('%s', (frequency, expected) => {
+    const p = { ...base, frequency }
+    expect(DATES.map((d) => isProtocolActiveOnDate(p, d))).toEqual(expected)
+  })
+
+  it('caixa alta (o servidor fazia toLowerCase) segue aceita', () => {
+    expect(isProtocolActiveOnDate({ ...base, frequency: 'SEMANAL' }, '2026-05-02')).toBe(false)
+    expect(isProtocolActiveOnDate({ ...base, frequency: 'SEMANAL' }, '2026-05-04')).toBe(true)
+  })
 })
 
-describe('paridade core × servidor — intervalo_dias (085 C1 / H-2)', () => {
-  it('N=30 em 70 dias: mesmos dias nos dois motores (1/5, 31/5, 30/6)', () => {
+describe('decisões que eram divergências na 085 — agora uma resposta só (FR-005/007)', () => {
+  it('frequência desconhecida: true (fallback audível, Q-2)', () => {
+    expect(isProtocolActiveOnDate({ ...base, frequency: 'quinzenal' }, '2026-05-02')).toBe(true)
+  })
+
+  it('período: end_date passado exclui', () => {
+    expect(isProtocolActiveOnDate({ ...base, frequency: 'diário', end_date: '2026-05-05' }, '2026-05-10')).toBe(false)
+  })
+
+  it('intervalo_dias N=30 em 70 dias: 1/5, 31/5, 30/6', () => {
     const p = { ...base, frequency: 'intervalo_dias', interval_days: 30 }
     const days = Array.from({ length: 70 }, (_, i) => {
       const d = new Date(2026, 4, 1 + i)
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     })
-    const server = days.filter((d) => isProtocolActiveOnWeekday(p, weekdayOf(d), d))
-    const core = days.filter((d) => isProtocolActiveOnDate(p, d))
-    expect(server).toEqual(['2026-05-01', '2026-05-31', '2026-06-30'])
-    expect(core).toEqual(server)
+    expect(days.filter((d) => isProtocolActiveOnDate(p, d))).toEqual(['2026-05-01', '2026-05-31', '2026-06-30'])
   })
 
-  it('N ausente (select sem a coluna): os dois motores erram para o lado audível', () => {
-    const p = { ...base, frequency: 'intervalo_dias', interval_days: null }
-    expect(isProtocolActiveOnWeekday(p, weekdayOf('2026-05-02'), '2026-05-02')).toBe(true)
-    expect(isProtocolActiveOnDate(p, '2026-05-02')).toBe(true)
-  })
-})
-
-describe('divergências DECLARADAS (spec 088 §2) — mudar qualquer uma é decisão, não acidente', () => {
-  it('frequência desconhecida: servidor false, core true', () => {
-    const p = { ...base, frequency: 'quinzenal' }
-    expect(isProtocolActiveOnWeekday(p, weekdayOf('2026-05-02'), '2026-05-02')).toBe(false)
-    expect(isProtocolActiveOnDate(p, '2026-05-02')).toBe(true)
-  })
-
-  it('período: servidor não confere end_date, core confere', () => {
-    const p = { ...base, frequency: 'diário', end_date: '2026-05-05' }
-    expect(isProtocolActiveOnWeekday(p, weekdayOf('2026-05-10'), '2026-05-10')).toBe(true)
-    expect(isProtocolActiveOnDate(p, '2026-05-10')).toBe(false)
+  it('intervalo_dias com N ausente (select sem a coluna): audível', () => {
+    expect(isProtocolActiveOnDate({ ...base, frequency: 'intervalo_dias', interval_days: null }, '2026-05-02')).toBe(true)
   })
 })

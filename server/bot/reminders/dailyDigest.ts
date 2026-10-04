@@ -1,8 +1,8 @@
 import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
 import { shouldSendNotification } from '../../services/notificationDeduplicator.js';
-import { getCurrentTimeInTimezone, getTodayLocal, getCurrentDatePartsInTimezone } from '../../utils/dateUtils.js';
-import { isProtocolActiveOnWeekday } from '../../utils/protocolActiveHelper.js';
+import { getCurrentTimeInTimezone, getProtocolPeriodPrefilter } from '../../utils/dateUtils.js';
+import { isProtocolActiveOnDate, getTodayLocal as getTodayLocalInTz } from '@dosiq/core';
 
 const logger = createLogger('DailyDigest');
 
@@ -39,12 +39,13 @@ async function _getEligibleUsersForDigest(users, correlationId) {
 // conteúdo: o caminho legado e o builder da outbox chamam ESTA — sem ela, o cutover
 // manteria duas implementações do mesmo texto, que divergem em silêncio.
 function _buildDigestPayload({ protocols, displayName, digestTime, timezone }) {
-  const { weekday } = getCurrentDatePartsInTimezone(timezone);
-  const todayStr = getTodayLocal();
+  // 088 (FR-003/004): uma data só, no fuso da usuária; o motor do core deriva o dia da semana dela
+  // e confere o período exato (a query só pré-filtra com folga de ±1 dia).
+  const todayStr = getTodayLocalInTz(timezone);
 
   const todaySchedule = [];
   (protocols || []).forEach(p => {
-    if (!isProtocolActiveOnWeekday(p, weekday, todayStr)) return;
+    if (!isProtocolActiveOnDate(p, todayStr)) return;
 
     (p.time_schedule || []).forEach(time => {
       todaySchedule.push({
@@ -80,14 +81,14 @@ function _buildDigestPayload({ protocols, displayName, digestTime, timezone }) {
 // Protocolos ativos hoje de UM usuário (o caminho legado busca em lote p/ N usuários; o drain
 // da outbox chega com 1 usuário por linha).
 async function _fetchActiveProtocolsForUser(userId: string) {
-  const today = getTodayLocal();
+  const { startOnOrBefore, endOnOrAfter } = getProtocolPeriodPrefilter();
   const { data, error } = await supabase
     .from('protocols')
     .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml)')
     .eq('user_id', userId)
     .eq('active', true)
-    .lte('start_date', today)
-    .or(`end_date.is.null,end_date.gte.${today}`);
+    .lte('start_date', startOnOrBefore)
+    .or(`end_date.is.null,end_date.gte.${endOnOrAfter}`);
   if (error) throw new Error(`_fetchActiveProtocolsForUser: ${error.message}`);
   return data ?? [];
 }
@@ -152,14 +153,14 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     }
 
     const eligibleIds = eligibleEntries.map(e => e.userId);
-    const today = getTodayLocal();
+    const { startOnOrBefore, endOnOrAfter } = getProtocolPeriodPrefilter();
     const { data: allProtocols } = await supabase
       .from('protocols')
       .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml)')
       .in('user_id', eligibleIds)
       .eq('active', true)
-      .lte('start_date', today)
-      .or(`end_date.is.null,end_date.gte.${today}`);
+      .lte('start_date', startOnOrBefore)
+      .or(`end_date.is.null,end_date.gte.${endOnOrAfter}`);
 
     const protocolsByUser = {};
     for (const p of allProtocols ?? []) {
