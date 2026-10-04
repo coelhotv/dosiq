@@ -1,197 +1,96 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+// Tela do relatório na web (spec 097 A2, D-A2-2 — períodos fixos, sem link, estados, baixar/compartilhar).
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
-  useDashboard: vi.fn(),
-  getConsultationData: vi.fn(),
-  generateConsultationPDF: vi.fn(),
-  shareReport: vi.fn(),
-  shareNative: vi.fn(),
-  copyToClipboard: vi.fn(),
-  track: vi.fn(),
-  getUser: vi.fn(),
-  stockTracking: { enabled: true },
+  fetchClinicalReport: vi.fn(),
+  warmReportEndpoint: vi.fn(),
+  downloadReportFile: vi.fn(),
+  shareReportFile: vi.fn(),
+  canShareReportFile: vi.fn(),
 }))
 
-vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
-  useDashboard: mocks.useDashboard,
-}))
+vi.mock('@/features/reports/services/reportDownloadFlow', () => mocks)
 
-vi.mock('@shared/hooks/useStockTracking', () => ({
-  useStockTracking: () => mocks.stockTracking,
-}))
+import ReportGenerator from '../ReportGenerator'
 
-vi.mock('@shared/utils/supabase', () => ({
-  supabase: {
-    auth: {
-      getUser: mocks.getUser,
-    },
-  },
-}))
-
-vi.mock('@shared/services/cachedServices', () => ({
-  cachedAdherenceService: {
-    getDailyAdherenceFromView: vi.fn((days) =>
-      Promise.resolve(
-        Array.from({ length: days }, (_, index) => ({
-          date: `2026-03-${String(index + 1).padStart(2, '0')}`,
-          taken: 10,
-          expected: 10,
-          adherence: 100,
-        }))
-      )
-    ),
-    getAdherenceSummary: vi.fn((period) =>
-      Promise.resolve({
-        overallScore: 90,
-        overallTaken: 9,
-        overallExpected: 10,
-        currentStreak: 3,
-        period,
-      })
-    ),
-  },
-}))
-
-vi.mock('@features/consultation/services/consultationDataService', () => ({
-  getConsultationData: mocks.getConsultationData,
-}))
-
-vi.mock('../../services/consultationPdfService.js', () => ({
-  generateConsultationPDF: mocks.generateConsultationPDF,
-}))
-
-vi.mock('../../services/shareService', () => ({
-  shareReport: mocks.shareReport,
-  shareNative: mocks.shareNative,
-  copyToClipboard: mocks.copyToClipboard,
-}))
-
-vi.mock('@dashboard/services/analyticsService', () => ({
-  analyticsService: {
-    track: mocks.track,
-  },
-}))
-
-import ReportGenerator from '@/features/reports/components/ReportGenerator'
+const FILE = { file: new File(['%PDF'], 'dosiq-relatorio-30d-2026-10-03.pdf'), filename: 'dosiq-relatorio-30d-2026-10-03.pdf' }
 
 describe('ReportGenerator', () => {
   beforeEach(() => {
+    mocks.canShareReportFile.mockReturnValue(true)
+  })
+
+  afterEach(() => {
     vi.clearAllMocks()
-    mocks.stockTracking.enabled = true
-
-    mocks.useDashboard.mockReturnValue({
-      medicines: [{ id: 'med-1', name: 'Ansitec' }],
-      protocols: [{ id: 'prot-1', medicine_id: 'med-1', active: true }],
-      logs: [{ id: 'log-1', protocol_id: 'prot-1', quantity_taken: 1 }],
-      stockSummary: [],
-      stats: { score: 90 },
-      dailyAdherence: [{ date: '2026-03-24', taken: 1, expected: 1, adherence: 100 }],
-    })
-
-    mocks.getUser.mockResolvedValue({
-      data: {
-        user: {
-          email: 'joao.silva@email.com',
-          user_metadata: {
-            name: 'Joao Silva',
-          },
-        },
-      },
-    })
-
-    mocks.getConsultationData.mockReturnValue({
-      patientInfo: { name: 'Joao Silva' },
-      activeMedicines: [],
-      adherenceSummary: {},
-      stockAlerts: [],
-      prescriptionStatus: [],
-      activeTitrations: [],
-      generatedAt: '2026-03-24T10:30:00.000Z',
-    })
-
-    mocks.generateConsultationPDF.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }))
+    vi.clearAllTimers()
   })
 
-  it('gera o PDF clinico usando o pipeline de consulta', async () => {
-    render(<ReportGenerator onClose={vi.fn()} />)
-
-    await waitFor(() => {
-      expect(mocks.getUser).toHaveBeenCalled()
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
-
-    await waitFor(() => {
-      expect(mocks.getConsultationData).toHaveBeenCalledWith(
-        expect.objectContaining({
-          medicines: [{ id: 'med-1', name: 'Ansitec' }],
-          protocols: [{ id: 'prot-1', medicine_id: 'med-1', active: true }],
-        }),
-        'Joao Silva',
-        null,
-        'joao.silva@email.com',
-        null,
-        expect.objectContaining({
-          last30d: expect.objectContaining({ overallScore: 90 }),
-          last90d: expect.objectContaining({ overallScore: 90 }),
-        })
-      )
-    })
-
-    await waitFor(() => {
-      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
-        expect.objectContaining({
-          consultationData: expect.objectContaining({
-            patientInfo: { name: 'Joao Silva' },
-          }),
-          dashboardData: expect.objectContaining({
-            medicines: [{ id: 'med-1', name: 'Ansitec' }],
-            dailyAdherence: expect.any(Array),
-          }),
-          period: '30d',
-          title: 'Dosiq - Consulta Médica',
-        })
-      )
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText(/resumo clínico gerado com sucesso/i)).toBeInTheDocument()
-    })
+  it('pré-aquece o servidor ao abrir', async () => {
+    render(<ReportGenerator />)
+    await waitFor(() => expect(mocks.warmReportEndpoint).toHaveBeenCalledTimes(1))
   })
 
-  it('094 FR-014: período 7d também lê a adesão do fato (view de dose_instances), não da lista viva', async () => {
-    const { cachedAdherenceService } = await import('@shared/services/cachedServices')
-    render(<ReportGenerator onClose={vi.fn()} />)
-    await waitFor(() => {
-      expect(mocks.getUser).toHaveBeenCalled()
-    })
-
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '7d' } })
-    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
-
-    await waitFor(() => {
-      expect(cachedAdherenceService.getDailyAdherenceFromView).toHaveBeenCalledWith(7)
-      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
-        expect.objectContaining({
-          period: '7d',
-          dashboardData: expect.objectContaining({
-            dailyAdherence: expect.arrayContaining([expect.objectContaining({ date: '2026-03-01', taken: 10 })]),
-          }),
-        })
-      )
-    })
+  it('oferece só 7/30/90/180 dias, padrão 30, sem "Todo o período" nem link', () => {
+    render(<ReportGenerator />)
+    const select = screen.getByLabelText('Período') as HTMLSelectElement
+    expect([...select.options].map((o) => o.value)).toEqual(['7', '30', '90', '180'])
+    expect(select.value).toBe('30')
+    expect(screen.queryByText('Todo o período')).toBeNull()
+    expect(screen.queryByText(/72 horas|Copiar/)).toBeNull()
   })
 
-  it('044 (smoke 085 C2): usuário dose-only ⇒ o PDF recebe stockTrackingEnabled=false', async () => {
-    mocks.stockTracking.enabled = false
-    render(<ReportGenerator onClose={vi.fn()} />)
-    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled())
-    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
-    await waitFor(() => {
-      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
-        expect.objectContaining({ dashboardData: expect.objectContaining({ stockTrackingEnabled: false }) })
-      )
-    })
+  it('gera com o período escolhido; pronto oferece Baixar e Compartilhar', async () => {
+    mocks.fetchClinicalReport.mockResolvedValue(FILE)
+    render(<ReportGenerator />)
+    fireEvent.change(screen.getByLabelText('Período'), { target: { value: '90' } })
+    fireEvent.click(screen.getByText('Gerar PDF Clínico'))
+    await waitFor(() => expect(mocks.fetchClinicalReport).toHaveBeenCalledWith(90))
+    fireEvent.click(await screen.findByText('Baixar PDF'))
+    await waitFor(() => expect(mocks.downloadReportFile).toHaveBeenCalledWith(FILE))
+    fireEvent.click(screen.getByText('Compartilhar'))
+    await waitFor(() => expect(mocks.shareReportFile).toHaveBeenCalledWith(FILE))
+  })
+
+  it('sem compartilhamento de arquivo no navegador, só Baixar', async () => {
+    mocks.canShareReportFile.mockReturnValue(false)
+    mocks.fetchClinicalReport.mockResolvedValue(FILE)
+    render(<ReportGenerator />)
+    fireEvent.click(screen.getByText('Gerar PDF Clínico'))
+    expect(await screen.findByText('Baixar PDF')).toBeInTheDocument()
+    expect(screen.queryByText('Compartilhar')).toBeNull()
+  })
+
+  it('carregando bloqueia o segundo toque', async () => {
+    let release: (v: typeof FILE) => void = () => {}
+    mocks.fetchClinicalReport.mockImplementation(() => new Promise((r) => (release = r)))
+    render(<ReportGenerator />)
+    fireEvent.click(screen.getByText('Gerar PDF Clínico'))
+    await waitFor(() => expect(screen.getByText('Gerando...')).toBeInTheDocument())
+    fireEvent.click(screen.getByText('Gerando...'))
+    expect(mocks.fetchClinicalReport).toHaveBeenCalledTimes(1)
+    release(FILE)
+    expect(await screen.findByText('Baixar PDF')).toBeInTheDocument()
+  })
+
+  it('erro mostra mensagem simples, mantém o período e permite tentar de novo', async () => {
+    mocks.fetchClinicalReport.mockRejectedValueOnce(Object.assign(new Error('Glifage: falha'), { code: 'collect' }))
+    render(<ReportGenerator />)
+    fireEvent.change(screen.getByLabelText('Período'), { target: { value: '7' } })
+    fireEvent.click(screen.getByText('Gerar PDF Clínico'))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Não foi possível gerar o relatório')
+    expect(alert).not.toHaveTextContent('Glifage')
+    expect((screen.getByLabelText('Período') as HTMLSelectElement).value).toBe('7')
+    mocks.fetchClinicalReport.mockResolvedValueOnce(FILE)
+    fireEvent.click(screen.getByText('Tentar de novo'))
+    await waitFor(() => expect(mocks.fetchClinicalReport).toHaveBeenLastCalledWith(7))
+  })
+
+  it('limite de pedidos tem mensagem própria', async () => {
+    mocks.fetchClinicalReport.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'rate_limited' }))
+    render(<ReportGenerator />)
+    fireEvent.click(screen.getByText('Gerar PDF Clínico'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Aguarde um minuto')
   })
 })

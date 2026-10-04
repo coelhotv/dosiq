@@ -14,8 +14,8 @@ import {
   pickMeasureSeriesState,
   type TreatmentMeasureSeries,
 } from '../treatmentMeasureSeries'
-import { medicineOf } from './reportFormat'
-import type { ReportInputs } from './reportTypes'
+import { daysBetween, localDayOf, medicineOf } from './reportFormat'
+import type { ReportInputs, ReportWindow } from './reportTypes'
 import { buildChanges, pausedRanges, type ChangeItem } from './reportSections/changes'
 import { buildForThisVisit, buildHeader, type ReportHeader, type VisitItem } from './reportSections/header'
 import { buildIntakesSection, type IntakesSection } from './reportSections/intakes'
@@ -29,12 +29,21 @@ export interface ReportMedicationRow extends MedicationRow {
 }
 
 export interface ReportLadder extends Ladder {
-  /** Peso por etapa (DS-7) — só no estado B-0 da 069, para semanal ou injetável. */
+  /** Peso por etapa (DS-7), para semanal ou injetável com ao menos uma pesagem na escada. */
   weightSeries: TreatmentMeasureSeries | null
+  /** Gráfico só no estado B-0 da 069 (≥3 pesagens, ≥14 dias); abaixo disso, só as linhas por etapa. */
+  weightChart: boolean
+  /**
+   * Doses do tratamento no período que não caem em nenhuma etapa registrada (escada com intervalo
+   * entre etapas, ou doses antes da 1ª). `null` quando tudo cai em alguma etapa (smoke 097 A2).
+   */
+  outsideSteps: { taken: number; expected: number } | null
 }
 
 export interface ReportModel {
   generatedAt: string
+  /** Fuso do dono (`user_settings.timezone`) — hora da geração no cabeçalho. */
+  timezone: string
   header: ReportHeader
   forThisVisit: VisitItem[]
   medications: ReportMedicationRow[]
@@ -45,13 +54,15 @@ export interface ReportModel {
   stock: StockRow[] | null
 }
 
-function _weightSeries(ladder: Ladder, inputs: ReportInputs): TreatmentMeasureSeries | null {
+function _weightSeries(ladder: Ladder, inputs: ReportInputs): Pick<ReportLadder, 'weightSeries' | 'weightChart'> {
+  const none = { weightSeries: null, weightChart: false }
   const protocol = inputs.protocols.find((p) => p.id === ladder.protocolId)
-  if (!protocol) return null
+  if (!protocol) return none
   // Regra da 069 (Clarifications): semanal OU injetável.
   const eligible = isInjectable(medicineOf(protocol, inputs.medicines)) || protocol.frequency === 'semanal'
-  if (!eligible) return null
+  if (!eligible) return none
 
+  const firstStart = ladder.steps.find((s) => !s.planned && s.start)?.start ?? null
   const doseDays = new Map<string, { day: string; taken: number; missed: number }>()
   for (const r of inputs.doseDays) {
     if (r.protocol_id !== protocol.id) continue
@@ -67,13 +78,53 @@ function _weightSeries(ladder: Ladder, inputs: ReportInputs): TreatmentMeasureSe
     steps: ladder.steps.map((s) => ({ doseLabel: s.doseLabel, start: s.planned ? null : s.start, end: s.end, current: s.state === 'current' })),
     doseDays: [...doseDays.values()],
     timezone: inputs.timezone,
-    from: inputs.window.from,
+    // Como na 069: o gráfico começa na 1ª etapa (recortada ao período), não no início do período.
+    from: firstStart && firstStart > inputs.window.from ? firstStart : inputs.window.from,
     to: inputs.window.to,
   })
-  return pickMeasureSeriesState(series, inputs.window.to) === 'B0' ? series : null
+  // Linhas por etapa com qualquer pesagem (fato); gráfico só no B-0, como no app (smoke 097 A2).
+  if (series.points.length === 0) return none
+  return { weightSeries: series, weightChart: pickMeasureSeriesState(series, inputs.window.to) === 'B0' }
 }
 
-export function buildReportModel(inputs: ReportInputs, { generatedAt }: { generatedAt: string }): ReportModel {
+/**
+ * Trecho do período com registro: começa no primeiro dia com dose prevista (tomada, perdida ou
+ * pausada) ou com medida. Antes disso não havia nada no app — dia vazio ali não é falta, é ausência
+ * de registro, e não entra nas faixas nem nos denominadores (smoke 097 A2). Sem registro nenhum,
+ * fica o período inteiro.
+ */
+export function dataWindowOf(inputs: ReportInputs): ReportWindow {
+  const { from, to } = inputs.window
+  let first: string | null = null
+  for (const r of inputs.doseDays) {
+    if (r.day < from || r.day > to) continue
+    if (r.taken_count + r.missed_count + r.paused_count === 0) continue
+    if (first === null || r.day < first) first = r.day
+  }
+  for (const b of inputs.biomarkers) {
+    const day = localDayOf(b.measured_at, inputs.timezone)
+    if (!day || day < from || day > to) continue
+    if (first === null || day < first) first = day
+  }
+  if (first === null || first <= from) return inputs.window
+  return { from: first, to, days: daysBetween(first, to) + 1 }
+}
+
+function _outsideSteps(
+  protocolId: string,
+  series: TreatmentMeasureSeries | null,
+  intakes: IntakesSection
+): ReportLadder['outsideSteps'] {
+  if (!series) return null
+  const row = [...intakes.active, ...intakes.ended].find((r) => r.protocolId === protocolId)
+  if (!row) return null
+  const taken = row.taken - series.steps.reduce((n, s) => n + s.taken, 0)
+  const expected = row.expected - series.steps.reduce((n, s) => n + s.expected, 0)
+  return expected > 0 ? { taken: Math.max(0, taken), expected } : null
+}
+
+export function buildReportModel(original: ReportInputs, { generatedAt }: { generatedAt: string }): ReportModel {
+  const inputs: ReportInputs = { ...original, window: dataWindowOf(original) }
   const asOf = inputs.window.to
   const intakes = buildIntakesSection(inputs)
   const allLadders = buildLadders(inputs)
@@ -87,7 +138,10 @@ export function buildReportModel(inputs: ReportInputs, { generatedAt }: { genera
   ])
   const ladders: ReportLadder[] = allLadders
     .filter((l) => relevant.has(l.protocolId))
-    .map((l) => ({ ...l, weightSeries: _weightSeries(l, inputs) }))
+    .map((l) => {
+      const weight = _weightSeries(l, inputs)
+      return { ...l, ...weight, outsideSteps: _outsideSteps(l.protocolId, weight.weightSeries, intakes) }
+    })
 
   const intakeById = new Map(intakes.active.map((r) => [r.protocolId, r]))
   const medications: ReportMedicationRow[] = medicationsBase.map((m) => {
@@ -98,11 +152,13 @@ export function buildReportModel(inputs: ReportInputs, { generatedAt }: { genera
   const stock = buildStockRows(inputs)
   return {
     generatedAt,
-    header: buildHeader(inputs, intakes),
+    timezone: inputs.timezone,
+    header: { ...buildHeader(inputs, intakes), window: original.window, dataWindow: inputs.window },
     forThisVisit: buildForThisVisit(medications, stock, ladders, asOf),
     medications,
     intakes,
-    changes: buildChanges(inputs, intakes, ladders),
+    // Mudanças são fatos datados: valem no período PEDIDO, não só no trecho com registro (RC6 #857).
+    changes: buildChanges({ ...inputs, window: original.window }, intakes, ladders),
     ladders,
     stock,
   }

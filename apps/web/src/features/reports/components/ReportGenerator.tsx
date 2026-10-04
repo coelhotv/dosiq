@@ -1,32 +1,23 @@
 /**
- * @fileoverview Componente de geração do resumo clínico em PDF.
- * Usa o pipeline dedicado do Modo Consulta Médica para todos os entrypoints.
+ * @fileoverview Geração do relatório clínico (spec 097 A2).
+ * O PDF é gerado no servidor (`/api/report`, template único do `@dosiq/core`) e chega como arquivo:
+ * baixar ou compartilhar (D-A2-2). Sem link público (FR-017). Fluxo carregado sob demanda (SC-003).
  * @module features/reports/components/ReportGenerator
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext'
-import { useStockTracking } from '@shared/hooks/useStockTracking'
-import { supabase } from '@shared/utils/supabase'
-import { cachedAdherenceService } from '@shared/services/cachedServices'
-import { getConsultationData } from '@features/consultation/services/consultationDataService'
-import { generateConsultationPDF } from '@/features/reports/services/consultationPdfService'
-import { shareReport, shareNative, copyToClipboard } from '@/features/reports/services/shareService'
-import { analyticsService } from '@dashboard/services/analyticsService'
+import { useState, useCallback, useEffect } from 'react'
 import Button from '@shared/components/ui/Button'
-import { getNow, formatLocalDate } from '@utils/dateUtils'
 import './ReportGenerator.css'
 
-/**
- * Opções de período para o relatório.
- * @constant {Array<{value: string, label: string}>}
- */
+/** Períodos fixos, iguais na web e no mobile (RC2-D4); padrão 30. */
 const PERIOD_OPTIONS = [
-  { value: '7d', label: 'Últimos 7 dias' },
-  { value: '30d', label: 'Últimos 30 dias' },
-  { value: '90d', label: 'Últimos 90 dias' },
-  { value: 'all', label: 'Todo o período' },
-]
+  { value: 7, label: 'Últimos 7 dias' },
+  { value: 30, label: 'Últimos 30 dias' },
+  { value: 90, label: 'Últimos 90 dias' },
+  { value: 180, label: 'Últimos 180 dias' },
+] as const
+
+type PeriodDays = (typeof PERIOD_OPTIONS)[number]['value']
 
 /** Renderiza o hero/header do gerador de relatórios. */
 function ReportHero() {
@@ -38,7 +29,7 @@ function ReportHero() {
           <h3 className="report-generator__title">Gerar Resumo Clínico</h3>
         </div>
         <p className="report-generator__description">
-          Um PDF único, legível em consulta e pronto para compartilhar com o médico.
+          Um PDF para levar à consulta: baixe ou envie pelo WhatsApp.
         </p>
       </div>
       <div className="report-generator__hero-badge">
@@ -56,81 +47,20 @@ function ReportContentPanel() {
       <label className="report-generator__label">Inclui no PDF</label>
       <div className="report-generator__chips">
         <span className="report-generator__chip">Tratamentos</span>
-        <span className="report-generator__chip">Adesão</span>
-        <span className="report-generator__chip">Estoque</span>
-        <span className="report-generator__chip">Prescrições</span>
+        <span className="report-generator__chip">Tomadas</span>
+        <span className="report-generator__chip">Mudanças</span>
         <span className="report-generator__chip">Titulação</span>
+        <span className="report-generator__chip">Estoque</span>
       </div>
       <p className="report-generator__helper">
-        O relatório clínico prioriza leitura rápida, com blocos curtos e gráficos legíveis.
+        Todos os números se referem ao período escolhido.
       </p>
     </section>
   )
 }
 
-/** Renderiza as ações após PDF gerado com sucesso. */
-function ReportSuccessActions({ isGenerating, shareLoading, onDownload, onShare, onRegenerate }) {
-  return (
-    <div className="report-generator__success">
-      <div className="report-generator__success-message">Resumo clínico gerado com sucesso!</div>
-      <div className="report-generator__success-actions">
-        <Button className="report-generator__button report-generator__button--download" onClick={onDownload} variant="primary">
-          Baixar PDF
-        </Button>
-        <Button className="report-generator__button report-generator__button--share" onClick={onShare} disabled={shareLoading} variant="secondary">
-          {shareLoading ? <><span className="report-generator__spinner" />Enviando...</> : 'Compartilhar'}
-        </Button>
-        <Button className="report-generator__button report-generator__button--regenerate" onClick={onRegenerate} disabled={isGenerating} variant="outline">
-          {isGenerating ? <><span className="report-generator__spinner" />Gerando...</> : 'Gerar Novo'}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-/** Período em dias para o mapa de períodos. */
-const PERIOD_DAYS_MAP = { '7d': 7, '30d': 30, '90d': 90, all: 90 }
-
-/** Resolve a aderência diária de acordo com o período selecionado. */
-// 094 FR-014: todo período lê a adesão do FATO (`v_daily_adherence` ← dose_instances). O atalho
-// de 7d usava o `dailyAdherence` do dashboard (lista VIVA de tratamentos × logs): tratamento
-// excluído/pausado sumia do esperado e suas tomadas inflavam o dia (R-299).
-async function resolveAdherence(period) {
-  const days = PERIOD_DAYS_MAP[period] || 30
-  return cachedAdherenceService.getDailyAdherenceFromView(days)
-}
-
-/**
- * Busca sumários de adesão instance-based (30d + 90d) p/ injetar no PDF (ADR-054).
- * Swallow + DEV-log em falha (retorna null): rede dos sumários não derruba o perfil/PDF
- * — degrada p/ adesão 0 em vez de erro total (Gemini #620).
- */
-async function fetchAdherenceSummaries() {
-  try {
-    const [last30d, last90d] = await Promise.all([
-      cachedAdherenceService.getAdherenceSummary('30d'),
-      cachedAdherenceService.getAdherenceSummary('90d'),
-    ])
-    return { last30d, last90d }
-  } catch (err) {
-    if (import.meta.env.DEV) console.error('Erro ao carregar sumários de adesão:', err)
-    return null
-  }
-}
-
-/** Executa o compartilhamento nativo em mobile se disponível. */
-async function tryNativeShare(url) {
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  if (!isMobile) return
-  try {
-    await shareNative(url, 'Resumo Clínico de Consulta')
-  } catch {
-    // Fallback silencioso - usuário verá o link copiável
-  }
-}
-
 /** Renderiza o painel de seleção de período do relatório. */
-function PeriodPanel({ period, isGenerating, onPeriodChange }) {
+function PeriodPanel({ period, isGenerating, onPeriodChange }: { period: PeriodDays; isGenerating: boolean; onPeriodChange: (p: PeriodDays) => void }) {
   return (
     <section className="report-generator__panel">
       <label className="report-generator__label" htmlFor="report-period">Período</label>
@@ -138,223 +68,96 @@ function PeriodPanel({ period, isGenerating, onPeriodChange }) {
         id="report-period"
         className="report-generator__select"
         value={period}
-        onChange={(e) => onPeriodChange(e.target.value)}
+        onChange={(e) => onPeriodChange(Number(e.target.value) as PeriodDays)}
         disabled={isGenerating}
       >
         {PERIOD_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
-      <p className="report-generator__helper">
-        O intervalo define a janela de adesão exibida no resumo principal.
-      </p>
     </section>
   )
 }
 
-/** Renderiza a área de link de compartilhamento copiável. */
-function ShareResultSection({ shareUrl, shareLoading, copied, onCopyLink }) {
-  if (!shareUrl || shareLoading) return null
-  return (
-    <div className="report-generator__share-result">
-      <div className="report-generator__share-url-container">
-        <input
-          type="text"
-          className="report-generator__share-url-input"
-          value={shareUrl}
-          readOnly
-          aria-label="Link de compartilhamento"
-        />
-        <Button
-          className="report-generator__copy-button"
-          onClick={onCopyLink}
-          variant={copied ? 'success' : 'secondary'}
-          size="small"
-        >
-          {copied ? 'Copiado!' : 'Copiar'}
-        </Button>
-      </div>
-      <p className="report-generator__share-expiry">Link válido por 72 horas</p>
-    </div>
-  )
-}
-
-function getPeriodLabel(selectedPeriod) {
-  return PERIOD_OPTIONS.find((opt) => opt.value === selectedPeriod)?.label || selectedPeriod
-}
-
-function buildConsultationReportFilename(selectedPeriod) {
-  const periodLabel = getPeriodLabel(selectedPeriod)
-  return `dosiq-consulta-medica-${periodLabel.replace(/\s+/g, '-')}-${formatDateForFilename()}.pdf`
-}
-
 /**
- * Formata a data atual para o nome do arquivo.
- * @returns {string} Data formatada como YYYY-MM-DD.
- */
-function formatDateForFilename() {
-  return formatLocalDate(getNow())
-}
-
-/**
- * Dispara o download de um Blob como arquivo.
- * @param {Blob} blob - Blob a ser baixado.
- * @param {string} filename - Nome do arquivo.
- */
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
-/**
- * Componente de geração de relatórios PDF.
- *
- * @param {Object} props - Propriedades do componente.
- * @returns {JSX.Element} Componente de geração de relatórios.
- *
+ * Componente de geração do relatório clínico.
  * @example
- * // Uso básico
- * <ReportGenerator />
- *
- * // Com callback de fechamento
  * <ReportGenerator onClose={() => setIsModalOpen(false)} />
  */
+type ReportFileT = import('@/features/reports/services/reportDownloadFlow').ReportFile
+
+// Uma importação só por sessão: o aquecimento e o clique compartilham a mesma promessa. Falha não
+// fica guardada — a próxima tentativa importa de novo (offline → online, RC6 #857).
+let flowPromise: Promise<typeof import('@/features/reports/services/reportDownloadFlow')> | null = null
+const loadFlow = () =>
+  (flowPromise ??= import('@/features/reports/services/reportDownloadFlow').catch((err: unknown) => {
+    flowPromise = null
+    throw err
+  }))
+
+/** Mensagem simples por código (nunca o detalhe técnico — FR-016). */
+function errorMessage(code: string | undefined): string {
+  if (code === 'rate_limited') return 'Muitos relatórios em sequência. Aguarde um minuto e tente de novo.'
+  if (code === 'auth') return 'Sua sessão expirou. Entre de novo para gerar o relatório.'
+  if (code === 'share') return 'Não foi possível abrir o compartilhamento. Use “Baixar PDF”.'
+  return 'Não foi possível gerar o relatório. Confira a conexão e tente de novo.'
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function ReportGenerator(props: any = {}) {
+export default function ReportGenerator(_props: { onClose?: () => void } = {}) {
   // 1. States (R-010: Hook order)
-  const [patientName, setPatientName] = useState('')
-  const [patientEmail, setPatientEmail] = useState('')
-  const [patientUserId, setPatientUserId] = useState(null)
-  const [adherenceSummaries, setAdherenceSummaries] = useState(null)
-  const [period, setPeriod] = useState('30d')
+  const [period, setPeriod] = useState<PeriodDays>(30)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [error, setError] = useState(null)
-  const [pdfBlob, setPdfBlob] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+  const [report, setReport] = useState<ReportFileT | null>(null)
+  const [canShare, setCanShare] = useState(false)
 
-  // Estados para compartilhamento
-  const [shareLoading, setShareLoading] = useState(false)
-  const [shareUrl, setShareUrl] = useState(null)
-  const [shareError, setShareError] = useState(null)
-  const [copied, setCopied] = useState(false)
-
-  const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
-  const { enabled: stockTrackingEnabled } = useStockTracking()
-
-  // 044 (smoke 085 C2): `stockTrackingEnabled` é ALLOWLIST do payload do PDF — sem ele o builder
-  // assume estoque ligado e o PDF do usuário dose-only imprimia alertas (pág. 1) e a pág. de
-  // estoque. O caminho do modo consulta (views/Consultation.tsx) já passava; este não.
-  const dashboardData = useMemo(
-    () => ({
-      medicines,
-      protocols,
-      logs,
-      stockSummary,
-      stats,
-      dailyAdherence,
-      stockTrackingEnabled,
-    }),
-    [medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled]
-  )
-
-  const consultationData = useMemo(
-    () => getConsultationData(dashboardData, patientName, null, patientEmail, patientUserId, adherenceSummaries),
-    [dashboardData, patientEmail, patientName, patientUserId, adherenceSummaries]
-  )
-
+  // 2. Effects — sobe o Chromium do servidor enquanto o usuário escolhe o período.
   useEffect(() => {
-    let isMounted = true
-
-    const loadPatientProfile = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!isMounted) return
-        setPatientName(user?.user_metadata?.name || user?.user_metadata?.full_name || '')
-        setPatientEmail(user?.email || '')
-        setPatientUserId(user?.id || null)
-
-        const summaries = await fetchAdherenceSummaries()
-        if (isMounted) setAdherenceSummaries(summaries)
-      } catch (err) {
-        console.error('Erro ao carregar perfil para relatório clínico:', err)
-      }
-    }
-
-    loadPatientProfile()
-
-    return () => {
-      isMounted = false
-    }
+    loadFlow()
+      .then((flow) => flow.warmReportEndpoint())
+      .catch(() => {})
   }, [])
 
+  // 3. Handlers
   const handleGenerate = useCallback(async () => {
-    setIsGenerating(true); setError(null); setPdfBlob(null); setShareUrl(null); setShareError(null)
+    if (isGenerating) return
+    setIsGenerating(true); setError(null); setReport(null)
     try {
-      const resolvedDailyAdherence = await resolveAdherence(period)
-      const blob = await generateConsultationPDF({
-        consultationData, dashboardData: { ...dashboardData, dailyAdherence: resolvedDailyAdherence }, period, title: 'Dosiq - Consulta Médica',
-      })
-      setPdfBlob(blob)
-      analyticsService.track('report_generated', { period, fileSize: blob.size, fileType: 'pdf', reportType: 'consultation_clinical_pdf' })
+      const flow = await loadFlow()
+      const file = await flow.fetchClinicalReport(period)
+      setReport(file)
+      setCanShare(flow.canShareReportFile(file))
     } catch (err) {
-      console.error('Erro ao gerar relatório:', err)
-      setError('Erro ao gerar relatório. Tente novamente.')
-      analyticsService.track('report_generation_error', { period, error: err.message })
+      setError(errorMessage((err as { code?: string })?.code))
     } finally {
       setIsGenerating(false)
     }
-  }, [consultationData, dashboardData, period])
+  }, [isGenerating, period])
 
-  const handleDownload = useCallback(() => {
-    if (!pdfBlob) return
-    const filename = buildConsultationReportFilename(period)
-    downloadBlob(pdfBlob, filename)
-    analyticsService.track('report_downloaded', { period, filename, fileSize: pdfBlob.size, reportType: 'consultation_clinical_pdf' })
-  }, [pdfBlob, period])
+  const handleDownload = useCallback(async () => {
+    if (!report) return
+    try {
+      const flow = await loadFlow()
+      flow.downloadReportFile(report)
+    } catch (err) {
+      setError(errorMessage((err as { code?: string })?.code))
+    }
+  }, [report])
 
   const handleShare = useCallback(async () => {
-    if (!pdfBlob) return
-    setShareLoading(true); setShareError(null); setShareUrl(null); setCopied(false)
+    if (!report) return
     try {
-      const filename = buildConsultationReportFilename(period)
-      const result = await shareReport(pdfBlob, { filename, expiresInHours: 72 })
-      setShareUrl(result.url)
-      await tryNativeShare(result.url)
-      analyticsService.track('report_shared', { period, filename, expiresInHours: 72, reportType: 'consultation_clinical_pdf' })
+      const flow = await loadFlow()
+      await flow.shareReportFile(report)
     } catch (err) {
-      console.error('Erro ao compartilhar relatório:', err)
-      setShareError(err.message || 'Erro ao compartilhar relatório. Tente novamente.')
-      analyticsService.track('report_share_error', { period, error: err.message })
-    } finally {
-      setShareLoading(false)
+      setError(errorMessage((err as { code?: string })?.code))
     }
-  }, [pdfBlob, period])
+  }, [report])
 
-  // Trocar período invalida o PDF gerado (volta o botão "Gerar"; evita baixar período antigo).
-  const handlePeriodChange = useCallback((p) => {
-    setPeriod(p); setPdfBlob(null); setShareUrl(null); setShareError(null); setCopied(false)
+  const handlePeriodChange = useCallback((p: PeriodDays) => {
+    setPeriod(p); setReport(null); setError(null)
   }, [])
-
-  const handleCopyLink = useCallback(async () => {
-    if (!shareUrl) return
-    try {
-      await copyToClipboard(shareUrl)
-      setCopied(true)
-      analyticsService.track('report_share_link_copied', { period })
-      setTimeout(() => setCopied(false), 3000)
-    } catch (err) {
-      console.error('Erro ao copiar link:', err)
-      setShareError('Não foi possível copiar o link. Copie manualmente.')
-    }
-  }, [shareUrl, period])
 
   return (
     <div className="report-generator">
@@ -366,30 +169,28 @@ export default function ReportGenerator(props: any = {}) {
       </div>
 
       {error && <div className="report-generator__error" role="alert">{error}</div>}
-      {shareError && <div className="report-generator__error" role="alert">{shareError}</div>}
 
       <div className="report-generator__actions">
-        {!pdfBlob ? (
+        {report ? (
+          <div className="report-generator__ready" role="status">
+            <p className="report-generator__success-message">Relatório pronto.</p>
+            <Button className="report-generator__button" onClick={handleDownload} variant="primary">Baixar PDF</Button>
+            {canShare && (
+              <Button className="report-generator__button" onClick={handleShare} variant="secondary">Compartilhar</Button>
+            )}
+            <Button className="report-generator__button" onClick={handleGenerate} disabled={isGenerating} variant="outline">Gerar de novo</Button>
+          </div>
+        ) : (
           <Button
             className="report-generator__button report-generator__button--generate"
             onClick={handleGenerate}
             disabled={isGenerating}
             variant="primary"
           >
-            {isGenerating ? <><span className="report-generator__spinner" />Gerando...</> : 'Gerar PDF Clínico'}
+            {isGenerating ? <><span className="report-generator__spinner" />Gerando...</> : error ? 'Tentar de novo' : 'Gerar PDF Clínico'}
           </Button>
-        ) : (
-          <ReportSuccessActions
-            isGenerating={isGenerating}
-            shareLoading={shareLoading}
-            onDownload={handleDownload}
-            onShare={handleShare}
-            onRegenerate={handleGenerate}
-          />
         )}
       </div>
-
-      <ShareResultSection shareUrl={shareUrl} shareLoading={shareLoading} copied={copied} onCopyLink={handleCopyLink} />
 
       {isGenerating && (
         <div className="report-generator__loading">

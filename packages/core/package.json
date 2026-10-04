@@ -15,6 +15,11 @@
       "default": "./src/schemas/index.ts"
     },
     "./schemas/*": "./src/schemas/*.ts",
+    "./services/report": {
+      "types": "./dist/services/report/index.d.ts",
+      "node": "./dist/services/report/index.js",
+      "default": "./src/services/report/index.ts"
+    },
     "./utils": {
       "types": "./dist/utils/index.d.ts",
       "node": "./dist/utils/index.js",
@@ -24,7 +29,7 @@
     "./protocols-utils": "./src/protocols-utils/index.ts"
   },
   "scripts": {
-    "build": "rm -rf dist && esbuild src/index.ts src/schemas/index.ts src/utils/index.ts --bundle --format=esm --platform=node --packages=external --outdir=dist --entry-names=[dir]/[name] --log-level=warning && tsc -p tsconfig.declarations.json && node scripts/fix-dts-extensions.mjs",
+    "build": "rm -rf dist && esbuild src/index.ts src/schemas/index.ts src/utils/index.ts src/services/report/index.ts --bundle --format=esm --platform=node --packages=external --outdir=dist --entry-names=[dir]/[name] --log-level=warning && tsc -p tsconfig.declarations.json && node scripts/fix-dts-extensions.mjs",
     "prepare": "npm run build"
   }
 }

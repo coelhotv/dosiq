@@ -45,7 +45,6 @@ export interface ReportMedicineRow {
   concentration_volume_ml: number | null
   presentation: string | null
   type: string | null
-  shelf_life_days: number | null
   archived_at: string | null
 }
 

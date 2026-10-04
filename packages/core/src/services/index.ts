@@ -93,7 +93,8 @@ export {
 export type { ConsentGateMode, ConsentGateDecision } from './consentGate'
 
 // Relatório clínico (spec 097 A1 — coletor + montador; template no A2)
-export * from './report/index'
+// Relatório clínico (097): fora do barrel de propósito — só por `@dosiq/core/services/report`,
+// para o template não entrar no grafo estático de quem importa o barrel (SC-003).
 
 // Medida × etapa do tratamento (contrato 069 FR-010/FR-012; criado pela 097 DS-7)
 export {

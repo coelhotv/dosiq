@@ -2,115 +2,11 @@
 // Fixture: janela de 7 dias (24–30/09/2026, America/Sao_Paulo). Datas locais literais; instantes
 // com offset -03 explícito (AP-270). Inclui 1 tratamento arquivado e 1 pausado.
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { renderReportHtml } from '../reportTemplate'
 import { buildReportModel } from '../reportModel'
-import type {
-  ReportDoseDayRow,
-  ReportInputs,
-  ReportMedicineRow,
-  ReportProtocolRow,
-  ReportTitrationStepRow,
-} from '../reportTypes'
+import type { ReportTitrationStepRow } from '../reportTypes'
+import { DAYS, dd, fixture, GEN, med, proto } from './reportFixture'
 
-const med = (over: Partial<ReportMedicineRow> & { id: string; name: string }): ReportMedicineRow => ({
-  active_ingredient: null,
-  dosage_per_pill: null,
-  dosage_unit: 'mg',
-  units_per_ml: null,
-  concentration_volume_ml: null,
-  presentation: 'comprimido',
-  type: 'medicamento',
-  shelf_life_days: null,
-  archived_at: null,
-  ...over,
-})
-
-const proto = (over: Partial<ReportProtocolRow> & { id: string; medicine_id: string }): ReportProtocolRow => ({
-  name: null,
-  frequency: 'diário',
-  time_schedule: ['08:00'],
-  dosage_per_intake: 1,
-  intake_unit: null,
-  interval_days: null,
-  weekdays: null,
-  start_date: '2026-01-01',
-  end_date: null,
-  active: true,
-  paused_at: null,
-  archived_at: null,
-  ...over,
-})
-
-const dd = (protocol_id: string, medicine_id: string, day: string, slot: string, c: Partial<ReportDoseDayRow>): ReportDoseDayRow => ({
-  protocol_id,
-  medicine_id,
-  day,
-  slot,
-  taken_count: 0,
-  missed_count: 0,
-  paused_count: 0,
-  skipped_count: 0,
-  pending_count: 0,
-  ...c,
-})
-
-const DAYS = ['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30']
-
-function fixture(over: Partial<ReportInputs> = {}): ReportInputs {
-  const medicines = [
-    med({ id: 'm_met', name: 'Glifage', active_ingredient: 'Metformina', dosage_per_pill: 850 }),
-    med({ id: 'm_moun', name: 'Mounjaro', presentation: 'injetavel', dosage_unit: 'mg/ml', dosage_per_pill: 10, concentration_volume_ml: 0.5, shelf_life_days: 21 }),
-    med({ id: 'm_lev', name: 'Puran', dosage_per_pill: 50, dosage_unit: 'mcg' }),
-    med({ id: 'm_old', name: 'Losartana', dosage_per_pill: 50 }),
-  ]
-  const protocols = [
-    proto({ id: 'p_met', medicine_id: 'm_met', time_schedule: ['08:00', '20:00'] }),
-    proto({ id: 'p_moun', medicine_id: 'm_moun', frequency: 'semanal', time_schedule: ['09:00'], intake_unit: 'mg', dosage_per_intake: 5, start_date: '2026-08-01', end_date: '2026-10-05' }),
-    // pausado hoje: active=false (pausar grava active=false — adherenceLogic.ts:360)
-    proto({ id: 'p_lev', medicine_id: 'm_lev', time_schedule: ['07:00'], active: false, paused_at: '2026-09-27T10:00:00-03:00' }),
-    // arquivado (094) no dia 27
-    proto({ id: 'p_old', medicine_id: 'm_old', active: false, archived_at: '2026-09-27T15:00:00-03:00' }),
-  ]
-  const doseDays: ReportDoseDayRow[] = [
-    ...DAYS.flatMap((d, i) => [
-      dd('p_met', 'm_met', d, '08:00', { taken_count: 1 }),
-      // noite: falta no dia 25 e no dia 29
-      dd('p_met', 'm_met', d, '20:00', i === 1 || i === 5 ? { missed_count: 1 } : { taken_count: 1 }),
-    ]),
-    dd('p_moun', 'm_moun', '2026-09-25', '09:00', { taken_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-24', '07:00', { taken_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-25', '07:00', { taken_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-26', '07:00', { missed_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-27', '07:00', { paused_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-28', '07:00', { paused_count: 1 }),
-    dd('p_lev', 'm_lev', '2026-09-29', '07:00', { skipped_count: 1 }),
-    dd('p_old', 'm_old', '2026-09-24', '08:00', { taken_count: 1 }),
-    dd('p_old', 'm_old', '2026-09-25', '08:00', { taken_count: 1 }),
-    dd('p_old', 'm_old', '2026-09-26', '08:00', { taken_count: 1 }),
-    // hoje ainda pendente: fora do denominador (ADR-054)
-    dd('p_met', 'm_met', '2026-09-30', '22:00', { pending_count: 1 }),
-  ]
-  return {
-    window: { from: '2026-09-24', to: '2026-09-30', days: 7 },
-    timezone: 'America/Sao_Paulo',
-    profile: { displayName: 'Ana', birthDate: '1960-05-02', allergies: ['Dipirona'], bloodType: null },
-    stockTrackingEnabled: true,
-    protocols,
-    medicines,
-    doseDays,
-    titrationSteps: [],
-    stockTotals: [
-      { medicine_id: 'm_met', total_quantity: 20 },
-      { medicine_id: 'm_moun', total_quantity: 20 },
-    ],
-    biomarkers: [
-      { id: 'b1', type: 'glicemia', value: 110, value_secondary: null, unit: 'mg/dL', measured_at: '2026-09-26T23:30:00-03:00', context: 'jejum' },
-    ],
-    medicineLogs: [],
-    ...over,
-  }
-}
-
-const GEN = '2026-09-30T18:00:00-03:00'
 
 describe('buildReportModel — seções do presente (INV-1)', () => {
   afterEach(() => {
@@ -123,14 +19,15 @@ describe('buildReportModel — seções do presente (INV-1)', () => {
     expect(m.medications.map((r) => r.protocolId)).toEqual(['p_moun', 'p_met'])
   })
 
-  it('dose na unidade da tomada, dose total no ciclo, término e validade após aberto', () => {
+  it('dose na unidade da tomada, dose total no ciclo, término e forma no detalhe', () => {
     const [moun, met] = buildReportModel(fixture(), { generatedAt: GEN }).medications
     expect(moun.dosePerIntake).toMatch(/^5 mg/)
     expect(moun.cycleDose).toMatch(/semana/)
     expect(moun.endDate).toBe('2026-10-05')
     expect(moun.endStatus).toBe('vencendo')
     expect(moun.injectable).toBe(true)
-    expect(moun.shelfLifeDays).toBe(21)
+    expect(moun).not.toHaveProperty('shelfLifeDays')
+    expect(moun.detail).toMatch(/ · injetável$/)
     expect(met.endDate).toBeNull()
     expect(met.endStatus).toBeNull()
     expect(met.times).toEqual(['08:00', '20:00'])
@@ -213,10 +110,11 @@ describe('buildReportModel — seções históricas pelo fato (PO-2b, R-299)', (
     expect(m.intakes.active.some((r) => r.protocolId === 'p_met')).toBe(inUse)
   })
 
-  it('mudanças datadas: pausa (faixa) e exclusão', () => {
-    const { changes } = buildReportModel(fixture(), { generatedAt: GEN })
-    expect(changes).toContainEqual(expect.objectContaining({ kind: 'paused', protocolId: 'p_lev', day: '2026-09-27', until: '2026-09-28' }))
-    expect(changes).toContainEqual(expect.objectContaining({ kind: 'archived', protocolId: 'p_old', day: '2026-09-27' }))
+  it('mudanças datadas: pausa (faixa); exclusão é cadastro, não mudança — vai só para "encerrados"', () => {
+    const m = buildReportModel(fixture(), { generatedAt: GEN })
+    expect(m.changes).toContainEqual(expect.objectContaining({ kind: 'paused', protocolId: 'p_lev', day: '2026-09-27', until: '2026-09-28' }))
+    expect(m.changes.some((c) => c.protocolId === 'p_old')).toBe(false)
+    expect(m.intakes.ended).toContainEqual(expect.objectContaining({ protocolId: 'p_old', endedOn: '2026-09-27' }))
   })
 
   it('cabeçalho: dias com dose e com medida (medida de 23h30 no próprio dia local)', () => {
@@ -279,7 +177,7 @@ describe('buildReportModel — escada de titulação (DS-5, AP-311) e peso por e
     expect(m.medications.every((r) => r.titrationChip === null)).toBe(true)
   })
 
-  it('peso por etapa só no B-0 (≥3 pesagens e ≥14 dias); abaixo disso, sem gráfico', () => {
+  it('gráfico de peso só no B-0 (≥3 pesagens e ≥14 dias); abaixo disso, só as linhas por etapa', () => {
     const peso = (day: string, kg: number) => ({ id: day, type: 'peso', value: kg, value_secondary: null, unit: 'kg', measured_at: `${day}T07:00:00-03:00`, context: null })
     const window = { from: '2026-09-01', to: '2026-09-30', days: 30 }
     const ok = buildReportModel(
@@ -287,13 +185,20 @@ describe('buildReportModel — escada de titulação (DS-5, AP-311) e peso por e
       { generatedAt: GEN }
     )
     expect(ok.ladders[0].weightSeries?.points).toHaveLength(3)
-    expect(ok.ladders[0].weightSeries?.steps[0]).toMatchObject({ start: '2026-09-01', clipped: true })
+    expect(ok.ladders[0].weightChart).toBe(true)
+    // Recorte (smoke 097 A2): o 1º registro é a pesagem de 02/09; a etapa começa recortada ali.
+    expect(ok.ladders[0].weightSeries?.steps[0]).toMatchObject({ start: '2026-09-02', clipped: true })
 
     const few = buildReportModel(
       fixture({ window, titrationSteps: steps, biomarkers: [peso('2026-09-02', 90), peso('2026-09-09', 89)] }),
       { generatedAt: GEN }
     )
-    expect(few.ladders[0].weightSeries).toBeNull()
+    expect(few.ladders[0].weightSeries?.points).toHaveLength(2)
+    expect(few.ladders[0].weightChart).toBe(false)
+    const html = renderReportHtml(few)
+    expect(html).toContain('Peso durante o tratamento')
+    expect(html).not.toContain('aria-label="Peso durante o tratamento"')
+    expect(html).toMatch(/Peso médio [\d,]+ kg · 2 pesagens/)
   })
 
   it('tratamento oral diário com escada: nunca gráfico de peso', () => {

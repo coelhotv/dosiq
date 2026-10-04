@@ -66,8 +66,8 @@ export function formatDosePerIntake(protocol: ReportProtocolRow, medicine: Repor
 
 /**
  * Dose TOTAL no ciclo da frequência (085): "100 mg/dia", "2,4 mg/semana", "1 mL a cada 90 dias".
- * Portado de `consultationPdfDataBuilder._formatCycleDose` (web, legado) sem mudar o número —
- * a regressão da PO-1 compara os dois.
+ * Portado de `consultationPdfDataBuilder._formatCycleDose` (web, legado, apagado no A2) sem mudar o número —
+ * a regressão da PO-1 comparou os dois no A1.
  */
 export function formatCycleDoseLabel(protocol: ReportProtocolRow, medicine: ReportMedicineRow | null): string {
   // 073/RC5: para PRN a "dose total" seria ficção.

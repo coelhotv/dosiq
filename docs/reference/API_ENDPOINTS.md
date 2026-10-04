@@ -42,7 +42,6 @@ graph TD
     VercelRouter -->|/api/admin| AdminFn["api/admin.ts (Router Admin)"]
     VercelRouter -->|/api/users| UsersFn["api/users.ts (Router Users)"]
     VercelRouter -->|/api/chatbot| ChatbotFn["api/chatbot.ts (AI Groq)"]
-    VercelRouter -->|/api/share| ShareFn["api/share.ts (Vercel Blob)"]
     VercelRouter -->|/api/telegram| TelegramFn["api/telegram.ts (Bot Webhook)"]
     VercelRouter -->|/api/generate-doses| DosesFn["api/generate-doses.ts (Cron Doses)"]
 
@@ -65,7 +64,7 @@ graph TD
 | 3 | `api/chatbot.ts` | Endpoint de assistente virtual IA via Groq SDK | default |
 | 4 | `api/generate-doses.ts` | Cron de suporte para geração de instâncias de dose | 60s |
 | 5 | `api/notify.ts` | Cron de despacho de notificações e outbox | 60s |
-| 6 | `api/share.ts` | Upload e compartilhamento de relatórios PDF | default |
+| 6 | `api/report.ts` | Relatório clínico em PDF (Chromium headless, dados pelo JWT do usuário) | 30s |
 | 7 | `api/telegram.ts` | Webhook de mensagens e callbacks do Telegram | 10s |
 
 ---
@@ -87,7 +86,6 @@ A API emprega três estratégias de autenticação, dependendo da origem da requ
 | `/api/notify` | Cron Secret | Vercel Cron / Scheduler | Valida `CRON_SECRET`. Nega se variável estiver ausente (fail-closed). |
 | `/api/admin` | JWT Bearer | Administrador (`ADMIN_USER_ID`) | Compara `user.id` do JWT com `ADMIN_USER_ID` (ADR-091). Fail-closed se env ausente. |
 | `/api/chatbot` | JWT Bearer | Usuário Autenticado | Valida JWT via Supabase Auth + Rate limit (5 req/min). |
-| `/api/share` | JWT Bearer | Usuário Autenticado | Valida JWT + Limite de upload de 5MB por arquivo. |
 | `/api/telegram` | Bot Token | Servidores Telegram | Valida existência do `TELEGRAM_BOT_TOKEN`. |
 | `/api/generate-doses` | Cron Secret | Cron Externo / Vercel | Valida `CRON_SECRET`. Nega se variável estiver ausente (fail-closed). |
 | `/api/users?action=beta-signup` | Pública | Qualquer Origem | Sem auth JWT. Protegido por rate limit por IP (5 req/min). |
@@ -336,45 +334,21 @@ if (isBlockedMessage(message)) {
 
 ---
 
-### `POST /api/share`
+> `POST /api/share` foi removido em 2026-10 (spec 097 A2): o relatório clínico não sai mais por
+> link público. O store do Vercel Blob é privado e não tinha nenhum arquivo em `reports/` (PO-SEC-1).
 
-Endpoint para upload e geração de links de compartilhamento de relatórios médicos em formato PDF.
+### `POST /api/report`
 
-- **Método**: `POST`
-- **Autenticação**: Supabase JWT
-- **Armazenamento**: Vercel Blob (`BLOB_READ_WRITE_TOKEN`)
-- **Tamanho Máximo do PDF**: 5 MB (base64 ~7 MB)
+Relatório clínico em PDF (spec 097, D-A2-2). `Authorization: Bearer <JWT do usuário>`; corpo
+`{ "days": 7 | 30 | 90 | 180, "to": "YYYY-MM-DD" }` (dia local do aparelho, ±1 dia do servidor).
+Os dados são lidos com o JWT de quem chama (chave anon, RLS) — nunca service role. Coletor, montador
+e template são os do `@dosiq/core/services/report`; o PDF sai do Chromium headless
+(`puppeteer-core` + `@sparticuz/chromium`) com JavaScript desligado e rede bloqueada.
+Resposta `200 application/pdf` (`attachment`, `Cache-Control: no-store`); nada é guardado.
+Erros: `401` sem/JWT inválido · `400` corpo inválido · `429` mais de 5 por minuto por usuário ·
+`500 { error_code: 'collect' | 'render' }` (sem conteúdo clínico). `GET /api/report?warm=1` → `204`:
+só sobe o Chromium (pré-aquecimento ao abrir a tela; sem auth, sem dado).
 
-#### Validação de Payload com Zod
-
-```typescript
-// api/share.ts
-const shareRequestSchema = z.object({
-  blob: z.string().min(1).refine(
-    (val) => ((val.length * 3) / 4) <= 5 * 1024 * 1024,
-    { message: 'Arquivo muito grande. Máximo de 5MB.' }
-  ),
-  filename: z.string().min(1).max(255).refine(
-    (val) => /^[\w\-.\s]+\.pdf$/i.test(val),
-    { message: 'Nome do arquivo deve terminar com .pdf' }
-  ),
-  expiresInHours: z.number().int().min(1).max(168).default(72)
-});
-```
-
-#### Exemplo de Resposta (`200 OK`)
-
-```json
-{
-  "success": true,
-  "data": {
-    "url": "https://blob.vercel-storage.com/reports/usr_123/1722269845-report.pdf",
-    "cacheExpiresAt": "2026-08-01T14:30:00.000Z"
-  }
-}
-```
-
----
 
 ### `POST /api/telegram`
 
