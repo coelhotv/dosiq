@@ -2,7 +2,6 @@
 // Framework: Jest (jest-expo) — rodar em apps/mobile/
 
 import { render, fireEvent, act } from '@testing-library/react-native'
-import * as WebBrowser from 'expo-web-browser'
 import PrivacyDataScreen from '../PrivacyDataScreen'
 
 const mockNavigate = jest.fn()
@@ -15,9 +14,6 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({ params: mockRouteParams.current }),
 }))
 
-jest.mock('expo-web-browser', () => ({
-  openBrowserAsync: jest.fn(),
-}))
 
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }))
 
@@ -111,14 +107,14 @@ describe('PrivacyDataScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('DeleteAccount')
   })
 
-  it('política de privacidade abre webview', () => {
-    const { getByText } = render(<PrivacyDataScreen />)
+  it('política de privacidade abre no visualizador do app (097 B-1)', () => {
+    const { getByText, getByTestId } = render(<PrivacyDataScreen />)
 
     fireEvent.press(getByText('Política de privacidade'))
 
-    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith(
-      'https://dosiq.app/politica-de-privacidade',
-    )
+    expect(getByTestId('document-viewer-webview').props.source).toEqual({
+      uri: 'https://dosiq.app/politica-de-privacidade',
+    })
   })
 
   it('Transparência mostra a versão publicada vigente, não a data/versão do aceite', () => {

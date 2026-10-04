@@ -6,8 +6,11 @@
 //
 // Copy VERBATIM de HEALTH_CONSENT_COPY (@dosiq/core) — a política publicada cita o mesmo texto.
 
-import { View, Text, Pressable, Linking, StyleSheet } from 'react-native'
+import { useState } from 'react'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { HEALTH_CONSENT_COPY } from '@dosiq/core'
+import DocumentViewer from '@shared/components/ui/DocumentViewer'
+import { EXTERNAL_URLS } from '../../../shared/constants'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 interface HealthConsentCheckboxProps {
@@ -24,6 +27,9 @@ export default function HealthConsentCheckbox({
   disabled = false,
   showError = false,
 }: HealthConsentCheckboxProps) {
+  // 097 B-1: a política abre no visualizador do app (antes saía para o navegador no meio do cadastro).
+  const [policyOpen, setPolicyOpen] = useState(false)
+
   // 065 PR D / US9: `consent_health_declined` APOSENTADO (payload vazio, sem origem, 7
   // ocorrências/180d) — a família consent_prompt_*/consent_granted/consent_blocked_attempt mede o
   // custo do consentimento com contexto real. Ver CON-034 §5.
@@ -32,9 +38,7 @@ export default function HealthConsentCheckbox({
     onChange(!checked)
   }
 
-  const openPolicy = () => {
-    Linking.openURL('https://dosiq.app/politica-de-privacidade')
-  }
+  const openPolicy = () => setPolicyOpen(true)
 
   return (
     <View style={[styles.container, showError && styles.containerError]}>
@@ -69,6 +73,12 @@ export default function HealthConsentCheckbox({
           Para continuar, é preciso autorizar o tratamento dos dados de saúde.
         </Text>
       ) : null}
+
+      <DocumentViewer
+        source={policyOpen ? { kind: 'web', url: EXTERNAL_URLS.PRIVACY_POLICY } : null}
+        title="Política de privacidade"
+        onClose={() => setPolicyOpen(false)}
+      />
     </View>
   )
 }

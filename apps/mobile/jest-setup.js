@@ -116,3 +116,12 @@ jest.mock('lucide-react-native', () => new Proxy({}, {
     return prop;
   },
 }));
+
+// react-native-webview (097 B-1, DocumentViewer): módulo nativo. O mock vira uma View que carrega as
+// props, para o teste ler `source`, `javaScriptEnabled` e chamar `onShouldStartLoadWithRequest`.
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const WebView = (props) => React.createElement(View, { ...props, testID: props.testID || 'webview' });
+  return { __esModule: true, WebView, default: WebView };
+});

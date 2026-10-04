@@ -7,7 +7,7 @@
  */
 
 /** Períodos fixos do relatório (RC2-D4). */
-export const REPORT_PERIOD_DAYS = [7, 30, 90, 180] as const
+export const REPORT_PERIOD_DAYS = [7, 30, 90] as const
 export type ReportPeriodDays = (typeof REPORT_PERIOD_DAYS)[number]
 export const DEFAULT_REPORT_PERIOD_DAYS: ReportPeriodDays = 30
 

@@ -106,15 +106,13 @@ describe('renderReportHtml — estrutura (PO-13)', () => {
     expect(strip?.[1].match(/class="c /g)).toHaveLength(7)
   })
 
-  it('180 dias: faixa em duas linhas de 90 células', () => {
+  it('90 dias: uma faixa só, de 90 células (180 saiu — smoke 097 B)', () => {
     const base = fixture()
-    // Registro desde o 1º dia: sem recorte, as 180 células aparecem.
-    const doseDays = [...base.doseDays, dd('p_met', 'm_met', '2026-04-04', '08:00', { taken_count: 1 })]
-    const m = buildReportModel({ ...base, doseDays, window: { from: '2026-04-04', to: '2026-09-30', days: 180 } }, { generatedAt: GEN })
-    const html = renderReportHtml(m)
-    const row = html.slice(html.indexOf('data-protocol="p_met"'))
-    const strips = row.match(/<div class="strip">([\s\S]*?)<\/div>/g)?.slice(0, 2) ?? []
-    expect(strips.map((s) => s.match(/class="c /g)?.length)).toEqual([90, 90])
+    const m = buildReportModel({ ...base, window: { from: '2026-07-03', to: '2026-09-30', days: 90 } }, { generatedAt: GEN })
+    const row = renderReportHtml(m).slice(renderReportHtml(m).indexOf('data-protocol="p_met"'))
+    const strips = row.match(/<div class="strip">([\s\S]*?)<\/div>/g) ?? []
+    expect(strips[0]?.match(/class="c /g)).toHaveLength(90)
+    expect(row).not.toContain('d180')
   })
 })
 
@@ -361,7 +359,7 @@ describe('renderReportHtml — pausa nas mudanças (smoke 097 A2)', () => {
   })
 })
 
-describe('recorte ao trecho com registro (smoke 097 A2)', () => {
+describe('eixo = período inteiro; cabeçalho avisa o 1º registro (smoke 097 B, desfaz o recorte do A2)', () => {
   afterEach(() => {
     vi.clearAllMocks()
     vi.clearAllTimers()
@@ -369,48 +367,30 @@ describe('recorte ao trecho com registro (smoke 097 A2)', () => {
 
   const peso = (day: string) => ({ id: day, type: 'peso', value: 80, value_secondary: null, unit: 'kg', measured_at: `${day}T07:00:00-03:00`, context: null })
 
-  it('180 dias com registro só no fim: faixa e denominadores começam no 1º dia com dose; cabeçalho avisa', () => {
+  it('90 dias com registro só no fim: faixa e denominadores do período inteiro; cabeçalho avisa', () => {
     const base = fixture()
-    const m = buildReportModel({ ...base, biomarkers: [], window: { from: '2026-04-04', to: '2026-09-30', days: 180 } }, { generatedAt: GEN })
-    expect(m.header.window).toEqual({ from: '2026-04-04', to: '2026-09-30', days: 180 })
-    expect(m.header.dataWindow).toEqual({ from: '2026-09-24', to: '2026-09-30', days: 7 })
-    expect(m.header.daysWithDose.of).toBe(7)
+    const m = buildReportModel({ ...base, biomarkers: [], window: { from: '2026-07-03', to: '2026-09-30', days: 90 } }, { generatedAt: GEN })
+    expect(m.header.window).toEqual({ from: '2026-07-03', to: '2026-09-30', days: 90 })
+    expect(m.header.recordsFrom).toBe('2026-09-24')
+    expect(m.header.daysWithDose.of).toBe(90)
     const html = renderReportHtml(m)
-    expect(visibleText(html)).toContain('04/04/2026 a 30/09/2026 (180 dias) · registros a partir de 24/09/2026')
-    expect(reportFileBaseName(m.header.window)).toBe('dosiq-relatorio-180d-2026-09-30')
+    expect(visibleText(html)).toContain('03/07/2026 a 30/09/2026 (90 dias) · registros a partir de 24/09/2026')
     const row = html.slice(html.indexOf('data-protocol="p_met"'))
-    expect(row.match(/<div class="strip">([\s\S]*?)<\/div>/)?.[0].match(/class="c /g)).toHaveLength(7)
+    expect(row.match(/<div class="strip">([\s\S]*?)<\/div>/)?.[0].match(/class="c /g)).toHaveLength(90)
   })
 
-  it('medida antes da 1ª dose também conta como início (linha de base)', () => {
+  it('medida antes da 1ª dose também conta como 1º registro (linha de base)', () => {
     const base = fixture()
     const m = buildReportModel({ ...base, biomarkers: [peso('2026-09-10')], window: { from: '2026-07-03', to: '2026-09-30', days: 90 } }, { generatedAt: GEN })
-    expect(m.header.dataWindow.from).toBe('2026-09-10')
+    expect(m.header.recordsFrom).toBe('2026-09-10')
   })
 
-  it('registro desde o início ou nenhum registro: sem recorte nem aviso', () => {
+  it('registro desde o início ou nenhum registro: sem aviso', () => {
     const m = model()
-    expect(m.header.dataWindow).toEqual(m.header.window)
+    expect(m.header.recordsFrom).toBeNull()
     expect(renderReportHtml(m)).not.toContain('registros a partir de')
     const empty = buildReportModel({ ...fixture(), doseDays: [], biomarkers: [] }, { generatedAt: GEN })
-    expect(empty.header.dataWindow).toEqual(empty.header.window)
-  })
-})
-
-describe('faixa acima de 90 dias (smoke 097 A2)', () => {
-  afterEach(() => {
-    vi.clearAllMocks()
-    vi.clearAllTimers()
-  })
-
-  it('119 dias: duas linhas de 60 células (59 + 1 vazia) — mesma escala nas duas', () => {
-    const base = fixture()
-    const doseDays = [...base.doseDays, dd('p_met', 'm_met', '2026-06-04', '08:00', { taken_count: 1 })]
-    const m = buildReportModel({ ...base, doseDays, window: { from: '2026-04-04', to: '2026-09-30', days: 180 } }, { generatedAt: GEN })
-    expect(m.header.dataWindow.days).toBe(119)
-    const row = renderReportHtml(m).slice(renderReportHtml(m).indexOf('data-protocol="p_met"'))
-    const strips = row.match(/<div class="strip">([\s\S]*?)<\/div>/g)?.slice(0, 2) ?? []
-    expect(strips.map((s) => s.match(/class="c /g)?.length)).toEqual([60, 60])
+    expect(empty.header.recordsFrom).toBeNull()
   })
 })
 
@@ -469,7 +449,77 @@ describe('mudanças no período pedido, não só no trecho com registro (RC6 #85
     const base = fixture()
     const protocols = base.protocols.map((p) => (p.id === 'p_met' ? { ...p, start_date: '2026-08-10' } : p))
     const m = buildReportModel({ ...base, protocols, window: { from: '2026-07-03', to: '2026-09-30', days: 90 } }, { generatedAt: GEN })
-    expect(m.header.dataWindow.from > '2026-08-10').toBe(true)
+    expect((m.header.recordsFrom ?? '') > '2026-08-10').toBe(true)
     expect(m.changes).toContainEqual(expect.objectContaining({ kind: 'started', protocolId: 'p_met', day: '2026-08-10' }))
+  })
+})
+
+describe('renderReportHtml — unidade de tomada e forma (PO-5, FR-005/FR-006)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  it('insulina U-100 em UI e GLP-1 semanal em mg/semana; sem concentração crua nem "comprimido" em líquido', () => {
+    const base = fixture()
+    const insulin = med({ id: 'm_ins', name: 'Lantus', presentation: 'injetavel', dosage_unit: 'ui/ml', units_per_ml: 100 })
+    const glp1 = med({ id: 'm_weg', name: 'Wegovy', presentation: 'injetavel', dosage_unit: 'mg/ml', dosage_per_pill: 3.2, concentration_volume_ml: 0.75 })
+    const html = renderReportHtml(
+      buildReportModel(
+        {
+          ...base,
+          medicines: [...base.medicines, insulin, glp1],
+          protocols: [
+            ...base.protocols,
+            proto({ id: 'p_ins', medicine_id: 'm_ins', time_schedule: ['22:00'], intake_unit: 'UI', dosage_per_intake: 10 }),
+            proto({ id: 'p_weg', medicine_id: 'm_weg', frequency: 'semanal', time_schedule: ['09:00'], intake_unit: 'mg', dosage_per_intake: 2.4 }),
+          ],
+        },
+        { generatedAt: GEN }
+      )
+    )
+    const text = visibleText(html)
+    expect(text).toContain('10 UI')
+    expect(text).toContain('2,4 mg/semana')
+    expect(text).not.toMatch(/\bui\/ml\b|\bmg\/ml\b/i)
+    const start = text.indexOf('Lantus')
+    const insulinRow = text.slice(start, text.indexOf('Glifage', start))
+    expect(insulinRow).not.toMatch(/comprimido/i)
+    expect(insulinRow).toMatch(/injetável/)
+  })
+})
+
+describe('renderReportHtml — 7 dias com registro só no fim (smoke 097 B, 2026-10-04)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  function row(): string {
+    const base = fixture()
+    const html = renderReportHtml(
+      buildReportModel(
+        {
+          ...base,
+          protocols: base.protocols.filter((p) => p.id === 'p_met'),
+          doseDays: base.doseDays.filter((d) => d.protocol_id === 'p_met' && d.day >= '2026-09-29'),
+          biomarkers: [],
+          titrationSteps: [],
+        },
+        { generatedAt: GEN }
+      )
+    )
+    return html.match(/<div class="irow side"[\s\S]*?<\/div><\/div><\/div>/)?.[0] ?? ''
+  }
+
+  it('faixa com os 7 dias do período, esticando para preencher a linha (sem teto de largura)', () => {
+    const r = row()
+    expect(r.match(/<div class="strip">([\s\S]*?)<\/div>/)?.[1].match(/class="c /g)).toHaveLength(7)
+    expect(r).toContain('<div class="sbox">')
+    expect(r).not.toContain('max-width')
+  })
+
+  it('escala de datas do 1º ao último dia do período', () => {
+    expect(row()).toContain('<div class="ticks num"><span>24/09</span><span>27/09</span><span>30/09</span></div>')
   })
 })

@@ -78,6 +78,12 @@ export const EVENTS = {
   STOCK_UPSELL_SHOWN: 'stock_upsell_shown',
   STOCK_UPSELL_CONVERSION: 'stock_upsell_conversion',
   STOCK_UPSELL_DISMISSED: 'stock_upsell_dismissed',
+
+  // Relatório clínico em PDF (spec 097 Slice B, PO-SEC-5). Payload SÓ via `toReportEventPayload`
+  // do core (allowlist): platform, period, duration_ms, size_bucket, error_code — nunca conteúdo.
+  // Emitidos SÓ pelo reportDownload (origem comum).
+  REPORT_GENERATED: 'report_generated',
+  REPORT_GENERATION_ERROR: 'report_generation_error',
 }
 
 // Superfície de ORIGEM da ação (spec 065 / US1). Responde a pergunta da tese: o usuário que

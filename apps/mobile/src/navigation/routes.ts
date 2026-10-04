@@ -81,6 +81,9 @@ export const ROUTES = {
   // Área de Medidas / biomarcadores (012 Fase C)
   MEASURES: 'Measures',
 
+  // Relatório clínico em PDF (spec 097 Slice B) — Perfil › Ferramentas
+  CLINICAL_REPORT: 'ClinicalReport',
+
   // Chat IA (spec 015 onda 2) — tela full-screen via stack
   CHAT: 'Chat',
 

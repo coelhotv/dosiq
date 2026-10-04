@@ -144,7 +144,7 @@ describe('createReportCollector', () => {
     const page = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, type: 'peso' }))
     const pages = { ...fullPages(), biomarkers_log: [page(1000, 'a'), page(1000, 'b'), page(3, 'c')] }
     const { client, calls } = makeClient(pages)
-    const out = await createReportCollector({ client, getUserId: async () => USER }).collect({ days: 180, to: '2026-09-30' })
+    const out = await createReportCollector({ client, getUserId: async () => USER }).collect({ days: 90, to: '2026-09-30' })
     expect(out.biomarkers).toHaveLength(2003)
     expect(calls.filter((c) => c.source === 'biomarkers_log').map((c) => c.range)).toEqual([
       [0, 999],

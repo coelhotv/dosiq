@@ -211,6 +211,19 @@ export default function ProfileScreen() {
             >
               <View style={styles.otherLabelContainer}>
                 <Text style={styles.otherLabel}>Histórico de Medidas</Text>
+              </View>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+            {/* Spec 097 Slice B (FR-010): o selo "novo" passou de Medidas para o relatório. */}
+            <TouchableOpacity
+              style={styles.otherRowBorderTop}
+              onPress={() => (navigation.navigate as any)(ROUTES.CLINICAL_REPORT)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Relatório em PDF, novo"
+            >
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabel}>Relatório em PDF</Text>
                 <View style={styles.newBadge}>
                   <Text style={styles.newText}>novo</Text>
                 </View>

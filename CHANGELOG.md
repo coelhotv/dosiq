@@ -7,6 +7,37 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Relatório clínico em PDF no app (spec 097, Slice B)
+
+- **Mobile** (`minor` — funcionalidade nova; `APP_VERSION` `0.33.6` → `0.33.7` só para build de
+  produção no **TestFlight interno** — não é lançamento; entra no pacote de loja `0.34.0`; canal:
+  **build de loja**, R-314 — feature nova e dois módulos nativos novos, `react-native-webview` e
+  `expo-intent-launcher`). Novo item "Relatório em PDF" em Perfil › Ferramentas (o selo "novo" sai de
+  "Histórico de Medidas" e vai para ele). Escolha o período (7, 30 ou 90 dias; padrão 30) e
+  toque em "Gerar relatório": o app recebe o mesmo PDF da web, gerado no servidor com a sua sessão.
+  Pronto, dá para "Visualizar" (no iPhone dentro do app; no Android no leitor de PDF do aparelho) e
+  "Salvar ou Compartilhar" pelo menu do sistema (Arquivos, WhatsApp, e-mail). Enquanto gera, a tela mostra o progresso e
+  não aceita um segundo toque; em erro (sem internet, sessão expirada, muitos pedidos seguidos)
+  mostra o motivo e "Tentar de novo" sem perder o período. O arquivo fica só no cache do app, com
+  nome sem o seu nome, e é apagado ao sair da tela ou gerar outro (a tela avisa: para mantê-lo, salve
+  antes de sair) — depois que o menu de
+  compartilhar fecha. A política de privacidade passa a abrir no mesmo visualizador em todos os
+  pontos do app (Privacidade e dados, aviso de política nova e cadastro — que antes saía para o
+  navegador).
+
+### Relatório clínico: períodos de 7, 30 e 90 dias e faixa sempre no período inteiro (spec 097, smoke do Slice B)
+
+- **Web** (`patch` — ajustes do relatório decididos no smoke; `4.28.0` → `4.28.1`) e **Mobile** (o
+  mesmo PDF vem do servidor; sem bump próprio). Saiu o período de 180 dias: o que aconteceu há meses
+  já não orienta a consulta. A faixa de tomadas de cada tratamento volta a cobrir o período inteiro,
+  do primeiro ao último dia (antes começava no primeiro registro e mudava a escala entre os
+  períodos), com as datas embaixo; os números do cabeçalho ("Dias com dose", "Dias com medida") contam
+  sobre o período inteiro. O aviso "registros a partir de …" continua no cabeçalho quando o uso do app
+  começou depois do início do período. No estoque, cada concentração do medicamento tem a sua linha
+  ("Rybelsus · 3 mg", "Rybelsus · 7 mg") e o consumo aparece no ritmo do tratamento ("1 un./semana",
+  "1 un. a cada 2 dias", "2 un./dia") em vez de uma média diária fracionada ("0,14 un."); o mesmo
+  medicamento em tratamentos de ritmos diferentes soma por semana ("≈ 8 un./semana").
+
 ### Relatório clínico novo na web, sem link público (spec 097, Slice A2)
 
 - **Web** (`minor` — relatório novo e remoção do link de compartilhamento; `4.27.2` → `4.28.0`). O

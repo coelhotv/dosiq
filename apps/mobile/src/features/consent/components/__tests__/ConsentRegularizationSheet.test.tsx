@@ -1,10 +1,8 @@
 // ConsentRegularizationSheet.test.tsx — nudge de política nova (spec 046, T011/T007).
 import { render, fireEvent, screen, waitFor } from '@testing-library/react-native'
-import * as WebBrowser from 'expo-web-browser'
 
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }))
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({ supabase: {} }))
-jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn() }))
 
 // Mock auto-contido (o spy nasce dentro da factory) — evita ambiguidade de hoisting do
 // babel-plugin-jest-hoist com referência a variável externa.
@@ -22,22 +20,23 @@ const { __grantSpy: mockGrant } = jest.requireMock('@dosiq/core') as { __grantSp
 import ConsentRegularizationSheet from '../ConsentRegularizationSheet'
 
 describe('ConsentRegularizationSheet', () => {
-  const mockOpenBrowser = WebBrowser.openBrowserAsync as jest.Mock
-
   beforeEach(() => {
     mockGrant.mockReset()
     mockGrant.mockResolvedValue({ ok: true })
-    mockOpenBrowser.mockReset()
-    mockOpenBrowser.mockResolvedValue({ type: 'dismiss' })
   })
 
-  // Helper: cumpre o gate de leitura (abre + fecha a webview da política) antes de aceitar.
-  // Espera o rótulo "Política lida ✓" — só aparece DEPOIS do setHasRead (pós-await do
-  // openBrowserAsync). Sem isso, o aceite pode ser pressionado com o botão ainda disabled.
+  // Helper: cumpre o gate de leitura (abre + FECHA o visualizador da política, 097 B-1) antes de
+  // aceitar. "Política lida ✓" só aparece depois do Fechar — abrir sem fechar não destrava.
   async function readPolicy() {
     fireEvent.press(screen.getByLabelText('Ler a nova política de privacidade'))
+    expect(screen.getByTestId('document-viewer-webview').props.source).toEqual({
+      uri: 'https://dosiq.app/politica-de-privacidade',
+    })
+    expect(screen.queryByText('Política lida ✓')).toBeNull()
+    fireEvent(screen.getByTestId('document-viewer-webview'), 'onLoadEnd')
+    fireEvent.press(screen.getByLabelText('Fechar'))
     expect(await screen.findByText('Política lida ✓')).toBeTruthy()
-    expect(mockOpenBrowser).toHaveBeenCalledWith('https://dosiq.app/politica-de-privacidade')
+    expect(screen.queryByTestId('document-viewer-webview')).toBeNull()
   }
 
   afterEach(() => {
@@ -73,13 +72,25 @@ describe('ConsentRegularizationSheet', () => {
     expect(onConfirmed).not.toHaveBeenCalled()
   })
 
-  it('"Ler a nova política" abre a webview e destrava o aceite', async () => {
+  it('"Ler a nova política" abre o visualizador e só destrava o aceite ao fechar', async () => {
     render(<ConsentRegularizationSheet visible onDismiss={jest.fn()} onConfirmed={jest.fn()} />)
 
     await readPolicy()
 
-    expect(mockOpenBrowser).toHaveBeenCalledWith('https://dosiq.app/politica-de-privacidade')
     expect(screen.getByText('Política lida ✓')).toBeTruthy()
+  })
+
+  it('política que falhou ao carregar não destrava o aceite (RC6 #858)', () => {
+    render(<ConsentRegularizationSheet visible onDismiss={jest.fn()} onConfirmed={jest.fn()} />)
+    fireEvent.press(screen.getByLabelText('Ler a nova política de privacidade'))
+    const web = screen.getByTestId('document-viewer-webview')
+    fireEvent(web, 'onError')
+    fireEvent.press(screen.getByLabelText('Fechar'))
+
+    expect(screen.queryByText('Política lida ✓')).toBeNull()
+    expect(screen.getByText('Não foi possível abrir a política agora. Tente de novo.')).toBeTruthy()
+    fireEvent.press(screen.getByLabelText('Aceitar a nova versão'))
+    expect(mockGrant).not.toHaveBeenCalled()
   })
 
   it('"Aceitar a nova versão" (após ler) chama consent_grant (RPC), nunca insert direto', async () => {
