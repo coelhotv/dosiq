@@ -7,6 +7,8 @@ export { buildReportModel, type ReportLadder, type ReportMedicationRow, type Rep
 export type { DayCellState, IntakeRow, IntakesSection, SlotCount } from './reportSections/intakes'
 export type { Ladder, LadderStep, LadderStepState } from './reportSections/ladders'
 export type { EndStatus, MedicationRow } from './reportSections/medications'
+export type { CrossRow, MeasureBlock, MeasuresSection, MeasureStat } from './reportSections/measures'
+export type { InjectionSiteCard, InjectionSiteCount } from './reportSections/injectionSites'
 export type { StockRow } from './reportSections/stock'
 export type { ChangeItem, ChangeKind } from './reportSections/changes'
 export type { ReportHeader, VisitItem, VisitItemKind } from './reportSections/header'

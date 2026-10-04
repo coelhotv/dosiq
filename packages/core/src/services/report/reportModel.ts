@@ -6,7 +6,7 @@
  * Seções do presente (medicamentos, estoque, "para esta consulta") avaliam no último dia do período;
  * seções históricas (tomadas, encerrados, mudanças, escadas) derivam do fato registrado. Seção
  * opcional sem dado fica vazia/`null` no modelo — o template decide omitir (DESIGN_DECISOES §3).
- * Dose × biomarcador e locais de aplicação entram no Slice C.
+ * Medidas (com o cruzamento dose × medida) e locais de aplicação: Slice C.
  */
 import { isInjectable } from '../../utils/injectionSites'
 import {
@@ -18,8 +18,10 @@ import { localDayOf, medicineOf } from './reportFormat'
 import type { ReportInputs, ReportWindow } from './reportTypes'
 import { buildChanges, pausedRanges, type ChangeItem } from './reportSections/changes'
 import { buildForThisVisit, buildHeader, type ReportHeader, type VisitItem } from './reportSections/header'
+import { buildInjectionSites, type InjectionSiteCard } from './reportSections/injectionSites'
 import { buildIntakesSection, type IntakesSection } from './reportSections/intakes'
 import { buildLadders, type Ladder } from './reportSections/ladders'
+import { buildMeasuresSection, type MeasuresSection } from './reportSections/measures'
 import { buildMedicationRows, type MedicationRow } from './reportSections/medications'
 import { buildStockRows, type StockRow } from './reportSections/stock'
 
@@ -50,6 +52,10 @@ export interface ReportModel {
   intakes: IntakesSection
   changes: ChangeItem[]
   ladders: ReportLadder[]
+  /** §3.7 — `null` sem medida no período: a seção não existe (PO-8). */
+  measures: MeasuresSection | null
+  /** §3.8 — vazio sem injetável no período: a seção não existe. */
+  injectionSites: InjectionSiteCard[]
   /** `null` = rastreio de estoque desligado (044): a seção não existe. */
   stock: StockRow[] | null
 }
@@ -156,6 +162,8 @@ export function buildReportModel(inputs: ReportInputs, { generatedAt }: { genera
     intakes,
     changes: buildChanges(inputs, intakes, ladders),
     ladders,
+    measures: buildMeasuresSection(inputs),
+    injectionSites: buildInjectionSites(inputs),
     stock,
   }
 }
