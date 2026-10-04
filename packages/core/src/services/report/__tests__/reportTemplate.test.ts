@@ -1,7 +1,7 @@
 // Template HTML único do relatório (spec 097 A2 — PO-13, PO-14, PO-15 vocabulário, PO-SEC-3).
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildReportModel, type ReportModel } from '../reportModel'
-import { reportFileBaseName, renderReportFooter, renderReportHtml } from '../reportTemplate'
+import { chartDateTicks, reportFileBaseName, renderReportFooter, renderReportHtml } from '../reportTemplate'
 import type { ReportTitrationStepRow } from '../reportTypes'
 import { dd, fixture, GEN, med, proto } from './reportFixture'
 
@@ -521,5 +521,115 @@ describe('renderReportHtml — 7 dias com registro só no fim (smoke 097 B, 2026
 
   it('escala de datas do 1º ao último dia do período', () => {
     expect(row()).toContain('<div class="ticks num"><span>24/09</span><span>27/09</span><span>30/09</span></div>')
+  })
+})
+
+// ── Slice C: §3.7 Medidas + cruzamento, §3.8 Locais (PO-7, PO-8, PO-10, PO-11) ─────────────────
+describe('renderReportHtml — medidas e locais de aplicação (097 C)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  const at = (d: string, t: string) => `2026-09-${d}T${t}:00-03:00`
+  const clinical = (over = {}) =>
+    model({
+      titrationSteps: LADDER_STEPS,
+      biomarkers: [
+        { id: 'g1', type: 'glicemia', value: 95, value_secondary: null, unit: 'mg/dL', measured_at: at('24', '07:00'), context: 'jejum' },
+        { id: 'g2', type: 'glicemia', value: 180, value_secondary: null, unit: 'mg/dL', measured_at: at('25', '13:30'), context: 'pos_refeicao' },
+        { id: 'g3', type: 'glicemia', value: 140, value_secondary: null, unit: 'mg/dL', measured_at: at('26', '22:30'), context: 'ao_deitar' },
+        { id: 'pa', type: 'pressao_arterial', value: 128, value_secondary: 82, unit: 'mmHg', measured_at: at('25', '08:00'), context: 'em_repouso' },
+        { id: 'w1', type: 'peso', value: 82.4, value_secondary: null, unit: 'kg', measured_at: at('27', '07:00'), context: null },
+      ],
+      medicineLogs: [
+        { id: 'l1', protocol_id: 'p_moun', medicine_id: 'm_moun', taken_at: at('25', '09:00'), injection_site: 'abdomen_e' },
+        { id: 'l2', protocol_id: null, medicine_id: 'm_moun', taken_at: at('26', '09:00'), injection_site: null },
+      ],
+      ...over,
+    })
+
+  it('ordem: encerrados → Medidas → Locais de aplicação → Estoque', () => {
+    const html = renderReportHtml(clinical())
+    const order = ['Tratamentos encerrados no período', '<h2>Medidas</h2>', '<h2>Locais de aplicação</h2>', '<h2>Estoque']
+    const positions = order.map((t) => html.indexOf(t))
+    expect(positions.every((p) => p >= 0)).toBe(true)
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions)
+  })
+
+  it('glicemia com 3 medidas: gráfico + tabela por momento; cruzamento por período do dia; PA e peso em lista', () => {
+    const text = visibleText(renderReportHtml(clinical()))
+    expect(renderReportHtml(clinical())).toContain('aria-label="Glicemia no período"')
+    expect(text).toContain('Doses e medidas por período do dia')
+    expect(text).toMatch(/Manhã \d+ Glicemia: 95 mg\/dL · 1 medida/)
+    expect(text).toContain('128×82 mmHg')
+    expect(text).toContain('27/09 07:00 82,4 kg')
+    expect(renderReportHtml(clinical())).toContain('<th>Data</th><th>Peso</th>')
+    // uma medida só no recorte: valor, sem mediana/faixa (smoke C)
+    expect(text).toContain('Pressão arterial: 128×82 mmHg · 1 medida')
+    expect(text).not.toContain('mediana 128×82')
+  })
+
+  it('PO-8: sem medidas, nem título nem cruzamento; o resto do documento é igual', () => {
+    const without = renderReportHtml(clinical({ biomarkers: [] }))
+    expect(without).not.toContain('<h2>Medidas</h2>')
+    expect(without).not.toContain('Doses e medidas por período do dia')
+    expect(without).toContain('<h2>Locais de aplicação</h2>')
+  })
+
+  it('PO-10: mapa com ≥ 1 local e denominador junto; 0 com local não tem cartão (D-C3); sem local sem seção', () => {
+    const html = renderReportHtml(clinical())
+    expect(visibleText(html)).toMatch(/Mounjaro · [^<]+ local informado em 1 de 2 aplicações/)
+    expect(html).toContain('class="bodymap"')
+    expect(visibleText(html)).toContain('Abdômen (esquerdo): 1')
+
+    const none = renderReportHtml(
+      clinical({ medicineLogs: [{ id: 'l2', protocol_id: null, medicine_id: 'm_moun', taken_at: at('26', '09:00'), injection_site: null }] })
+    )
+    expect(none).not.toContain('Locais de aplicação')
+
+    expect(renderReportHtml(clinical({ medicineLogs: [] }))).not.toContain('Locais de aplicação')
+  })
+
+  it('PO-7/PO-11: nenhum termo de recomendação, juízo ou rodízio no texto com as seções clínicas', () => {
+    const text = visibleText(renderReportHtml(clinical())).replaceAll('não é avaliação clínica nem recomendação', '')
+    expect(text).not.toMatch(
+      /\b(meta|alvo|ideal|ajust\w*|recomend\w*|risco|atenção|excelente|crítico|cuidado|evite|aplique|próximo|sobrecarreg\w*|rodízio|normal|bom|ruim|controlad\w*)\b/i
+    )
+  })
+
+  it('nome hostil do medicamento no cartão e no aria-label sai escapado', () => {
+    const html = renderReportHtml(
+      clinical({ medicines: [...fixture().medicines.filter((m) => m.id !== 'm_moun'), med({ id: 'm_moun', name: HOSTILE[2], presentation: 'injetavel' })] })
+    )
+    // Valores de atributo (já escapados) saem da varredura: só atributo REAL conta.
+    const tags = html.replace(/"[^"]*"/g, '""')
+    expect(tags).not.toMatch(/<svg onload/i)
+    expect(tags).not.toMatch(/<[a-z][^>]*\son\w+=/i)
+    expect(html).toContain('aria-label="Locais de aplicação de &quot;&gt;&lt;svg onload=alert(1)&gt;"')
+  })
+})
+
+describe('chartDateTicks — eixo de datas dos gráficos (smoke 097 C)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  it('30 dias: início, uma marca por semana e fim', () => {
+    expect(chartDateTicks('2026-09-05', '2026-10-04')).toEqual(['2026-09-05', '2026-09-12', '2026-09-19', '2026-09-26', '2026-10-04'])
+  })
+
+  it('90 dias: marcas a cada duas semanas; a colada no fim sai', () => {
+    const t = chartDateTicks('2026-07-07', '2026-10-04')
+    expect(t[0]).toBe('2026-07-07')
+    expect(t[1]).toBe('2026-07-21')
+    expect(t[t.length - 1]).toBe('2026-10-04')
+    expect(t).toHaveLength(7)
+  })
+
+  it('7 dias e dia único', () => {
+    expect(chartDateTicks('2026-09-24', '2026-09-30')).toEqual(['2026-09-24', '2026-09-26', '2026-09-28', '2026-09-30'])
+    expect(chartDateTicks('2026-09-30', '2026-09-30')).toEqual(['2026-09-30'])
   })
 })

@@ -47,6 +47,9 @@ export function reportSectionsOf(model: ReportModel): string {
   if (model.ladders.length) present.push('ladders')
   if (model.ladders.some((l) => l.weightSeries)) present.push('weight_series')
   if (model.intakes.ended.length) present.push('ended')
+  if (model.measures) present.push('measures')
+  if (model.measures?.cross.length) present.push('measure_cross')
+  if (model.injectionSites.length) present.push('injection_sites')
   if (model.stock?.length) present.push('stock')
   return present.join(',')
 }

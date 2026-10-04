@@ -14,14 +14,17 @@
  */
 import { getUserTime, parseISO } from '../../utils/dateUtils'
 import { formatNumberPtBR } from '../../utils/doseUnit'
-import { daysBetween, formatDayMonth, formatShortDate } from './reportFormat'
+import { daysBetween, formatDayMonth, formatShortDate, shiftDay } from './reportFormat'
 import { escapeAttr, escapeHtml as e } from './reportHtmlEscape'
+import { renderBodyMapSvg } from './reportBodyMapSvg'
 import { REPORT_LOGO_DATA_URI } from './reportLogo'
 import type { ReportLadder, ReportMedicationRow, ReportModel } from './reportModel'
 import type { ReportWindow } from './reportTypes'
 import type { ChangeItem } from './reportSections/changes'
 import type { VisitItem } from './reportSections/header'
+import type { InjectionSiteCard } from './reportSections/injectionSites'
 import type { DayCellState, IntakeRow } from './reportSections/intakes'
+import type { MeasureBlock, MeasurePoint, MeasureStat, MeasuresSection } from './reportSections/measures'
 import type { StockRow } from './reportSections/stock'
 
 interface FlowTable {
@@ -78,8 +81,12 @@ td{border-bottom:1px solid var(--line);padding:4px;vertical-align:top}
 .wl{font-size:10px;margin-top:2px}
 .nw{white-space:nowrap}
 .over{font-size:10px;color:var(--mute)}
+.mblock{margin:6px 0 10px}
+.sites{display:flex;flex-wrap:wrap;gap:8px 4%}
+.site{flex:0 0 48%;border-top:1px solid var(--line);padding-top:4px}
+.bodymap{display:block;width:62mm;height:auto;margin:4px 0}
 thead{display:table-header-group}
-tr,.irow,.ladder,.box,.chg{break-inside:avoid;page-break-inside:avoid}
+tr,.irow,.ladder,.box,.chg,.mblock,.site{break-inside:avoid;page-break-inside:avoid}
 h2{break-after:avoid;page-break-after:avoid}`
 
 const LOGO = `<img class="logo" src="${REPORT_LOGO_DATA_URI}" alt="dosiq">`
@@ -295,6 +302,37 @@ const CHART_H = 110
 const PAD_L = 34
 const PAD_B = 14
 
+/**
+ * Eixo de datas dos gráficos: início, fim e marcas intermediárias a cada semana (até ~31 dias) ou a
+ * cada duas semanas (acima disso). Marca intermediária colada no fim (< meio passo) é omitida para
+ * os rótulos não se sobreporem (smoke 097 C).
+ */
+export function chartDateTicks(from: string, to: string): string[] {
+  const span = daysBetween(from, to)
+  if (span <= 0) return [from]
+  const step = span <= 10 ? Math.max(1, Math.ceil(span / 4)) : span <= 31 ? 7 : 14
+  const out = [from]
+  for (let d = step; d < span; d += step) {
+    if (span - d >= step / 2) out.push(shiftDay(from, d))
+  }
+  out.push(to)
+  return out
+}
+
+function dateAxis(from: string, to: string, x: (day: string) => number): string {
+  const ticks = chartDateTicks(from, to)
+  return ticks
+    .map((day, i) => {
+      const anchor = i === 0 ? 'start' : i === ticks.length - 1 ? 'end' : 'middle'
+      const xp = x(day)
+      return (
+        `<line x1="${xp.toFixed(1)}" y1="${CHART_H - PAD_B}" x2="${xp.toFixed(1)}" y2="${CHART_H - PAD_B + 3}" stroke="#9ca3af" stroke-width=".6"/>` +
+        `<text x="${xp.toFixed(1)}" y="${CHART_H - 2}" font-size="9" fill="#6b7280" text-anchor="${anchor}">${dm(day)}</text>`
+      )
+    })
+    .join('')
+}
+
 /** Uma linha por etapa: peso médio, pesagens e doses tomadas (fatos, sem diferença calculada). */
 function weightLines(ladder: ReportLadder): string {
   const series = ladder.weightSeries
@@ -351,8 +389,7 @@ function weightChart(ladder: ReportLadder, period: ReportWindow): string {
   const axis =
     `<text x="0" y="12" font-size="9" fill="#6b7280">${e(formatNumberPtBR(hi))} kg</text>` +
     `<text x="0" y="${CHART_H - PAD_B}" font-size="9" fill="#6b7280">${e(formatNumberPtBR(lo))} kg</text>` +
-    `<text x="${PAD_L}" y="${CHART_H - 2}" font-size="9" fill="#6b7280">${dm(window.from)}</text>` +
-    `<text x="${CHART_W - 30}" y="${CHART_H - 2}" font-size="9" fill="#6b7280">${dm(window.to)}</text>`
+    dateAxis(window.from, window.to, x)
   if (!ladder.weightChart) return `<div class="small"><b>Peso durante o tratamento</b></div>${weightLines(ladder)}`
   const svg = `<svg width="100%" viewBox="0 0 ${CHART_W} ${CHART_H}" role="img" aria-label="Peso durante o tratamento">${bands}${dots}${axis}</svg>`
 
@@ -382,6 +419,158 @@ function laddersFlow(model: ReportModel): FlowItem[] {
     })
   }
   return items
+}
+
+// ── §3.7 Medidas + cruzamento dose × medida (ADR-105) ─────────────────────────
+const num = (n: number) => e(formatNumberPtBR(Math.round(n * 10) / 10))
+
+/** "120" ou "120×80" (pressão: sistólica × diastólica). */
+function statValue(main: number, sec: number | null | undefined): string {
+  return sec === null || sec === undefined ? num(main) : `${num(main)}×${num(sec)}`
+}
+
+function statCells(stat: MeasureStat, sec: MeasureStat | null): string {
+  return (
+    `<td class="num">${stat.n}</td>` +
+    `<td class="num">${statValue(stat.min, sec?.min)}</td>` +
+    `<td class="num">${statValue(stat.median, sec?.median)}</td>` +
+    `<td class="num">${statValue(stat.max, sec?.max)}</td>`
+  )
+}
+
+const STAT_HEAD = '<th>n</th><th>Mínimo</th><th>Mediana</th><th>Máximo</th>'
+
+/** Marcador por momento da glicemia (categórico, legível em P&B): ● jejum/antes de comer, ○ depois, ▲ ao deitar, ■ outro. */
+type GlyMarker = 'fill' | 'open' | 'tri' | 'sq'
+function glyMarker(context: string | null): GlyMarker {
+  if (context === 'jejum' || context === 'pre_refeicao') return 'fill'
+  if (context === 'pos_refeicao') return 'open'
+  if (context === 'ao_deitar') return 'tri'
+  return 'sq'
+}
+
+function markerSvg(kind: GlyMarker, cx: number, cy: number): string {
+  const c = '#0f766e'
+  if (kind === 'fill') return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.6" fill="${c}"/>`
+  if (kind === 'open') return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.6" fill="#fff" stroke="${c}" stroke-width="1.1"/>`
+  if (kind === 'tri') {
+    return `<path d="M${cx.toFixed(1)},${(cy - 3).toFixed(1)} L${(cx + 3).toFixed(1)},${(cy + 2.4).toFixed(1)} L${(cx - 3).toFixed(1)},${(cy + 2.4).toFixed(1)} Z" fill="${c}"/>`
+  }
+  return `<rect x="${(cx - 2.2).toFixed(1)}" y="${(cy - 2.2).toFixed(1)}" width="4.4" height="4.4" fill="none" stroke="${c}" stroke-width="1.1"/>`
+}
+
+const GLY_LEGEND: [GlyMarker, string][] = [
+  ['fill', 'jejum ou antes de comer'],
+  ['open', 'depois de comer'],
+  ['tri', 'ao deitar'],
+  ['sq', 'outro ou sem momento'],
+]
+
+/** Glicemia: pontos por dia, marcador pelo momento; sem faixa-alvo, meta ou linha ligando (INV-5). */
+function glycemiaChart(points: MeasurePoint[], period: ReportWindow): string {
+  const span = Math.max(1, daysBetween(period.from, period.to))
+  const x = (day: string) => PAD_L + (Math.min(span, Math.max(0, daysBetween(period.from, day))) / span) * (CHART_W - PAD_L - 6)
+  const values = points.map((p) => p.value)
+  const lo = Math.floor(Math.min(...values) / 10) * 10 - 10
+  const hi = Math.ceil(Math.max(...values) / 10) * 10 + 10
+  const plotH = CHART_H - PAD_B - 4
+  const y = (v: number) => 4 + ((hi - v) / Math.max(1, hi - lo)) * plotH
+  const dots = points.map((p) => markerSvg(glyMarker(p.context), x(p.day), y(p.value))).join('')
+  const axis =
+    `<text x="0" y="12" font-size="9" fill="#6b7280">${num(hi)}</text>` +
+    `<text x="0" y="${CHART_H - PAD_B}" font-size="9" fill="#6b7280">${num(lo)}</text>` +
+    dateAxis(period.from, period.to, x) +
+    `<line x1="${PAD_L}" y1="${CHART_H - PAD_B}" x2="${CHART_W - 4}" y2="${CHART_H - PAD_B}" stroke="#d1d5db" stroke-width=".6"/>`
+  const legend =
+    '<div class="legend">' +
+    GLY_LEGEND.map(([k, label]) => `<span class="k"><svg width="9" height="9" viewBox="0 0 9 9">${markerSvg(k, 4.5, 4.5)}</svg>${label}</span>`).join('') +
+    '</div>'
+  return `<svg width="100%" viewBox="0 0 ${CHART_W} ${CHART_H}" role="img" aria-label="Glicemia no período">${dots}${axis}</svg>${legend}`
+}
+
+function contextTable(block: MeasureBlock): string {
+  const rows = block.byContext
+    .map((g) => `<tr><td>${e(g.label)}</td>${statCells(g.stat, g.secondary)}</tr>`)
+    .join('')
+  return `<table><thead><tr><th>Momento (${e(block.unit)})</th>${STAT_HEAD}</tr></thead><tbody>${rows}</tbody></table>`
+}
+
+function measureBlock(block: MeasureBlock, model: ReportModel): string {
+  const title = `<div><b>${e(block.label)}</b> <span class="mute num">· ${block.points.length} ${block.points.length === 1 ? 'medida' : 'medidas'}</span></div>`
+  if (block.type === 'peso') {
+    const rows = block.points.map((p) => `<tr><td class="num">${dm(p.day)} ${e(p.time)}</td><td class="num">${num(p.value)} kg</td></tr>`).join('')
+    const inLadder = model.ladders.some((l) => l.weightChart)
+      ? '<div class="small mute">Peso por etapa: ver "Escadas de titulação".</div>'
+      : ''
+    const table = `<table><thead><tr><th>Data</th><th>Peso</th></tr></thead><tbody>${rows}</tbody></table>`
+    return `<div class="mblock">${title}${table}${inLadder}</div>`
+  }
+  if (block.type === 'pressao_arterial') {
+    const rows = block.points
+      .map(
+        (p) =>
+          `<tr><td class="num">${dm(p.day)} ${e(p.time)}</td><td>${e(p.contextLabel ?? '—')}</td>` +
+          `<td class="num">${statValue(p.value, p.secondary)} mmHg</td></tr>`
+      )
+      .join('')
+    const table = `<table><thead><tr><th>Data</th><th>Momento</th><th>Sistólica × diastólica</th></tr></thead><tbody>${rows}</tbody></table>`
+    return `<div class="mblock">${title}${table}</div>`
+  }
+  // Glicemia: gráfico só com ≥ 3 medidas (DESIGN_DECISOES §3.7); tabela por momento sempre.
+  const chart = block.chart ? glycemiaChart(block.points, model.header.window) : ''
+  return `<div class="mblock">${title}${chart}${contextTable(block)}</div>`
+}
+
+function crossTable(section: MeasuresSection): string {
+  if (!section.cross.length) return ''
+  const rows = section.cross
+    .map((r) => {
+      const measures = r.measures
+        .map((m) =>
+          // Uma medida só: o valor basta — mediana e faixa de um ponto repetem o mesmo número (smoke C).
+          m.stat.n === 1
+            ? `${e(m.label)}: ${statValue(m.stat.median, m.secondary?.median)} ${e(m.unit)} · 1 medida`
+            : `${e(m.label)}: ${m.stat.n} · mediana ${statValue(m.stat.median, m.secondary?.median)} · ` +
+            `${statValue(m.stat.min, m.secondary?.min)} a ${statValue(m.stat.max, m.secondary?.max)} ${e(m.unit)}`
+        )
+        .join('<br>')
+      return `<tr><td>${e(r.period)}</td><td class="num">${r.dosesTaken}</td><td class="num">${measures}</td></tr>`
+    })
+    .join('')
+  return (
+    '<div class="mblock"><div><b>Doses e medidas por período do dia</b></div>' +
+    '<div class="small mute">doses tomadas e medidas registradas em cada período, somadas no período do relatório</div>' +
+    `<table><thead><tr><th>Período</th><th>Doses tomadas</th><th>Medidas (n · mediana · mínimo a máximo)</th></tr></thead><tbody>${rows}</tbody></table></div>`
+  )
+}
+
+function measuresFlow(model: ReportModel): FlowItem[] {
+  const section = model.measures
+  if (!section) return []
+  return [
+    { html: '<h2>Medidas</h2>' },
+    ...section.blocks.filter((b) => b.type === 'glicemia').map((b) => ({ html: measureBlock(b, model) })),
+    ...(section.cross.length ? [{ html: crossTable(section) }] : []),
+    ...section.blocks.filter((b) => b.type !== 'glicemia').map((b) => ({ html: measureBlock(b, model) })),
+  ]
+}
+
+// ── §3.8 Locais de aplicação (geometria do core, só número — NC-3) ───────────
+function siteCard(card: InjectionSiteCard): string {
+  const plural = card.total === 1 ? 'aplicação' : 'aplicações'
+  const denominator = `<div class="small num">local informado em ${card.withSite} de ${card.total} ${plural}</div>`
+  const counts = Object.fromEntries(card.counts.map((c) => [c.site, c.count]))
+  const svg = renderBodyMapSvg(counts, escapeAttr(`Locais de aplicação de ${card.name}`))
+  const list = card.counts.map((c) => `${e(c.label)}: ${c.count}`).join(' · ')
+  return `<div class="site"><b>${e(card.name)}</b>${denominator}${svg}<div class="small num">${list}</div></div>`
+}
+
+function sitesFlow(cards: InjectionSiteCard[]): FlowItem[] {
+  if (!cards.length) return []
+  return [
+    { html: '<h2>Locais de aplicação</h2>' },
+    { html: `<div class="sites">${cards.map(siteCard).join('')}</div>` },
+  ]
 }
 
 // ── §3.8b Estoque (anexo, sem custo) ──────────────────────────────────────────
@@ -450,6 +639,8 @@ export function renderReportHtml(model: ReportModel): string {
     ...changesFlow(model.changes),
     ...laddersFlow(model),
     ...endedFlow(model),
+    ...measuresFlow(model),
+    ...sitesFlow(model.injectionSites),
     ...stockFlow(model.stock),
   ])
   const title = reportFileBaseName(model.header.window)

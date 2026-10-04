@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Relatório clínico: medidas e locais de aplicação (spec 097, Slice C)
+
+- **Web** (`minor` — seções novas no documento; `4.28.1` → `4.29.0`) e **Mobile** (o mesmo PDF vem
+  do servidor; sem bump próprio, segue no pacote de loja `0.34.0`). O relatório ganha a seção
+  **Medidas**: glicemia em pontos por dia, com um marcador por momento (jejum, depois de comer, ao
+  deitar), e uma tabela por momento com número de medidas, mínimo, mediana e máximo (o gráfico só
+  aparece com 3 medidas ou mais); pressão arterial em tabela (data, momento, sistólica × diastólica);
+  peso em tabela. A tabela **Doses e medidas por período do dia** põe lado a lado, para manhã, tarde,
+  noite e madrugada, as doses tomadas e as medidas de glicemia e pressão daquele período. A seção
+  **Locais de aplicação** mostra, por medicamento injetável, o corpo de frente e de costas com o
+  número de aplicações em cada local e a linha "local informado em X de Y aplicações"; o cartão diz
+  o nome e a concentração ("Ozempic · 2,68 mg/mL"), e medicamento sem nenhum local informado no
+  período não aparece. Peso e pressão saem em tabela; no cruzamento, um tipo com uma medida só
+  mostra o valor, sem mediana. Os gráficos marcam as datas a cada semana (30 dias) ou a cada duas
+  semanas (90 dias). Nada no documento diz o que é bom, ruim ou o próximo local: só os
+  registros e as contagens. Sem medida ou sem local informado no período, a seção não aparece.
+
 ### Relatório clínico em PDF no app (spec 097, Slice B)
 
 - **Mobile** (`minor` — funcionalidade nova; `APP_VERSION` `0.33.6` → `0.33.7` só para build de
