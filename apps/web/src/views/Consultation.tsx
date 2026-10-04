@@ -155,8 +155,8 @@ export default function Consultation({ onBack }) {
       const flow = await import('@features/reports/services/reportDownloadFlow')
       const report = await flow.fetchClinicalReport(30)
       if (flow.canShareReportFile(report)) {
-        await flow.shareReportFile(report)
-        analyticsService.track('consultation_shared', { method: 'web_share_api' })
+        // Cancelar o menu não conta como compartilhado (RC6 #857).
+        if (await flow.shareReportFile(report)) analyticsService.track('consultation_shared', { method: 'web_share_api' })
       } else {
         flow.downloadReportFile(report)
         analyticsService.track('consultation_shared', { method: 'download' })

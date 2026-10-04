@@ -85,7 +85,7 @@ describe('reportDownloadFlow', () => {
     const file = { file: new File(['%PDF'], 'a.pdf', { type: 'application/pdf' }), filename: 'a.pdf' }
     vi.stubGlobal('navigator', { canShare: () => true, share: vi.fn().mockRejectedValue(Object.assign(new Error('x'), { name: 'AbortError' })) })
     expect(canShareReportFile(file)).toBe(true)
-    await expect(shareReportFile(file)).resolves.toBeUndefined()
+    await expect(shareReportFile(file)).resolves.toBe(false)
     vi.stubGlobal('navigator', { share: vi.fn().mockRejectedValue(new Error('boom')) })
     expect(canShareReportFile(file)).toBe(false)
     await expect(shareReportFile(file)).rejects.toMatchObject({ code: 'share' })

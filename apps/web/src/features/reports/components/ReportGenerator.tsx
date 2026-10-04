@@ -132,8 +132,12 @@ export default function ReportGenerator(_props: { onClose?: () => void } = {}) {
 
   const handleDownload = useCallback(async () => {
     if (!report) return
-    const flow = await loadFlow()
-    flow.downloadReportFile(report)
+    try {
+      const flow = await loadFlow()
+      flow.downloadReportFile(report)
+    } catch (err) {
+      setError(errorMessage((err as { code?: string })?.code))
+    }
   }, [report])
 
   const handleShare = useCallback(async () => {

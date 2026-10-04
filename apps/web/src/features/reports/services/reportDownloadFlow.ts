@@ -112,12 +112,13 @@ export function canShareReportFile(report: ReportFile): boolean {
   return typeof navigator.canShare === 'function' && navigator.canShare({ files: [report.file] })
 }
 
-/** Menu nativo de compartilhar com o arquivo. Cancelar não é erro. */
-export async function shareReportFile(report: ReportFile): Promise<void> {
+/** Menu nativo de compartilhar com o arquivo. `false` = o usuário cancelou (não é erro). */
+export async function shareReportFile(report: ReportFile): Promise<boolean> {
   try {
     await navigator.share({ files: [report.file], title: 'Relatório de acompanhamento' })
+    return true
   } catch (err) {
-    if ((err as Error)?.name === 'AbortError') return
+    if ((err as Error)?.name === 'AbortError') return false
     throw new ReportFlowError('share', err)
   }
 }

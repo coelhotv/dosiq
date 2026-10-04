@@ -202,3 +202,15 @@ describe('api/report — guardas estruturais', () => {
     for (const f of fontes) expect(f).not.toMatch(/demo/i)
   })
 })
+
+describe('createRateLimiter — memória (RC6 #857)', () => {
+  it('chaves expiradas são apagadas quando o Map passa de 1000', () => {
+    let t = 0
+    const rl = createRateLimiter({ max: 5, windowMs: 60_000, now: () => t })
+    for (let i = 0; i < 1001; i += 1) rl.take(`u${i}`)
+    expect(rl.size()).toBe(1001)
+    t = 120_000
+    expect(rl.take('novo')).toBe(true)
+    expect(rl.size()).toBe(1)
+  })
+})
