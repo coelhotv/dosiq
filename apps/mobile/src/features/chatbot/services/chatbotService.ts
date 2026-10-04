@@ -10,7 +10,7 @@ import { nativeApiBaseUrl } from '../../../platform/config/nativePublicAppConfig
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import { CHATBOT_MAX_HISTORY } from '../config/chatbotConfig'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
-import { EVENTS } from '../../../platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '../../../platform/analytics/analyticsEvents'
 
 const CHATBOT_ENDPOINT = `${nativeApiBaseUrl}/api/chatbot`
 
@@ -50,6 +50,10 @@ export async function sendChatMessage({ message, history = [], patientContext })
     return { response: 'Faça login para usar o assistente.', error: true }
   }
 
+  // 092 FR-006: caminho da falha num enum fechado, atribuído em cada ramo ANTES do throw — nunca
+  // derivado de `error.message`, que carrega texto do servidor (R-042). Começa em `network`: se o
+  // `fetch` rejeitar, nenhum ramo abaixo chega a rodar.
+  let errorKind = 'network'
   try {
     const res = await fetch(CHATBOT_ENDPOINT, {
       method: 'POST',
@@ -65,17 +69,23 @@ export async function sendChatMessage({ message, history = [], patientContext })
     })
 
     if (!res.ok) {
+      errorKind = res.status >= 500 ? 'http_5xx' : 'http_4xx'
       const err = await res.json().catch(() => ({}))
       throw new Error(err.message || `HTTP ${res.status}`)
     }
 
+    errorKind = 'invalid_response'
     const data = await res.json()
     // FR-8/R-042: só meta (has_error) — zero texto de pergunta/resposta.
-    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, { has_error: false })
+    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, { has_error: false, surface: SURFACES.MOBILE })
     return { response: data.response, error: false }
   } catch (error) {
     if (__DEV__) console.warn('[chatbot] erro ao enviar mensagem:', error?.message || error)
-    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, { has_error: true })
+    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, {
+      has_error: true,
+      error_kind: errorKind,
+      surface: SURFACES.MOBILE,
+    })
     return {
       response: 'Desculpe, estou com dificuldades técnicas. Tente novamente em instantes.',
       error: true,

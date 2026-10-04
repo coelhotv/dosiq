@@ -14,7 +14,7 @@
 // seria um segundo primitivo de concorrência competindo com o do banco.
 
 import * as Notifications from 'expo-notifications'
-import { confirmTitrationSwitch, titrationConfirmedProps } from '@features/treatments/services/titrationService'
+import { confirmTitrationSwitch, titrationConfirmedProps, titrationPostponedProps } from '@features/treatments/services/titrationService'
 import { triggerTitrationRefresh } from '@features/treatments/services/titrationRefreshBus'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -115,7 +115,13 @@ export async function handleTitrationNotificationAction(
   // push é responsabilidade do motor (que só notifica quando o claim pega), não daqui.
   if (actionId === TITRATION_ACTION.NOT_YET) {
     // SEC-6: só IDs e tipos — nunca nome de medicamento ou dose.
-    logEvent(EVENTS.TITRATION_TRANSITION_POSTPONED, { step_id: stepId ?? '', surface: SURFACES.PUSH })
+    // 092 E-5: sem `stepId` a chave sai do payload (antes ia `''`). `treatment_id` fica fora: o push
+    // só carrega `stepId` (`_payloadBuilders.ts` → `params: { stepId }`), e ler o protocolo da etapa
+    // aqui seria consulta extra num handler headless só para analytics.
+    logEvent(EVENTS.TITRATION_TRANSITION_POSTPONED, {
+      ...titrationPostponedProps({ stepId }),
+      surface: SURFACES.PUSH,
+    })
     return true
   }
 

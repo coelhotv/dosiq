@@ -126,14 +126,14 @@ describe('profileService', () => {
       mockedSupabase.rpc.mockResolvedValue({ data: { ok: true }, error: null })
       const res = await deleteAccount()
       expect(res.success).toBe(true)
-      expect(accountEvents()).toEqual([['account_deleted', { result: 'success' }]])
+      expect(accountEvents()).toEqual([['account_deleted', { result: 'success', surface: 'mobile' }]])
     })
 
     it('falha: emite account_deleted{result:"error"} — mede tentativa, não só êxito', async () => {
       mockedSupabase.rpc.mockResolvedValue({ data: null, error: { message: 'active_treatments_block' } })
       const res = await deleteAccount()
       expect(res.success).toBe(false)
-      expect(accountEvents()).toEqual([['account_deleted', { result: 'error' }]])
+      expect(accountEvents()).toEqual([['account_deleted', { result: 'error', surface: 'mobile' }]])
     })
   })
 

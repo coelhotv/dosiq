@@ -719,3 +719,20 @@ export function titrationConfirmedProps(result: ConfirmSwitchResult): { outcome:
     ? { outcome: 'confirmed', treatment_id: result.protocolActivated }
     : { outcome: 'confirmed' }
 }
+
+/**
+ * Props de identidade do `titration_transition_postponed` (092 FR-005 / E-5).
+ *
+ * 🔴 INV-3: chave sem valor sai do payload — nunca `''`. `treatment_id` é o `protocol_id` da PRÓPRIA
+ * etapa adiada (FK da linha de `titration_steps`, INV-2); etapa futura de `medicine_switch` ainda
+ * sem tratamento não o tem e a chave fica fora. O push só carrega `stepId`, então ele chama sem
+ * `treatmentId`.
+ */
+export function titrationPostponedProps(
+  { stepId, treatmentId }: { stepId?: string | null; treatmentId?: string | null },
+): { step_id?: string; treatment_id?: string } {
+  return {
+    ...(stepId ? { step_id: stepId } : {}),
+    ...(treatmentId ? { treatment_id: treatmentId } : {}),
+  }
+}

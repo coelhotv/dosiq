@@ -269,7 +269,7 @@ export async function updateProfile(input) {
   try {
     const data = await profileRepo.updateProfile(input)
     // FR-8/R-042: {} — perfil é a maior superfície de PII do app, zero campo no payload.
-    void logEvent(EVENTS.PROFILE_UPDATED, {})
+    void logEvent(EVENTS.PROFILE_UPDATED, { surface: SURFACES.MOBILE })
     return { data, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao salvar perfil:', err)
@@ -286,7 +286,7 @@ export async function updateComplexity(value) {
   try {
     const data = await profileRepo.updateComplexity(value)
     // Mesma normalização da super property (setMode): null = 'auto' — null no payload apagaria a densidade.
-    void logEvent(EVENTS.MODE_CHANGED, { mode: value || 'auto' })
+    void logEvent(EVENTS.MODE_CHANGED, { mode: value || 'auto', surface: SURFACES.MOBILE })
     return { data, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao salvar densidade:', err)
@@ -383,11 +383,11 @@ export async function setStockTracking(enabled) {
 export async function deleteAccount() {
   try {
     await profileRepo.deleteAccount()
-    void logEvent(EVENTS.ACCOUNT_DELETED, { result: 'success' })
+    void logEvent(EVENTS.ACCOUNT_DELETED, { result: 'success', surface: SURFACES.MOBILE })
     return { success: true, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao excluir conta:', err)
-    void logEvent(EVENTS.ACCOUNT_DELETED, { result: 'error' })
+    void logEvent(EVENTS.ACCOUNT_DELETED, { result: 'error', surface: SURFACES.MOBILE })
     return { success: false, error: mapErrorToMessage(err) }
   }
 }

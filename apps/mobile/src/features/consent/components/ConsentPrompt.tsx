@@ -19,7 +19,7 @@ import HealthConsentCheckbox from './HealthConsentCheckbox'
 import ConsentLegalHeader from './ConsentLegalHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { EVENTS } from '@platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 // 065 PR D / US9 — de onde este prompt foi renderizado (4 call-sites reais, achados no C1.5;
 // ConsentRegularizationSheet é aceite de política nova e usa componente PRÓPRIO, não este).
@@ -46,12 +46,12 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
   // 1x por montagem (não por render) — mesma disciplina do FR-1: `source`/`blocking` vêm de quem
   // monta este componente, nunca de um default silencioso.
   useEffect(() => {
-    void logEvent(EVENTS.CONSENT_PROMPT_SHOWN, { blocking, source })
+    void logEvent(EVENTS.CONSENT_PROMPT_SHOWN, { blocking, source, surface: SURFACES.MOBILE })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleDismiss() {
-    void logEvent(EVENTS.CONSENT_PROMPT_DISMISSED, { source })
+    void logEvent(EVENTS.CONSENT_PROMPT_DISMISSED, { source, surface: SURFACES.MOBILE })
     onDismiss?.()
   }
 
@@ -68,7 +68,7 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
         setError('Não foi possível registrar o consentimento agora. Tente de novo.')
         return
       }
-      void logEvent(EVENTS.CONSENT_GRANTED, { source })
+      void logEvent(EVENTS.CONSENT_GRANTED, { source, surface: SURFACES.MOBILE })
       onGranted()
     } catch {
       // onGrant() rejeitou (ex.: rede) — sem isto o botão ficaria travado em loading.

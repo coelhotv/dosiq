@@ -15,6 +15,7 @@ import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseA
 import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
 import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import { getMedicinePresentations } from '@platform/analytics/medicineForm'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
 import { buildBulkSiteCounts } from '../utils/siteEventProps'
@@ -45,6 +46,28 @@ function _doseEventProps(base, { surface = null, treatmentId = null, entryPoint 
   // 065 AD-8: `entry_point: 'reminder'` só quando a modal foi aberta por um lembrete. Sem default.
   if (entryPoint) props.entry_point = entryPoint
   return props
+}
+
+/**
+ * Emite `dose_logged` com a forma do medicamento DE CADA dose (092 FR-001 / E-1).
+ *
+ * 🔴 NÃO-BLOQUEANTE: dispara e não devolve a promise. O lookup de `presentation` é uma ida ao banco;
+ *    esperá-lo atrasaria o retorno do registro à tela e ao alarme headless (`quickDoseRegistration`)
+ *    por causa de analytics. O registro já está gravado quando isto roda.
+ * 🔴 `presentation` segue `medicine_id` (o do FATO, R-299): sem `medicine_id` não há lookup; lookup que
+ *    falha devolve `{}` e a chave fica fora (INV-3). Lote = UMA query para todos os ids distintos.
+ */
+function _emitDoseLogged(events: Array<{ base: Record<string, unknown>, opts: Parameters<typeof _doseEventProps>[1] }>) {
+  void (async () => {
+    const forms = await getMedicinePresentations(events.map((e) => e.base.medicine_id as string | null))
+    for (const { base, opts: { surface, treatmentId, entryPoint } } of events) {
+      const presentation = forms[base.medicine_id as string]
+      await logEvent(
+        EVENTS.DOSE_LOGGED,
+        _doseEventProps(presentation ? { ...base, presentation } : base, { surface, treatmentId, entryPoint }),
+      )
+    }
+  })()
 }
 
 // Obtém usuário autenticado ou retorna erro de sessão
@@ -142,14 +165,11 @@ export async function registerDose(logData, { instanceId = null, surface = null,
 
     // Side-effects locais de plataforma
     await _cancelAlarmBestEffort(instanceId)
-    await logEvent(
-      EVENTS.DOSE_LOGGED,
-      _doseEventProps(
-        // eventProps: local de aplicação (071 PR3) — só comportamento, nunca o valor (siteEventProps)
-        { medicine_id: logEntry.medicine_id, ...eventProps },
-        { surface, treatmentId: (logEntry as any)?.protocol_id, entryPoint },
-      ),
-    )
+    _emitDoseLogged([{
+      // eventProps: local de aplicação (071 PR3) — só comportamento, nunca o valor (siteEventProps)
+      base: { medicine_id: logEntry.medicine_id, ...eventProps },
+      opts: { surface, treatmentId: (logEntry as any)?.protocol_id, entryPoint },
+    }])
 
     return { success: true, data: logEntry }
   } catch (err) {
@@ -188,13 +208,10 @@ export async function undoDose(instanceId, { surface = null } = {}) {
 
     await doseLogCore.undoDose(instanceId)
 
-    await logEvent(
-      EVENTS.DOSE_LOGGED,
-      _doseEventProps(
-        { action: 'undo', medicine_id: (instance as any).medicine_id },
-        { surface, treatmentId: (instance as any).protocol_id },
-      ),
-    )
+    _emitDoseLogged([{
+      base: { action: 'undo', medicine_id: (instance as any).medicine_id },
+      opts: { surface, treatmentId: (instance as any).protocol_id },
+    }])
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -213,15 +230,12 @@ export async function undoDose(instanceId, { surface = null } = {}) {
 export async function updateOrphanLog(logId, updates, { surface = null, eventProps } = {} as { surface?: string | null, eventProps?: Record<string, unknown> }) {
   try {
     const logEntry = await doseLogCore.updateOrphanLog(logId, updates)
-    await logEvent(
-      EVENTS.DOSE_LOGGED,
-      _doseEventProps(
-        // `update_orphan` é nome herdado: cobre TODA edição de registro com log (órfão ou agendado
-        // já tomado). Série viva — não renomear (TRACKING_PLAN §2.1). eventProps: change_kind + local (071 PR3).
-        { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id, ...eventProps },
-        { surface, treatmentId: (logEntry as any)?.protocol_id },
-      ),
-    )
+    _emitDoseLogged([{
+      // `update_orphan` é nome herdado: cobre TODA edição de registro com log (órfão ou agendado
+      // já tomado). Série viva — não renomear (TRACKING_PLAN §2.1). eventProps: change_kind + local (071 PR3).
+      base: { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id, ...eventProps },
+      opts: { surface, treatmentId: (logEntry as any)?.protocol_id },
+    }])
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -285,21 +299,20 @@ function _validateManyLogs(logsData) {
 // (doseLogService.registerDoseMany). As props vêm de `logsData[i].event_props`, montadas na tela
 // (siteEventProps); o Zod não as vê (metadado, como o instance_id). Devolve as props dos itens
 // bem-sucedidos para as contagens do agregado.
-async function _emitBulkDoseEvents(results, logsData, { surface, entryPoint }) {
+function _emitBulkDoseEvents(results, logsData, { surface, entryPoint }) {
   const succeededProps = []
+  const events = []
   for (let i = 0; i < results.length; i++) {
     const res = results[i]
     if (!res.success) continue
     const itemProps = logsData[i]?.event_props ?? {}
     succeededProps.push(itemProps)
-    await logEvent(
-      EVENTS.DOSE_LOGGED,
-      _doseEventProps(
-        { medicine_id: (res as any).data?.medicine_id, ...itemProps },
-        { surface, treatmentId: (res as any).data?.protocol_id, entryPoint },
-      ),
-    )
+    events.push({
+      base: { medicine_id: (res as any).data?.medicine_id, ...itemProps },
+      opts: { surface, treatmentId: (res as any).data?.protocol_id, entryPoint },
+    })
   }
+  if (events.length > 0) _emitDoseLogged(events)
   return succeededProps
 }
 
@@ -353,7 +366,7 @@ export async function registerDoseMany(logsData, { surface = null, entryPoint } 
     //
     // DEPOIS do laço de cancelamento de alarme, nunca antes: analytics não atrasa o cancelamento do
     // alarme de uma dose já registrada.
-    const succeededProps = await _emitBulkDoseEvents(results, logsData, { surface, entryPoint })
+    const succeededProps = _emitBulkDoseEvents(results, logsData, { surface, entryPoint })
 
     if (succeeded.length > 0) {
       // O agregado PERMANECE, e continua sem `treatment_id`: o lote atravessa tratamentos por

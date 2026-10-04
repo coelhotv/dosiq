@@ -10,6 +10,7 @@ import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 import { colors, spacing } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { isDeviceKey } from '@platform/session/localDataWipe'
 import {
@@ -425,7 +426,7 @@ export default function DevHubScreen({ navigation }: any) {
           <TouchableOpacity
             onPress={() => {
               lightTap()
-              logEvent('dev_smoke_event', { source: 'devhub', platform: Platform.OS })
+              logEvent('dev_smoke_event', { source: 'devhub', platform: Platform.OS, surface: SURFACES.MOBILE })
                 .then(() => Alert.alert('Dev — PostHog', 'Evento dev_smoke_event enviado.'))
                 .catch((err) => Alert.alert('Dev — PostHog', err?.message ?? 'Erro ao enviar evento.'))
             }}

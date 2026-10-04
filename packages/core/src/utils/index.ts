@@ -176,6 +176,13 @@ export {
   isTreatmentSchedulableOn,
 } from './treatmentStatus'
 
+// Persona de analytics por volume de tratamentos vigentes, pausados inclusive (092)
+export {
+  countTreatmentsInPeriod,
+  resolveTreatmentCountBucket,
+  type TreatmentCountBucket,
+} from './treatmentCountBucket'
+
 // Prescription vigência status resolver (038 Slice C — paridade web↔mobile)
 export {
   PRESCRIPTION_STATUS,

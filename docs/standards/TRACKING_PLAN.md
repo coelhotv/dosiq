@@ -110,11 +110,12 @@ marcado como não-produção).
 |---|---|---|---|
 | `surface` | `mobile` · `web` · `bot` · `push` · `alarm` · `system` | **por chamada** (varia por evento) | de onde a ação nasceu |
 | `app_version` | ex. `0.30.1` | super property / `bundleTags()` no mobile | métrica de adoção de frota (ADR-090) |
-| `mode` | `simple` · `complex` | **super property** via `register` (§3.2) | segmentação por persona |
+| `mode` | `simple` · `complex` · `auto` | **super property** via `register` (§3.2) | densidade **escolhida** (`auto` = não escolheu) |
+| `treatment_count_bucket` | `0` · `1-3` · `4+` | **super property** via `register` (§3.2, spec 092) | persona por volume de tratamentos |
 
 > **Três níveis, não um.** `surface` é a única **por chamada** — obrigatória em todo evento.
-> `app_version`/`mode` são **super properties**: anexadas automaticamente depois de definidas na
-> sessão (eventos antes do profile carregar — `login`, `cold_start` — podem não ter `mode`; §3.2).
+> `app_version`/`mode`/`treatment_count_bucket` são **super properties**: anexadas automaticamente depois de definidas na
+> sessão (eventos antes do Hoje carregar — `login`, `cold_start` — podem não tê-las; §3.2).
 > Eventos de **comportamento clínico** carregam ainda `treatment_id` — obrigatória **condicional**,
 > não universal (§5.0).
 
@@ -135,18 +136,24 @@ marcado como não-produção).
 A plataforma do dispositivo continua disponível pelas propriedades nativas do SDK PostHog
 (`$os`, `$lib`); não duplicar.
 
-### 3.2 `mode` como super property (não passar por chamada)
+### 3.2 Persona: `mode` + `treatment_count_bucket` (super properties, nunca por chamada)
 
-`mode` mapeia a coluna `profiles.complexity_override` (`'simple' | 'complex' | null`; `null` =
-densidade adaptativa, Wave 10A). Ele **não** está acessível na maioria dos pontos de emissão
-(ex.: `doseService`), então **não** deve ser passado call a call. Definir uma vez por sessão via
-`register` quando o profile carrega — assim acompanha todos os eventos seguintes. Quando
-`complexity_override` for `null`, resolver para o valor efetivo do threshold adaptativo antes de
-registrar (não registrar `null`).
+**`mode`** registra a densidade **declarada** em `user_settings.complexity_override`:
+`'simple' | 'complex'`, ou `'auto'` quando a pessoa não escolheu (decisão da 065, US4). Não resolve o
+adaptativo: cada tela usa uma base de contagem diferente, e escolher uma inventaria um número que
+não é o de nenhuma tela (`productAnalytics.setMode`). Registrado em `useTodayData.load`, a tela
+inicial, quando `user_settings` carrega.
+
+**`treatment_count_bucket`** (spec 092 D-2) é a persona legível para quem está em `auto`: faixa
+`'0' | '1-3' | '4+'` de tratamentos com **prescrição vigente** no dia local — `start_date <= hoje` e
+`end_date` nulo ou `>= hoje`, **pausados inclusive**, início futuro não. A regra mora no core
+(`resolveTreatmentCountBucket`, sobre `isProtocolInPeriod`), registrada no mesmo ponto do `mode` a
+partir de `protocolService.getAll()`, fora do caminho da agenda. Carga falhou ⇒ a propriedade fica
+ausente (nunca `'0'` inventado). O corte `4+` casa com o limiar do adaptativo (`> 3`).
 
 **Por que importa:** as personas têm funções de utilidade **opostas** — sessão longa é bom sinal
-para o Carlos (complex) e mau sinal para a Dona Maria (simple). Média global sem `mode` mistura os
-dois e esconde os dois.
+para o Carlos (muitos tratamentos) e mau sinal para a Dona Maria (poucos). Média global sem persona
+mistura os dois e esconde os dois. Leia a persona pela faixa; `mode` diz só o que a pessoa escolheu.
 
 ---
 
@@ -230,13 +237,13 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?` | **ativação real** (time to first value) |
-| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?` (re-emite) | manutenção vs. instabilidade do plano |
+| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (092) | **ativação real** (time to first value) |
+| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (re-emite) | manutenção vs. instabilidade do plano |
 | `treatment_paused` | ✅ mobile | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
 | `treatment_resumed` | ✅ mobile | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
 | `treatment_ended` | ✅ mobile | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
 | `titration_transition_confirmed` | ✅ mobile | confirma etapa de titulação (evolução do tratamento) | `step_id`, `surface` (canal), `placement: timeline_banner\|today_card` (só em `mobile`), `outcome`, `treatment_id` (**só** quando a RPC devolve `protocol_activated`; ausente em `already_confirmed`/recusa — R-299) | avanço de titulação |
-| `titration_transition_postponed` | ✅ mobile | adia etapa | `step_id`, `surface`, `placement?` — **sem** `treatment_id` (adiar não passa pela RPC, não há fato que o carregue) | fricção na titulação |
+| `titration_transition_postponed` | ✅ mobile | adia etapa | `step_id`, `surface`, `placement?`, `treatment_id?` — `protocol_id` da **própria etapa** adiada no card do Hoje (092 FR-005); ausente no push (o payload só carrega `stepId`) e em etapa futura sem tratamento | fricção na titulação |
 
 **Setup do medicamento (passo anterior, secundário):**
 
@@ -321,7 +328,7 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, `surface`, `entry_point: reminder` (**só** na modal aberta por um lembrete — 065 AD-8; ausente = abriu o app por conta própria) | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
+| `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, `surface`, `entry_point: reminder` (**só** na modal aberta por um lembrete — 065 AD-8; ausente = abriu o app por conta própria), `presentation?` (forma do medicamento **da dose**, lida no momento do evento — 092; segue `medicine_id`, ausente em `delete_orphan`) | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
 | `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, `surface`, `entry_point?` · **071:** `injectable_count`, `site_set_count` (só quando o lote tem injetável) | catch-up de doses atrasadas · o local é informado no lote? |
 | `dose_skipped` | ✅ mobile | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
 | `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). **Fase 2 (web)** — verificado 2026-08-09: **sem gatilho no mobile** (só KPI passivo `adherence30d`/`streak`); a celebração é web (`MilestoneCelebration`/`BadgeDisplay`). Gatilho no mobile = mecânica nova, fora de escopo |
@@ -368,7 +375,7 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Props | Pergunta |
 |---|---|---|---|
-| `stock_onboarding_choice` | ✅ | `mode: dose_only\|stock` | escolha de modo no onboarding |
+| `stock_onboarding_choice` | ✅ | `mode` **e** `stock_mode`: `dose_only\|stock` (mesmo valor — 092 D-4; `mode` sai quando a série SC-004 da 044 migrar para `stock_mode`), `surface` | escolha de modo no onboarding |
 | `stock_opt_in` / `stock_opt_out` | ✅ | `source: onboarding\|settings\|upsell` | adoção do controle de estoque |
 | `stock_upsell_shown` / `stock_upsell_conversion` / `stock_upsell_dismissed` | ✅ | — | eficácia do upsell (SC-004) |
 | `stock_added` | ✅ mobile | `medicine_id`, `surface` — **sem** `treatment_id` (spec 065 Decisão 6). **Só compra** (1 por compra, também no líquido de N frascos); saldo inicial é `stock_opt_in`, ajuste e edição de compra não emitem | reposição de estoque do medicamento |
@@ -417,8 +424,8 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
 | `ai_assistant_opened` | ⏸ não emitido | abre o assistente | — | adoção da feature — **coberto hoje por `$screen` da tela do chat** (autocapture); evento dedicado só se a leitura por tela falhar |
-| `ai_assistant_message_sent` | ✅ mobile (#842) | resposta recebida **ou** falha no envio | `has_error: boolean` — ⚠️ sem `surface`/`message_index` | engajamento + confiabilidade (substitui o `ai_assistant_error` proposto) |
-| `ai_assistant_error` | ⛔ absorvido | — | — | virou `ai_assistant_message_sent{has_error:true}` (065 PR D). `error_kind` não existe: gap G-8 (§5.12) |
+| `ai_assistant_message_sent` | ✅ mobile (#842) | resposta recebida **ou** falha no envio | `has_error: boolean`, `surface`, `error_kind` (só com `has_error: true`): `http_4xx`\|`http_5xx`\|`network`\|`invalid_response` — atribuído por ramo, nunca da mensagem (092 FR-006) | engajamento + confiabilidade (substitui o `ai_assistant_error` proposto) |
+| `ai_assistant_error` | ⛔ absorvido | — | — | virou `ai_assistant_message_sent{has_error:true}` (065 PR D). `error_kind` chegou na 092 (G-8 fechado) |
 
 > 🔴 **Só meta-eventos.** O **texto** da pergunta e a **resposta** do Groq **jamais** entram no
 > payload (§6) — é a maior fonte de PII do app. Uso de software → **sem `treatment_id`**.
@@ -447,11 +454,16 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | ~~`consent_health_declined`~~ | ⛔ mobile · 🔤 web | `{}` | **aposentado no mobile** (065 PR D, #842): media só marcar→desmarcar, sem origem. Web legado ainda emite |
 | `dev_smoke_event` | 🔤 | `source`, `platform` | **não-produção** (DevHub); excluir de dashboards |
 
-> **Chave de payload ≠ super property.** `app_env`, `channel`, `is_internal`, `mode`, `runtime_version`
-> e `update_id` são registradas em todo evento; repetir a chave no payload **sobrescreve** o valor
+> **Chave de payload ≠ super property.** `app_env`, `channel`, `is_internal`, `mode`, `runtime_version`,
+> `treatment_count_bucket` e `update_id` são registradas em todo evento; repetir a chave no payload **sobrescreve** o valor
 > global naquele evento (achado no smoke do 065 D: `mode` apagava a densidade). Guard:
 > `payloadPiiContract.test.ts`. Exceções declaradas: `mode_changed` (mesma semântica) e
-> `stock_onboarding_choice{mode}` (legado 044 — renomear quebra a série).
+> `stock_onboarding_choice{mode}` (legado 044 — renomear quebra a série; desde a 092 viaja junto de
+> `stock_mode`, e a exceção sai quando a série migrar).
+>
+> **`surface` em todo evento (092 FR-003).** Todos os eventos da §5.10 carregam `surface`. Guard estático
+> no mesmo arquivo: um `logEvent` que não cita `surface` nem passa uma variável que a recebe reprova,
+> sem lista de eventos isentos. Sem default no wrapper: emissor headless esquecido sairia `mobile`.
 
 ### 5.11 Faseamento e cobertura
 
@@ -488,15 +500,15 @@ superfície.
 
 | # | Gap | Evidência | Impacto na pergunta | Prioridade / caminho |
 |---|---|---|---|---|
-| G-1 | **Wedge GLP-1 não é segmentável** (→ spec **092**). ⚖️ **Decidido na 092 D-1 (PO, 2026-09-27)** — `presentation` em `treatment_created`/`treatment_edited`/`dose_logged`, forma e nunca classe; entrega pendente na 092. A 071 PR3 (2026-10-01, PO opção (a)) já revela a forma injetável implicitamente (props de local só existem em injetável), sem chave própria. Esta linha fica até a 092 mergear. Nenhum evento de tratamento/dose carrega a forma (`presentation`: `injetavel`…) nem a classe do remédio | `treatment_created` = `medicine_id` UUID + `frequency`; `semanal` é proxy fraco | A tese 2026 (wedge GLP-1/injetáveis) não tem corte próprio no PostHog | 🔴 **alta** — decidir: `presentation` (enum de 7, categoria de forma, não de doença) em `treatment_created`/`dose_logged`, **ou** join `medicine_id`→`medicines` via data warehouse. Passa pela régua de postura do §5.7 |
-| G-2 | **Persona ilegível para quem não escolheu densidade** — `mode = 'auto'` é decisão consciente da 065 (`productAnalytics.ts:140`: o adaptativo usa contagens diferentes por tela, não há valor efetivo único); a §3.2 abaixo está desatualizada | 30d: `['auto']` em quase todo evento | Segmentação por persona (Carlos × dona Maria) — o motivo de `mode` existir — não funciona para a maioria | 🔴 **alta** — spec **092** (unificar heurística e registrar efetivo, ou derivar persona por faixa de contagem) |
-| G-3 (→ 092) | **`surface` ausente** apesar de "obrigatória em todo evento" (§3) | 0% em `login`, `cold_start`, `stock_*` (044), `consent_*`, `account_deleted`, ~~`biomarker_logged`~~ (fechado na 069-A2), `ai_assistant_message_sent`, `profile_updated`, `mode_changed` | Baixo hoje (tudo é UI mobile), alto na Fase 2 (web/bot) — mistura superfícies | 🟡 média — ou emitir, ou rebaixar a regra para "obrigatória em evento que pode nascer em >1 superfície" (decisão de plano, não de código) |
+| G-1 | ✅ **Fechado na 092 (2026-10-04)** — `presentation` em `treatment_created`/`treatment_edited`/`dose_logged`. ⚠️ Viés: o default do banco é `'comprimido'`, então medicamento sem forma escolhida conta como comprimido (092 E-7). **Wedge GLP-1 não é segmentável** (→ spec **092**). ⚖️ **Decidido na 092 D-1 (PO, 2026-09-27)** — `presentation` em `treatment_created`/`treatment_edited`/`dose_logged`, forma e nunca classe; entrega pendente na 092. A 071 PR3 (2026-10-01, PO opção (a)) já revela a forma injetável implicitamente (props de local só existem em injetável), sem chave própria. Esta linha fica até a 092 mergear. Nenhum evento de tratamento/dose carrega a forma (`presentation`: `injetavel`…) nem a classe do remédio | `treatment_created` = `medicine_id` UUID + `frequency`; `semanal` é proxy fraco | A tese 2026 (wedge GLP-1/injetáveis) não tem corte próprio no PostHog | 🔴 **alta** — decidir: `presentation` (enum de 7, categoria de forma, não de doença) em `treatment_created`/`dose_logged`, **ou** join `medicine_id`→`medicines` via data warehouse. Passa pela régua de postura do §5.7 |
+| G-2 | ✅ **Fechado na 092 (2026-10-04)** — super property `treatment_count_bucket` (§3.2); `mode` segue `auto`. **Persona ilegível para quem não escolheu densidade** — `mode = 'auto'` é decisão consciente da 065 (`productAnalytics.ts:140`: o adaptativo usa contagens diferentes por tela, não há valor efetivo único); a §3.2 abaixo está desatualizada | 30d: `['auto']` em quase todo evento | Segmentação por persona (Carlos × dona Maria) — o motivo de `mode` existir — não funciona para a maioria | 🔴 **alta** — spec **092** (unificar heurística e registrar efetivo, ou derivar persona por faixa de contagem) |
+| G-3 (✅ 092) | ✅ **Fechado na 092 (2026-10-04)** — `surface` explícito em todos os call sites do mobile (incl. `report_generated`/`report_generation_error` da 097, `dev_smoke_event`) + guard sem exceções. **`surface` ausente** apesar de "obrigatória em todo evento" (§3) | 0% em `login`, `cold_start`, `stock_*` (044), `consent_*`, `account_deleted`, ~~`biomarker_logged`~~ (fechado na 069-A2), `ai_assistant_message_sent`, `profile_updated`, `mode_changed` | Baixo hoje (tudo é UI mobile), alto na Fase 2 (web/bot) — mistura superfícies | 🟡 média — ou emitir, ou rebaixar a regra para "obrigatória em evento que pode nascer em >1 superfície" (decisão de plano, não de código) |
 | G-4 (fora — 059/Fase 2) | **Sucesso silencioso fora do app é invisível.** Dose registrada pelo **bot/web** e lembretes **enviados** (denominador do AD-8) vivem só no servidor | `notification_log`/`dose_critical_events` fora do PostHog | "Lembrete funcionou?" só tem numerador; usuária de Telegram parece churn | 🟡 média — Fase 2 (§5.11) ou warehouse; gated pela `059`/v0.4 |
 | G-5 (→ 092; `stock_low_viewed` → 090 D-5) | **Eventos sem nenhuma amostra real** | 30d: `stock_low_viewed` 0 (banner morto — 090 D-5), `stock_upsell_conversion` 0, `consent_prompt_dismissed` 0 | Série vazia não distingue "não usado" de "quebrado" | 🟢 baixa — `stock_low_viewed` depende da 090 D-5; os outros, gatilho manual no próximo smoke |
-| G-6 (→ 092) | **`titration_transition_postponed` sem `treatment_id`** (declarado) | tid = 0 | Fricção de titulação não se liga ao tratamento | 🟢 baixa — aceitar, ou ler `step_id`→tratamento via warehouse |
+| G-6 (✅ 092) | ✅ Fechado na 092: `treatment_id` da própria etapa no card do Hoje; push segue sem (o payload só carrega `stepId`). **`titration_transition_postponed` sem `treatment_id`** (declarado) | tid = 0 | Fricção de titulação não se liga ao tratamento | 🟢 baixa — aceitar, ou ler `step_id`→tratamento via warehouse |
 | G-7 (fora — 047) | **"Gostar" sem sinal direto** | nenhum evento de satisfação | Terceira variável do §1 só é inferida (push desligado + uso) | 🟢 baixa — `047` review prompt traz o 1º sinal explícito |
-| G-8 (→ 092) | **Assistente sem `error_kind`** | `has_error` booleano | Não separa timeout × 5xx × sem sessão | 🟢 baixa — enum curto se o chat entrar no wedge |
-| G-9 (→ 092) | **Colisão legada de super property** | `stock_onboarding_choice{mode}` sobrescreve a densidade | Evento sem persona | 🟢 baixa — exceção declarada; renomear só com a série da 044 encerrada |
+| G-8 (✅ 092) | ✅ Fechado na 092: `error_kind` (`http_4xx`\|`http_5xx`\|`network`\|`invalid_response`). **Assistente sem `error_kind`** | `has_error` booleano | Não separa timeout × 5xx × sem sessão | 🟢 baixa — enum curto se o chat entrar no wedge |
+| G-9 (✅ 092, janela) | ✅ Janela aberta na 092: `stock_mode` junto de `mode`. **Colisão legada de super property** | `stock_onboarding_choice{mode}` sobrescreve a densidade | Evento sem persona | 🟢 baixa — exceção declarada; renomear só com a série da 044 encerrada |
 
 **Não é gap (conferido):** `$app_version` em 100% (SDK); PII limpa nos 42 eventos; `treatment_id`
 100% onde o plano exige; `dose_logged`/`dose_logged_bulk` com `surface` em todo evento pós-corte.

@@ -5,7 +5,7 @@
  */
 import type { ReportModel } from './reportModel'
 
-export const REPORT_EVENT_KEYS = ['platform', 'period', 'sections', 'duration_ms', 'size_bucket', 'error_code'] as const
+export const REPORT_EVENT_KEYS = ['platform', 'surface', 'period', 'sections', 'duration_ms', 'size_bucket', 'error_code'] as const
 export type ReportEventKey = (typeof REPORT_EVENT_KEYS)[number]
 
 /** Etapa em que a geração falhou — vocabulário fechado, nunca a mensagem do erro. */

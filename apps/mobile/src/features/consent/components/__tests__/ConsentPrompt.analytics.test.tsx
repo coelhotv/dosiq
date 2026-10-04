@@ -38,13 +38,13 @@ describe('ConsentPrompt — consent_*', () => {
   it('montagem: consent_prompt_shown{blocking, source} 1× — re-render não re-emite', () => {
     const { rerender } = renderPrompt(jest.fn())
     rerender(<ConsentPrompt blocking={false} source="prompt_navigated" onGrant={jest.fn()} onDismiss={jest.fn()} onGranted={jest.fn()} />)
-    expect(consentCalls()).toEqual([['consent_prompt_shown', { blocking: false, source: 'prompt_navigated' }]])
+    expect(consentCalls()).toEqual([['consent_prompt_shown', { blocking: false, source: 'prompt_navigated', surface: 'mobile' }]])
   })
 
   it('grant ok: consent_granted{source} e onGranted', async () => {
     const { onGranted } = renderPrompt(jest.fn().mockResolvedValue({ ok: true }))
     await checkAndConfirm()
-    expect(mockLogEvent).toHaveBeenCalledWith('consent_granted', { source: 'prompt_navigated' })
+    expect(mockLogEvent).toHaveBeenCalledWith('consent_granted', { source: 'prompt_navigated', surface: 'mobile' })
     expect(onGranted).toHaveBeenCalled()
   })
 
@@ -63,13 +63,13 @@ describe('ConsentPrompt — consent_*', () => {
   it('"Agora não": consent_prompt_dismissed{source} e onDismiss', () => {
     const { onDismiss } = renderPrompt(jest.fn())
     fireEvent.press(screen.getByText('Agora não'))
-    expect(mockLogEvent).toHaveBeenCalledWith('consent_prompt_dismissed', { source: 'prompt_navigated' })
+    expect(mockLogEvent).toHaveBeenCalledWith('consent_prompt_dismissed', { source: 'prompt_navigated', surface: 'mobile' })
     expect(onDismiss).toHaveBeenCalled()
   })
 
   it('bloqueante: shown{blocking:true} e sem botão de adiar', () => {
     renderPrompt(jest.fn(), { blocking: true, source: 'prompt_blocking', onDismiss: undefined })
-    expect(consentCalls()).toEqual([['consent_prompt_shown', { blocking: true, source: 'prompt_blocking' }]])
+    expect(consentCalls()).toEqual([['consent_prompt_shown', { blocking: true, source: 'prompt_blocking', surface: 'mobile' }]])
     expect(screen.queryByText('Agora não')).toBeNull()
   })
 })

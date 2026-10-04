@@ -13,6 +13,7 @@ describe('toReportEventPayload', () => {
   it('só passam as chaves da allowlist', () => {
     const payload = toReportEventPayload({
       platform: 'web',
+      surface: 'web',
       period: 30,
       sections: 'medications,intakes',
       duration_ms: 812,

@@ -19,7 +19,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native'
 import { signInWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
 import { logEvent } from '../platform/analytics/productAnalytics'
-import { EVENTS } from '../platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '../platform/analytics/analyticsEvents'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
 export default function LoginScreen({ navigation }) {
@@ -46,7 +46,7 @@ export default function LoginScreen({ navigation }) {
     // A identificação (PostHog identify + Sentry user) NÃO acontece aqui: vive no useAuthSession
     // (Navigation.tsx), que dispara tanto neste login quanto na sessão restaurada. Duplicar aqui
     // criaria dois donos para a mesma regra — e só um deles cobriria o uso recorrente.
-    await logEvent(EVENTS.LOGIN, { method: 'email' })
+    await logEvent(EVENTS.LOGIN, { method: 'email', surface: SURFACES.MOBILE })
   }
 
   return (

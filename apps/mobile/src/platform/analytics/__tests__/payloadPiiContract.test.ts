@@ -108,9 +108,12 @@ describe('PO-6 — nenhum logEvent do app cita chave proibida', () => {
 
 // Super properties (register em productAnalytics) — chave igual no payload SOBRESCREVE o valor global
 // no evento (visto no smoke do PR D: consent_blocked_attempt{mode} apagou a densidade).
-const SUPER_PROPS = ['app_env', 'channel', 'is_internal', 'mode', 'runtime_version', 'update_id']
+// `treatment_count_bucket` (092 FR-002): persona por volume de tratamentos — nunca em payload (INV-5).
+const SUPER_PROPS = ['app_env', 'channel', 'is_internal', 'mode', 'runtime_version', 'treatment_count_bucket', 'update_id']
 // Exceções declaradas: mode_changed carrega a MESMA semântica (densidade nova); stock_onboarding_choice
 // é legado da 044 (série SC-004 — renomear quebra o histórico; ver analysis-prD G-10).
+// ⏳ Janela (092 D-4): stock_onboarding_choice emite `mode` E `stock_mode` com o mesmo valor. Sai
+// da lista quando a série SC-004 da 044 for lida por `stock_mode` — aí `mode` deixa o payload.
 const SUPER_PROP_EXEMPT = ['MODE_CHANGED', 'STOCK_ONBOARDING_CHOICE']
 
 describe('nenhum logEvent reusa chave de super property', () => {
@@ -126,6 +129,42 @@ describe('nenhum logEvent reusa chave de super property', () => {
         if (hit) offenders.push(`${path.relative(root, file)} → ${hit}: ${call.replace(/\s+/g, ' ')}`)
       }
     }
+    expect(offenders).toEqual([])
+  })
+})
+
+// 092 FR-003 / PO-3 — `surface` é obrigatória em todo evento (TRACKING_PLAN §3). SEM default no
+// wrapper (plan.md, SD-3 revertida: emissor headless esquecido sairia `mobile` em silêncio) e SEM
+// lista de eventos isentos. A chamada passa se o texto cita `surface` OU se um identificador do
+// payload (nu ou espalhado) recebe `surface` no mesmo arquivo — cobre os emissores headless que
+// montam o payload numa variável e omitem a chave quando a origem é desconhecida (CON-034 inv. 4).
+function payloadIdentifiers(call: string): string[] {
+  const args = call.slice(call.indexOf('(') + 1, -1)
+  const payload = args.slice(args.indexOf(',') + 1)
+  return [...payload.matchAll(/(?:\.\.\.|^\s*|[?:]\s*)([A-Za-z_$][\w$]*)\b(?!\s*[:(])/g)].map((m) => m[1])
+}
+
+function identifierCarriesSurface(src: string, id: string): boolean {
+  return new RegExp(`\\b${id}\\.surface\\s*=|\\b${id}\\s*=[^;\\n]*\\bsurface\\b`).test(src)
+}
+
+describe('092 PO-3 — todo logEvent do app declara surface', () => {
+  it('varredura estática de apps/mobile/src', () => {
+    const root = path.join(__dirname, '../../..')
+    const offenders: string[] = []
+    let scanned = 0
+    for (const file of sourceFiles(root)) {
+      const src = fs.readFileSync(file, 'utf8')
+      if (!src.includes('logEvent(')) continue
+      for (const call of logEventCalls(src)) {
+        if (/^logEvent\(eventName/.test(call)) continue // definição do wrapper
+        scanned++
+        if (/\bsurface\b/.test(call)) continue
+        if (payloadIdentifiers(call).some((id) => identifierCarriesSurface(src, id))) continue
+        offenders.push(`${path.relative(root, file)}: ${call.replace(/\s+/g, ' ').slice(0, 120)}`)
+      }
+    }
+    expect(scanned).toBeGreaterThan(30)
     expect(offenders).toEqual([])
   })
 })

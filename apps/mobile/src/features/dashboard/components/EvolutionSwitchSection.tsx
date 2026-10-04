@@ -10,6 +10,7 @@ import { useStockTracking } from '@shared/hooks/useStockTracking'
 import {
   confirmTitrationSwitch,
   titrationConfirmedProps,
+  titrationPostponedProps,
   getSwitchOutcomeProtocols,
   type SwitchOutcomeProtocol,
 } from '@treatments/services/titrationService'
@@ -144,9 +145,9 @@ export default function EvolutionSwitchSection({
 
   const handlePostpone = useCallback(() => {
     if (!view) return
-    // Sem RPC ⇒ sem fato que carregue o protocolo: `treatment_id` fica fora (R-299 §4).
+    // 092 FR-005: `treatment_id` = `protocol_id` da PRÓPRIA etapa adiada, nunca o da etapa atual.
     logEvent(EVENTS.TITRATION_TRANSITION_POSTPONED, {
-      step_id: view.info.pendingStepId,
+      ...titrationPostponedProps({ stepId: view.info.pendingStepId, treatmentId: view.pendingStep?.protocol_id }),
       surface: SURFACES.MOBILE,
       placement: PLACEMENTS.TODAY_CARD,
     })
