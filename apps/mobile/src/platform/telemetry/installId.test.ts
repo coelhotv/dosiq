@@ -67,4 +67,10 @@ describe('getInstallId', () => {
   it('a chave fica fora da allowlist do wipe (gira por sessão — FR-011)', () => {
     expect(isDeviceKey(INSTALL_ID_KEY)).toBe(false)
   })
+
+  // RC6 #864: o throttle do heartbeat não carrega o id nem a conta. Quem garante o heartbeat
+  // imediato da próxima conta é o wipe do logout apagar esta chave (motivo do corte do FR-005).
+  it('a chave de throttle do heartbeat também cai no wipe', () => {
+    expect(isDeviceKey('@dosiq/device-activity-last-heartbeat:{"os":"ios"}:0.34.0')).toBe(false)
+  })
 })
