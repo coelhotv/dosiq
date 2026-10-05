@@ -117,7 +117,16 @@ export async function loadTreatmentMeasureSeries(
       ),
       ...slices.map((s) =>
         readAllPages<MeasureBridgeDoseDay>((a, b) =>
-          typedClient.rpc('report_dose_days', { p_from: s.from, p_to: s.to }).range(a, b)
+          // ORDER BY da RPC (day, slot, protocol_id) não é único — a linha também agrupa medicine_id;
+          // empate entre páginas duplicaria/pularia linha. Chave completa no cliente (RC6 #866;
+          // validado no PostgREST 2026-10-05: 200, coluna inválida ⇒ 42703).
+          typedClient
+            .rpc('report_dose_days', { p_from: s.from, p_to: s.to })
+            .order('day')
+            .order('slot')
+            .order('protocol_id')
+            .order('medicine_id')
+            .range(a, b)
         )
       ),
     ])

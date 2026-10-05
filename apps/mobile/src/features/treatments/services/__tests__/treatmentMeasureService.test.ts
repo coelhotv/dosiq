@@ -9,6 +9,7 @@ const mockToday = jest.fn()
 const mockBiomarkerPage = jest.fn()
 const mockRpcPage = jest.fn()
 const mockRpc = jest.fn()
+const mockRpcOrder = jest.fn()
 const mockEq = jest.fn()
 
 jest.mock('@treatments/services/titrationService', () => ({
@@ -38,7 +39,14 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => {
       from: () => chain,
       rpc: (name, args) => {
         mockRpc(name, args)
-        return { range: (a, b) => mockRpcPage(args, a, b) }
+        const q: any = {
+          order: (col) => {
+            mockRpcOrder(col)
+            return q
+          },
+          range: (a, b) => mockRpcPage(args, a, b),
+        }
+        return q
       },
     },
   }
@@ -140,6 +148,11 @@ describe('loadTreatmentMeasureSeries', () => {
     })
     const r = await loadTreatmentMeasureSeries(PROTO as any)
     expect(r?.series.steps[0]).toMatchObject({ taken: 1, expected: 1 })
+  })
+
+  it('paginação da RPC com ordem total (day, slot, protocol_id, medicine_id) — RC6 #866', async () => {
+    await loadTreatmentMeasureSeries(PROTO as any)
+    expect(mockRpcOrder.mock.calls.map((c) => c[0])).toEqual(['day', 'slot', 'protocol_id', 'medicine_id'])
   })
 
   it('falha de uma fatia LANÇA (nunca série parcial)', async () => {
