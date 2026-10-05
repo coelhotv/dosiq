@@ -9,6 +9,7 @@ import { Platform } from 'react-native'
 import * as Device from 'expo-device'
 import * as Application from 'expo-application'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getInstallId } from './installId'
 
 const THROTTLE_MS = 24 * 60 * 60 * 1000 // 24h — plan.md Clarifications (FR-003)
 
@@ -53,6 +54,8 @@ export async function syncDeviceActivity({
       p_device_fingerprint: deviceFingerprint,
       p_platform:           Platform.OS,
       p_app_version:        appVersion,
+      // 095: linha por instalação (dois apps no mesmo aparelho, SO atualizado). null = caminho legado.
+      p_install_id:         await getInstallId(),
     })
 
     if (error) return // best-effort — nunca lança (FR-002/AP-303)
@@ -60,5 +63,21 @@ export async function syncDeviceActivity({
     await AsyncStorage.setItem(storageKey, String(nowMs))
   } catch {
     // best-effort — telemetria nunca pode quebrar o app
+  }
+}
+
+/**
+ * Saída da conta (spec 095, FR-006): apaga a linha de atividade DESTA instalação na conta que sai,
+ * para a trava da cadência não seguir julgando a conta por um app que não é mais dela.
+ * Best-effort: sem id ou sem rede, a linha tem a versão atual e expira em 30 d (FR-011).
+ */
+export async function deleteDeviceActivity({ supabase }: { supabase: any }): Promise<void> {
+  if (!supabase) return
+  try {
+    const installId = await getInstallId()
+    if (!installId) return
+    await supabase.rpc('delete_device_activity', { p_install_id: installId })
+  } catch {
+    // best-effort — logout nunca espera por telemetria (INV-3)
   }
 }

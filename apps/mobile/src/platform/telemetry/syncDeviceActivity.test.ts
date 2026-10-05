@@ -23,12 +23,22 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
 }))
 
+jest.mock('./installId', () => ({ getInstallId: jest.fn() }))
+
 import AsyncStorageImport from '@react-native-async-storage/async-storage'
 const AsyncStorage = AsyncStorageImport as any
 
-import { syncDeviceActivity } from './syncDeviceActivity'
+import { getInstallId } from './installId'
+import { syncDeviceActivity, deleteDeviceActivity } from './syncDeviceActivity'
+
+const INSTALL_ID = '22222222-2222-4222-8222-222222222222'
+const mockedGetInstallId = jest.mocked(getInstallId)
 
 describe('syncDeviceActivity', () => {
+  beforeEach(() => {
+    mockedGetInstallId.mockResolvedValue(INSTALL_ID)
+  })
+
   afterEach(() => {
     jest.clearAllMocks()
   })
@@ -120,5 +130,58 @@ describe('syncDeviceActivity', () => {
     const [, params] = mockSupabase.rpc.mock.calls[0]
     const fingerprint = JSON.parse(params.p_device_fingerprint)
     expect(fingerprint).not.toHaveProperty('appVersion')
+  })
+
+  it('095: envia o id da instalação na RPC (linha por instalação — PO-3)', async () => {
+    AsyncStorage.getItem.mockResolvedValue(null)
+    const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+
+    await syncDeviceActivity({ supabase: mockSupabase, now: () => 1000 })
+
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+      'upsert_device_activity',
+      expect.objectContaining({ p_install_id: INSTALL_ID })
+    )
+  })
+
+  it('095: sem id (storage falhou) segue pelo caminho legado com p_install_id null', async () => {
+    AsyncStorage.getItem.mockResolvedValue(null)
+    mockedGetInstallId.mockResolvedValue(null)
+    const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+
+    await syncDeviceActivity({ supabase: mockSupabase, now: () => 1000 })
+
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+      'upsert_device_activity',
+      expect.objectContaining({ p_install_id: null })
+    )
+  })
+})
+
+describe('deleteDeviceActivity (spec 095, FR-006)', () => {
+  beforeEach(() => {
+    mockedGetInstallId.mockResolvedValue(INSTALL_ID)
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('apaga a linha desta instalação', async () => {
+    const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+    await deleteDeviceActivity({ supabase: mockSupabase })
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('delete_device_activity', { p_install_id: INSTALL_ID })
+  })
+
+  it('sem id não chama a RPC', async () => {
+    mockedGetInstallId.mockResolvedValue(null)
+    const mockSupabase = { rpc: jest.fn() }
+    await deleteDeviceActivity({ supabase: mockSupabase })
+    expect(mockSupabase.rpc).not.toHaveBeenCalled()
+  })
+
+  it('rejeição do client não propaga (best-effort)', async () => {
+    const mockSupabase = { rpc: jest.fn().mockRejectedValue(new Error('offline')) }
+    await expect(deleteDeviceActivity({ supabase: mockSupabase })).resolves.toBeUndefined()
   })
 })

@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "A cada X dias" e "Mensal" não somem por causa de um app que não é mais seu (spec 095)
+
+- **Mobile** (`patch` — correção; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote
+  de loja `0.34.0`; canal: **build de loja**, R-314). Cada instalação do app passa a ser contada
+  por si: dois apps dosiq no mesmo aparelho, ou o mesmo app depois de atualizar o sistema, não se
+  misturam mais. Ao sair da conta, o aparelho deixa de contar para ela. Antes, uma versão antiga do
+  app aberta em outra conta, ou um app já substituído, podia esconder "A cada X dias" e "Mensal" de
+  quem já tinha a versão nova.
+- **Servidor** (banco; sem versão própria). Quando um app antigo troca de conta, a conta anterior
+  deixa de ser julgada pela versão dele. Reinstalar o app por cima não deixa mais o registro de
+  notificação antigo ativo ao lado do novo. Apps já instalados seguem funcionando sem atualização.
+
 ### Escada de titulação: edição não solta etapas e dose futura não troca de remédio antes da hora (spec 093)
 
 - **Mobile** (`patch` — correção; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote

@@ -7,6 +7,7 @@
 import { Platform } from 'react-native'
 import * as Device from 'expo-device'
 import * as Application from 'expo-application'
+import { getInstallId } from '@platform/telemetry/installId'
 
 export async function syncNotificationDevice({ supabase, userId, token, nativeAlarmEnabled = false, provider = 'expo' }) {
   if (!supabase) {
@@ -39,6 +40,9 @@ export async function syncNotificationDevice({ supabase, userId, token, nativeAl
     // Gate de duplicata (Spec 001 A2): device com alarme nativo ON → server pula
     // o push de DOSE pra este token (alarme local já cobre). Default false.
     p_native_alarm_enabled: nativeAlarmEnabled,
+    // 095 FR-009: token novo desativa os anteriores desta instalação. null (storage falhou) =
+    // caminho legado — nunca falha o registro por causa do id (C1.5 K-2).
+    p_install_id: await getInstallId(),
   })
 
   if (error) {

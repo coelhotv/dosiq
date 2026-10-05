@@ -9,7 +9,7 @@ import { endSession, drainAuditQueue, handleExternalSignOut, isEndingSession } f
 import { SESSION_ENDED_REASON_KEY } from '../localDataWipe'
 
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
-  supabase: { auth: { getSession: jest.fn(), signOut: jest.fn() }, from: jest.fn() },
+  supabase: { auth: { getSession: jest.fn(), signOut: jest.fn() }, from: jest.fn(), rpc: jest.fn() },
 }))
 jest.mock('@platform/analytics/productAnalytics', () => ({
   logEvent: jest.fn(() => Promise.resolve()),
@@ -22,6 +22,7 @@ const TOKEN = 'ExponentPushToken[device]'
 const mockedStorage = jest.mocked(AsyncStorage)
 const auth = supabase.auth as unknown as { getSession: jest.Mock; signOut: jest.Mock }
 const from = supabase.from as unknown as jest.Mock
+const rpc = (supabase as any).rpc as jest.Mock
 
 let store: Map<string, string>
 let auditInsert: jest.Mock
@@ -55,6 +56,7 @@ beforeEach(() => {
   auth.getSession.mockResolvedValue({ data: { session: { user: { id: USER_A } } }, error: null })
   auth.signOut.mockResolvedValue({ error: null })
 
+  rpc.mockResolvedValue({ error: null })
   auditInsert = jest.fn(() => Promise.resolve({ error: null }))
   deviceFilters = []
   const chain: any = {
@@ -217,4 +219,32 @@ it('PO-SEC-3: saída não loga id, token nem conteúdo', async () => {
   expect(logged).not.toContain(TOKEN)
   expect(logged).not.toContain('dado de A')
   spies.forEach((s) => s.mockRestore())
+})
+
+// Spec 095 — PO-4: a saída apaga a linha de atividade desta instalação, antes do signOut, sem bloquear.
+describe('endSession — atividade da instalação (spec 095)', () => {
+  const INSTALL_ID = '22222222-2222-4222-8222-222222222222'
+
+  it('logout: apaga a linha da instalação com a sessão de quem sai, antes do signOut', async () => {
+    store.set('@dosiq/install-id', INSTALL_ID)
+    await endSession('logout')
+    expect(rpc).toHaveBeenCalledWith('delete_device_activity', { p_install_id: INSTALL_ID })
+    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(auth.signOut.mock.invocationCallOrder[0])
+    // o id gira: o wipe o apaga (FR-011)
+    expect(store.has('@dosiq/install-id')).toBe(false)
+  })
+
+  it('falha de rede ao apagar não bloqueia a saída', async () => {
+    store.set('@dosiq/install-id', INSTALL_ID)
+    rpc.mockRejectedValueOnce(new Error('network'))
+    const res = await endSession('logout')
+    expect(res.success).toBe(true)
+    expect(auth.signOut).toHaveBeenCalled()
+  })
+
+  it('deleted: não chama (a conta some em cascata)', async () => {
+    store.set('@dosiq/install-id', INSTALL_ID)
+    await endSession('deleted')
+    expect(rpc).not.toHaveBeenCalledWith('delete_device_activity', expect.anything())
+  })
 })

@@ -3,6 +3,20 @@
 
 import { describe, it, expect } from '@jest/globals'
 import { syncNotificationDevice } from './syncNotificationDevice'
+import { getInstallId } from '@platform/telemetry/installId'
+
+jest.mock('@platform/telemetry/installId', () => ({ getInstallId: jest.fn() }))
+
+const INSTALL_ID = '22222222-2222-4222-8222-222222222222'
+const mockedGetInstallId = jest.mocked(getInstallId)
+
+beforeEach(() => {
+  mockedGetInstallId.mockResolvedValue(INSTALL_ID)
+})
+
+afterEach(() => {
+  jest.clearAllMocks()
+})
 
 jest.mock('react-native', () => ({
   Platform: {
@@ -128,6 +142,30 @@ describe('syncNotificationDevice', () => {
       const fingerprint = JSON.parse(params.p_device_fingerprint)
       expect(fingerprint).not.toHaveProperty('appVersion')
       expect(params.p_app_version).toBe('4.0.0')
+    })
+  })
+
+  // Spec 095 FR-009 / PO-6: o servidor desativa tokens anteriores DESTA instalação.
+  describe('install_id (spec 095)', () => {
+    it('envia o id da instalação', async () => {
+      const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+      await syncNotificationDevice({ supabase: mockSupabase, userId: 'user-123', token: 'ExponentPushToken[abc123]' })
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'upsert_notification_device',
+        expect.objectContaining({ p_install_id: INSTALL_ID })
+      )
+    })
+
+    it('sem id (storage falhou) registra pelo caminho legado, sem lançar', async () => {
+      mockedGetInstallId.mockResolvedValue(null)
+      const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+      await expect(
+        syncNotificationDevice({ supabase: mockSupabase, userId: 'user-123', token: 'ExponentPushToken[abc123]' })
+      ).resolves.toBeUndefined()
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'upsert_notification_device',
+        expect.objectContaining({ p_install_id: null })
+      )
     })
   })
 })
