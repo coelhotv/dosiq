@@ -52,12 +52,22 @@ function parseIndex() {
   return rows
 }
 
-function headerStatus(num) {
+/** Specs de épico não têm spec.md na raiz: vale EPIC.md ou, na falta, cada <fase>/spec.md. */
+function specFiles(dir) {
+  const root = join(SPECS, dir)
+  for (const f of ['spec.md', 'EPIC.md']) if (existsSync(join(root, f))) return [join(root, f)]
+  return readdirSync(root, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(root, d.name, 'spec.md')))
+    .map((d) => join(root, d.name, 'spec.md'))
+}
+
+function headerStatuses(num) {
   const dir = readdirSync(SPECS).find((d) => d.startsWith(`${num}-`))
-  const file = dir && join(SPECS, dir, 'spec.md')
-  if (!file || !existsSync(file)) return { dir, status: undefined }
-  const m = readFileSync(file, 'utf8').split('\n').slice(0, 15).join('\n').match(/Status\**\s*:\**\s*(.+)/i)
-  return { dir, status: m ? normalizeStatus(m[1]) : null }
+  const files = dir ? specFiles(dir) : []
+  return files.map((file) => {
+    const m = readFileSync(file, 'utf8').split('\n').slice(0, 15).join('\n').match(/Status\**\s*:\**\s*(.+)/i)
+    return { file: file.replace(`${SPECS}/`, ''), status: m ? normalizeStatus(m[1]) : null }
+  })
 }
 
 const travas = (r) => (r.trava === EMPTY ? [] : r.trava.split(',').map((t) => t.trim()))
@@ -71,10 +81,12 @@ function check(rows) {
       if (!TRAVAS.includes(t) && !TRAVA_DEP.test(t)) errors.push(`${r.num}: Trava "${t}" fora do vocabulário`)
     }
     if (r.status === 'superseded' && !/^\*?\*?(superseded)/.test(r.status)) continue
-    const h = headerStatus(r.num)
-    if (h.status === undefined) warns.push(`${r.num}: sem spec.md (header não conferido)`)
-    else if (h.status === null) warns.push(`${r.num}: header sem Status reconhecível`)
-    else if (h.status !== r.status) errors.push(`${r.num}: header "${h.status}" ≠ índice "${r.status}"`)
+    const hs = headerStatuses(r.num)
+    if (!hs.length) warns.push(`${r.num}: sem spec.md/EPIC.md/<fase>/spec.md (header não conferido)`)
+    for (const h of hs) {
+      if (h.status === null) warns.push(`${h.file}: header sem Status reconhecível`)
+      else if (h.status !== r.status) errors.push(`${h.file}: header "${h.status}" ≠ índice "${r.status}"`)
+    }
   }
   // spec superseded citada como candidata nos docs de estratégia
   const OK = /supersed|substitu|ex-\d{3}|→|encerrad/i
