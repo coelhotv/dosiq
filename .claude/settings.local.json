@@ -49,11 +49,17 @@
       "mcp__graftroom__graftroom_retrieve",
       "mcp__graftroom__graftroom_learn",
       "mcp__graftroom__graftroom_stats",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration"
     ],
-    "additionalDirectories": ["/tmp", "/Users/coelhotv/.claude/plans"]
+    "additionalDirectories": [
+      "/tmp",
+      "/Users/coelhotv/.claude/plans"
+    ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["graftroom"],
+  "enabledMcpjsonServers": [
+    "graftroom"
+  ],
   "prefersReducedMotion": true
 }
