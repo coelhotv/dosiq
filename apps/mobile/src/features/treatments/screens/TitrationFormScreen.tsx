@@ -1,6 +1,6 @@
 // TitrationFormScreen.tsx — cadastro E edição da Evolução do tratamento (escada, spec 029 F4 / T019).
 // Mock: titration-screens.jsx › EvoFormScreen. Abre a partir do form de tratamento (T018), SEMPRE
-// com um protocolo já salvo — a etapa 0 precisa do protocol.id (ativação T019a + vínculo A5).
+// com um protocolo já salvo — a etapa 0 precisa do protocol.id (ativação T019a + vínculo protocol_id).
 //
 // Dois modos (auto-detectados pela existência de escada):
 //   • CADASTRO (LadderCreator): escada vazia → builder + [Salvar] via createFullLadder (etapa 0

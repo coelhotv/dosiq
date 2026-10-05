@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Escada de titulação: edição não solta etapas e dose futura não troca de remédio antes da hora (spec 093)
+
+- **Mobile** (`patch` — correção; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote
+  de loja `0.34.0`; canal: **build de loja**, R-314). Editar uma evolução de tratamento que troca de
+  remédio no meio (mudar dose ou duração, acrescentar ou tirar etapas futuras) deixa todas as etapas
+  ligadas ao tratamento. Antes, a etapa do outro remédio e as seguintes ficavam soltas e podiam
+  sumir do calendário até a troca ser confirmada. Salvar qualquer edição também religa uma etapa que
+  uma versão antiga do app deixou solta.
+- **Servidor e app** (regra compartilhada; sem versão própria). As doses futuras de uma evolução
+  seguem com o remédio e a dose da etapa atual até a pessoa confirmar a troca de remédio. Antes, as
+  doses depois do fim da etapa já nasciam com o remédio novo: quem adiasse a troca via o remédio
+  errado no calendário e no lembrete. Troca só de dose do mesmo remédio segue automática.
+- **Banco** (dado; sem versão). Saneamento único religa ao tratamento a etapa que ficou solta por
+  uma edição em versão antiga (1 etapa hoje); reaplicado depois que a `0.34.0` for adotada.
+
 ### Medição por forma do remédio e por perfil de uso (spec 092)
 
 - **Mobile** (sem efeito visível; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote

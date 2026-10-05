@@ -74,7 +74,8 @@ function getStepDurationDays(step: TitrationStepLike | null | undefined): number
  * formal no banco: caminha a escada a partir da etapa 'current' somando `duration_days`.
  *
  * Recebe as etapas injetadas (pureza preservada) e o instante alvo. `stageIndex` é o índice na
- * escada ORDENADA por position.
+ * escada ORDENADA por position. O walk para antes da primeira etapa de OUTRO medicamento (093):
+ * troca de medicamento só por confirmação, nunca por projeção.
  *
  * @param {TitrationStepLike[]} steps - etapas da escada (qualquer ordem; ordenadas aqui)
  * @param {Date|string|number} at - instante da ocorrência
@@ -102,9 +103,15 @@ export function resolveTitrationStageAt(
   if (atMs < stageStartMs) return null
 
   let index = currentIndex
+  const currentMedicineId = currentStep.medicine_id ?? null
   while (index < ordered.length - 1) {
     const days = getStepDurationDays(ordered[index])
     if (!days) break // etapa contínua: para aqui
+    // 093 (FR-005/INV-4): a projeção NUNCA atravessa etapa de outro medicamento — a troca só
+    // vigora pela confirmação (RPC `confirm_titration_switch`). Antes quem parava o walk era o
+    // filtro por `protocol_id` no chamador; com a escada toda vinculada (ADR-085) ele não recorta
+    // mais nada, então a regra mora aqui, compartilhada pelos 4 caminhos do `planWindow`.
+    if ((ordered[index + 1]?.medicine_id ?? null) !== currentMedicineId) break
     const stageEndMs = stageStartMs + days * MS_DAY
     if (atMs < stageEndMs) break
     stageStartMs = stageEndMs

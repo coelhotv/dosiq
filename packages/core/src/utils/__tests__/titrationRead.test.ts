@@ -81,14 +81,36 @@ describe('resolveTitrationStageAt — a escada rege a dose', () => {
   })
 })
 
-describe('resolveTitrationStageAt — medicine_id da etapa (052)', () => {
-  it('devolve o medicine_id da etapa RESOLVIDA, não o da vigente hoje', () => {
-    const crossMed: TitrationStepLike[] = [
-      { position: 0, dose: 0.25, duration_days: 28, status: 'current', started_at: STAGE_START, medicine_id: 'MED-A' },
-      { position: 1, dose: 0.5, duration_days: 28, status: 'upcoming', started_at: null, medicine_id: 'MED-B' },
-    ]
-    expect(resolveTitrationStageAt(crossMed, DATE_IN_CURRENT)?.medicine_id).toBe('MED-A')
-    expect(resolveTitrationStageAt(crossMed, DATE_NEXT_STAGE)?.medicine_id).toBe('MED-B')
+describe('resolveTitrationStageAt — medicine_id da etapa (052) e parada na troca (093 US-3)', () => {
+  // 093 (FR-005/INV-4): até a 052 este caso afirmava que a data futura ADOTAVA a etapa de outro
+  // medicamento — o filtro por `protocol_id` no chamador é que parava o walk. Com a escada toda
+  // vinculada (ADR-085) o filtro não recorta mais nada: a parada mora aqui. A troca de
+  // medicamento só vigora pela confirmação (RPC), nunca pela projeção.
+  const DATE_THIRD_STAGE = startMs + 60 * DAY
+  const step = (position: number, medicine_id: string, dose: number, current = false): TitrationStepLike => ({
+    position,
+    dose,
+    duration_days: 28,
+    status: current ? 'current' : 'upcoming',
+    started_at: current ? STAGE_START : null,
+    medicine_id,
+  })
+
+  it('A→B: depois do fim de A, segue A (remédio E dose) — não atravessa a troca', () => {
+    const crossMed = [step(0, 'MED-A', 0.25, true), step(1, 'MED-B', 0.5)]
+    expect(resolveTitrationStageAt(crossMed, DATE_IN_CURRENT)).toEqual({ stageIndex: 0, dosage: 0.25, medicine_id: 'MED-A' })
+    expect(resolveTitrationStageAt(crossMed, DATE_NEXT_STAGE)).toEqual({ stageIndex: 0, dosage: 0.25, medicine_id: 'MED-A' })
+  })
+
+  it("A→A': troca de dose do mesmo remédio é adotada como antes", () => {
+    const sameMed = [step(0, 'MED-A', 0.25, true), step(1, 'MED-A', 0.5)]
+    expect(resolveTitrationStageAt(sameMed, DATE_NEXT_STAGE)).toEqual({ stageIndex: 1, dosage: 0.5, medicine_id: 'MED-A' })
+  })
+
+  it("A→A'→B: atravessa A' e para antes da primeira etapa de B", () => {
+    const mixed = [step(0, 'MED-A', 0.25, true), step(1, 'MED-A', 0.5), step(2, 'MED-B', 2.5)]
+    expect(resolveTitrationStageAt(mixed, DATE_NEXT_STAGE)).toEqual({ stageIndex: 1, dosage: 0.5, medicine_id: 'MED-A' })
+    expect(resolveTitrationStageAt(mixed, DATE_THIRD_STAGE)).toEqual({ stageIndex: 1, dosage: 0.5, medicine_id: 'MED-A' })
   })
 
   it('etapa sem medicine_id (embed legado) → null, nunca undefined (o chamador faz o fallback)', () => {
