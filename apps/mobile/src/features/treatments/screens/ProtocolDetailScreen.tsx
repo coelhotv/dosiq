@@ -36,6 +36,8 @@ import { useProtocolDelete } from '@treatments/hooks/useProtocolDelete'
 import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import ProtocolDeleteSheet from '@treatments/components/ProtocolDeleteSheet'
 import TitrationTimeline from '@treatments/components/TitrationTimeline'
+import TreatmentWeightCard from '@treatments/components/TreatmentWeightCard'
+import { MEASURE_PROMPT_POLICIES } from '@dose/services/measurePrompt'
 import { confirmTitrationSwitch, titrationConfirmedProps } from '@treatments/services/titrationService'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES, PLACEMENTS } from '@platform/analytics/analyticsEvents'
@@ -340,6 +342,10 @@ export default function ProtocolDetailScreen() {
           onStartPendingStep={handleStartPendingStep}
           onEditStep={goToLadder}
         />
+
+        {/* Peso durante o tratamento (069 Bb · FR-008) — só semanal, o mesmo predicado do pedido de
+            peso da Fase A (R-11 emendada 2026-10-05): injetável mensal/diário não ganha o card. */}
+        {MEASURE_PROMPT_POLICIES.peso.appliesTo({ protocol }) ? <TreatmentWeightCard protocol={protocol} /> : null}
 
         <DosageFrequencySection
           protocol={protocol}

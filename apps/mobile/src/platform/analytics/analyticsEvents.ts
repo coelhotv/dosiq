@@ -66,6 +66,9 @@ export const EVENTS = {
   // Pedido de medida após a dose (spec 069 A2). Nomes genéricos de propósito (S-2): outro tipo reusa.
   MEASURE_PROMPT_SHOWN: 'measure_prompt_shown',         // biomarker_type, trigger: single|bulk, treatment_id? (só single), entry_point? ('reminder'), surface
   MEASURE_PROMPT_DISMISSED: 'measure_prompt_dismissed', // biomarker_type, reason: skip|swipe|close_after_error, trigger, surface
+  // Peso durante o tratamento (spec 069 Bb). Nunca valor, média ou diferença (§6).
+  MEASURE_SERIES_VIEWED: 'measure_series_viewed',       // biomarker_type, state: chart|missing_count|missing_time|missing_both|error, step_count, treatment_id, surface
+  MEASURE_SERIES_STEPS_TOGGLED: 'measure_series_steps_toggled', // expanded: boolean, treatment_id, surface
   AI_ASSISTANT_MESSAGE_SENT: 'ai_assistant_message_sent', // has_error: boolean — NUNCA a mensagem nem a resposta
   PROFILE_UPDATED: 'profile_updated',                 // {} — NUNCA display_name/birth_date/city/phone
   MODE_CHANGED: 'mode_changed',                       // mode: 'simple'|'complex'|'auto'
@@ -109,6 +112,8 @@ export const ENTRY_POINTS = {
   REMINDER: 'reminder',
   // 069 A2: medida registrada no passo 2 do sheet de dose (pedido de peso).
   DOSE_PROMPT: 'dose_prompt',
+  // 069 Bb: medida registrada pelo CTA dos vazios do card "Peso durante o tratamento".
+  MEASURE_SERIES: 'measure_series',
 }
 
 // Motivo de fechar o pedido de medida sem salvar (069 A2). `swipe` = fechar sem botão (fundo ou

@@ -104,8 +104,74 @@ export interface ProtocolMeasureSeries {
   state: MeasureSeriesState
 }
 
+function _seriesSteps(
+  protocol: MeasureBridgeProtocol,
+  medicines: MeasureBridgeMedicine[],
+  steps: MeasureBridgeStepRow[],
+  timezone: string,
+  medicine: MeasureBridgeMedicine | null
+): { seriesSteps: MeasureStepInput[]; firstStart: string | null } {
+  if (steps.length >= 2) {
+    const ordered = [...steps].sort((a, b) => a.position - b.position)
+    const days = ladderStepDays(ordered, protocol, medicines, timezone)
+    return {
+      seriesSteps: days.map((d, i) => ({
+        doseLabel: d.doseLabel,
+        start: d.planned ? null : d.start,
+        end: d.end,
+        current: ordered[i].status === 'current',
+      })),
+      firstStart: days.find((d) => !d.planned && d.start)?.start ?? null,
+    }
+  }
+  const firstStart = protocol.start_date ?? null
+  return {
+    seriesSteps: [{ doseLabel: formatDosePerIntake(protocol, medicine), start: firstStart, end: null, current: true }],
+    firstStart,
+  }
+}
+
 /**
- * Série do tratamento, ou `null` se o tratamento não é elegível (069 R-11: semanal OU injetável).
+ * Dia local em que a série do tratamento começa (sem piso): 1ª etapa iniciada, ou `start_date`
+ * sem escada. O leitor do card precisa dele ANTES de ler — mesma regra da ponte (analysis-Bb L-3).
+ */
+export function protocolMeasureWindowStart({
+  protocol,
+  medicines,
+  steps,
+  timezone,
+}: Pick<BuildProtocolMeasureSeriesArgs, 'protocol' | 'medicines' | 'steps' | 'timezone'>): string | null {
+  const medicine = medicines.find((m) => m.id === protocol.medicine_id) ?? null
+  return _seriesSteps(protocol, medicines, steps, timezone, medicine).firstStart
+}
+
+/** Teto da RPC `report_dose_days` (`p_to - p_from > 186` ⇒ 22023), em dias inclusivos. */
+export const DOSE_DAYS_MAX_WINDOW = 186
+
+/**
+ * Fatias contíguas e inclusivas de `[from, to]` com no máximo `maxDays` dias cada (dias locais
+ * `YYYY-MM-DD`). `from > to` ⇒ nenhuma fatia (tratamento que ainda não começou).
+ */
+export function splitDayWindow(
+  from: string,
+  to: string,
+  maxDays: number = DOSE_DAYS_MAX_WINDOW
+): { from: string; to: string }[] {
+  const out: { from: string; to: string }[] = []
+  if (from > to || maxDays < 1) return out
+  let start = from
+  while (start <= to) {
+    const end = shiftDay(start, maxDays - 1)
+    const sliceTo = end < to ? end : to
+    out.push({ from: start, to: sliceTo })
+    start = shiftDay(sliceTo, 1)
+  }
+  return out
+}
+
+/**
+ * Série do tratamento, ou `null` se o tratamento não é elegível: semanal OU injetável (regra do PDF
+ * da 097). O card da 069 filtra antes, só semanal (R-11 emendada 2026-10-05; spec 100 decide a unificação).
  *
  * - Escada com 2+ etapas: uma etapa por degrau; prevista não vira faixa.
  * - Sem escada ou escada de 1 etapa (E-B6): 1 etapa sintética desde `start_date`, a vigente (AC-8b).
@@ -127,22 +193,7 @@ export function buildProtocolMeasureSeries({
   const medicine = medicines.find((m) => m.id === protocol.medicine_id) ?? null
   if (!isInjectable(medicine) && protocol.frequency !== 'semanal') return null
 
-  let seriesSteps: MeasureStepInput[]
-  let firstStart: string | null
-  if (steps.length >= 2) {
-    const ordered = [...steps].sort((a, b) => a.position - b.position)
-    const days = ladderStepDays(ordered, protocol, medicines, timezone)
-    seriesSteps = days.map((d, i) => ({
-      doseLabel: d.doseLabel,
-      start: d.planned ? null : d.start,
-      end: d.end,
-      current: ordered[i].status === 'current',
-    }))
-    firstStart = days.find((d) => !d.planned && d.start)?.start ?? null
-  } else {
-    firstStart = protocol.start_date ?? null
-    seriesSteps = [{ doseLabel: formatDosePerIntake(protocol, medicine), start: firstStart, end: null, current: true }]
-  }
+  const { seriesSteps, firstStart } = _seriesSteps(protocol, medicines, steps, timezone, medicine)
 
   const byDay = new Map<string, { day: string; taken: number; missed: number }>()
   for (const r of doseDays) {
