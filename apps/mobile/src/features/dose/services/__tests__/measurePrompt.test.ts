@@ -37,7 +37,10 @@ const AsyncStorage = AsyncStorageImport as unknown as { getItem: jest.Mock; setI
 const policy = MEASURE_PROMPT_POLICIES.peso
 
 const INJ = { protocol: { frequency: 'diário', medicine: { presentation: 'injetavel' } } }
+const MONTHLY_INJ = { protocol: { frequency: 'intervalo_dias', medicine: { presentation: 'injetavel' } } }
 const WEEKLY = { protocol: { frequency: 'semanal', medicine: { presentation: 'comprimido' } } }
+// Elegível = semanal (R-11 emendada 2026-10-05); o injetável semanal é o caso GLP-1 típico.
+const WEEKLY_INJ = { protocol: { frequency: 'semanal', medicine: { presentation: 'injetavel' } } }
 const DAILY = { protocol: { frequency: 'diário', medicine: { presentation: 'comprimido' } } }
 
 // Quinta 01/10/2026 14:30 local
@@ -49,7 +52,7 @@ const daysAgo = (n: number) => {
 }
 
 function ctx(over = {}) {
-  return { items: [INJ], periodMarked: false, lastMeasuredAt: null, now: NOW, ...over }
+  return { items: [WEEKLY_INJ], periodMarked: false, lastMeasuredAt: null, now: NOW, ...over }
 }
 
 beforeEach(() => {
@@ -66,10 +69,12 @@ afterEach(() => {
   jest.useRealTimers()
 })
 
-describe('elegibilidade (semanal OU injetável)', () => {
-  it('injetável diário e semanal oral são elegíveis; oral diário não', () => {
-    expect(isWeightEligible(INJ)).toBe(true)
+describe('elegibilidade (só semanal — R-11 emendada 2026-10-05)', () => {
+  it('semanal é elegível (oral ou injetável); injetável diário/mensal e oral diário não', () => {
     expect(isWeightEligible(WEEKLY)).toBe(true)
+    expect(isWeightEligible(WEEKLY_INJ)).toBe(true)
+    expect(isWeightEligible(INJ)).toBe(false)
+    expect(isWeightEligible(MONTHLY_INJ)).toBe(false)
     expect(isWeightEligible(DAILY)).toBe(false)
   })
   it('item sem protocolo/medicamento não quebra e não é elegível', () => {
@@ -77,8 +82,8 @@ describe('elegibilidade (semanal OU injetável)', () => {
     expect(isWeightEligible({ protocol: { frequency: 'diário', medicine: null } })).toBe(false)
   })
   it('lote: basta um item elegível', () => {
-    expect(shouldAskMeasure(policy, ctx({ items: [DAILY, INJ] }))).toBe(true)
-    expect(shouldAskMeasure(policy, ctx({ items: [DAILY, DAILY] }))).toBe(false)
+    expect(shouldAskMeasure(policy, ctx({ items: [DAILY, WEEKLY_INJ] }))).toBe(true)
+    expect(shouldAskMeasure(policy, ctx({ items: [DAILY, INJ] }))).toBe(false)
     expect(shouldAskMeasure(policy, ctx({ items: [] }))).toBe(false)
   })
 })
@@ -95,31 +100,31 @@ describe('PO-15 — recência de 7 dias locais', () => {
   })
   it('getLatest rejeitado → pede', async () => {
     mockGetLatest.mockRejectedValue(new Error('TypeError: Network request failed'))
-    const step = await resolvePostDoseStep({ items: [INJ] })
+    const step = await resolvePostDoseStep({ items: [WEEKLY_INJ] })
     expect(step).not.toBeNull()
     expect(step!.lastMeasure).toBeNull()
   })
   it('getLatest lento (timeout) → pede sem esperar', async () => {
     jest.useFakeTimers()
     mockGetLatest.mockReturnValue(new Promise(() => {}))
-    const pending = resolvePostDoseStep({ items: [INJ] })
+    const pending = resolvePostDoseStep({ items: [WEEKLY_INJ] })
     await jest.advanceTimersByTimeAsync(2600)
     expect(await pending).not.toBeNull()
   })
   it('peso antigo vira lastMeasure com valor numérico (rodapé do passo 2)', async () => {
     mockGetLatest.mockResolvedValue({ measured_at: daysAgo(9), value: '86.0' })
-    const step = await resolvePostDoseStep({ items: [INJ] })
+    const step = await resolvePostDoseStep({ items: [WEEKLY_INJ] })
     expect(step!.lastMeasure).toEqual({ value: 86, measuredAt: daysAgo(9) })
   })
   it('R-15: peso salvo no passo 2 e depois APAGADO (getLatest volta a null) reabre o pedido na mesma semana', async () => {
     mockGetLatest.mockResolvedValueOnce({ measured_at: daysAgo(0), value: 92 })
-    expect(await resolvePostDoseStep({ items: [INJ] })).toBeNull()   // pesou hoje → suprime
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).toBeNull()   // pesou hoje → suprime
     mockGetLatest.mockResolvedValueOnce(null)                        // apagou o único peso
-    expect(await resolvePostDoseStep({ items: [INJ] })).not.toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).not.toBeNull()
   })
   it('peso recente lido do repo suprime', async () => {
     mockGetLatest.mockResolvedValue({ measured_at: daysAgo(2) })
-    expect(await resolvePostDoseStep({ items: [INJ] })).toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).toBeNull()
     expect(mockGetLatest).toHaveBeenCalledWith('peso')
   })
 })
@@ -137,40 +142,40 @@ describe('PO-2 — semana local (segunda) e marca por usuário', () => {
   it('semana marcada suprime', async () => {
     AsyncStorage.getItem.mockImplementation(async (k: string) =>
       k === 'measurePrompt:user-a:peso:2026-09-28' ? '1' : null)
-    expect(await resolvePostDoseStep({ items: [INJ] })).toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).toBeNull()
   })
   it('outro user_id não herda a marca', async () => {
     AsyncStorage.getItem.mockImplementation(async (k: string) =>
       k === 'measurePrompt:user-a:peso:2026-09-28' ? '1' : null)
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'user-b' } } } })
-    expect(await resolvePostDoseStep({ items: [INJ] })).not.toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).not.toBeNull()
   })
   it('segunda nova libera mesmo com a semana anterior marcada', async () => {
     AsyncStorage.getItem.mockImplementation(async (k: string) =>
       k === 'measurePrompt:user-a:peso:2026-09-28' ? '1' : null)
     mockGetNow.mockReturnValue(new Date(2026, 9, 5, 8, 0))
-    expect(await resolvePostDoseStep({ items: [INJ] })).not.toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).not.toBeNull()
   })
   it('markPromptPeriod grava a chave da semana do passo', async () => {
-    const step = await resolvePostDoseStep({ items: [INJ] })
+    const step = await resolvePostDoseStep({ items: [WEEKLY_INJ] })
     await markPromptPeriod(step!)
     expect(AsyncStorage.setItem).toHaveBeenCalledWith('measurePrompt:user-a:peso:2026-09-28', '1')
   })
   it('falha ao gravar a marca é engolida', async () => {
     AsyncStorage.setItem.mockRejectedValue(new Error('disk'))
-    const step = await resolvePostDoseStep({ items: [INJ] })
+    const step = await resolvePostDoseStep({ items: [WEEKLY_INJ] })
     await expect(markPromptPeriod(step!)).resolves.toBeUndefined()
   })
   it('falha ao LER a marca → trata como livre (pede)', async () => {
     AsyncStorage.getItem.mockRejectedValue(new Error('disk'))
-    expect(await resolvePostDoseStep({ items: [INJ] })).not.toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).not.toBeNull()
   })
 })
 
 describe('resolvePostDoseStep — curto-circuitos', () => {
   it('sem sessão → não pede', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } })
-    expect(await resolvePostDoseStep({ items: [INJ] })).toBeNull()
+    expect(await resolvePostDoseStep({ items: [WEEKLY_INJ] })).toBeNull()
   })
   it('lote só de dose diária → null sem tocar I/O', async () => {
     expect(await resolvePostDoseStep({ items: [DAILY] })).toBeNull()

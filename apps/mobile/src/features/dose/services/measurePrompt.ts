@@ -6,7 +6,7 @@
 // Marca no aparelho, com user_id na chave (FR-003/S-1): trocar de conta não herda a marca.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { isInjectable, mondayOf, formatLocalDate, addDays, parseISO, getNow } from '@dosiq/core'
+import { mondayOf, formatLocalDate, addDays, parseISO, getNow } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { measuresRepo } from '@measures/services/measuresRepo'
 
@@ -19,11 +19,12 @@ export type MeasurePromptPolicy = {
   appliesTo: (item: PromptItem) => boolean
 }
 
-// Semanal OU injetável (plan A-1) — o mesmo predicado vai mostrar o card da Fase B (R-11).
+// Só SEMANAL (R-11, emenda do PO 2026-10-05 no smoke da 069 Bb): "injetável" pegava anticoncepcional
+// mensal e insulina diária — falso positivo do wedge GLP-1. O mesmo predicado decide o pedido de peso
+// da Fase A e o card da Fase B. GLP-1 diário injetável (Saxenda) fica fora até existir classe
+// terapêutica rastreável (CMED); a saída planejada é a configuração do gráfico por tratamento.
 export function isWeightEligible(item: PromptItem): boolean {
-  const protocol = item?.protocol
-  if (!protocol) return false
-  return protocol.frequency === 'semanal' || isInjectable(protocol.medicine as never)
+  return item?.protocol?.frequency === 'semanal'
 }
 
 export const MEASURE_PROMPT_POLICIES: Record<'peso', MeasurePromptPolicy> = {

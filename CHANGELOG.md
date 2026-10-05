@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Peso durante o tratamento no detalhe do tratamento (spec 069 B)
+
+- **Mobile** (`minor` — funcionalidade nova; `APP_VERSION` `0.33.7` → `0.33.8` só para build de
+  produção no **TestFlight interno** — não é lançamento; entra no pacote de loja `0.34.0`; canal:
+  **build de loja**, R-314 — feature nova, sem módulo nativo novo). No detalhe de um tratamento
+  semanal, logo abaixo da evolução do tratamento, aparece o card "Peso durante o
+  tratamento": os pesos registrados desde o início da primeira etapa, como pontos sobre uma faixa
+  por etapa de dose. Em "Ver por etapa" (recolhido por padrão, e o app lembra a escolha), cada etapa
+  mostra o período, o peso médio, quantas pesagens e quantas doses foram tomadas de quantas
+  previstas — os mesmos números do relatório em PDF. Tratamento sem evolução de dose mostra a dose
+  atual e desde quando. O gráfico só aparece com pesos em 3 dias diferentes ao longo de pelo menos 2 semanas (2 pesos no mesmo dia contam uma vez); antes disso, o
+  card diz o que falta (pesagens, tempo ou os dois) e oferece "Registrar peso". Se a leitura falhar,
+  o card diz se faltou internet e permite tentar de novo. O mesmo desenho e o mesmo texto para
+  quem perde ou ganha peso: nada de meta, previsão ou comparação. Tratamento que não é semanal (diário,
+  mensal, a cada X dias) não ganha o card nem o pedido de peso. Leitor de tela anuncia o resumo completo do gráfico.
+
 ### "A cada X dias" e "Mensal" não somem por causa de um app que não é mais seu (spec 095)
 
 - **Mobile** (`patch` — correção; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote
@@ -223,7 +239,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Mobile** (`minor` — funcionalidade nova no registro de dose; `APP_VERSION` `0.33.5` → `0.33.6`
   só para build de produção no **TestFlight interno** — não é lançamento; entra no pacote de loja
   `0.34.0`; canal: build de loja, R-314). Ao confirmar
-  a dose de um tratamento semanal ou injetável, o mesmo sheet passa a mostrar "Dose registrada" no
+  a dose de um tratamento semanal, o mesmo sheet passa a mostrar "Dose registrada" no
   topo e pergunta, como opcional, o peso de hoje. A dose já está salva quando a pergunta aparece:
   nada do que acontecer com o peso a desfaz. A pergunta aparece no máximo uma vez por semana
   (segunda a domingo) e não aparece se já houver peso registrado nos últimos 7 dias. "Agora não"
@@ -232,7 +248,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   no campo, a mensagem diz se faltou internet (em até 15 segundos, mesmo com sinal ruim), e
   "Fechar sem peso" deixa a pergunta voltar na próxima dose. "Tentar de novo" nunca grava o
   mesmo peso duas vezes, mesmo quando a primeira tentativa chegou ao servidor sem resposta. No registro de várias doses de uma vez, a pergunta aparece uma só vez, quando ao
-  menos uma das doses é semanal ou injetável e todas foram registradas. Dose diária oral e registro
+  menos uma das doses é semanal e todas foram registradas. Dose que não é semanal (diária, mensal, a cada X dias) e registro
   pelo alarme continuam como antes. Store note: "registre seu peso ao confirmar a dose".
 - **Core** (`patch`): a criação de medida aceita um `id` gerado pelo app; repetir a gravação com o
   mesmo `id` devolve a medida já salva em vez de duplicar.

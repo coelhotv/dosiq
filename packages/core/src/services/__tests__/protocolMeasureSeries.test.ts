@@ -1,9 +1,12 @@
 // Ponte tratamento/escada → série (069 Ba · PO-10, PO-17). Datas locais literais; instantes com
 // offset -03 explícito (AP-270).
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { daysBetween, shiftDay } from '../report/reportFormat'
 import {
   buildProtocolMeasureSeries,
   ladderStepDays,
+  protocolMeasureWindowStart,
+  splitDayWindow,
   type BuildProtocolMeasureSeriesArgs,
   type MeasureBridgeDoseDay,
   type MeasureBridgeMedicine,
@@ -208,5 +211,46 @@ describe('ladderStepDays — datas reais e previstas', () => {
   it('23h30 -03 do started_at fica no dia local (R-020)', () => {
     const [d] = ladderStepDays([step({ position: 1, started_at: '2026-09-01T23:30:00-03:00', ended_at: null })], PROTO, [MOUN], TZ)
     expect(d.start).toBe('2026-09-01')
+  })
+})
+
+// 069 Bb (PO-8, analysis-Bb L-3/L-5): janela do leitor do card.
+describe('protocolMeasureWindowStart', () => {
+  it('escada: dia local da 1ª etapa iniciada (mesma regra da ponte)', () => {
+    expect(protocolMeasureWindowStart({ protocol: PROTO, medicines: [MOUN], steps: LADDER, timezone: TZ })).toBe('2026-08-01')
+  })
+  it('sem escada ou 1 etapa: start_date do tratamento', () => {
+    const p = { ...PROTO, start_date: '2026-09-10' }
+    expect(protocolMeasureWindowStart({ protocol: p, medicines: [MOUN], steps: [], timezone: TZ })).toBe('2026-09-10')
+    expect(protocolMeasureWindowStart({ protocol: p, medicines: [MOUN], steps: [LADDER[0]], timezone: TZ })).toBe('2026-09-10')
+  })
+  it('start_date nulo e sem escada: null', () => {
+    expect(protocolMeasureWindowStart({ protocol: { ...PROTO, start_date: null }, medicines: [], steps: [], timezone: TZ })).toBeNull()
+  })
+  it('a ponte usa o mesmo início (from da série)', () => {
+    const r = buildProtocolMeasureSeries(args({ measures: [peso('2026-07-30', 90), peso('2026-08-02', 89)] }))
+    expect(r?.series.points.map((p) => p.day)).toEqual(['2026-08-02'])
+  })
+})
+
+describe('splitDayWindow', () => {
+  it('from > to: nenhuma fatia', () => {
+    expect(splitDayWindow('2026-10-06', '2026-10-05')).toEqual([])
+  })
+  it('1 dia: 1 fatia', () => {
+    expect(splitDayWindow('2026-10-05', '2026-10-05')).toEqual([{ from: '2026-10-05', to: '2026-10-05' }])
+  })
+  it('186 dias inclusivos cabem em 1 fatia; 187 viram 2', () => {
+    expect(splitDayWindow('2026-01-01', '2026-07-05')).toHaveLength(1)
+    expect(splitDayWindow('2026-01-01', '2026-07-06')).toHaveLength(2)
+  })
+  it('400 dias atravessando o ano: contíguas, sem buraco nem sobreposição, cada uma ≤ 186 dias', () => {
+    const slices = splitDayWindow('2025-09-01', '2026-10-05')
+    expect(slices[0].from).toBe('2025-09-01')
+    expect(slices[slices.length - 1].to).toBe('2026-10-05')
+    slices.forEach((s, i) => {
+      expect(daysBetween(s.from, s.to)).toBeLessThanOrEqual(185)
+      if (i > 0) expect(s.from).toBe(shiftDay(slices[i - 1].to, 1))
+    })
   })
 })

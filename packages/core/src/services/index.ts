@@ -113,8 +113,17 @@ export type {
   TreatmentMeasureSeries,
 } from './treatmentMeasureSeries'
 
+// Aritmética de dia local (YYYY-MM-DD) da série — o card da 069-B precisa das mesmas contas da ponte.
+export { shiftDay, daysBetween } from './report/reportFormat'
+
 // Ponte tratamento/escada → série (069 Ba), compartilhada pelo relatório e pelo card do tratamento
-export { buildProtocolMeasureSeries, ladderStepDays } from './protocolMeasureSeries'
+export {
+  buildProtocolMeasureSeries,
+  ladderStepDays,
+  protocolMeasureWindowStart,
+  splitDayWindow,
+  DOSE_DAYS_MAX_WINDOW,
+} from './protocolMeasureSeries'
 export type {
   BuildProtocolMeasureSeriesArgs,
   LadderStepDays,

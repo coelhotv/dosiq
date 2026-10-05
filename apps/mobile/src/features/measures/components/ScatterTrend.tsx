@@ -11,35 +11,12 @@ import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, ChevronRight } = LucideIcons as any
 import { addDays, parseISO, getRawNow, mondayOf } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+import { buildScale, fmtTick } from '@measures/utils/chartScale'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const CHART_H = 132
 const Y_AXIS_W = 34
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-
-// "Passo bonito" p/ a escala do eixo Y (1/2/5 × 10ⁿ).
-function niceStep(raw) {
-  if (raw <= 0) return 10
-  const pow = Math.pow(10, Math.floor(Math.log10(raw)))
-  const n = raw / pow
-  const m = n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10
-  return m * pow
-}
-
-// Escala Y a partir de min/max dos dados → {lo, hi, ticks:[hi,mid,lo]} (topo→base).
-function buildScale(min, max) {
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return { lo: 0, hi: 100, ticks: [100, 50, 0] }
-  if (min === max) { const lo = Math.max(0, min - 10); const hi = min + 10; return { lo, hi, ticks: [hi, (lo + hi) / 2, lo] } }
-  const step = niceStep(max - min)
-  const lo = Math.max(0, Math.floor(min / step) * step)
-  const hi = Math.ceil(max / step) * step
-  const mid = (lo + hi) / 2
-  return { lo, hi, ticks: [hi, mid, lo] }
-}
-
-function fmtTick(v) {
-  return Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ',')
-}
 
 // PA = 2 séries (sistólica + diastólica). Cor diferencia SÉRIE, nunca qualidade (SaMD, ADR-062).
 const mean = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null)

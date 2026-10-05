@@ -23,6 +23,7 @@ import { EVENTS } from '../analyticsEvents'
 
 const FORBIDDEN = [
   'value', 'value_secondary', 'notes',            // biomarcador (dado clínico)
+  'kg', 'meanKg', 'mean_kg',                      // série de peso (069 Bb §6 — nunca valor nem média)
   'message', 'response', 'history', 'content',    // chatbot (texto livre)
   'display_name', 'birth_date', 'city', 'phone', 'email', // perfil (PII)
 ]
@@ -52,6 +53,17 @@ describe('PO-6 / 069 PO-19 — biomarker_logged só com tipo + origem', () => {
       [EVENTS.BIOMARKER_LOGGED, { biomarker_type: 'peso', surface: 'mobile', entry_point: 'dose_prompt' }],
     ])
     expect(JSON.stringify(mockLogEvent.mock.calls)).not.toMatch(/82/)
+  })
+
+  it('create pelo card do tratamento carrega entry_point measure_series e nada do valor (069 Bb)', async () => {
+    mockCreate.mockResolvedValue({ id: 'b3', type: 'peso', value: 91.2, unit: 'kg' })
+
+    await measuresRepo.create({ type: 'peso', value: 91.2 }, { entry_point: 'measure_series' })
+
+    expect(mockLogEvent.mock.calls).toEqual([
+      [EVENTS.BIOMARKER_LOGGED, { biomarker_type: 'peso', surface: 'mobile', entry_point: 'measure_series' }],
+    ])
+    expect(JSON.stringify(mockLogEvent.mock.calls)).not.toMatch(/91/)
   })
 
   it('create que falha NÃO emite e propaga o erro', async () => {
