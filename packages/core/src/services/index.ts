@@ -112,3 +112,15 @@ export type {
   MeasureStepInput,
   TreatmentMeasureSeries,
 } from './treatmentMeasureSeries'
+
+// Ponte tratamento/escada → série (069 Ba), compartilhada pelo relatório e pelo card do tratamento
+export { buildProtocolMeasureSeries, ladderStepDays } from './protocolMeasureSeries'
+export type {
+  BuildProtocolMeasureSeriesArgs,
+  LadderStepDays,
+  MeasureBridgeDoseDay,
+  MeasureBridgeMedicine,
+  MeasureBridgeProtocol,
+  MeasureBridgeStepRow,
+  ProtocolMeasureSeries,
+} from './protocolMeasureSeries'

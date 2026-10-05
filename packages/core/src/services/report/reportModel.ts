@@ -8,13 +8,9 @@
  * opcional sem dado fica vazia/`null` no modelo — o template decide omitir (DESIGN_DECISOES §3).
  * Medidas (com o cruzamento dose × medida) e locais de aplicação: Slice C.
  */
-import { isInjectable } from '../../utils/injectionSites'
-import {
-  buildTreatmentMeasureSeries,
-  pickMeasureSeriesState,
-  type TreatmentMeasureSeries,
-} from '../treatmentMeasureSeries'
-import { localDayOf, medicineOf } from './reportFormat'
+import { buildProtocolMeasureSeries } from '../protocolMeasureSeries'
+import type { TreatmentMeasureSeries } from '../treatmentMeasureSeries'
+import { localDayOf } from './reportFormat'
 import type { ReportInputs, ReportWindow } from './reportTypes'
 import { buildChanges, pausedRanges, type ChangeItem } from './reportSections/changes'
 import { buildForThisVisit, buildHeader, type ReportHeader, type VisitItem } from './reportSections/header'
@@ -64,33 +60,22 @@ function _weightSeries(ladder: Ladder, inputs: ReportInputs): Pick<ReportLadder,
   const none = { weightSeries: null, weightChart: false }
   const protocol = inputs.protocols.find((p) => p.id === ladder.protocolId)
   if (!protocol) return none
-  // Regra da 069 (Clarifications): semanal OU injetável.
-  const eligible = isInjectable(medicineOf(protocol, inputs.medicines)) || protocol.frequency === 'semanal'
-  if (!eligible) return none
-
-  const firstStart = ladder.steps.find((s) => !s.planned && s.start)?.start ?? null
-  const doseDays = new Map<string, { day: string; taken: number; missed: number }>()
-  for (const r of inputs.doseDays) {
-    if (r.protocol_id !== protocol.id) continue
-    const d = doseDays.get(r.day) ?? { day: r.day, taken: 0, missed: 0 }
-    d.taken += r.taken_count
-    d.missed += r.missed_count
-    doseDays.set(r.day, d)
-  }
-
-  const series = buildTreatmentMeasureSeries({
+  // Ponte única com o card da 069-B: elegibilidade, etapas, janela e doses do próprio tratamento.
+  const result = buildProtocolMeasureSeries({
     biomarkerType: 'peso',
+    protocol,
+    medicines: inputs.medicines,
+    steps: inputs.titrationSteps.filter((s) => s.titration_id === ladder.titrationId),
     measures: inputs.biomarkers,
-    steps: ladder.steps.map((s) => ({ doseLabel: s.doseLabel, start: s.planned ? null : s.start, end: s.end, current: s.state === 'current' })),
-    doseDays: [...doseDays.values()],
+    doseDays: inputs.doseDays,
     timezone: inputs.timezone,
-    // Como na 069: o gráfico começa na 1ª etapa (recortada ao período), não no início do período.
-    from: firstStart && firstStart > inputs.window.from ? firstStart : inputs.window.from,
+    // Como na 069: o gráfico começa na 1ª etapa, recortada ao período.
+    floor: inputs.window.from,
     to: inputs.window.to,
   })
   // Linhas por etapa com qualquer pesagem (fato); gráfico só no B-0, como no app (smoke 097 A2).
-  if (series.points.length === 0) return none
-  return { weightSeries: series, weightChart: pickMeasureSeriesState(series, inputs.window.to) === 'B0' }
+  if (!result || result.series.points.length === 0) return none
+  return { weightSeries: result.series, weightChart: result.state === 'B0' }
 }
 
 /**

@@ -7,7 +7,8 @@
  * (R-299: escada cross-medicamento troca de cadastro no meio).
  */
 import { formatMedicineConcentration } from '../../../utils/doseUnit'
-import { formatStepDose, localDayOf, medicineOf, shiftDay, treatmentName } from '../reportFormat'
+import { ladderStepDays } from '../../protocolMeasureSeries'
+import { medicineOf, treatmentName } from '../reportFormat'
 import type { ReportInputs, ReportMedicineRow, ReportProtocolRow, ReportTitrationStepRow } from '../reportTypes'
 
 export type LadderStepState = 'completed' | 'current' | 'planned'
@@ -85,28 +86,17 @@ export function buildLadders(inputs: ReportInputs): Ladder[] {
     const medicineIds = new Set(ordered.map((st) => st.medicine_id ?? protocol.medicine_id))
     const showMedicine = medicineIds.size > 1
 
-    let prevEnd: string | null = null
-    const steps: LadderStep[] = ordered.map((step, index) => {
-      const stepMedicine = inputs.medicines.find((m) => m.id === step.medicine_id) ?? protoMedicine
-      const dose = formatStepDose(step, protocol, stepMedicine) ?? '-'
-      const duration = Number(step.duration_days)
-      const durationDays = Number.isFinite(duration) && duration > 0 ? duration : null
-      const startedDay = localDayOf(step.started_at, inputs.timezone)
-      const start = startedDay ?? prevEnd
-      const endedDay = localDayOf(step.ended_at, inputs.timezone)
-      const end = endedDay ?? (start && durationDays ? shiftDay(start, durationDays) : null)
-      prevEnd = end
-      return {
-        position: index + 1,
-        doseLabel: dose,
-        medicineLabel: showMedicine ? _medicineLabel(stepMedicine) : null,
-        durationDays,
-        state: _state(step),
-        start,
-        end,
-        planned: startedDay === null,
-      }
-    })
+    const days = ladderStepDays(ordered, protocol, inputs.medicines, inputs.timezone)
+    const steps: LadderStep[] = ordered.map((step, index) => ({
+      position: index + 1,
+      doseLabel: days[index].doseLabel,
+      medicineLabel: showMedicine ? _medicineLabel(days[index].medicine) : null,
+      durationDays: days[index].durationDays,
+      state: _state(step),
+      start: days[index].start,
+      end: days[index].end,
+      planned: days[index].planned,
+    }))
 
     const currentIndex = steps.findIndex((s) => s.state === 'current')
     ladders.push({
