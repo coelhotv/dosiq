@@ -19,7 +19,8 @@ import {
   getScheduledProtocols,
 } from '../services/dashboardService'
 import { useTodayDerived } from './_useTodayDerived'
-import { setMode } from '@platform/analytics/productAnalytics'
+import { setMode, setTreatmentCountBucket } from '@platform/analytics/productAnalytics'
+import { protocolService } from '@treatments/services/protocolService'
 import { isNetworkError } from '@shared/utils/networkError'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
@@ -139,6 +140,19 @@ export function useTodayData() {
       // F4.3f.1: localDay no fuso do perfil (segregação de cache cross-dia correta p/ expat).
       const tz = userSettings?.timezone || 'America/Sao_Paulo'
       const localDay = getTodayLocal(tz)
+      // 092 FR-002: persona por volume de tratamentos, no mesmo ponto do `mode`. Fire-and-forget e
+      // fora do caminho da agenda: `getAll` traz TODOS os protocolos do dono (pausados e futuros
+      // inclusive — a regra filtra no core). Falha ⇒ não registra (AC-2.2), o Hoje segue igual.
+      // RC6 #862: logout durante o `getAll` roda `resetUser` ANTES do register — a faixa vazaria para
+      // a sessão seguinte no aparelho. Só registra se a sessão ainda é de quem carregou.
+      const loadedUserId = user.id
+      void protocolService.getAll()
+        .then(async (rows) => {
+          const { data: { session: current } } = await supabase.auth.getSession()
+          if (current?.user?.id !== loadedUserId) return
+          await setTreatmentCountBucket(rows, localDay)
+        })
+        .catch(() => {})
       const medicines = await getMedicinesData([...new Set([...protocols, ...scheduledProtocols].map(p => p.medicine_id))])
       await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances, scheduledProtocols)
     } catch (err) {

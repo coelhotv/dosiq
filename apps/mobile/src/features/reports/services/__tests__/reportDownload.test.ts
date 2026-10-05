@@ -157,6 +157,7 @@ describe('eventos (PO-SEC-5 mobile)', () => {
     await fetchReportPdf(30)
     expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.REPORT_GENERATED, {
       platform: 'mobile',
+      surface: 'mobile',
       period: 30,
       duration_ms: expect.any(Number),
       size_bucket: 'lt_100k',
@@ -168,6 +169,7 @@ describe('eventos (PO-SEC-5 mobile)', () => {
     await expect(fetchReportPdf(90)).rejects.toBeInstanceOf(ReportDownloadError)
     expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.REPORT_GENERATION_ERROR, {
       platform: 'mobile',
+      surface: 'mobile',
       period: 90,
       error_code: 'collect',
     })

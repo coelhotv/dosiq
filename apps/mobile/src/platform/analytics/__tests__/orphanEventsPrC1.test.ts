@@ -34,7 +34,7 @@ import * as Notifications from 'expo-notifications'
 import { signOut, verifyOtpWithEmail } from '@platform/auth/authService'
 import { ensurePushPermission } from '@platform/notifications/pushPermission'
 import { handleTitrationNotificationAction, TITRATION_ACTION } from '@platform/notifications/titrationNotificationActions'
-import { confirmTitrationSwitch, titrationConfirmedProps } from '@features/treatments/services/titrationService'
+import { confirmTitrationSwitch, titrationConfirmedProps, titrationPostponedProps } from '@features/treatments/services/titrationService'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 const auth = (supabase as any).auth
@@ -147,6 +147,30 @@ describe('ação da titulação no push', () => {
   it('Ainda não → postponed sem treatment_id', async () => {
     await handleTitrationNotificationAction(response(TITRATION_ACTION.NOT_YET))
     expect(eventsOf(EVENTS.TITRATION_TRANSITION_POSTPONED)).toEqual([{ step_id: 's-1', surface: SURFACES.PUSH }])
+  })
+
+  it('Ainda não sem stepId no payload → step_id omitido, nunca string vazia (092 E-5)', async () => {
+    await handleTitrationNotificationAction({
+      actionIdentifier: TITRATION_ACTION.NOT_YET,
+      notification: { request: { content: { data: {} } } },
+    })
+    expect(eventsOf(EVENTS.TITRATION_TRANSITION_POSTPONED)).toEqual([{ surface: SURFACES.PUSH }])
+  })
+})
+
+// 092 FR-005 / PO-4 — o card do Hoje adia com a etapa pendente em mãos.
+describe('titrationPostponedProps (INV-2/INV-3)', () => {
+  it('etapa com tratamento → treatment_id = protocol_id da etapa', () => {
+    expect(titrationPostponedProps({ stepId: 's-2', treatmentId: 'p-9' })).toEqual({ step_id: 's-2', treatment_id: 'p-9' })
+  })
+
+  it('etapa futura de medicine_switch sem tratamento → chave omitida', () => {
+    expect(titrationPostponedProps({ stepId: 's-2', treatmentId: null })).toEqual({ step_id: 's-2' })
+    expect(titrationPostponedProps({ stepId: 's-2' })).toEqual({ step_id: 's-2' })
+  })
+
+  it('sem stepId → nada de string vazia', () => {
+    expect(titrationPostponedProps({ stepId: '', treatmentId: '' })).toEqual({})
   })
 })
 

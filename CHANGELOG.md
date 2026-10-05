@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Medição por forma do remédio e por perfil de uso (spec 092)
+
+- **Mobile** (sem efeito visível; só JavaScript, sem bump próprio de `APP_VERSION`, segue no pacote
+  de loja `0.34.0`; canal: **build de loja**, R-314). A medição de uso do app passa a separar
+  tratamentos e doses pela forma do remédio (injetável, comprimido, líquido…), sem guardar o nome
+  do remédio, e a separar quem cuida de poucos ou de muitos tratamentos (nenhum, de 1 a 3, 4 ou
+  mais), contando também os pausados. Todo evento passa a dizer de onde a ação partiu, e as falhas
+  do assistente dizem o tipo de falha (resposta de erro do servidor, falta de conexão ou resposta
+  ilegível), nunca a mensagem. Registrar uma dose não espera essa medição.
+- **Web** (sem mudança de comportamento; sem bump). Os eventos do relatório clínico passam a aceitar
+  a origem da ação (`surface`) entre os dados que vão para a medição.
+
 ### Bot e resumo diário decidem o dia de dose como o app (spec 088)
 
 - **Servidor** (sem versão própria). O comando `/hoje` do bot deixa de listar tratamento já

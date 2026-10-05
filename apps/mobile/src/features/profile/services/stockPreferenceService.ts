@@ -21,7 +21,7 @@ import {
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { EVENTS } from '@platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 async function getUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser()
@@ -48,7 +48,10 @@ export async function chooseStockModeInOnboarding(enabled: boolean): Promise<voi
   // toggle de Settings tomaria o caminho de RETOMADA (gap de minutos → silencioso) em vez de
   // perguntar o saldo inicial — a tela do PO-3 nunca apareceria.
   await profileRepo.setStockTracking(enabled, { freeze: false })
-  void logEvent(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: enabled ? 'stock' : 'dose_only' })
+  // 092 D-4: `mode` é a série legada da 044 (SC-004) e colide com a super property de densidade;
+  // `stock_mode` carrega o MESMO valor até a série migrar — só então `mode` sai daqui.
+  const stockMode = enabled ? 'stock' : 'dose_only'
+  void logEvent(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: stockMode, stock_mode: stockMode, surface: SURFACES.MOBILE })
   // 065 PR D / US9 (dedupe): NÃO emitir stock_opt_in aqui. Escolher o modo é intenção (já medida
   // por stock_onboarding_choice{mode}); o opt-in mensurável é activateStockWithInitialBalance, na
   // tela de saldo OPCIONAL seguinte. Emitir nos dois pontos contava a pessoa 2× (SC-004 da 044).
@@ -69,21 +72,22 @@ export async function activateStockWithInitialBalance(
     source,
     counted: result.countedMedicineIds.length,
     skipped: result.skipped,
+    surface: SURFACES.MOBILE,
   })
-  if (source === 'upsell') void logEvent(EVENTS.STOCK_UPSELL_CONVERSION, {})
+  if (source === 'upsell') void logEvent(EVENTS.STOCK_UPSELL_CONVERSION, { surface: SURFACES.MOBILE })
   return result
 }
 
 /** Opt-out: CONGELA (zero mutação de saldo). */
 export async function disableStockTracking(source: StockPreferenceSource = 'settings'): Promise<void> {
   await profileRepo.setStockTracking(false)
-  void logEvent(EVENTS.STOCK_OPT_OUT, { source })
+  void logEvent(EVENTS.STOCK_OPT_OUT, { source, surface: SURFACES.MOBILE })
 }
 
 /** Reativação de quem já teve estoque: retoma o saldo congelado como estava. */
 export async function resumeStockAsIs(source: StockPreferenceSource = 'settings'): Promise<StockResumeAssessment> {
   const assessment = await resumeService.resumeAsIs()
-  void logEvent(EVENTS.STOCK_OPT_IN, { source, resume: 'as_is' })
+  void logEvent(EVENTS.STOCK_OPT_IN, { source, resume: 'as_is', surface: SURFACES.MOBILE })
   return assessment
 }
 
@@ -92,7 +96,7 @@ export async function resumeStockAndZero(
   source: StockPreferenceSource = 'settings',
 ): Promise<{ zeroedMedicineIds: string[] }> {
   const result = await resumeService.resumeAndZero()
-  void logEvent(EVENTS.STOCK_OPT_IN, { source, resume: 'zeroed' })
+  void logEvent(EVENTS.STOCK_OPT_IN, { source, resume: 'zeroed', surface: SURFACES.MOBILE })
   return result
 }
 
@@ -103,10 +107,10 @@ export function assessStockResume(): Promise<StockResumeAssessment> {
 
 /** O card de upsell apareceu (denominador da taxa de conversão — SC-004). */
 export function trackStockUpsellShown(): void {
-  void logEvent(EVENTS.STOCK_UPSELL_SHOWN, {})
+  void logEvent(EVENTS.STOCK_UPSELL_SHOWN, { surface: SURFACES.MOBILE })
 }
 
 /** "Agora não": dismiss persistente, sem re-nag. */
 export function trackStockUpsellDismissed(): void {
-  void logEvent(EVENTS.STOCK_UPSELL_DISMISSED, {})
+  void logEvent(EVENTS.STOCK_UPSELL_DISMISSED, { surface: SURFACES.MOBILE })
 }

@@ -16,6 +16,7 @@ import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { posthogApiKey, posthogHost } from '@platform/config/nativePublicAppConfig'
 import { bundleTags } from '@platform/updates/bundleInfo'
+import { resolveTreatmentCountBucket } from '@dosiq/core'
 
 let client = null
 
@@ -147,4 +148,17 @@ export function envTags() {
  */
 export async function setMode(complexityOverride) {
   await setUserProperty('mode', complexityOverride || 'auto')
+}
+
+/**
+ * Persona por volume de tratamentos como super property (092 FR-002 / D-2): `'0' | '1-3' | '4+'`.
+ *
+ * Complementa o `mode` (que segue `auto` para quem não escolheu — decisão da 065) com um número que
+ * não depende da escolha de densidade. Base e regra moram no core (`resolveTreatmentCountBucket`):
+ * prescrição vigente no dia local, pausados inclusive. Sem linhas (falha de carga) NÃO registra —
+ * a propriedade fica ausente, nunca `'0'` inventado (AC-2.2). `resetUser` apaga junto das demais.
+ */
+export async function setTreatmentCountBucket(protocols, localDay) {
+  if (!Array.isArray(protocols)) return
+  await setUserProperty('treatment_count_bucket', resolveTreatmentCountBucket(protocols, localDay))
 }

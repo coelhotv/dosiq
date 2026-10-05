@@ -37,13 +37,13 @@ describe('stockPreferenceService — dedupe stock_opt_in (PO-12)', () => {
     await chooseStockModeInOnboarding(true)
     const optInCalls = mockLogEvent.mock.calls.filter(([event]) => event === EVENTS.STOCK_OPT_IN)
     expect(optInCalls).toHaveLength(0)
-    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: 'stock' })
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: 'stock', stock_mode: 'stock', surface: 'mobile' })
   })
 
   it('chooseStockModeInOnboarding(false) também não emite STOCK_OPT_IN', async () => {
     await chooseStockModeInOnboarding(false)
     const optInCalls = mockLogEvent.mock.calls.filter(([event]) => event === EVENTS.STOCK_OPT_IN)
     expect(optInCalls).toHaveLength(0)
-    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: 'dose_only' })
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: 'dose_only', stock_mode: 'dose_only', surface: 'mobile' })
   })
 })

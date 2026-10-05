@@ -47,7 +47,7 @@ import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import { logScreenView, setUserId, logEvent } from '../platform/analytics/productAnalytics'
-import { EVENTS } from '../platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '../platform/analytics/analyticsEvents'
 import { ensureDeviceOwner } from '../platform/session/localDataWipe'
 import { handleExternalSignOut } from '../platform/session/endSession'
 import { useSessionVerification } from '../platform/session/useSessionVerification'
@@ -353,7 +353,7 @@ function NavigationTree({
   // (revogou × cortesia esgotada) — dado real do gate, nunca constante (boundary da PO-12). Chave
   // `gate_mode`, NÃO `mode`: `mode` é super property (densidade) e seria sobrescrita no evento.
   useEffect(() => {
-    if (consentLocked) void logEvent(EVENTS.CONSENT_BLOCKED_ATTEMPT, { gate_mode: consent.mode })
+    if (consentLocked) void logEvent(EVENTS.CONSENT_BLOCKED_ATTEMPT, { gate_mode: consent.mode, surface: SURFACES.MOBILE })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [consentLocked])
 

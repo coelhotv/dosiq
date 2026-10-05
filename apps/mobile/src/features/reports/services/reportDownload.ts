@@ -22,7 +22,7 @@ import {
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { nativeApiBaseUrl } from '@platform/config/nativePublicAppConfig'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { EVENTS } from '@platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 const ENDPOINT = `${nativeApiBaseUrl}/api/report`
 const SAFE_FILENAME = /^dosiq-relatorio-[A-Za-z0-9-]+\.pdf$/
@@ -123,6 +123,7 @@ export async function fetchReportPdf(days: ReportPeriodDays): Promise<ReportPdf>
       EVENTS.REPORT_GENERATED,
       toReportEventPayload({
         platform: 'mobile',
+        surface: SURFACES.MOBILE,
         period: days,
         duration_ms: Date.now() - started,
         size_bucket: reportSizeBucket(bytes.byteLength),
@@ -133,7 +134,7 @@ export async function fetchReportPdf(days: ReportPeriodDays): Promise<ReportPdf>
     const code: ReportDownloadErrorCode = err instanceof ReportDownloadError ? err.code : 'unknown'
     void logEvent(
       EVENTS.REPORT_GENERATION_ERROR,
-      toReportEventPayload({ platform: 'mobile', period: days, error_code: eventCodeOf(code) })
+      toReportEventPayload({ platform: 'mobile', surface: SURFACES.MOBILE, period: days, error_code: eventCodeOf(code) })
     )
     throw err instanceof ReportDownloadError ? err : new ReportDownloadError('unknown', err)
   }

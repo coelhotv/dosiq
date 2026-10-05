@@ -6,6 +6,12 @@ jest.mock('../../../../platform/analytics/productAnalytics', () => ({
   logEvent: (...args) => mockLogEvent(...args),
 }))
 
+// 092: a forma é lida fora do caminho do registro; default = lookup sem resultado (chave omitida).
+const mockGetPresentations = jest.fn()
+jest.mock('@platform/analytics/medicineForm', () => ({
+  getMedicinePresentations: (...args) => mockGetPresentations(...args),
+}))
+
 jest.mock('../../../../platform/analytics/analyticsEvents', () => ({
   EVENTS: {
     DOSE_LOGGED: 'dose_logged',
@@ -76,6 +82,7 @@ describe('doseService adapter tests', () => {
     jest.clearAllMocks()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
     mockCancelAlarm.mockResolvedValue(undefined)
+    mockGetPresentations.mockResolvedValue({})
   })
 
   describe('registerDose', () => {
@@ -360,6 +367,7 @@ describe('065 — surface e treatment_id', () => {
     jest.clearAllTimers()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
     mockCancelAlarm.mockResolvedValue(undefined)
+    mockGetPresentations.mockResolvedValue({})
   })
 
   // T016 — a única barreira contra o modo de falha silencioso da US1: com um default `'mobile'`
@@ -482,6 +490,7 @@ describe('065 FR-14 — dose_logged por item do lote', () => {
     jest.clearAllTimers()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
     mockCancelAlarm.mockResolvedValue(undefined)
+    mockGetPresentations.mockResolvedValue({})
   })
 
   it('lote com 2 TRATAMENTOS distintos → 2 dose_logged com treatment_id próprio + 1 bulk sem ele', async () => {
@@ -555,6 +564,7 @@ describe('065 — payload nunca carrega chave vazia', () => {
     jest.clearAllTimers()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
     mockCancelAlarm.mockResolvedValue(undefined)
+    mockGetPresentations.mockResolvedValue({})
   })
 
   it('item de lote SEM data não emite medicine_id nem treatment_id vazios', async () => {
@@ -566,5 +576,97 @@ describe('065 — payload nunca carrega chave vazia', () => {
     expect(props).toEqual({ surface: 'mobile' })
     expect(Object.keys(props)).not.toContain('medicine_id')
     expect(Object.keys(props)).not.toContain('treatment_id')
+  })
+})
+
+// 092 FR-001 / PO-1 — `presentation` do medicamento DA DOSE, sem bloquear o registro.
+describe('092 — presentation em dose_logged', () => {
+  const flush = () => new Promise((r) => setImmediate(r))
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
+    mockCancelAlarm.mockResolvedValue(undefined)
+  })
+
+  it('individual: presentation = forma do medicine_id do FATO (RPC), não do input', async () => {
+    mockGetPresentations.mockResolvedValue({ 'med-do-fato': 'injetavel' })
+    mockRegisterDose.mockResolvedValueOnce({ ...LOG, medicine_id: 'med-do-fato' })
+
+    await registerDose(INPUT, { surface: 'mobile' })
+    await flush()
+
+    expect(mockGetPresentations).toHaveBeenCalledWith(['med-do-fato'])
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+      medicine_id: 'med-do-fato', presentation: 'injetavel', surface: 'mobile', treatment_id: PID,
+    })
+  })
+
+  it('o retorno NÃO espera o lookup: com a forma pendente, registerDose já resolveu e nada foi emitido', async () => {
+    let release
+    mockGetPresentations.mockReturnValue(new Promise((r) => { release = r }))
+    mockRegisterDose.mockResolvedValueOnce(LOG)
+
+    const res = await registerDose(INPUT, { surface: 'alarm' })
+
+    expect(res).toEqual({ success: true, data: LOG })
+    expect(mockLogEvent).not.toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, expect.anything())
+
+    release({ [MID]: 'comprimido' })
+    await flush()
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+      medicine_id: MID, presentation: 'comprimido', surface: 'alarm', treatment_id: PID,
+    })
+  })
+
+  it('lookup sem resultado (falha) → evento sai SEM presentation, nunca default (INV-3)', async () => {
+    mockGetPresentations.mockResolvedValue({})
+    mockRegisterDose.mockResolvedValueOnce(LOG)
+
+    await registerDose(INPUT)
+    await flush()
+
+    const payload = mockLogEvent.mock.calls.find(([e]) => e === EVENTS.DOSE_LOGGED)[1]
+    expect(payload).not.toHaveProperty('presentation')
+  })
+
+  it('lote: UMA consulta para os ids distintos; cada dose com a forma do SEU medicamento', async () => {
+    mockGetPresentations.mockResolvedValue({ 'med-a': 'injetavel', 'med-b': 'capsula' })
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'i1', data: { medicine_id: 'med-a', protocol_id: 'p-a' } },
+      { success: true, instanceId: 'i2', data: { medicine_id: 'med-b', protocol_id: 'p-b' } },
+      { success: true, instanceId: 'i3', data: { medicine_id: 'med-a', protocol_id: 'p-a' } },
+      { success: false, error: 'x' },
+    ])
+
+    await registerDoseMany([INPUT, INPUT, INPUT, INPUT], { surface: 'mobile' })
+    await flush()
+
+    expect(mockGetPresentations).toHaveBeenCalledTimes(1)
+    expect(mockGetPresentations).toHaveBeenCalledWith(['med-a', 'med-b', 'med-a'])
+    const forms = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED).map(([, p]) => [p.medicine_id, p.presentation])
+    expect(forms).toEqual([['med-a', 'injetavel'], ['med-b', 'capsula'], ['med-a', 'injetavel']])
+  })
+
+  it('undo e update_orphan levam presentation; delete_orphan (sem medicine_id) não consulta', async () => {
+    mockGetPresentations.mockResolvedValue({ [MID]: 'liquido' })
+    mockGetById.mockResolvedValueOnce({ id: 'inst-1', medicine_id: MID, protocol_id: PID })
+    mockUndoDose.mockResolvedValueOnce(undefined)
+    mockUpdateOrphanLog.mockResolvedValueOnce({ id: 'log-1', medicine_id: MID, protocol_id: null })
+    mockDeleteOrphanLog.mockResolvedValueOnce(undefined)
+
+    await undoDose('inst-1')
+    await updateOrphanLog('log-1', { quantity_taken: 1 })
+    await deleteOrphanLog('log-2')
+    await flush()
+
+    const payloads = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED).map(([, p]) => p)
+    expect(payloads).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: 'undo', presentation: 'liquido' }),
+      expect.objectContaining({ action: 'update_orphan', presentation: 'liquido' }),
+      { action: 'delete_orphan' },
+    ]))
+    expect(mockGetPresentations).toHaveBeenCalledTimes(2)
   })
 })

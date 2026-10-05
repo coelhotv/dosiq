@@ -5,7 +5,7 @@
 // detailSelect customizado pra trazer treatment_plan completo (ProtocolDetailScreen
 // renderiza emoji/name/etc; default da factory traz só medicine).
 
-import { createProtocolRepository, deriveSchedulePreset } from '@dosiq/core'
+import { createProtocolRepository, deriveSchedulePreset, PRESENTATIONS } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
@@ -106,6 +106,10 @@ function writeProps(row) {
     // 086 FR-019: a FORMA do horário salvo (1x/12h/8h/6h/manual), nunca os horários (INV-7).
     // Mesma função que marca o intervalo na tela; ausente em PRN e sem horário (`compact`).
     schedule_preset: deriveSchedulePreset(row?.time_schedule, row?.frequency),
+    // 092 FR-001: a forma do medicamento no momento da escrita — `row.medicine` é o embed que a
+    // própria escrita devolve (`FULL_SELECT_AFTER_WRITE`), sem consulta extra. Fora do enum do banco
+    // ou ausente ⇒ chave omitida pelo `compact` (INV-3), nunca `outro`.
+    presentation: PRESENTATIONS.includes(row?.medicine?.presentation) ? row.medicine.presentation : null,
   }
 }
 

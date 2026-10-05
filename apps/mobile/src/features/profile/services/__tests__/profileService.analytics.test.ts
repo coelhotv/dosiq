@@ -36,7 +36,7 @@ describe('profileService — profile_updated/mode_changed sem PII', () => {
     await updateProfile({ display_name: 'Ana' })
 
     const calls = mockLogEvent.mock.calls.filter(([n]) => n === EVENTS.PROFILE_UPDATED)
-    expect(calls).toEqual([[EVENTS.PROFILE_UPDATED, {}]])
+    expect(calls).toEqual([[EVENTS.PROFILE_UPDATED, { surface: 'mobile' }]])
     expect(JSON.stringify(calls)).not.toMatch(/Ana/)
   })
 
@@ -50,11 +50,11 @@ describe('profileService — profile_updated/mode_changed sem PII', () => {
     await updateComplexity('complex')
 
     const calls = mockLogEvent.mock.calls.filter(([n]) => n === EVENTS.MODE_CHANGED)
-    expect(calls).toEqual([[EVENTS.MODE_CHANGED, { mode: 'complex' }]])
+    expect(calls).toEqual([[EVENTS.MODE_CHANGED, { mode: 'complex', surface: 'mobile' }]])
   })
 
   it('updateComplexity(null): emite mode_changed{auto} — mesma normalização da super property', async () => {
     await updateComplexity(null)
-    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.MODE_CHANGED, { mode: 'auto' })
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.MODE_CHANGED, { mode: 'auto', surface: 'mobile' })
   })
 })

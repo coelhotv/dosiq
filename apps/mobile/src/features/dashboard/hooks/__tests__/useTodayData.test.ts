@@ -17,6 +17,17 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient';
 
 jest.mock('../../services/dashboardService');
+
+// 092 FR-002: persona registrada no mesmo ponto do `mode`, fora do caminho da agenda.
+const mockSetTreatmentCountBucket = jest.fn();
+jest.mock('@platform/analytics/productAnalytics', () => ({
+  setMode: jest.fn(),
+  setTreatmentCountBucket: (...a: unknown[]) => mockSetTreatmentCountBucket(...a),
+}));
+const mockGetAllProtocols = jest.fn();
+jest.mock('@treatments/services/protocolService', () => ({
+  protocolService: { getAll: (...a: unknown[]) => mockGetAllProtocols(...a) },
+}));
 jest.mock('../_useTodayDerived', () => ({
   useTodayDerived: jest.fn(data => data)
 }));
@@ -36,7 +47,57 @@ describe('useTodayData', () => {
     mockedDashboardService.getUserSettings.mockResolvedValue({ id: 'u1', name: 'Test' } as any);
     mockedDashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
     mockedDashboardService.getScheduledProtocols.mockResolvedValue([]); // 086 D-13
+    mockGetAllProtocols.mockResolvedValue([]);
   });
+
+  it('092: registra a persona com TODOS os protocolos (getAll) e o dia local do fuso do perfil', async () => {
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+    mockedDashboardService.getUserSettings.mockResolvedValue({ timezone: 'America/Sao_Paulo' } as any);
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({});
+    const rows = [{ id: 'p1', active: false, start_date: '2026-01-01', end_date: null }];
+    mockGetAllProtocols.mockResolvedValue(rows);
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(mockSetTreatmentCountBucket).toHaveBeenCalled(), { timeout: 5000 });
+
+    expect(mockSetTreatmentCountBucket).toHaveBeenCalledWith(rows, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+  }, 10000);
+
+  it('092 / RC6 #862: sessão trocou durante o getAll (logout) → NÃO registra a faixa', async () => {
+    mockedSupabase.auth.getSession
+      .mockResolvedValueOnce({ data: { session: { user: mockUser } }, error: null })
+      .mockResolvedValue({ data: { session: null }, error: null });
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({});
+    let release: (rows: unknown[]) => void = () => {};
+    mockGetAllProtocols.mockReturnValue(new Promise((r) => { release = r; }));
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 5000 });
+    release([{ id: 'p1', start_date: '2026-01-01', end_date: null }]);
+    await new Promise((r) => setImmediate(r));
+
+    expect(mockSetTreatmentCountBucket).not.toHaveBeenCalled();
+  }, 10000);
+
+  it('092: getAll falha → não registra e o Hoje carrega igual (AC-2.2)', async () => {
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([{ id: 'p1', medicine_id: 'm1' }] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({ m1: { name: 'Pills' } });
+    mockGetAllProtocols.mockRejectedValue(new Error('boom'));
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 5000 });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.data.protocols).toHaveLength(1);
+    expect(mockSetTreatmentCountBucket).not.toHaveBeenCalled();
+  }, 10000);
 
   it('loads data successfully from online service', async () => {
     mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });

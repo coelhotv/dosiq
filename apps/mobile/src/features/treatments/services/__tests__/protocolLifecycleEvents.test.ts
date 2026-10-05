@@ -220,3 +220,28 @@ describe('delete', () => {
     expect(mockLogEvent).not.toHaveBeenCalled()
   })
 })
+
+// 092 FR-001 / PO-1 — forma do medicamento a partir do embed que a ESCRITA devolve.
+describe('092 — presentation em treatment_created/edited', () => {
+  it('created leva presentation da linha escrita (row.medicine)', async () => {
+    mockRepo.create.mockResolvedValue({ ...ROW, medicine: { id: 'm-1', presentation: 'injetavel' } })
+    await protocolService.create({}, { surface: 'mobile' })
+    expect(eventsOf('treatment_created')[0]).toMatchObject({ medicine_id: 'm-1', presentation: 'injetavel' })
+  })
+
+  it('edited re-emite a forma da linha escrita', async () => {
+    mockRepo.update.mockResolvedValue({ ...ROW, dosage_per_intake: 2, medicine: { presentation: 'capsula' } })
+    await protocolService.update('p-1', { dosage_per_intake: 2 }, { surface: 'mobile', previous: ROW })
+    expect(eventsOf('treatment_edited')[0]).toMatchObject({ presentation: 'capsula' })
+  })
+
+  it.each([
+    ['sem embed', undefined],
+    ['forma nula', { presentation: null }],
+    ['fora do enum do banco', { presentation: 'Injetável' }],
+  ])('%s → chave omitida, nunca outro (INV-3)', async (_label, medicine) => {
+    mockRepo.create.mockResolvedValue({ ...ROW, medicine })
+    await protocolService.create({}, { surface: 'mobile' })
+    expect(eventsOf('treatment_created')[0]).not.toHaveProperty('presentation')
+  })
+})
