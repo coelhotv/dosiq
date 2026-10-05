@@ -14,6 +14,9 @@ import {
 import { isInjectable } from '../../utils/injectionSites'
 import type { ReportMedicineRow, ReportProtocolRow, ReportTitrationStepRow, ReportWindow } from './reportTypes'
 
+/** Campos do cadastro que os rótulos de dose leem (o embed da escada no mobile traz só estes). */
+type DoseMedicine = Pick<ReportMedicineRow, 'dosage_unit' | 'dosage_per_pill' | 'units_per_ml'>
+
 /** Dia local (YYYY-MM-DD) de um instante ISO no fuso do dono. `null` se o instante for inválido. */
 export function localDayOf(iso: string | null | undefined, tz: string): string | null {
   if (!iso) return null
@@ -60,7 +63,10 @@ export function medicineOf(protocol: ReportProtocolRow, medicines: ReportMedicin
 }
 
 /** Dose por tomada na unidade da tomada (073/F-17; INV-3). */
-export function formatDosePerIntake(protocol: ReportProtocolRow, medicine: ReportMedicineRow | null): string {
+export function formatDosePerIntake(
+  protocol: Pick<ReportProtocolRow, 'dosage_per_intake' | 'intake_unit'>,
+  medicine: DoseMedicine | null
+): string {
   return formatIntakeDose(protocol.dosage_per_intake ?? 1, protocol.intake_unit, medicine)
 }
 
@@ -93,9 +99,9 @@ export function formatCycleDoseLabel(protocol: ReportProtocolRow, medicine: Repo
  * `titration_steps`, CON-032 §5) vira texto por extenso e nunca é propagado. Portado do legado.
  */
 export function formatStepDose(
-  step: ReportTitrationStepRow,
-  protocol: ReportProtocolRow | null,
-  medicine: ReportMedicineRow | null
+  step: Pick<ReportTitrationStepRow, 'dose' | 'intake_unit'>,
+  protocol: Pick<ReportProtocolRow, 'intake_unit'> | null,
+  medicine: DoseMedicine | null
 ): string | null {
   if (step.dose == null) return null
   const qty = Number(step.dose)
