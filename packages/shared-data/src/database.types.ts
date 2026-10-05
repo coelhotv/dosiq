@@ -229,6 +229,7 @@ export type Database = {
           created_at: string
           device_fingerprint: string
           id: string
+          install_id: string | null
           last_seen_at: string
           platform: string
           user_id: string
@@ -238,6 +239,7 @@ export type Database = {
           created_at?: string
           device_fingerprint: string
           id?: string
+          install_id?: string | null
           last_seen_at?: string
           platform: string
           user_id: string
@@ -247,6 +249,7 @@ export type Database = {
           created_at?: string
           device_fingerprint?: string
           id?: string
+          install_id?: string | null
           last_seen_at?: string
           platform?: string
           user_id?: string
@@ -822,6 +825,7 @@ export type Database = {
           device_fingerprint: string | null
           device_name: string | null
           id: string
+          install_id: string | null
           is_active: boolean
           last_seen_at: string
           native_alarm_enabled: boolean
@@ -838,6 +842,7 @@ export type Database = {
           device_fingerprint?: string | null
           device_name?: string | null
           id?: string
+          install_id?: string | null
           is_active?: boolean
           last_seen_at?: string
           native_alarm_enabled?: boolean
@@ -854,6 +859,7 @@ export type Database = {
           device_fingerprint?: string | null
           device_name?: string | null
           id?: string
+          install_id?: string | null
           is_active?: boolean
           last_seen_at?: string
           native_alarm_enabled?: boolean
@@ -1923,6 +1929,10 @@ export type Database = {
         Args: { ttl_days?: number }
         Returns: number
       }
+      delete_device_activity: {
+        Args: { p_install_id: string }
+        Returns: undefined
+      }
       delete_dose_log_atomic: {
         Args: {
           p_default_tolerance_minutes?: number
@@ -2034,6 +2044,7 @@ export type Database = {
         Args: {
           p_app_version: string
           p_device_fingerprint: string
+          p_install_id?: string
           p_platform: string
         }
         Returns: undefined
@@ -2044,6 +2055,7 @@ export type Database = {
           p_app_version: string
           p_device_fingerprint: string
           p_device_name: string
+          p_install_id?: string
           p_native_alarm_enabled?: boolean
           p_platform: string
           p_provider: string

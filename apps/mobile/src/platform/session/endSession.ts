@@ -5,7 +5,9 @@
 // Agora todos passam por aqui, numa ordem que NÃO é intercambiável:
 //
 //   1. drena a fila de auditoria      — precisa da sessão de quem sai (os inserts são dela)
-//   2. desativa o aparelho p/ push    — idem: RLS por user_id (RC-SEC S-1)
+//   2. desativa o aparelho p/ push    — idem: RLS por user_id (RC-SEC S-1); em paralelo, apaga a
+//      linha de atividade desta instalação (spec 095 FR-006 — senão a trava da cadência segue
+//      julgando a conta por este app)
 //   3. evento `logout`                — ANTES do signOut (AP-358: o listener reseta a identidade)
 //   4. marca de UI (só `invalid`)     — ANTES do signOut: a Landing monta de dentro dele
 //   5. signOut local                  — dispara SIGNED_OUT; o listener vê `isEndingSession()`
@@ -13,7 +15,7 @@
 //   7. resetUser                      — identidade analítica anônima de novo (CON-021)
 //
 // `deleted` pula 1 e 2: o chamador drenou ANTES do RPC de exclusão (depois dele o insert bate na
-// FK) e as linhas de notification_devices somem em cascata com a conta.
+// FK) e as linhas de notification_devices e device_activity somem em cascata com a conta.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCriticalAuditService, type CriticalAuditEvent } from '@dosiq/core'
@@ -22,6 +24,7 @@ import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
 import { ALARM_OUT_OF_WINDOW_EVENT } from '@platform/alarms/outOfWindowNotice'
 import { PUSH_TOKEN_KEY } from '@platform/notifications/registerPushToken'
 import { unregisterNotificationDevice } from '@platform/notifications/unregisterNotificationDevice'
+import { deleteDeviceActivity } from '@platform/telemetry/syncDeviceActivity'
 import { logEvent, resetUser } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { wipeLocalUserData, SESSION_ENDED_REASON_KEY, LIVE_ACTIVITY_PUSH_TOKEN_KEY } from './localDataWipe'
@@ -99,7 +102,8 @@ async function currentUserId(): Promise<string | null> {
 async function settleWhileSessionAlive(reason: EndSessionReason, userId: string | null): Promise<number> {
   if (reason === 'deleted') return (await auditQueue.peek()).items.length
   const { remaining } = await drainAuditQueue()
-  if (userId) await deactivatePushDevice(userId)
+  // Em paralelo: a saída não fica mais lenta por causa da telemetria (095, C1.5 K-3).
+  if (userId) await Promise.all([deactivatePushDevice(userId), deleteDeviceActivity({ supabase })])
   return remaining
 }
 
