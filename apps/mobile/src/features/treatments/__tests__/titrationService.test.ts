@@ -1,7 +1,7 @@
 // titrationService.test.ts — núcleo do cadastro da escada (spec 029 F4 / T021).
 // Cobre a lógica PURA (sem client), que é onde moram as duas armadilhas do slice:
 //   - T019a (AP-301): a etapa 0 nasce current + started_at (senão a titulação nasce zumbi).
-//   - A5 (CON-032): protocol_id vincula o run same-med; a etapa de outro medicamento fica NULL.
+//   - 052/093 (ADR-085): toda etapa — criada ou editada — nasce vinculada ao tratamento (protocol_id).
 //   - AP-299: intake_unit da escada (sólido → 'cp', líquido → massa mg/UI) ≠ protocols.intake_unit.
 // O client é mockado só para o módulo carregar — nada aqui exercita o select (AP-300/AP-279:
 // teste sobre client mockado é falso-verde; por isso o alvo é a função pura, não o I/O).
@@ -185,15 +185,61 @@ describe('buildLadderEditPlan — edição toca só o futuro (T019 / guard A4:24
     })
   })
 
-  it('trocar medicamento de etapa futura fecha o run: protocol_id vira NULL dela em diante', () => {
+  // ── 093 (FR-001 / PO-1): toda linha criada ou atualizada sai vinculada ao tratamento ─────
+  // Até a 093 este bloco afirmava a regra "run same-med" (A5): trocar o medicamento de uma etapa
+  // futura gravava `protocol_id` NULL nela e nas seguintes. A regra morreu com o executor único
+  // (052 Slice C / ADR-085) na criação, mas sobreviveu aqui — a escada saía órfã (AP-311).
+  const linkedToProtocol = (plan: ReturnType<typeof buildLadderEditPlan>) => {
+    const created = plan.toCreate.map((r) => r.protocol_id)
+    const touchedLink = plan.toUpdate
+      .filter((u) => 'protocol_id' in u.updates)
+      .map((u) => u.updates.protocol_id)
+    return [...created, ...touchedLink].every((v) => v === PROTOCOL)
+  }
+
+  it('trocar medicamento de etapa futura mantém ela e as seguintes vinculadas', () => {
     const desired = asDesired(base).map((d) => (d.id === 's1' ? { ...d, medicine_id: 'S05' } : d))
     const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', base, desired)
     const u1 = plan.toUpdate.find((u) => u.id === 's1')
-    const u2 = plan.toUpdate.find((u) => u.id === 's2')
-    expect(u1?.updates.medicine_id).toBe('S05')
-    expect(u1?.updates.protocol_id).toBeNull()
-    // s2 continua same-med 'MET', mas o run já fechou em s1 → também perde o protocol_id.
-    expect(u2?.updates.protocol_id).toBeNull()
+    expect(u1?.updates).toEqual({ medicine_id: 'S05' })
+    // s2 (same-med, depois da troca) não muda nada — vínculo já é o tratamento.
+    expect(plan.toUpdate.find((u) => u.id === 's2')).toBeUndefined()
+  })
+
+  it('criar etapa de outro remédio antes e depois de etapa do mesmo remédio → todas vinculadas', () => {
+    const desired: DesiredEditableStep[] = [
+      { medicine_id: 'S05', dose: 2.5, intake_unit: 'mg', duration_days: 28 },
+      ...asDesired(base),
+      { medicine_id: 'S05', dose: 5, intake_unit: 'mg', duration_days: null },
+    ]
+    const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', base, desired)
+    expect(plan.toCreate).toHaveLength(2)
+    expect(plan.toCreate.every((r) => r.protocol_id === PROTOCOL)).toBe(true)
+    expect(linkedToProtocol(plan)).toBe(true)
+  })
+
+  it('prefixo congelado de OUTRO remédio (pós-troca): etapa nova e editada saem vinculadas', () => {
+    const posTroca: ExistingLadderStep[] = [
+      ex({ id: 'c0', position: 0, status: 'completed', medicine_id: 'MET' }),
+      ex({ id: 'c1', position: 1, status: 'current', medicine_id: 'S05', intake_unit: 'mg' }),
+      ex({ id: 'u2', position: 2, medicine_id: 'S05', dose: 5, intake_unit: 'mg' }),
+    ]
+    const desired: DesiredEditableStep[] = [
+      { ...asDesired(posTroca)[0], dose: 7.5 },
+      { medicine_id: 'S05', dose: 10, intake_unit: 'mg', duration_days: null },
+    ]
+    const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', posTroca, desired)
+    expect(plan.toCreate[0]?.protocol_id).toBe(PROTOCOL)
+    expect(plan.toUpdate).toEqual([{ id: 'u2', updates: { dose: 7.5 } }])
+    expect(linkedToProtocol(plan)).toBe(true)
+  })
+
+  it('etapa editável já desvinculada (build antigo) sai vinculada em qualquer edição (AC-1.4)', () => {
+    const comOrfa = base.map((s) => (s.id === 's2' ? { ...s, medicine_id: 'S05', protocol_id: null } : s))
+    const desired = asDesired(comOrfa).map((d) => (d.id === 's1' ? { ...d, dose: 9 } : d))
+    const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', comOrfa, desired)
+    expect(plan.toUpdate.find((u) => u.id === 's2')?.updates).toEqual({ protocol_id: PROTOCOL })
+    expect(linkedToProtocol(plan)).toBe(true)
   })
 
   // ── F5.5: gatilho manual de saída da etapa contínua (Decisões §7.4) ──────────

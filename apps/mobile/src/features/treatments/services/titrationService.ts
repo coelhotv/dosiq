@@ -10,11 +10,11 @@
 // recusa o zumbi no banco (23514), mas o smoke, não o teste — o client é mockado. `createFullLadder`
 // centraliza a regra pra que nenhum caminho de escrita a esqueça de novo.
 //
-// 🔴 A5 / CON-032: `titration_steps.protocol_id` é o FILTRO do embed que o motor lê. Toda etapa do
-// run same-med a partir da etapa 0 (mesmo `medicine_id` do protocolo) recebe `protocol_id` = o
-// protocolo, senão o `dose_change` automático nunca enxerga a próxima etapa (repete o AP-298 em
-// silêncio). Etapa de OUTRO medicamento (medicine_switch) fica com `protocol_id` NULL até a RPC de
-// confirmação (F5) criar o protocolo executor.
+// 🔴 052 Slice C / 093 (ADR-085, CON-032): `titration_steps.protocol_id` é o FILTRO do embed que o
+// motor lê. TODA etapa — criada (`buildLadderRows`) ou editada (`buildLadderEditPlan`) — fica
+// vinculada ao tratamento, qualquer que seja o medicamento. Etapa sem vínculo some do embed e o
+// motor deixa de enxergá-la em silêncio (AP-298/AP-311). A parada na troca de medicamento pendente
+// mora no core (`resolveTitrationStageAt`, 093/INV-4), não no vínculo.
 
 import {
   createTitrationRepository,
@@ -314,9 +314,12 @@ function diffEditableStep(
  *
  * 🔴 Guard: as etapas `current`/`completed` (prefixo congelado) NUNCA entram no plano — nem update,
  * nem delete. Só o sufixo editável (`upcoming`/`pending_confirmation`) é reconciliado.
- * 🔴 A5/CON-032: `protocol_id` recalculado no caminho — enquanto o run same-med (mesmo `medicine_id`
- * do protocolo) segue aberto a partir da etapa 0, a etapa recebe `protocol_id`; a primeira etapa de
- * OUTRO medicamento (e as seguintes) fica NULL. O prefixo congelado abre/fecha o run antes do sufixo.
+ * 🔴 093 (FR-001 / ADR-085): toda linha criada ou atualizada sai com `protocol_id = protocolId`,
+ * independente do medicamento dela ou das anteriores — mesma regra de `buildLadderRows` desde a 052.
+ * O antigo "run same-med" (A5) sobreviveu aqui e gravava NULL na etapa de outro medicamento e nas
+ * seguintes (escada órfã, AP-311). Como `diffEditableStep` compara o vínculo, qualquer edição também
+ * cura etapa desvinculada gravada por build antigo. `_protocolMedicineId` não participa mais (mantido
+ * para não mexer na assinatura do chamador).
  * 🔴 As novas etapas nascem `upcoming` + `started_at=null` (a ativação foi da etapa 0 no cadastro —
  * a edição não mexe na vigente, então o CHECK `current⇒started_at` nunca é tocado aqui).
  *
@@ -336,7 +339,7 @@ function diffEditableStep(
 export function buildLadderEditPlan(
   titrationId: string,
   protocolId: string,
-  protocolMedicineId: string,
+  _protocolMedicineId: string,
   existing: ExistingLadderStep[],
   desired: DesiredEditableStep[],
   /** F5.5: vigente contínua → a 1ª etapa CRIADA nasce `pending_confirmation` (ver doc acima). */
@@ -347,9 +350,6 @@ export function buildLadderEditPlan(
   const editableExisting = ordered.filter((s) => !FROZEN_STATUS.has(s.status))
 
   const basePos = frozen.length > 0 ? Math.max(...frozen.map((s) => s.position)) + 1 : 0
-  // Run same-med ainda aberto depois do prefixo congelado? Só se toda etapa congelada é do
-  // medicamento do protocolo (o prefixo começa na posição 0 = etapa vigente/histórico do protocolo).
-  let runOpen = frozen.every((s) => s.medicine_id === protocolMedicineId)
 
   const existingById = new Map(editableExisting.map((s) => [s.id, s]))
   // 🔴 Uma pendência por escada. Sem este guard, a SEGUNDA edição de uma escada já em manutenção
@@ -364,9 +364,7 @@ export function buildLadderEditPlan(
 
   desired.forEach((d, i) => {
     const position = basePos + i
-    const belongs = runOpen && d.medicine_id === protocolMedicineId
-    if (!belongs) runOpen = false
-    const protocol_id = belongs ? protocolId : null
+    const protocol_id = protocolId
 
     const prev = d.id ? existingById.get(d.id) : undefined
     if (prev) {

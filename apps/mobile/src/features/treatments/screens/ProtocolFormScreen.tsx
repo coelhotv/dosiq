@@ -125,7 +125,7 @@ export default function ProtocolFormScreen() {
 
   // T018 — "A dose muda ao longo do tempo?": salva o tratamento (create-on-transition, decisão do
   // PO) e navega para o cadastro da escada COM protocol.id (a etapa 0 precisa dele — ativação T019a
-  // + vínculo A5). Em EDIT o id já existe; em CREATE vem do result. Se o form for inválido, o submit
+  // + vínculo protocol_id). Em EDIT o id já existe; em CREATE vem do result. Se o form for inválido, o submit
   // mostra os erros e não chama onSaved — a navegação não acontece.
   const handleOpenTitration = useCallback(() => {
     submit({

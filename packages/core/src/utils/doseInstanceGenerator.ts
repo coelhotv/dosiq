@@ -282,10 +282,9 @@ function localDateRange(fromDate: Date, toDate: Date, tz: string): string[] {
  * @param {string} [tz='America/Sao_Paulo'] - fuso do usuário (user_settings.timezone)
  * @param {Array} [titrationSteps] - etapas da escada N2 **deste protocolo** (spec 029 F3/T014).
  *   Injetadas pelo chamador (a pureza da função é o motivo): quem faz I/O é o repository/cron.
- *   ⚠️ DEVEM vir filtradas por `protocol_id = protocol.id`. A escada inteira quebraria o caso
- *   cross-medicamento: o walk-forward adotaria a dose de OUTRO medicamento para as instâncias
- *   deste executor. Filtradas, o walk para na etapa do protocolo — que é exatamente o
- *   comportamento desejado enquanto um medicine_switch aguarda confirmação.
+ *   Desde o executor único (ADR-085) toda etapa da escada pertence a este protocolo; a parada
+ *   numa troca de medicamento pendente mora em `resolveTitrationStageAt` (093/INV-4), não num
+ *   recorte do chamador — a escada inteira é o insumo correto.
  * @returns {Array<{user_id: string, protocol_id: string, scheduled_for: string,
  *                  expected_dose: number, tolerance_minutes: number}>}
  *          Ordenadas por scheduled_for; só dentro de [fromTs, toTs].
@@ -345,9 +344,8 @@ export function generateInstances(
         expected_dose: titrationStage ? titrationStage.dosage : expectedDose,
         // 052 (FR-002): a identidade do medicamento congela pela MESMA resolução temporal da
         // dose — o step vigente em `scheduled_for`, não `protocols.medicine_id` no instante da
-        // geração. Uma instância futura gerada ANTES da troca de medicamento tem que nascer com
-        // o medicamento da etapa que vai reger aquela data; ler do protocolo congelaria o
-        // medicamento de hoje no calendário de amanhã.
+        // geração. Dose e medicamento nunca se separam. A resolução não atravessa troca de
+        // medicamento (093/INV-4): antes da confirmação, a data futura segue com a etapa vigente.
         // Fallback ao protocolo cobre os dois casos legítimos sem escada regendo a data:
         // tratamento normal (sem titulação) e etapa contínua/manutenção.
         medicine_id: titrationStage?.medicine_id ?? protocol.medicine_id ?? null,

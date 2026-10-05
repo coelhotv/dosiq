@@ -2,7 +2,7 @@
 //
 // Modelo "Gravar etapa" (Decisões §4.2, sem auto-save): o builder grava uma etapa por vez em
 // `steps` (card-resumo), e [Salvar] persiste a escada inteira via titrationService.createFullLadder
-// (que aplica a ATIVAÇÃO T019a — etapa 0 current + started_at — e o vínculo protocol_id do A5).
+// (que aplica a ATIVAÇÃO T019a — etapa 0 current + started_at — e o vínculo protocol_id de toda etapa — ADR-085).
 //
 // A tela nasce SEMPRE com um protocolo existente (o cadastro da escada só abre quando o tratamento
 // já foi salvo — a etapa 0 precisa do protocol.id p/ o vínculo). A etapa 1 é pré-preenchida com o

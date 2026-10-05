@@ -484,17 +484,26 @@ describe('generateInstances — medicine_id congela o medicamento da etapa vigen
   const diaLocal = (iso) =>
     new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(iso))
 
-  it('instância futura nasce com o medicamento da etapa que rege AQUELA data, não a vigente hoje', () => {
-    const byDate = Object.fromEntries(gerar(stepsCrossMed).map((i) => [diaLocal(i.scheduled_for), i.medicine_id]))
-    expect(byDate['2026-06-07']).toBe('MED-ETAPA-1') // dentro da etapa 1
-    expect(byDate['2026-06-28']).toBe('MED-ETAPA-1') // último domingo da etapa 1
-    expect(byDate['2026-07-05']).toBe('MED-ETAPA-2') // já na etapa 2 (após 29/06)
+  // 093 (FR-005/INV-4): até a 052 a instância de 05/07 nascia com MED-ETAPA-2 — a projeção
+  // trocava de medicamento antes da confirmação. A troca agora só vigora pela RPC.
+  it('instância depois do fim da etapa 1 segue com remédio E dose da etapa 1 (troca só por confirmação)', () => {
+    const byDate = Object.fromEntries(gerar(stepsCrossMed).map((i) => [diaLocal(i.scheduled_for), i]))
+    expect(byDate['2026-06-07'].medicine_id).toBe('MED-ETAPA-1') // dentro da etapa 1
+    expect(byDate['2026-06-28'].medicine_id).toBe('MED-ETAPA-1') // último domingo da etapa 1
+    expect(byDate['2026-07-05'].medicine_id).toBe('MED-ETAPA-1') // após 29/06: troca pendente
+    expect(byDate['2026-07-05'].expected_dose).toBe(0.25)
   })
 
-  it('dose e medicamento saem da MESMA etapa (nunca cronograma novo + medicamento velho)', () => {
+  it('nenhuma instância sai com remédio ou dose da etapa de outro medicamento', () => {
     const out = gerar(stepsCrossMed)
-    const parByDose = { 0.25: 'MED-ETAPA-1', 0.5: 'MED-ETAPA-2' }
-    expect(out.every((i) => i.medicine_id === parByDose[i.expected_dose])).toBe(true)
+    expect(out.every((i) => i.medicine_id === 'MED-ETAPA-1' && i.expected_dose === 0.25)).toBe(true)
+  })
+
+  it("mesmo medicamento (A→A'): a dose da etapa seguinte é adotada após a fronteira", () => {
+    const sameMed = stepsCrossMed.map((s) => ({ ...s, medicine_id: 'MED-ETAPA-1' }))
+    const byDate = Object.fromEntries(gerar(sameMed).map((i) => [diaLocal(i.scheduled_for), i]))
+    expect(byDate['2026-06-28'].expected_dose).toBe(0.25)
+    expect(byDate['2026-07-05'].expected_dose).toBe(0.5)
   })
 
   it('sem escada regendo a data → cai no medicine_id do protocolo (tratamento normal)', () => {
