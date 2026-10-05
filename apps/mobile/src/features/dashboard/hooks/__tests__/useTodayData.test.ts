@@ -66,6 +66,24 @@ describe('useTodayData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
   }, 10000);
 
+  it('092 / RC6 #862: sessão trocou durante o getAll (logout) → NÃO registra a faixa', async () => {
+    mockedSupabase.auth.getSession
+      .mockResolvedValueOnce({ data: { session: { user: mockUser } }, error: null })
+      .mockResolvedValue({ data: { session: null }, error: null });
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({});
+    let release: (rows: unknown[]) => void = () => {};
+    mockGetAllProtocols.mockReturnValue(new Promise((r) => { release = r; }));
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 5000 });
+    release([{ id: 'p1', start_date: '2026-01-01', end_date: null }]);
+    await new Promise((r) => setImmediate(r));
+
+    expect(mockSetTreatmentCountBucket).not.toHaveBeenCalled();
+  }, 10000);
+
   it('092: getAll falha → não registra e o Hoje carrega igual (AC-2.2)', async () => {
     mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
     mockedDashboardService.getActiveProtocols.mockResolvedValue([{ id: 'p1', medicine_id: 'm1' }] as any);
