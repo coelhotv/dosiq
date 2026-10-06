@@ -239,6 +239,14 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
   } catch (err) {
     if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
   }
+  // 062 D-3: apaga os canais Android legados. SÓ aqui — depois de cancelAll + re-agendamento no canal
+  // vigente, nenhum trigger da versão antiga sobrou (RC3 E-1; soneca/nag headless não passam por aqui).
+  // Fail-open total: limpeza de canal jamais pode quebrar o agendamento.
+  try {
+    await alarmService.migrateLegacyAlarmChannels()
+  } catch (err) {
+    if (__DEV__) console.warn('[useAlarmScheduler] migração de canais falhou (fail-open)', err?.message)
+  }
 }
 
 /**

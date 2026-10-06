@@ -15,6 +15,7 @@ import {
   ALARM_CHANNEL_ID,
   ALARM_ACTION,
   ensureAlarmSetup,
+  resolveAlarmChannelId,
 } from '@platform/alarms/alarmService'
 // R-020: instante SEMPRE via helpers do core — `new Date()` é barrado pelo lint de propósito.
 import { getRawNow, parseISO } from '@dosiq/core'
@@ -42,7 +43,7 @@ function buildDevNotification(notificationId): any {
       __dev: 'true',
     },
     android: {
-      channelId: ALARM_CHANNEL_ID,
+      channelId: resolveAlarmChannelId(), // 062: canal vigente (dose-alarm-v3 é legado varrido)
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
       sound: 'alarm_dose',
@@ -181,7 +182,7 @@ function buildEarlyAlarmNotification(
       __devEarly: 'true',
     },
     android: {
-      channelId: ALARM_CHANNEL_ID,
+      channelId: resolveAlarmChannelId(), // 062: canal vigente (dose-alarm-v3 é legado varrido)
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
       sound: 'alarm_dose',

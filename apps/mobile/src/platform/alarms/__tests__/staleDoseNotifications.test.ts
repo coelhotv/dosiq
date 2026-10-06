@@ -20,7 +20,7 @@ jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
   endDoseActivity: (...a) => mockEndSurface(...a),
 }))
 
-import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from '../alarmService'
+import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID, LEGACY_ALARM_CHANNEL_IDS } from '../alarmService'
 import { markRegisterHandoff, __resetRegisterHandoff } from '../registerHandoff'
 import {
   isDoseNotificationOutOfWindow,
@@ -116,6 +116,16 @@ describe('isAlarmNotification', () => {
     expect(isAlarmNotification({ android: { channelId: ALARM_CRITICAL_CHANNEL_ID } })).toBe(true)
     expect(isAlarmNotification({ ios: { categoryId: ALARM_CHANNEL_ID } })).toBe(true)
     expect(isAlarmNotification({ android: { channelId: 'outro' } })).toBe(false)
+  })
+
+  it('062 PO-14: canal LEGADO de alarme segue sendo alarme (agendado pela versão anterior)', () => {
+    for (const channelId of LEGACY_ALARM_CHANNEL_IDS) {
+      expect(isAlarmNotification({ android: { channelId } })).toBe(true)
+    }
+  })
+
+  it('062 E-3: superfície antiga (dose-activity-v1, só na varredura) NÃO é alarme', () => {
+    expect(isAlarmNotification({ android: { channelId: 'dose-activity-v1' } })).toBe(false)
   })
 })
 
