@@ -7,11 +7,12 @@ jest.mock('@notifee/react-native', () => ({
 }))
 
 const mockCancelAlarm = jest.fn()
-jest.mock('../alarmService', () => ({
-  ALARM_CHANNEL_ID: 'dose-alarm-v2',
-  ALARM_CRITICAL_CHANNEL_ID: 'dose-alarm-critical-v2',
-  cancelAlarm: (...a) => mockCancelAlarm(...a),
-}))
+// 062 (FR-011/E-3): ids de canal vêm da constante REAL — o mock antigo declarava `dose-alarm-v2`
+// (id inexistente) e o teste seguia verde testando um canal que o código não usa.
+jest.mock('../alarmService', () => {
+  const actual = jest.requireActual('../alarmService')
+  return { ...actual, cancelAlarm: (...a) => mockCancelAlarm(...a) }
+})
 
 const mockEndSurface = jest.fn()
 jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
@@ -19,6 +20,7 @@ jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
   endDoseActivity: (...a) => mockEndSurface(...a),
 }))
 
+import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from '../alarmService'
 import { markRegisterHandoff, __resetRegisterHandoff } from '../registerHandoff'
 import {
   isDoseNotificationOutOfWindow,
@@ -111,8 +113,8 @@ describe('evaluateDoseWindow — PISO (adiantado)', () => {
 
 describe('isAlarmNotification', () => {
   it('canal de alarme (android) e categoria (ios)', () => {
-    expect(isAlarmNotification({ android: { channelId: 'dose-alarm-critical-v2' } })).toBe(true)
-    expect(isAlarmNotification({ ios: { categoryId: 'dose-alarm-v2' } })).toBe(true)
+    expect(isAlarmNotification({ android: { channelId: ALARM_CRITICAL_CHANNEL_ID } })).toBe(true)
+    expect(isAlarmNotification({ ios: { categoryId: ALARM_CHANNEL_ID } })).toBe(true)
     expect(isAlarmNotification({ android: { channelId: 'outro' } })).toBe(false)
   })
 })
@@ -122,8 +124,8 @@ describe('reconcileStaleDoseNotifications', () => {
 
   it('cancela alarme VELHO (missed) e ignora dose fresca', async () => {
     mockGetDisplayed.mockResolvedValueOnce([
-      { notification: { android: { channelId: 'dose-alarm-critical-v2' }, data: { doseInstanceId: 'old', scheduledFor: iso(-300), toleranceMinutes: '120' } } },
-      { notification: { android: { channelId: 'dose-alarm-critical-v2' }, data: { doseInstanceId: 'fresh', scheduledFor: iso(-10), toleranceMinutes: '120' } } },
+      { notification: { android: { channelId: ALARM_CRITICAL_CHANNEL_ID }, data: { doseInstanceId: 'old', scheduledFor: iso(-300), toleranceMinutes: '120' } } },
+      { notification: { android: { channelId: ALARM_CRITICAL_CHANNEL_ID }, data: { doseInstanceId: 'fresh', scheduledFor: iso(-10), toleranceMinutes: '120' } } },
     ])
     await reconcileStaleDoseNotifications(NOW)
     expect(mockCancelAlarm).toHaveBeenCalledWith('old')
@@ -163,7 +165,7 @@ describe('reconcileStaleDoseNotifications', () => {
 
   it('067 A2: cancela notificação ADIANTADA além do piso (FR-004)', async () => {
     mockGetDisplayed.mockResolvedValueOnce([
-      { notification: { android: { channelId: 'dose-alarm-critical-v2' }, data: { doseInstanceId: 'adiantada', scheduledFor: iso(217), toleranceMinutes: '120', earlyWindowMinutes: '90' } } },
+      { notification: { android: { channelId: ALARM_CRITICAL_CHANNEL_ID }, data: { doseInstanceId: 'adiantada', scheduledFor: iso(217), toleranceMinutes: '120', earlyWindowMinutes: '90' } } },
     ])
     await reconcileStaleDoseNotifications(NOW)
     expect(mockCancelAlarm).toHaveBeenCalledWith('adiantada')
@@ -179,14 +181,14 @@ describe('pickPromotableAlarm', () => {
   // O `data` do alarme é sempre string (notifee serializa) — fixtures espelham o device.
   const alarme = (id, min = -5) => ({
     notification: {
-      android: { channelId: 'dose-alarm-critical-v2' },
+      android: { channelId: ALARM_CRITICAL_CHANNEL_ID },
       data: { doseInstanceId: id, scheduledFor: iso(min), toleranceMinutes: '120' },
     },
   })
   // O RESUMO do auto-grupo do Android: mesmo canal, SEM data. É o bug de 2026-08-02 — vinha
   // primeiro na lista e o `find(isAlarmNotification)` o devolvia no lugar do alarme real.
   const resumoDoAutoGrupo = () => ({
-    notification: { android: { channelId: 'dose-alarm-critical-v2' }, data: {} },
+    notification: { android: { channelId: ALARM_CRITICAL_CHANNEL_ID }, data: {} },
   })
   const superficie = () => ({
     notification: {
@@ -213,7 +215,7 @@ describe('pickPromotableAlarm', () => {
   it('🔴 067 A2: não promove alarme ADIANTADO além do piso (FR-003)', () => {
     const adiantado = {
       notification: {
-        android: { channelId: 'dose-alarm-critical-v2' },
+        android: { channelId: ALARM_CRITICAL_CHANNEL_ID },
         data: { doseInstanceId: 'adiantada', scheduledFor: iso(217), toleranceMinutes: '120', earlyWindowMinutes: '90' },
       },
     }
@@ -223,7 +225,7 @@ describe('pickPromotableAlarm', () => {
   it('067 A2: o aviso informativo nunca vira takeover', () => {
     const aviso = {
       notification: {
-        android: { channelId: 'dose-alarm-critical-v2' },
+        android: { channelId: ALARM_CRITICAL_CHANNEL_ID },
         data: { doseInstanceId: 'aviso', [OUT_OF_WINDOW_NOTICE_FLAG]: 'true', scheduledFor: iso(-5) },
       },
     }

@@ -12,7 +12,7 @@ jest.mock('../criticalAuditQueue', () => ({
 }))
 
 // Const do canal crítico sem carregar o alarmService pesado (supabase/firebase).
-jest.mock('@platform/alarms/alarmService', () => ({ ALARM_CRITICAL_CHANNEL_ID: 'dose-alarm-critical-v2' }))
+jest.mock('@platform/alarms/alarmService', () => ({ ALARM_CRITICAL_CHANNEL_ID: 'canal-critico-teste' })) // id neutro: o beacon lê pela constante (062 PO-14)
 
 // notifee: settings de permissão + canal.
 const mockGetSettings = jest.fn()
