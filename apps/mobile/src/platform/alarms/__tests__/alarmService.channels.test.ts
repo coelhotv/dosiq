@@ -161,6 +161,14 @@ describe('migrateLegacyAlarmChannels (D-3)', () => {
     expect(notifee.deleteChannel).not.toHaveBeenCalled()
   })
 
+  it('expo E fallback -v2 falhando juntos ⇒ não lança e não deleta (RC6 #867)', async () => {
+    mockSetChannel.mockRejectedValue(new Error('oem'))
+    const { mod, notifee } = loadFresh()
+    notifee.createChannel.mockRejectedValueOnce(new Error('oem'))
+    await expect(mod.migrateLegacyAlarmChannels()).resolves.toBeUndefined()
+    expect(notifee.deleteChannel).not.toHaveBeenCalled()
+  })
+
   it('pula id com notificação exibida e tenta de novo na próxima chamada (Q7 / E-4)', async () => {
     const { mod, notifee } = loadFresh()
     notifee.getDisplayedNotifications.mockResolvedValueOnce([onChannel(mod.LEGACY_CRITICAL_CHANNEL_ID)])

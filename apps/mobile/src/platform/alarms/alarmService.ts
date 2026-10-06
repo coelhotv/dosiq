@@ -255,7 +255,15 @@ function _referencedChannelIds(items) {
 export async function migrateLegacyAlarmChannels() {
   if (Platform.OS !== 'android' || legacyChannelsMigrated) return
   // C-1: sem dose crítica nas 72h o syncAlarms não agenda nada e o -v3 nunca seria garantido.
-  if (!(await ensureAlarmCriticalChannel())) return
+  // try/catch próprio (RC6 #867): -v3 e fallback -v2 falhando juntos lançam do ensure — aqui isso só
+  // significa "não migra", nunca erro para o caller (FR-005/006).
+  let ensured = false
+  try {
+    ensured = await ensureAlarmCriticalChannel()
+  } catch {
+    return
+  }
+  if (!ensured) return
   let referenced: Set<string>
   try {
     const [displayed, triggers] = await Promise.all([
