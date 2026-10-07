@@ -5,6 +5,7 @@
 // no SO (usage=USAGE_ALARM) só se prova por `dumpsys` (PO-2/PO-8, INV-4).
 
 import { Platform } from 'react-native'
+import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
 
 const mockSetChannel = jest.fn()
 jest.mock('expo-notifications', () => ({
@@ -130,7 +131,7 @@ describe('migrateLegacyAlarmChannels (D-3)', () => {
     expect([...mod.LEGACY_SWEEP_CHANNEL_IDS]).toEqual([...mod.LEGACY_ALARM_CHANNEL_IDS, 'dose-activity-v1'])
     expect(mod.LEGACY_ALARM_CHANNEL_IDS).not.toContain(mod.ALARM_CRITICAL_CHANNEL_ID)
     expect(mod.LEGACY_SWEEP_CHANNEL_IDS).not.toContain('dose-activity-v2')
-    expect(mod.LEGACY_SWEEP_CHANNEL_IDS).not.toContain('dosiq-default-v1')
+    expect(mod.LEGACY_SWEEP_CHANNEL_IDS).not.toContain(ANDROID_PUSH_CHANNEL.DEFAULT)
   })
 
   it('inclui todo id de alarme que já existiu em código (histórico do git, não suposição)', () => {
