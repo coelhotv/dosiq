@@ -198,7 +198,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
   // ---------------------------------------------------------------------------------------------
   describe('gate por evidência de alarme (082 Slice C)', () => {
     /** Monta a fila do caminho crítico: settings → instâncias → snoozed → [evidência] → [capacidade] → claim. */
-    const armarCiclo = ({ instancias, evidencia, capaz = undefined, erroEvidencia = false }) => {
+    const armarCiclo = ({ instancias, evidencia, capaz = undefined, erroEvidencia = false, soneca = [] }) => {
       setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
       setMockData(instancias);
       setMockData([]);                       // snoozed
@@ -207,6 +207,8 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
       } else {
         setMockData(evidencia.map(id => ({ dose_instance_id: id })));
       }
+      // 082 D1: a leitura de `snoozed` só acontece quando há dose ADIADA no ciclo.
+      if (instancias.some(i => i.snoozed_until)) setMockData(soneca);
       if (capaz !== undefined) setMockData(capaz ? [{ id: 'ev-1' }] : []);
       setMockData(instancias.map(i => ({ id: i.id })));  // claim
     };
@@ -300,6 +302,84 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
 
       expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
       expect(motivoDespachado()).toBeUndefined();
+    });
+
+    // -------------------------------------------------------------------------------------------
+    // 082 D1 · FR-016b — a soneca do APP prova o alarme da soneca: o app só emite `snoozed` depois
+    // de armar o trigger. Sem isto o push crítico (USAGE_ALARM, 062 F3-B) preempta o INSISTENT.
+    // -------------------------------------------------------------------------------------------
+    describe('D1 — prova da soneca', () => {
+      const SNOOZED_UNTIL = '2026-06-30T15:45:00.000Z';
+      const adiada = (id = 'inst-1', snoozedUntil = SNOOZED_UNTIL) =>
+        ({ ...instanciaCritica(id), snoozed_until: snoozedUntil });
+      const snoozedRow = (createdAt, platform = 'android', id = 'inst-1') =>
+        ({ dose_instance_id: id, created_at: createdAt, platform });
+
+      it('🔴 D1: snoozed android na janela ⇒ suprime como `native_alarm` [PO-D1-1]', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [adiada()],
+          evidencia: [],
+          soneca: [snoozedRow('2026-06-30T15:40:04.000Z')],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-prova');
+
+        expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+        expect(motivoDespachado()).toBe('native_alarm');
+      });
+
+      it('🔴 D1: snoozed ios na janela + alarm_scheduled velho ⇒ suprime (a prova é a soneca)', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [adiada()],
+          evidencia: ['inst-1'],
+          soneca: [snoozedRow('2026-06-30T15:41:30.000Z', 'ios')],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-ios');
+
+        expect(motivoDespachado()).toBe('native_alarm');
+      });
+
+      it.each([
+        ['snoozed ANTES da janela (soneca anterior)', '2026-06-30T15:30:00.000Z', 'android', SNOOZED_UNTIL],
+        ['snoozed DEPOIS da janela', '2026-06-30T15:44:00.000Z', 'android', SNOOZED_UNTIL],
+        ['snoozed com platform server', '2026-06-30T15:40:04.000Z', 'server', SNOOZED_UNTIL],
+        ['snoozed com platform null', '2026-06-30T15:40:04.000Z', null, SNOOZED_UNTIL],
+        ['snoozed_until ilegível', '2026-06-30T15:40:04.000Z', 'android', 'nao-e-data'],
+        // App adiou às 15:40 (snoozed); bot adiou de novo às 15:47 ⇒ snoozed_until 15:52, sem alarme.
+        ['soneca do bot depois da do app', '2026-06-30T15:40:04.000Z', 'android', '2026-06-30T15:52:00.000Z'],
+      ])('🔴 D1 mutação: %s ⇒ push SAI [PO-D1-2]', async (_caso, createdAt, platform, snoozedUntil) => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [adiada('inst-1', snoozedUntil)],
+          evidencia: ['inst-1'],  // alarm_scheduled velho NUNCA prova dose adiada (AP-353)
+          soneca: [snoozedRow(createdAt, platform)],
+          capaz: true,
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-mutacao');
+
+        expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+        expect(motivoDespachado()).toBeUndefined();
+      });
+
+      it('🔴 D1: erro ao ler a soneca ⇒ envia (fail-open)', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
+        setMockData([adiada()]);
+        setMockData([]);                                                   // snoozed (claim)
+        setMockData([]);                                                   // alarm_scheduled
+        mockDataQueue.push({ data: null, error: { message: 'connection reset' } }); // snoozed (prova)
+        setMockData([{ id: 'ev-1' }]);                                     // capaz
+        setMockData([{ id: 'inst-1' }]);                                   // claim
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-erro');
+
+        expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+        expect(motivoDespachado()).toBeUndefined();
+      });
     });
 
     it('🔴 bloco MISTO (uma dose sem prova) ⇒ envia (RC3/F5 — o R-191 manda 1 push por bloco)', async () => {

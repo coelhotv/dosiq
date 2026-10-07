@@ -30,7 +30,14 @@ import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
 import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
-import { initSentry, captureServerException, flushSentry, withServerIsolation } from '../server/observability/sentry.js';
+import {
+  initSentry,
+  captureServerException,
+  flushSentry,
+  withServerIsolation,
+  withServerMonitor,
+  CRITICAL_DELIVERY_AUDIT_MONITOR,
+} from '../server/observability/sentry.js';
 import { runCriticalDeliveryAudit } from '../server/observability/criticalDeliveryAudit.js';
 
 const logger = createLogger('CronNotify');
@@ -454,18 +461,23 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   // olhando as 24 h anteriores. Não envia nada ao paciente: emite UM evento ao Sentry do backend
   // quando há não-entrega ou paciente sem canal (FR-009/FR-010).
   if (currentHour === 8 && currentMinute === 0) {
-    await runJob('critical_delivery_audit', 'critical_delivery_audit', async (context) => {
-      const report = await runCriticalDeliveryAudit({
-        supabase,
-        logger,
-        correlationId: context?.correlationId || correlationId,
-      });
-      logger.info('[critical_delivery_audit] ciclo concluído', {
-        correlationId,
-        semEntrega: report.criticalNoDelivery.total,
-        semCanal: report.noChannelPatients.total,
-      });
-    });
+    // 082 D1 · S-3: heartbeat — job que morre ou não roda vira alerta de cron perdido no Sentry, em
+    // vez de um silêncio igual ao de "nada a reportar". O monitor fica DENTRO do runJob: vê o erro,
+    // e o runJob segue isolando e reportando.
+    await runJob('critical_delivery_audit', 'critical_delivery_audit', (context) =>
+      withServerMonitor(CRITICAL_DELIVERY_AUDIT_MONITOR, async () => {
+        const report = await runCriticalDeliveryAudit({
+          supabase,
+          logger,
+          correlationId: context?.correlationId || correlationId,
+        });
+        logger.info('[critical_delivery_audit] ciclo concluído', {
+          correlationId,
+          semEntrega: report.criticalNoDelivery.total,
+          semCanal: report.noChannelPatients.total,
+        });
+      })
+    );
   }
 
   // Titration + Prescription Alerts: Daily at 08:00 (não migram para outbox)

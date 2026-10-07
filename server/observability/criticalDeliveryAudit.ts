@@ -54,6 +54,11 @@ export type DoseOutcome =
   | 'sem_registro'
   /** Silêncio residual do D1 (FR-012a/SC-002a): suprimida sem prova de alarme. */
   | 'nao_avisada'
+  /**
+   * 082 D1 · S-1: sem linha de entrega, mas a dose já está `taken` — a paciente tomou no minuto do
+   * alarme, antes de o cron reivindicá-la (o reminder só pega `pending`). NÃO é não-entrega.
+   */
+  | 'tomada_antes_do_aviso'
 
 /** Desfechos que entram na lista de não-entrega (FR-007). */
 const OUTCOMES_NAO_ENTREGA: DoseOutcome[] = ['sem_canal', 'falhou', 'sem_registro', 'nao_avisada']
@@ -63,6 +68,27 @@ export interface CriticalDose {
   user_id: string
   protocol_id: string
   scheduled_for: string
+  /** Atributo da PRÓPRIA linha do fato (R-299). Ausente ⇒ tratado como não-tomada. */
+  status?: string | null
+  /** Registro da tomada (FK `dose_instances.medicine_log_id`): fato datado, não entidade viva. */
+  medicine_log?: { taken_at: string | null } | null
+}
+
+/**
+ * Até quantos minutos depois do horário agendado uma tomada SEM linha de entrega ainda é inocente
+ * (082 D1 · S-1, ajustado pelo RC6 do #870). O cron roda a cada minuto e reivindica a dose `pending`
+ * no minuto agendado: tomada depois disto sem linha significa que o reminder NÃO rodou — falha real,
+ * que o `status` atual não pode esconder. Medido: mediana 0 min, p10 −23 min.
+ */
+export const TAKEN_BEFORE_REMINDER_MARGIN_MIN = 5
+
+/** A dose foi tomada antes de o reminder ter tido a chance de avisá-la? */
+function _takenBeforeReminder(dose: CriticalDose, scheduledMs: number): boolean {
+  if (dose.status !== 'taken') return false
+  const takenMs = Date.parse(dose.medicine_log?.taken_at ?? '')
+  // Sem instante da tomada não há como absolver: fica `sem_registro` (lado que alerta).
+  if (Number.isNaN(takenMs)) return false
+  return takenMs <= scheduledMs + TAKEN_BEFORE_REMINDER_MARGIN_MIN * 60_000
 }
 
 export interface DeliveryLogRow {
@@ -135,7 +161,9 @@ export function classifyDose(dose: CriticalDose, logs: DeliveryLogRow[]): DoseOu
       logAnchorsProtocol(row, dose.protocol_id) &&
       logInWindow(row, scheduledMs)
   )
-  if (matches.length === 0) return 'sem_registro'
+  // Sem linha: só a dose tomada ANTES de o reminder rodar tem explicação inocente (ele só
+  // reivindica `pending`).
+  if (matches.length === 0) return _takenBeforeReminder(dose, scheduledMs) ? 'tomada_antes_do_aviso' : 'sem_registro'
 
   const outcomes = matches.map((m) => statusToOutcome(m.status))
   if (outcomes.includes('entregue')) return 'entregue'
@@ -205,6 +233,7 @@ export function buildReport(params: {
     falhou: 0,
     sem_registro: 0,
     nao_avisada: 0,
+    tomada_antes_do_aviso: 0,
   }
   const items: NoDeliveryItem[] = []
   let consentRevokedSkipped = 0
@@ -288,7 +317,8 @@ async function fetchAuditInputs(supabase: SupabaseLike, windowStart: Date, windo
   const doses = await fetchOrThrow<CriticalDose>(
     supabase
       .from('dose_instances')
-      .select('id, user_id, protocol_id, scheduled_for')
+      // FK explícita: há duas relações dose_instances↔medicine_logs (PGRST201 sem o hint).
+      .select('id, user_id, protocol_id, scheduled_for, status, medicine_log:medicine_logs!dose_instances_medicine_log_id_fkey(taken_at)')
       .eq('critical_alarm', true)
       .gte('scheduled_for', windowStart.toISOString())
       .lte('scheduled_for', windowEnd.toISOString())

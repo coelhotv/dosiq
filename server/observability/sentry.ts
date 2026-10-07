@@ -251,3 +251,80 @@ export async function flushSentry(timeoutMs = 2000): Promise<void> {
 export function withServerIsolation<T>(fn: () => Promise<T>): Promise<T> {
   return Sentry.withIsolationScope(() => fn())
 }
+
+export interface ServerMonitor {
+  slug: string
+  /** Crontab que ESPELHA a condição de horário do chamador — o Sentry acusa check-in ausente. */
+  crontab: string
+  timezone: string
+  /** Minutos de tolerância para o check-in chegar depois do horário. */
+  checkinMargin: number
+  /** Minutos até um `in_progress` sem fim virar falha. */
+  maxRuntime: number
+}
+
+/**
+ * Heartbeat da apuração diária de entrega crítica (082 D1 · S-3). Espelha o
+ * `currentHour === 8 && currentMinute === 0` de `api/notify.ts`, que roda em horário de São Paulo.
+ */
+export const CRITICAL_DELIVERY_AUDIT_MONITOR: ServerMonitor = {
+  slug: 'critical-delivery-audit',
+  crontab: '0 8 * * *',
+  timezone: 'America/Sao_Paulo',
+  checkinMargin: 10,
+  maxRuntime: 5,
+}
+
+/** Check-in nunca derruba o job: o heartbeat é observabilidade, não caminho crítico. */
+function _safeCheckIn(fn: () => string): string | null {
+  try {
+    return fn()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Envolve um job agendado num monitor de cron do Sentry (082 D1 · S-3). Sem isto, o silêncio de um
+ * alerta é ambíguo: "nada a reportar" e "o job morreu" parecem iguais.
+ *
+ * O monitor é criado/atualizado pelo próprio check-in (upsert) — sem passo manual no dashboard.
+ * No-op sem DSN. O erro do `fn` é repropagado (quem isola é o chamador); erro do SDK é engolido. O
+ * envio acontece no `flushSentry` que o handler já faz.
+ */
+export async function withServerMonitor<T>(monitor: ServerMonitor, fn: () => Promise<T>): Promise<T> {
+  if (!process.env.SENTRY_SERVER_DSN) return fn()
+
+  const checkInId = _safeCheckIn(() =>
+    Sentry.captureCheckIn(
+      { monitorSlug: monitor.slug, status: 'in_progress' },
+      {
+        schedule: { type: 'crontab', value: monitor.crontab },
+        timezone: monitor.timezone,
+        checkinMargin: monitor.checkinMargin,
+        maxRuntime: monitor.maxRuntime,
+      }
+    )
+  )
+  const startedAt = Date.now()
+  const finish = (status: 'ok' | 'error') => {
+    if (!checkInId) return
+    _safeCheckIn(() =>
+      Sentry.captureCheckIn({
+        monitorSlug: monitor.slug,
+        status,
+        checkInId,
+        duration: (Date.now() - startedAt) / 1000,
+      })
+    )
+  }
+
+  try {
+    const result = await fn()
+    finish('ok')
+    return result
+  } catch (err) {
+    finish('error')
+    throw err
+  }
+}

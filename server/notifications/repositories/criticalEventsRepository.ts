@@ -100,6 +100,108 @@ export async function findInstancesWithAlarmEvidence(
   return withEvidence
 }
 
+/** Evento que o app emite DEPOIS de armar o alarme da soneca (`alarmService.scheduleSnooze`). */
+const EVENT_SNOOZED = 'snoozed'
+
+/** Só aparelho arma alarme local: `snoozed` de outra origem não prova nada. */
+const DEVICE_PLATFORMS = ['android', 'ios']
+
+/**
+ * Intervalo da soneca manual. O DONO do valor é o app (`SNOOZE_INTERVAL_MS`,
+ * `apps/mobile/src/platform/alarms/alarmService.ts`): mudou lá, muda aqui.
+ */
+export const SNOOZE_EVIDENCE_INTERVAL_MIN = 5
+
+/**
+ * Folga entre `created_at` (relógio do SERVIDOR, quando a linha entrou) e `snoozed_until − 5 min`
+ * (relógio do APARELHO, quando a soneca foi pedida): latência do insert + skew de relógio. Fora
+ * dela ⇒ sem prova ⇒ o push sai (lado barulhento, estado anterior ao D1).
+ */
+export const SNOOZE_EVIDENCE_TOLERANCE_MIN = 3
+
+export interface SnoozedInstance {
+  instanceId: string | null
+  snoozedUntil: string | null
+}
+
+/** O `snoozed` foi emitido pela soneca que gerou ESTE `snoozed_until`? */
+function _matchesCurrentSnooze(createdAt: string | null, snoozedUntil: string): boolean {
+  const createdMs = Date.parse(createdAt ?? '')
+  const untilMs = Date.parse(snoozedUntil)
+  if (Number.isNaN(createdMs) || Number.isNaN(untilMs)) return false
+  const requestedMs = untilMs - SNOOZE_EVIDENCE_INTERVAL_MIN * 60_000
+  return Math.abs(createdMs - requestedMs) <= SNOOZE_EVIDENCE_TOLERANCE_MIN * 60_000
+}
+
+/**
+ * Quais destas ocorrências ADIADAS têm prova de que o alarme da soneca vigente está armado
+ * (082 D1 · FR-016b).
+ *
+ * A prova é o evento `snoozed` de APARELHO cuja emissão casa com o `snoozed_until` atual. O app só
+ * emite `snoozed` depois de `createTriggerNotification` armar o alarme da soneca — contrato travado
+ * por teste no app. A janela é obrigatória: uma soneca posterior pelo bot (sem alarme local) muda o
+ * `snoozed_until` e deixa o `snoozed` antigo fora dela ⇒ o push sai. `alarm_scheduled` NUNCA prova
+ * dose adiada (AP-353): descreve o alarme do horário original, que já passou.
+ *
+ * @returns `Set` com os ids COM prova. Erro de leitura ou teto batido ⇒ `Set` vazio (fail-open).
+ */
+export async function findInstancesWithSnoozeEvidence(
+  client: SupabaseLike,
+  items: SnoozedInstance[]
+): Promise<Set<string>> {
+  const withEvidence = new Set<string>()
+  const snoozedUntilById = new Map<string, string>()
+  for (const item of items || []) {
+    if (item?.instanceId && item.snoozedUntil) snoozedUntilById.set(item.instanceId, item.snoozedUntil)
+  }
+  const ids = [...snoozedUntilById.keys()]
+  if (ids.length === 0) return withEvidence
+
+  for (let i = 0; i < ids.length; i += ID_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + ID_CHUNK_SIZE)
+    const { data, error } = await client
+      .from('dose_critical_events')
+      .select('dose_instance_id, created_at, platform')
+      .eq('event', EVENT_SNOOZED)
+      .in('platform', DEVICE_PLATFORMS)
+      .in('dose_instance_id', chunk)
+      .limit(ROW_LIMIT)
+
+    if (error) {
+      logger.error('Leitura de evidência de soneca indisponível — fail-open (envia)', error, {
+        chunkSize: chunk.length,
+      })
+      return new Set<string>()
+    }
+
+    const rows = (data ?? []) as Array<{
+      dose_instance_id: string | null
+      created_at: string | null
+      platform: string | null
+    }>
+
+    if (rows.length >= ROW_LIMIT) {
+      logger.error('Leitura de evidência de soneca possivelmente truncada (AP-186) — fail-open (envia)', null, {
+        chunkSize: chunk.length,
+        rows: rows.length,
+        rowLimit: ROW_LIMIT,
+      })
+      return new Set<string>()
+    }
+
+    for (const row of rows) {
+      // Filtro de plataforma repetido aqui: o `.in` do banco é a primeira barreira, não a única.
+      if (!row.dose_instance_id || !DEVICE_PLATFORMS.includes(row.platform ?? '')) continue
+      const snoozedUntil = snoozedUntilById.get(row.dose_instance_id)
+      if (snoozedUntil && _matchesCurrentSnooze(row.created_at, snoozedUntil)) {
+        withEvidence.add(row.dose_instance_id)
+      }
+    }
+  }
+
+  return withEvidence
+}
+
 /**
  * O USUÁRIO é capaz de produzir evidência de alarme? (FR-012)
  *

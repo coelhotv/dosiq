@@ -118,9 +118,17 @@ crítico tem **6** aparelhos.
   relatório diário como não-entrega.
 - **Fail-open (FR-013).** Qualquer erro de leitura devolve o resultado que **envia** o push.
   Indisponibilidade do Postgres não pode virar dose não avisada.
-- **Dose adiada não é dose coberta (AP-353).** O app **não** re-emite `alarm_scheduled` ao adiar —
-  medido: 11 de 12 doses adiadas em 60 dias. A prova que existe descreve o alarme do horário
-  ORIGINAL, que já passou. `snoozed_until` preenchido ⇒ conta como sem prova.
+- **Dose adiada não é coberta por `alarm_scheduled` (AP-353).** O app **não** re-emite
+  `alarm_scheduled` ao adiar — medido: 11 de 12 doses adiadas em 60 dias. Essa prova descreve o
+  alarme do horário ORIGINAL, que já passou, e nunca vale para dose com `snoozed_until`.
+- **A prova da dose adiada é a soneca do aparelho (082 D1 · FR-016b).** O app só emite `snoozed`
+  depois de armar o alarme da soneca (`alarmService.scheduleSnooze`, ordem travada por teste). A dose
+  adiada conta como coberta se existe `snoozed` com `platform ∈ {android, ios}` cujo `created_at`
+  (servidor) fica a ±3 min de `snoozed_until − 5 min` (relógio do aparelho). Fora da janela, de
+  outra plataforma, ou adiada pelo bot (que não arma alarme nem emite `snoozed`) ⇒ sem prova ⇒ envia.
+  Motivo: desde a 062 F3-B o push crítico toca em USAGE_ALARM e **preempta** o alarme INSISTENT da
+  soneca — o loop morre em ~14 s (062 PO-21). O status segue `suprimida_alarme`; a origem fica no log
+  `prova de soneca` do reminder.
 - **Supressão sem aparelho não existe.** Se o usuário tem zero device expo, o desfecho é
   `sem_canal`, não supressão: não havia push a suprimir, e o problema é falta de canal.
 - **Dose não-crítica não passa pelo gate** (FR-014, R-191 intacto).
