@@ -5,7 +5,11 @@
 // Consultar expoPushChannel.js para a API exata usada (Gate 6 — R-275).
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
+import {
+  ANDROID_PUSH_CHANNEL,
+  MIN_APP_VERSION_FOR_CRITICAL_PUSH_CHANNEL,
+  resolveAndroidPushChannel,
+} from '@dosiq/core'
 import { sendExpoPushNotification } from './expoPushChannel'
 
 const makePayload = () => ({
@@ -296,7 +300,7 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].sound).toBe('alarm_dose.wav')
     expect(messages[0].interruptionLevel).toBe('time-sensitive')
-    // 062 F3-A: nenhuma versão do app cria `dosiq-critical-v1` — o crítico vai no canal que existe.
+    // 062 F3-B: aparelho sem `app_version` não prova que tem o canal crítico ⇒ canal que existe.
     expect(messages[0].channelId).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
     expect(messages[0].channelId).not.toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
   })
@@ -378,5 +382,59 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
       expect(msg.categoryId).toBeUndefined()
       expect(msg.data.actions).toBeUndefined()
     })
+  })
+})
+
+// 062 F3-B (PO-20, FR-017): canal do push por aparelho. Na dúvida, o canal que existe (AP-303).
+describe('resolveAndroidPushChannel (062 F3-B)', () => {
+  const MIN = MIN_APP_VERSION_FOR_CRITICAL_PUSH_CHANNEL
+
+  it('crítico + versão ≥ mínima ⇒ CRITICAL', () => {
+    expect(resolveAndroidPushChannel({ app_version: MIN }, true)).toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
+    expect(resolveAndroidPushChannel({ app_version: '0.34.0' }, true)).toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
+  })
+
+  it('crítico + versão anterior ⇒ DEFAULT', () => {
+    expect(resolveAndroidPushChannel({ app_version: '0.33.9' }, true)).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
+  })
+
+  it('crítico + versão ausente ou ilegível ⇒ DEFAULT', () => {
+    for (const app_version of [null, undefined, '', 'abc', '1.x.0']) {
+      expect(resolveAndroidPushChannel({ app_version }, true)).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
+    }
+    expect(resolveAndroidPushChannel({}, true)).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
+  })
+
+  it('compara por semver, não por string (0.33.10 > 0.33.9)', () => {
+    expect(MIN).toBe('0.33.10')
+    // Por string, '0.33.10' < '0.33.9' — o aparelho novo receberia DEFAULT.
+    expect(resolveAndroidPushChannel({ app_version: '0.33.10' }, true)).toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
+    expect(resolveAndroidPushChannel({ app_version: '0.33.11' }, true)).toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
+  })
+
+  it('push comum ⇒ DEFAULT em qualquer versão', () => {
+    expect(resolveAndroidPushChannel({ app_version: '9.9.9' }, false)).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
+  })
+
+  it('envio: um aparelho novo e um antigo no mesmo push crítico recebem canais distintos', async () => {
+    const devices = {
+      listActiveByUser: vi.fn().mockResolvedValue([
+        { push_token: 'ExponentPushToken[new]', native_alarm_enabled: false, app_version: '0.33.10' },
+        { push_token: 'ExponentPushToken[old]', native_alarm_enabled: false, app_version: '0.33.9' },
+      ]),
+      deactivateByToken: vi.fn(),
+    }
+    const expoClient = { sendPushNotificationsAsync: vi.fn().mockResolvedValue([{ status: 'ok' }, { status: 'ok' }]) }
+    await sendExpoPushNotification({
+      userId: 'user-mixed',
+      payload: { title: 'Hora da dose', body: 'x', metadata: { kind: 'dose_reminder', critical_alarm: true } },
+      context: { correlationId: 'c-mixed' },
+      repositories: { devices },
+      expoClient,
+    } as never)
+    const [messages] = expoClient.sendPushNotificationsAsync.mock.calls[0]
+    expect(messages.map((m: { channelId: string }) => m.channelId)).toEqual([ANDROID_PUSH_CHANNEL.CRITICAL, ANDROID_PUSH_CHANNEL.DEFAULT])
+    // iOS ignora channelId: som/interrupção iguais nos dois (sem efeito de versão)
+    expect(messages.map((m: { sound: string }) => m.sound)).toEqual(['alarm_dose.wav', 'alarm_dose.wav'])
   })
 })

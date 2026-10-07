@@ -127,6 +127,12 @@ describe('isAlarmNotification', () => {
   it('062 E-3: superfície antiga (dose-activity-v1, só na varredura) NÃO é alarme', () => {
     expect(isAlarmNotification({ android: { channelId: 'dose-activity-v1' } })).toBe(false)
   })
+
+  it('062 F3-B (FR-018, RC3 E-9): push crítico do servidor NÃO é alarme local', () => {
+    const { ANDROID_PUSH_CHANNEL } = jest.requireActual('@dosiq/core')
+    expect(isAlarmNotification({ android: { channelId: ANDROID_PUSH_CHANNEL.CRITICAL } })).toBe(false)
+    expect(isAlarmNotification({ android: { channelId: ANDROID_PUSH_CHANNEL.DEFAULT } })).toBe(false)
+  })
 })
 
 describe('reconcileStaleDoseNotifications', () => {

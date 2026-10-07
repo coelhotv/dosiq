@@ -3,13 +3,15 @@
 // expoClient é injetado para facilitar testes sem chamadas HTTP reais
 // Desativa tokens com erros permanentes via shouldDeactivateDevice (R-042)
 
-import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
+import { resolveAndroidPushChannel } from '@dosiq/core'
 import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
 import type { ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
 interface ExpoDevice {
   push_token: string
   native_alarm_enabled?: boolean
+  /** Versão nativa do app (`nativeApplicationVersion`) — roteia o canal Android (062 F3-B). */
+  app_version?: string | null
   [key: string]: unknown
 }
 
@@ -96,10 +98,10 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
     //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
     //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
-    // Android: o som é do CANAL, e só vale canal que o app cria. Nenhuma versão cria o crítico
-    // ainda (062 F3-B) — referenciá-lo jogava o push no fallback do FCM ("Miscellaneous"). O
-    // `sound` acima segue valendo no iOS, que ignora `channelId`.
-    channelId: ANDROID_PUSH_CHANNEL.DEFAULT,
+    // Android: o som é do CANAL, e só vale canal que o app cria — canal inexistente joga o push no
+    // fallback do FCM ("Miscellaneous", AP-251). O crítico só vai para `app_version` que cria o
+    // canal; senão, o default (062 F3-B). O `sound` acima segue valendo no iOS, que ignora `channelId`.
+    channelId: resolveAndroidPushChannel(device, isCriticalDose),
     ...(categoryId ? { categoryId } : {}),
     title: payload.title,
     body: payload.pushBody || payload.body,

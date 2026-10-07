@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Aviso de dose essencial com som de alarme no Android (spec 062 F3-B)
+
+- **Mobile** (`minor` — comportamento perceptível do aviso; `APP_VERSION` `0.33.9` → `0.33.10` só
+  para build intermediário (preview/TestFlight) — não é lançamento; entra no pacote de loja `0.34.0`,
+  fechado pelo release train; canal: **build de loja**, R-314 — canal de notificação novo; OTA
+  proibido). O app passa a criar o canal "Avisos de dose essencial", com o mesmo som e o mesmo volume
+  de alarme do alarme de dose. É nele que chega o aviso enviado pelo servidor quando o alarme do
+  aparelho não cobriu uma dose essencial.
+- **Backend/Infra** (`minor`, sem arquivo de versão; deploy na Vercel no merge). O servidor escolhe o
+  canal do aviso de dose essencial por aparelho: só manda para "Avisos de dose essencial" quem tem a
+  versão `0.33.10` ou posterior; versões anteriores, ou aparelho com versão desconhecida, seguem
+  recebendo em "Lembretes e avisos". No iPhone nada muda.
+- **Nota de loja:** o aviso de dose essencial do dosiq passa a tocar com o som de alarme.
+
 ### Push de dose crítica no canal de notificação do dosiq (spec 062 F3-A)
 
 - **Backend/Infra** (`Fixed`, `patch` — sem arquivo de versão: servidor + constante no core; deploy
