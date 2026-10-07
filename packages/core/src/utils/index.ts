@@ -277,7 +277,11 @@ export type { BodyMapFace, BodyMapRegion, BodyMapPoint, BodyMapBounds } from './
 export { compareSemver, satisfiesSemver } from './semver'
 
 // Canais Android do push remoto — fonte única servidor↔app (062 F3)
-export { ANDROID_PUSH_CHANNEL } from './androidPushChannels'
+export {
+  ANDROID_PUSH_CHANNEL,
+  MIN_APP_VERSION_FOR_CRITICAL_PUSH_CHANNEL,
+  resolveAndroidPushChannel,
+} from './androidPushChannels'
 export type { AndroidPushChannelId } from './androidPushChannels'
 
 // Nudge scheduler — lógica pura de seleção/filtragem (026)
