@@ -29,6 +29,8 @@ import notifee, {
 } from '@notifee/react-native'
 import { Platform, Linking } from 'react-native'
 import * as Device from 'expo-device'
+import * as Notifications from 'expo-notifications'
+import { colors } from '@shared/styles/tokens'
 import { debugLog } from '@shared/utils/debugLog'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
@@ -37,11 +39,28 @@ import { EVENTS } from '@platform/analytics/analyticsEvents'
 // correto (alarm_dose). v1 ficou no som padrão; v2 nasceu padrão em devices cujo
 // build era anterior ao plugin de sons (res/raw sem alarm_dose) e, por ser
 // imutável, não corrigia nem reinstalando. v3 = canal limpo no build COM o som.
-// REGRA: ao trocar o som do alarme, SEMPRE bumpar este id (senão fica no antigo).
+// 062 (D-2): no Android este canal MORREU (nenhum alarme o usa desde a spec 010) e entra na varredura
+// de legados. O id segue vivo só como CATEGORIA iOS (`ensureAlarmCategories`, `ios.categoryId`).
 export const ALARM_CHANNEL_ID = 'dose-alarm-v3'
-// Canal crítico Android (Spec 010, R-261): id separado para alarmes críticos (critical_alarm=true).
-// NUNCA mudar o id dose-alarm-v3 acima; bumpar este ao trocar som do canal crítico.
-export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v2'
+// Canal Android ÚNICO do alarme (062 D-1/D-2). `-v3` nasce pelo expo-notifications porque só ele expõe
+// `audioAttributes.usage = ALARM` (volume de alarme; toca no vibrar/mute no AOSP — medido F0). O
+// notifee segue EXIBINDO nele. REGRA (R-261 + F0/Q5): canal é imutável e um id deletado RESSUSCITA a
+// config antiga se recriado — mudar a config exige id NUNCA usado, jamais reaproveitar um legado.
+export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v3'
+// Antecessor do `-v3` (USAGE_NOTIFICATION, criado pelo notifee). Segue sendo o canal de FALLBACK
+// quando o expo falha (E-2): recriá-lo com a config de sempre é no-op no device que já o tem.
+export const LEGACY_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v2'
+// Lista FECHADA (nunca prefixo/regex — PO-16): canais de alarme de versões anteriores. Usada pelo
+// predicado `isAlarmNotification` (alarme agendado pela versão antiga ou no fallback).
+export const LEGACY_ALARM_CHANNEL_IDS: readonly string[] = Object.freeze([
+  LEGACY_CRITICAL_CHANNEL_ID,
+  'dose-alarm-critical-v1',
+  ALARM_CHANNEL_ID,
+  'dose-alarm-v2', // nunca existiu em código (só num mock) — delete de id inexistente é no-op (medido)
+  'dose-alarm', // o original sem sufixo (Spec 001, 2026-06-02 → trocado por dose-alarm-v3 em 06-03)
+])
+// Varredura = alarme ∪ superfície 039 antiga (RC3 E-3: `dose-activity-v1` NÃO é alarme).
+export const LEGACY_SWEEP_CHANNEL_IDS: readonly string[] = Object.freeze([...LEGACY_ALARM_CHANNEL_IDS, 'dose-activity-v1'])
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
 // iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
@@ -73,8 +92,8 @@ export const ALARM_ACTION = Object.freeze({
   SNOOZE: 'dose-snooze',
 })
 
-let channelEnsured = false
 let criticalChannelEnsured = false
+let legacyChannelsMigrated = false
 
 /**
  * Pede a permissão de notificação do SO (POST_NOTIFICATIONS no Android 13+,
@@ -157,35 +176,51 @@ export async function ensureAlarmCategories() {
 }
 
 /**
- * Garante a infra do alarme pra plataforma atual: canal HIGH no Android,
- * categoria de ações no iOS. Chamado antes de todo agendamento.
+ * Garante a infra do alarme pra plataforma atual: canal no Android, categoria de ações no iOS.
+ * Chamado antes de todo agendamento (inclusive soneca/nag headless — por isso NÃO migra canais).
  */
 export async function ensureAlarmSetup() {
-  await ensureAlarmChannel()
   await ensureAlarmCriticalChannel()
   await ensureAlarmCategories()
 }
 
-/** Cria (idempotente) o canal Android HIGH que fura DND. No-op no iOS. */
-export async function ensureAlarmChannel() {
-  if (Platform.OS !== 'android' || channelEnsured) return
-  await notifee.createChannel({
-    id: ALARM_CHANNEL_ID,
-    name: 'Alarmes de dose',
-    importance: AndroidImportance.HIGH,
-    sound: SOUND_ANDROID,
-    vibration: true,
-    bypassDnd: true,
-    visibility: AndroidVisibility.PUBLIC,
-  })
-  channelEnsured = true
+/**
+ * Canal Android do alarme (062 D-1). Cria o `-v3` pelo expo-notifications; a flag só vira true no
+ * sucesso, então o próximo setup re-tenta. Falhou ⇒ garante o `-v2` (notifee, config de sempre) e o
+ * alarme vai nele — fail-open = o alarme AINDA TOCA (FR-006/E-2). Nunca criar o `-v3` pelo notifee:
+ * queimaria o id sem USAGE_ALARM (F0/Q5).
+ * @returns {Promise<boolean>} true se o `-v3` está garantido neste processo
+ */
+export async function ensureAlarmCriticalChannel() {
+  if (Platform.OS !== 'android') return false
+  if (criticalChannelEnsured) return true
+  try {
+    await Notifications.setNotificationChannelAsync(ALARM_CRITICAL_CHANNEL_ID, {
+      name: 'Alarmes críticos de dose',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: SOUND_IOS, // expo resolve res/raw pelo nome com extensão (padrão ensurePushChannel)
+      enableVibrate: true,
+      bypassDnd: true, // só vale se o acesso ao DND existir NA CRIAÇÃO (F0/Q3) — custo zero
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      audioAttributes: {
+        usage: Notifications.AndroidAudioUsage.ALARM,
+        contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+      },
+    })
+    criticalChannelEnsured = true
+    return true
+  } catch (err) {
+    // Sinal channel_v3_failed: em prod, o beacon lê `getChannel(-v3)` nulo ⇒ importance null.
+    if (__DEV__) console.warn('[alarmService] channel_v3_failed', err?.message)
+    await ensureLegacyCriticalChannel()
+    return false
+  }
 }
 
-/** Canal Android crítico (dose-alarm-critical-v1) — para alarmes com critical_alarm=true. No-op no iOS. */
-export async function ensureAlarmCriticalChannel() {
-  if (Platform.OS !== 'android' || criticalChannelEnsured) return
+/** Fallback E-2: o `-v2` com a config de sempre (recriar o mesmo id com a mesma config é no-op). */
+async function ensureLegacyCriticalChannel() {
   await notifee.createChannel({
-    id: ALARM_CRITICAL_CHANNEL_ID,
+    id: LEGACY_CRITICAL_CHANNEL_ID,
     name: 'Alarmes críticos de dose',
     importance: AndroidImportance.HIGH,
     sound: SOUND_ANDROID,
@@ -193,7 +228,66 @@ export async function ensureAlarmCriticalChannel() {
     bypassDnd: true,
     visibility: AndroidVisibility.PUBLIC,
   })
-  criticalChannelEnsured = true
+}
+
+/** Canal em que o alarme Android é postado: o `-v3` se garantido, senão o fallback `-v2`. */
+export function resolveAlarmChannelId() {
+  return criticalChannelEnsured ? ALARM_CRITICAL_CHANNEL_ID : LEGACY_CRITICAL_CHANNEL_ID
+}
+
+/** Ids referenciados por notificação exibida OU trigger pendente (o item do notifee traz `.notification`). */
+function _referencedChannelIds(items) {
+  const ids = new Set<string>()
+  for (const item of items) {
+    const channelId = (item?.notification || item)?.android?.channelId
+    if (channelId) ids.add(channelId)
+  }
+  return ids
+}
+
+/**
+ * 062 D-3 — apaga os canais legados (lista fechada) da base instalada. SÓ pode ser chamada depois de
+ * `cancelAll` + re-agendamento (fim do `syncAlarms`): aí nenhum trigger da versão antiga sobrou no
+ * `-v2` (RC3 E-1). Mesmo assim pula id com notificação exibida (deletar derruba o alarme em curso —
+ * F0/Q7) ou trigger pendente. Leitura falha ⇒ não deleta nada. Nunca lança (FR-005/006).
+ * A flag só marca varredura LIMPA (E-4): id pulado/falho ⇒ a próxima chamada tenta de novo.
+ */
+export async function migrateLegacyAlarmChannels() {
+  if (Platform.OS !== 'android' || legacyChannelsMigrated) return
+  // C-1: sem dose crítica nas 72h o syncAlarms não agenda nada e o -v3 nunca seria garantido.
+  // try/catch próprio (RC6 #867): -v3 e fallback -v2 falhando juntos lançam do ensure — aqui isso só
+  // significa "não migra", nunca erro para o caller (FR-005/006).
+  let ensured = false
+  try {
+    ensured = await ensureAlarmCriticalChannel()
+  } catch {
+    return
+  }
+  if (!ensured) return
+  let referenced: Set<string>
+  try {
+    const [displayed, triggers] = await Promise.all([
+      notifee.getDisplayedNotifications(),
+      notifee.getTriggerNotifications(),
+    ])
+    referenced = _referencedChannelIds([...(displayed || []), ...(triggers || [])])
+  } catch {
+    return
+  }
+  let clean = true
+  for (const id of LEGACY_SWEEP_CHANNEL_IDS) {
+    if (referenced.has(id)) {
+      clean = false
+      continue
+    }
+    try {
+      await notifee.deleteChannel(id)
+    } catch {
+      clean = false
+    }
+  }
+  legacyChannelsMigrated = clean
+  debugLog('[alarmService] migração de canais legados', clean ? 'completa' : 'parcial')
 }
 
 function _getSingleDoseDesc(name, dosagePerPill, dosageUnit, quantity) {
@@ -264,8 +358,8 @@ function getAlarmCopy({ medicineName, data }) {
 }
 
 // Monta o objeto de notificação compartilhado por agendamento e nag.
-// isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
-function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
+// isCritical: só o iOS diferencia. Android = canal único resolvido (062 D-2); deve rodar após ensureAlarmSetup.
+function buildNotification({ doseInstanceId, medicineName, data, notificationId }: { doseInstanceId: string, medicineName?: string, data?: Record<string, unknown>, notificationId: string, isCritical?: boolean }) {
   const { title, body } = getAlarmCopy({ medicineName, data })
   const sanitizedData: Record<string, string> = {}
   if (data) {
@@ -283,7 +377,11 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
     body,
     data: sanitizedData,
     android: {
-      channelId: isCritical ? ALARM_CRITICAL_CHANNEL_ID : ALARM_CHANNEL_ID,
+      channelId: resolveAlarmChannelId(),
+      // 062 D-7: a marca do dosiq (drawable escrito por withDoseActivityAndroidIcon.js), igual à
+      // superfície e ao push — sem isto cai no launcher mascarado.
+      smallIcon: 'ic_dosiq_mark',
+      color: colors.brand.primary,
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
       sound: SOUND_ANDROID,
@@ -599,8 +697,9 @@ export const alarmService = {
   requestAlarmPermission,
   openFullScreenIntentSettings,
   needsFullScreenIntentAccess,
-  ensureAlarmChannel,
   ensureAlarmCriticalChannel,
+  resolveAlarmChannelId,
+  migrateLegacyAlarmChannels,
   ensureAlarmCategories,
   ensureAlarmSetup,
   scheduleAlarm,

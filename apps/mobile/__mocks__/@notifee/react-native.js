@@ -14,6 +14,10 @@ const notifee = {
   requestPermission: jest.fn(() => Promise.resolve({ authorizationStatus: 1 })),
   getInitialNotification: jest.fn(() => Promise.resolve(null)),
   getDisplayedNotifications: jest.fn(() => Promise.resolve([])),
+  // 062 D-3: migração de canais legados
+  getTriggerNotifications: jest.fn(() => Promise.resolve([])),
+  deleteChannel: jest.fn(() => Promise.resolve()),
+  getChannel: jest.fn(() => Promise.resolve(null)),
 }
 
 const AndroidImportance = { HIGH: 4, DEFAULT: 3, LOW: 2 }

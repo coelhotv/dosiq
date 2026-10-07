@@ -10,7 +10,7 @@ jest.mock('../criticalAuditQueue', () => ({
   AUDIT_QUEUE_KEY: 'k',
   AUDIT_QUEUE_CAP: 200,
 }))
-jest.mock('@platform/alarms/alarmService', () => ({ ALARM_CRITICAL_CHANNEL_ID: 'dose-alarm-critical-v2' }))
+jest.mock('@platform/alarms/alarmService', () => ({ ALARM_CRITICAL_CHANNEL_ID: 'canal-critico-teste' })) // id neutro: o beacon lê pela constante (062 PO-14)
 jest.mock('@notifee/react-native', () => ({
   __esModule: true,
   default: { getNotificationSettings: async () => ({ authorizationStatus: 1 }), getChannel: async () => ({ importance: 4 }) },

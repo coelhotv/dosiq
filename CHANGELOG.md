@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alarme de dose no volume de alarme e marca do dosiq nas notificações (spec 062 F1+F2)
+
+- **Mobile** (`minor` — comportamento perceptível do alarme; `APP_VERSION` `0.33.8` → `0.33.9` só
+  para build intermediário (preview/TestFlight) — não é lançamento; entra no pacote de loja `0.34.0`,
+  fechado pelo release train; canal: **build de loja**, R-314 — canal de notificação novo e config plugin nativo; OTA proibido).
+  No Android, o alarme de dose passa a tocar como alarme: segue o volume de **alarme** do aparelho e,
+  em aparelhos com Android de base (medido num Motorola), toca mesmo com o celular no vibrar ou no silencioso (em aparelhos
+  Xiaomi/HyperOS o modo silencioso ainda cala o som — limitação do sistema). Para isso o app cria um
+  canal de alarme novo e apaga os canais antigos que sobravam nas configurações; se um alarme estiver
+  tocando ou agendado no canal antigo, a limpeza espera a próxima abertura do app. Se o aparelho não
+  aceitar o canal novo, o alarme continua tocando no canal antigo. As notificações do servidor e o
+  alarme passam a mostrar o símbolo do dosiq em verde, igual ao lembrete de dose, em vez do ícone
+  genérico.
+- **Nota de loja:** quem tinha mudado som ou vibração do "Alarmes críticos de dose" nas
+  configurações do Android precisa refazer o ajuste uma vez, no canal novo.
+
 ### Peso durante o tratamento no detalhe do tratamento (spec 069 B)
 
 - **Mobile** (`minor` — funcionalidade nova; `APP_VERSION` `0.33.7` → `0.33.8` só para build de

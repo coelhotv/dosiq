@@ -11,7 +11,7 @@
 
 import notifee from '@notifee/react-native'
 import { getRawNow } from '@dosiq/core'
-import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID, cancelAlarm } from './alarmService'
+import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID, LEGACY_ALARM_CHANNEL_IDS, cancelAlarm } from './alarmService'
 import { endDoseActivity, DOSE_ACTIVITY_CHANNEL_ID } from '@platform/doseActivity/doseActivitySurfaceService'
 // 067 A2: a regra da janela vive em `doseWindow` (módulo puro, sem dependência de app). Este arquivo
 // importa `alarmService` p/ cancelar, e o `alarmService` também precisa da guarda (FR-006) — manter a
@@ -23,13 +23,18 @@ import { isHandedOffToRegister } from './registerHandoff'
 export { evaluateDoseWindow, isDoseNotificationOutOfWindow, isOutOfWindowNotice }
 export { OUT_OF_WINDOW_NOTICE_FLAG } from './doseWindow'
 
-/** Notificação do canal/categoria de alarme (Android por canal; iOS por categoria). */
+/**
+ * Notificação do canal/categoria de alarme (Android por canal; iOS por categoria).
+ * 062 (FR-011/E-3): Android aceita o canal vigente E os legados de alarme — alarme agendado pela
+ * versão anterior (ou no fallback `-v2`) continua sendo alarme. Nunca a lista de varredura: a
+ * superfície antiga (`dose-activity-v1`) não é alarme.
+ */
 export function isAlarmNotification(notification) {
   if (!notification) return false
   const channelId = notification.android?.channelId
   return (
-    channelId === ALARM_CHANNEL_ID ||
     channelId === ALARM_CRITICAL_CHANNEL_ID ||
+    (typeof channelId === 'string' && LEGACY_ALARM_CHANNEL_IDS.includes(channelId)) ||
     notification.ios?.categoryId === ALARM_CHANNEL_ID
   )
 }

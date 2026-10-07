@@ -12,7 +12,7 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 // default só vale para os casos em que errar barato é melhor que errar caro.
 const UPDATE_CHANNEL = process.env.EAS_BUILD_PROFILE || 'development'
 
-const APP_VERSION = '0.33.8' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.33.9' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -191,6 +191,9 @@ module.exports = {
       }],
       // PostHog precisa do locale do device (peer dep de posthog-react-native).
       'expo-localization',
+      // 062 F2: ícone/cor padrão do push = marca dosiq. TEM que vir ANTES de 'expo-notifications':
+      // mods rodam em ordem inversa e o expo, sem icon/color, apaga estes meta-data (ver o plugin).
+      './withNotificationIconDefaults.js',
       // sounds: copia os .wav p/ android res/raw + iOS bundle → notifee/expo
       // resolvem por nome ('alarm_dose'/'push_chime'). Sem isso o canal cai no
       // som padrão do SO (Spec 001 — bug visto no dumpsys: mSound=default).
