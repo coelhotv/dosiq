@@ -54,6 +54,11 @@ export type DoseOutcome =
   | 'sem_registro'
   /** Silêncio residual do D1 (FR-012a/SC-002a): suprimida sem prova de alarme. */
   | 'nao_avisada'
+  /**
+   * 082 D1 · S-1: sem linha de entrega, mas a dose já está `taken` — a paciente tomou no minuto do
+   * alarme, antes de o cron reivindicá-la (o reminder só pega `pending`). NÃO é não-entrega.
+   */
+  | 'tomada_antes_do_aviso'
 
 /** Desfechos que entram na lista de não-entrega (FR-007). */
 const OUTCOMES_NAO_ENTREGA: DoseOutcome[] = ['sem_canal', 'falhou', 'sem_registro', 'nao_avisada']
@@ -63,6 +68,8 @@ export interface CriticalDose {
   user_id: string
   protocol_id: string
   scheduled_for: string
+  /** Atributo da PRÓPRIA linha do fato (R-299). Ausente ⇒ tratado como não-tomada. */
+  status?: string | null
 }
 
 export interface DeliveryLogRow {
@@ -135,7 +142,8 @@ export function classifyDose(dose: CriticalDose, logs: DeliveryLogRow[]): DoseOu
       logAnchorsProtocol(row, dose.protocol_id) &&
       logInWindow(row, scheduledMs)
   )
-  if (matches.length === 0) return 'sem_registro'
+  // Sem linha: só a dose JÁ TOMADA tem explicação inocente (o reminder só reivindica `pending`).
+  if (matches.length === 0) return dose.status === 'taken' ? 'tomada_antes_do_aviso' : 'sem_registro'
 
   const outcomes = matches.map((m) => statusToOutcome(m.status))
   if (outcomes.includes('entregue')) return 'entregue'
@@ -205,6 +213,7 @@ export function buildReport(params: {
     falhou: 0,
     sem_registro: 0,
     nao_avisada: 0,
+    tomada_antes_do_aviso: 0,
   }
   const items: NoDeliveryItem[] = []
   let consentRevokedSkipped = 0
@@ -288,7 +297,7 @@ async function fetchAuditInputs(supabase: SupabaseLike, windowStart: Date, windo
   const doses = await fetchOrThrow<CriticalDose>(
     supabase
       .from('dose_instances')
-      .select('id, user_id, protocol_id, scheduled_for')
+      .select('id, user_id, protocol_id, scheduled_for, status')
       .eq('critical_alarm', true)
       .gte('scheduled_for', windowStart.toISOString())
       .lte('scheduled_for', windowEnd.toISOString())

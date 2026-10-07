@@ -12,6 +12,7 @@ import {
 } from '@dosiq/core';
 import {
   findInstancesWithAlarmEvidence,
+  findInstancesWithSnoozeEvidence,
   isUserAlarmCapable,
 } from '../../notifications/repositories/criticalEventsRepository.js';
 
@@ -430,6 +431,22 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
 }
 
 /**
+ * A dose tem prova de que um alarme local a cobre AGORA?
+ *
+ * 🔴 Dose ADIADA nunca aceita `alarm_scheduled` (AP-353): essa prova descreve o alarme do horário
+ * ORIGINAL, que já passou — o app não re-emite `alarm_scheduled` ao adiar (11 de 12 doses adiadas
+ * em 60 d). A prova dela é o `snoozed` de APARELHO da soneca vigente (082 D1 · FR-016b): o app só o
+ * emite depois de armar o alarme da soneca (`alarmService.scheduleSnooze`, contrato travado por
+ * teste lá). Soneca pelo bot não emite `snoozed` ⇒ sem prova ⇒ o push sai.
+ * @private
+ */
+function _isDoseCovered(dose, evidenceByInstance, snoozeEvidence) {
+  if (!dose.instanceId) return false;
+  if (dose.snoozedUntil) return snoozeEvidence.has(dose.instanceId);
+  return evidenceByInstance.has(dose.instanceId);
+}
+
+/**
  * Decide, POR BLOCO, se o push crítico deve ser suprimido (082 Slice C · FR-011/012/013).
  *
  * Três eixos que NÃO coincidem (spec §6): a evidência é por OCORRÊNCIA, a capacidade é por
@@ -442,7 +459,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
  * @returns motivo da supressão (`native_alarm` | `no_alarm_evidence`) ou `null` para enviar.
  * @private
  */
-function _resolveBlockSuppression(block, evidenceByInstance, isCapable) {
+function _resolveBlockSuppression(block, evidenceByInstance, snoozeEvidence, isCapable) {
   const criticalDoses = block.doses.filter(d => d.critical_alarm === true);
   if (criticalDoses.length === 0) return null;  // FR-014: dose não-crítica, caminho intacto
 
@@ -454,15 +471,7 @@ function _resolveBlockSuppression(block, evidenceByInstance, isCapable) {
   if (criticalDoses.length !== block.doses.length) return null;
 
   // Dose sem `instanceId` não tem como ter prova — conta como sem prova (lado que envia).
-  //
-  // 🔴 Dose ADIADA também conta como sem prova (spec §6, caso de borda do snooze). A prova que
-  // existe para ela descreve o alarme do horário ORIGINAL, que já passou — e o app, medido em
-  // prod, NÃO re-emite `alarm_scheduled` ao adiar: em 11 de 12 doses adiadas nos últimos 60 dias
-  // o último `alarm_scheduled` é ANTERIOR ao `snoozed`. Aceitar essa prova velha suprimiria
-  // justamente a dose que a paciente pediu para ser lembrada de novo.
-  const allHaveEvidence = criticalDoses.every(
-    d => Boolean(d.instanceId) && !d.snoozedUntil && evidenceByInstance.has(d.instanceId)
-  );
+  const allHaveEvidence = criticalDoses.every(d => _isDoseCovered(d, evidenceByInstance, snoozeEvidence));
   if (allHaveEvidence) return 'native_alarm';        // dose COBERTA pelo alarme local
 
   // Sem prova: o que ela significa depende de o usuário SABER produzi-la.
@@ -483,18 +492,31 @@ async function _loadCriticalEvidence(userId, criticalDoses) {
   const instanceIds = criticalDoses.map(d => d.instanceId).filter(Boolean);
   const evidenceByInstance = await findInstancesWithAlarmEvidence(supabase, instanceIds);
 
+  // 082 D1: só paga a leitura de `snoozed` quando há dose ADIADA no ciclo (caminho comum = zero).
+  const snoozed = criticalDoses
+    .filter(d => d.instanceId && d.snoozedUntil)
+    .map(d => ({ instanceId: d.instanceId, snoozedUntil: d.snoozedUntil }));
+  const snoozeEvidence = snoozed.length > 0
+    ? await findInstancesWithSnoozeEvidence(supabase, snoozed)
+    : new Set();
+  if (snoozeEvidence.size > 0) {
+    // Origem da prova fica no log (grep-ável no Vercel): o status segue `suprimida_alarme`.
+    logger.info('prova de soneca: alarme da soneca armado no aparelho', {
+      userId, adiadas: snoozed.length, comProvaDeSoneca: snoozeEvidence.size,
+    });
+  }
+
   // A capacidade só muda o desfecho quando falta prova a alguma dose — não pagar a consulta quando
   // todas já têm prova.
-  const someWithoutEvidence = criticalDoses.some(
-    d => !d.instanceId || d.snoozedUntil || !evidenceByInstance.has(d.instanceId)
-  );
+  const someWithoutEvidence = criticalDoses.some(d => !_isDoseCovered(d, evidenceByInstance, snoozeEvidence));
   const isCapable = someWithoutEvidence ? await isUserAlarmCapable(supabase, userId) : true;
 
   logger.debug('Evidência de alarme lida para o ciclo', {
-    userId, criticas: criticalDoses.length, comProva: evidenceByInstance.size, isCapable,
+    userId, criticas: criticalDoses.length, comProva: evidenceByInstance.size,
+    comProvaDeSoneca: snoozeEvidence.size, isCapable,
   });
 
-  return { evidenceByInstance, isCapable };
+  return { evidenceByInstance, snoozeEvidence, isCapable };
 }
 
 /**
@@ -537,10 +559,10 @@ async function _dispatchUserReminderBlocks(
   // bloco), ela pode ter sido tomada olhando uma dose que não será notificada aqui — e o desvio só
   // acontece para o lado de ENVIAR, porque suprimir exige que TODAS tenham prova e todo subconjunto
   // de um bloco com prova completa também tem. O pior caso é um push a mais, nunca um a menos.
-  const { evidenceByInstance, isCapable } = await _loadCriticalEvidence(userId, criticalDoses);
+  const { evidenceByInstance, snoozeEvidence, isCapable } = await _loadCriticalEvidence(userId, criticalDoses);
 
   for (const block of blocks) {
-    const suppressPushReason = _resolveBlockSuppression(block, evidenceByInstance, isCapable);
+    const suppressPushReason = _resolveBlockSuppression(block, evidenceByInstance, snoozeEvidence, isCapable);
     await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz, suppressPushReason);
   }
 }

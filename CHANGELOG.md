@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alarme adiado de dose essencial não é mais interrompido pelo aviso do servidor (spec 082 D1)
+
+- **Backend/Infra** (`Fixed`, `patch` — sem arquivo de versão; deploy na Vercel no merge; corrige
+  todas as versões do app já instaladas). Quando a paciente adiava uma dose essencial pelo app, o
+  servidor ainda mandava o aviso no horário da soneca. No Android, esse aviso tocava por cima do
+  alarme da soneca e o calava depois de poucos segundos. Agora o servidor reconhece que o alarme da
+  soneca foi armado no aparelho e não envia o aviso. Soneca feita pelo Telegram continua recebendo
+  o aviso, porque ela não arma alarme no celular.
+- **Backend/Infra** (`Fixed`, `patch`). A apuração diária de entrega crítica deixa de acusar como
+  "sem registro" a dose que a paciente tomou no horário do alarme, antes de o aviso sair. E a
+  apuração passa a avisar no Sentry quando não roda, em vez de ficar em silêncio.
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.10` → `0.33.11` só para build intermediário —
+  não é lançamento; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — correção JS,
+  sem feature nova nem código nativo). Se o registro de que o alarme de uma dose essencial foi armado
+  falhava (sem rede, por exemplo), o app não tentava de novo, e o servidor mandava o aviso por cima
+  do alarme. Agora o app tenta de novo na próxima sincronização.
+
 ### Aviso de dose essencial com som de alarme no Android (spec 062 F3-B)
 
 - **Mobile** (`minor` — comportamento perceptível do aviso; `APP_VERSION` `0.33.9` → `0.33.10` só

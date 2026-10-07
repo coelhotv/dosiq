@@ -157,3 +157,44 @@ describe('scheduleSnooze — dose_snoozed (065 AD-8)', () => {
     expect(mockLogEvent).toHaveBeenCalledWith('dose_snoozed', {})
   })
 })
+
+// 082 D1 (E-2): o SERVIDOR aceita `snoozed` de aparelho como prova de que o alarme da soneca está
+// armado e, por ela, suprime o push crítico (`server/bot/reminders/doseReminders.ts`,
+// `_isDoseCovered`). Essa garantia mora AQUI: emitir `snoozed` antes de armar — ou mesmo se armar
+// falhou — faria o servidor calar a dose sem alarme nenhum. Estes testes travam a ordem.
+describe('scheduleSnooze — contrato com o gate do servidor (082 D1 · E-2)', () => {
+  const CRITICA = {
+    doseInstanceId: 'inst-4', medicineName: 'Lantus', scheduledFor: iso(-3),
+    toleranceMinutes: 120, earlyWindowMinutes: 90, currentSnoozeAttempt: 0, isCritical: true,
+  }
+
+  it('🔴 `snoozed` só é emitido DEPOIS do trigger armado [PO-D1-5]', async () => {
+    const order: string[] = []
+    ;(notifee.createTriggerNotification as jest.Mock).mockImplementationOnce(async () => {
+      order.push('trigger')
+    })
+    mockEmit.mockImplementationOnce(async () => {
+      order.push('snoozed')
+    })
+
+    await scheduleSnooze(CRITICA)
+
+    expect(order).toEqual(['trigger', 'snoozed'])
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({ doseInstanceId: 'inst-4', event: 'snoozed', actor: 'user' }),
+    )
+  })
+
+  it('🔴 trigger REJEITA ⇒ zero `snoozed` (sem alarme, sem prova) [PO-D1-5]', async () => {
+    ;(notifee.createTriggerNotification as jest.Mock).mockRejectedValueOnce(new Error('exact alarm negado'))
+
+    await expect(scheduleSnooze(CRITICA)).rejects.toThrow('exact alarm negado')
+
+    expect(mockEmit).not.toHaveBeenCalled()
+  })
+
+  it('dose NÃO-crítica não emite `snoozed` (o gate só olha crítica)', async () => {
+    await scheduleSnooze({ ...CRITICA, isCritical: false })
+    expect(mockEmit).not.toHaveBeenCalled()
+  })
+})

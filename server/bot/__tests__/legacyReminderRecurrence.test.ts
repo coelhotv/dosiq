@@ -14,6 +14,7 @@ vi.mock('../../notifications/apns/dispatchLiveActivityStarts.js', () => ({ dispa
 vi.mock('../../notifications/apns/dispatchLiveActivityLifecycle.js', () => ({ dispatchLiveActivityLifecycle: vi.fn() }));
 vi.mock('../../notifications/repositories/criticalEventsRepository.js', () => ({
   findInstancesWithAlarmEvidence: vi.fn(async () => new Set()),
+  findInstancesWithSnoozeEvidence: vi.fn(async () => new Set()),
   isUserAlarmCapable: vi.fn(async () => false),
 }));
 

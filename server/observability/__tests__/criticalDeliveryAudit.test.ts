@@ -118,6 +118,42 @@ describe('classificação da dose (FR-007)', () => {
   })
 })
 
+describe('dose tomada antes do aviso (082 D1 · S-1)', () => {
+  // Medido em 30 d (spec §Leitura do Sentry): 41 de 41 `sem_registro` da paciente f1096d63 estavam
+  // `taken` — tomou no minuto do alarme, antes de o cron reivindicar a dose. O alerta disparava
+  // justamente quando o alarme tinha funcionado melhor.
+  it('🔴 taken SEM linha ⇒ `tomada_antes_do_aviso` [PO-D1-7]', () => {
+    expect(classifyDose(dose({ status: 'taken' }), [])).toBe('tomada_antes_do_aviso')
+  })
+
+  it.each(['pending', 'missed', 'skipped_user', null, undefined])(
+    '🔴 mutação: status %s SEM linha ⇒ segue `sem_registro`',
+    (status) => {
+      expect(classifyDose(dose({ status: status as string | null }), [])).toBe('sem_registro')
+    }
+  )
+
+  it('🔴 taken COM linha ⇒ a linha vence (dose avisada e depois tomada)', () => {
+    expect(classifyDose(dose({ status: 'taken' }), [log({ status: 'suprimida_alarme' })])).toBe('coberta')
+    expect(classifyDose(dose({ status: 'taken' }), [log({ status: 'sem_canal' })])).toBe('sem_canal')
+  })
+
+  it('🔴 relatório: conta em totals, mas FORA da lista de não-entrega (não alerta)', () => {
+    const r = buildReport({
+      windowStart: new Date(2026, 8, 9, 8, 0, 0),
+      windowEnd: new Date(2026, 8, 10, 8, 0, 0),
+      noChannel: [],
+      noChannelAllTypes: 0,
+      doses: [dose({ status: 'taken' })],
+      logs: [],
+      revokedUserIds: new Set(),
+    })
+    expect(r.totals.tomada_antes_do_aviso).toBe(1)
+    expect(r.criticalNoDelivery.total).toBe(0)
+    expect(shouldAlert(r)).toBe(false)
+  })
+})
+
 describe('relatório', () => {
   const base = {
     windowStart: new Date(2026, 8, 9, 8, 0, 0),

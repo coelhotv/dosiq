@@ -663,6 +663,9 @@ export async function scheduleSnooze({
 
   // Auditoria de dose crítica (spec 042): emite `snoozed` por ocorrência. Fail-open
   // (o service nunca lança). isCritical filtra: só doses críticas geram trail (FR-004).
+  // 🔴 CONTRATO (082 D1): o servidor trata este `snoozed` como PROVA de que o alarme da soneca está
+  // armado e suprime o push crítico por ela (`doseReminders._isDoseCovered`). Ele DEVE continuar
+  // depois do `createTriggerNotification` acima — travado em `alarmService.snoozeWindow.test.ts`.
   if (isCritical) {
     // Emits independentes (1 por ocorrência) e fail-open (emit nunca rejeita) → paralelos.
     // Headless (onBackgroundEvent) tem orçamento de tempo limitado pelo SO: serial N inserts o queima.
