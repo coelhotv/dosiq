@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Push de dose crítica no canal de notificação do dosiq (spec 062 F3-A)
+
+- **Backend/Infra** (`Fixed`, `patch` — sem arquivo de versão: servidor + constante no core; deploy
+  na Vercel no merge; nenhum build mobile). No Android, o aviso de dose crítica enviado pelo servidor
+  chegava como notificação "Diversos" (prioridade média, som padrão do sistema), porque apontava
+  para um canal que o app nunca criou. Agora ele chega em "Lembretes e avisos", com prioridade alta,
+  o som e a vibração do dosiq. No iPhone nada muda. Os nomes dos canais passam a vir de uma única
+  definição compartilhada entre o servidor e o app.
+
 ### Alarme de dose no volume de alarme e marca do dosiq nas notificações (spec 062 F1+F2)
 
 - **Mobile** (`minor` — comportamento perceptível do alarme; `APP_VERSION` `0.33.8` → `0.33.9` só

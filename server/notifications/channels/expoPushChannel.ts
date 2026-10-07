@@ -3,6 +3,7 @@
 // expoClient é injetado para facilitar testes sem chamadas HTTP reais
 // Desativa tokens com erros permanentes via shouldDeactivateDevice (R-042)
 
+import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
 import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
 import type { ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
@@ -95,7 +96,10 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
     //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
     //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
-    channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
+    // Android: o som é do CANAL, e só vale canal que o app cria. Nenhuma versão cria o crítico
+    // ainda (062 F3-B) — referenciá-lo jogava o push no fallback do FCM ("Miscellaneous"). O
+    // `sound` acima segue valendo no iOS, que ignora `channelId`.
+    channelId: ANDROID_PUSH_CHANNEL.DEFAULT,
     ...(categoryId ? { categoryId } : {}),
     title: payload.title,
     body: payload.pushBody || payload.body,

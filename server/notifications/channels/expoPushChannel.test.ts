@@ -5,6 +5,7 @@
 // Consultar expoPushChannel.js para a API exata usada (Gate 6 — R-275).
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
 import { sendExpoPushNotification } from './expoPushChannel'
 
 const makePayload = () => ({
@@ -295,7 +296,9 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].sound).toBe('alarm_dose.wav')
     expect(messages[0].interruptionLevel).toBe('time-sensitive')
-    expect(messages[0].channelId).toBe('dosiq-critical-v1')
+    // 062 F3-A: nenhuma versão do app cria `dosiq-critical-v1` — o crítico vai no canal que existe.
+    expect(messages[0].channelId).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
+    expect(messages[0].channelId).not.toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
   })
 
   it('deve usar som push_chime.wav e active para dose normal', async () => {
@@ -319,7 +322,7 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].sound).toBe('push_chime.wav')
     expect(messages[0].interruptionLevel).toBe('active')
-    expect(messages[0].channelId).toBe('dosiq-default-v1')
+    expect(messages[0].channelId).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
   })
 
   // 029 F5 (T025): sem estas 3 peças o push do switch chega SEM botão — o schema e a copy
@@ -361,7 +364,7 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
       expect(msg.data.actions[0].params.stepId).toBe('step-1')
       // Time-sensitive NÃO é alarme: som e canal seguem os normais.
       expect(msg.sound).toBe('push_chime.wav')
-      expect(msg.channelId).toBe('dosiq-default-v1')
+      expect(msg.channelId).toBe(ANDROID_PUSH_CHANNEL.DEFAULT)
     })
 
     it('dose_change (sem ações) → active e sem categoria (§3.4)', async () => {

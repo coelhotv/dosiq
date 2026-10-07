@@ -276,6 +276,10 @@ export type { BodyMapFace, BodyMapRegion, BodyMapPoint, BodyMapBounds } from './
 // SemVer utilities (026 — Nudges In-App)
 export { compareSemver, satisfiesSemver } from './semver'
 
+// Canais Android do push remoto — fonte única servidor↔app (062 F3)
+export { ANDROID_PUSH_CHANNEL } from './androidPushChannels'
+export type { AndroidPushChannelId } from './androidPushChannels'
+
 // Nudge scheduler — lógica pura de seleção/filtragem (026)
 export {
   dismissKey,

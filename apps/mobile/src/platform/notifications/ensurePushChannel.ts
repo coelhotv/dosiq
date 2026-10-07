@@ -1,4 +1,4 @@
-// ensurePushChannel.js — canal Android do push remoto (expo-notifications) com o
+// ensurePushChannel.ts — canal Android do push remoto (expo-notifications) com o
 // som próprio do app (push_chime.wav).
 //
 // No Android 8+, o SOM de uma notificação é por-CANAL, não por-mensagem — o campo
@@ -10,9 +10,10 @@
 
 import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
+import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
 
-// Mantido em sync com o `channelId` enviado pelo server (expoPushChannel.js).
-export const PUSH_CHANNEL_ID = 'dosiq-default-v1'
+// Id vindo da constante única do core — o servidor envia o mesmo (062 F3, FR-014).
+export const PUSH_CHANNEL_ID = ANDROID_PUSH_CHANNEL.DEFAULT
 
 let ensured = false
 
