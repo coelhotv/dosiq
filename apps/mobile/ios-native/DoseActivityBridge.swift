@@ -78,9 +78,10 @@ class DoseActivityBridge: NSObject {
         let contentState = buildState(params)
         let instanceId = params["instanceId"] as? String ?? ""
         Task {
-            for activity in Activity<DoseActivityAttributes>.activities {
-                await activity.end(nil, dismissalPolicy: .immediate)
-            }
+            // Spec 101 C-13c: encerra as outras SÓ depois do `request` dar certo. Antes, um `request`
+            // recusado (app em background) já tinha derrubado a LA viva — inclusive a recriada pelo
+            // servidor — e a tela ficava sem nenhuma.
+            let previous = Activity<DoseActivityAttributes>.activities
             do {
                 // Spec 041 fix-up: pushType .token → o SO emite um token PER-ACTIVITY em
                 // `activity.pushTokenUpdates`. O backend usa esse token p/ push de update/end
@@ -93,6 +94,9 @@ class DoseActivityBridge: NSObject {
                     DoseActivityBridge.observeActivityPushToken(activity, instanceId: instanceId)
                 } else {
                     activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
+                }
+                for other in previous where other.id != activity.id {
+                    await other.end(nil, dismissalPolicy: .immediate)
                 }
                 resolve(activity.id)
             } catch {
@@ -132,12 +136,15 @@ class DoseActivityBridge: NSObject {
         guard #available(iOS 16.2, *) else { resolve(nil); return }
         let contentState = buildState(params)
         Task {
+            // Spec 101 C-13b: devolve quantas atualizou — 0 diz ao RN que a LA sumiu por fora e precisa recriar.
+            var count = 0
             for activity in Activity<DoseActivityAttributes>.activities {
                 await activity.update(
                     ActivityContent(state: contentState, staleDate: staleDate(params, contentState))
                 )
+                count += 1
             }
-            resolve(nil)
+            resolve(count)
         }
     }
 

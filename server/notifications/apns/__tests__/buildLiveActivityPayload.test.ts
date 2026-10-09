@@ -31,6 +31,14 @@ describe('buildLiveActivityStartPayload', () => {
     expect(p.attributes.instanceId).toBe('inst-1');
   });
 
+  it('🔴 101 C-15: datas do content-state em segundos desde 2001 (Date do ActivityKit), não epoch Unix', () => {
+    // Smoke iOS 2026-10-09: LA recriada pelo servidor mostrava timer de 271751 h (scheduledAt lido como 2057).
+    const p = buildLiveActivityStartPayload(item(), { now: NOW })!;
+    expect(p.contentState.scheduledAt).toBe(Date.parse(inUpcoming) / 1000 - 978307200);
+    // stale-date é campo do APNs (aps), continua em epoch Unix
+    expect(p.staleEpochSec).toBeGreaterThan(Date.parse('2026-01-01T00:00:00Z') / 1000);
+  });
+
   it('DEFAULT explícito (decisão PO 2026-06-29): mostra o nome (iOS não redige a LA)', () => {
     const p = buildLiveActivityStartPayload(item(), { now: NOW })!; // sem discreet → default
     expect(p.attributes.medicineName).toBe('Selozok');

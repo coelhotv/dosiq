@@ -15,6 +15,7 @@ import { deriveDoseActivityState, createCriticalAuditService, resolveInstanceMed
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { isSnoozeLiveActivityCapable } from './dispatchLiveActivityStarts.js'
+import { toActivityDateSec } from './buildLiveActivityPayload.js'
 
 interface Logger {
   info?: (...args: unknown[]) => void
@@ -100,11 +101,14 @@ function mapInstance(inst: DoseInstanceRow, snoozedUntil: string | null = null) 
   }
 }
 
-/** Epoch (s) do scheduled_for (R-020: parseISO, nunca Date cru). @private */
+/**
+ * `scheduledAt` do content-state (R-020: parseISO, nunca Date cru), no referencial de `Date` do
+ * ActivityKit — segundos desde 2001 (Spec 101 C-15). @private
+ */
 function scheduledEpochSec(inst: DoseInstanceRow, now: Date): number {
   const d = inst.scheduled_for ? parseISO(inst.scheduled_for) : null
   const ms = d && !Number.isNaN(d.getTime()) ? d.getTime() : now.getTime()
-  return Math.floor(ms / 1000)
+  return toActivityDateSec(ms)
 }
 
 /** Limpa o token+estado da LA da ocorrência (encerrada ou token morto). @private */
@@ -240,7 +244,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       state: derived.state,
       scheduledAt: scheduledEpochSec(inst, now),
       doneAtLabel: '',
-      ...(derived.nowUntil != null ? { nowUntil: Math.floor(derived.nowUntil / 1000) } : {}),
+      ...(derived.nowUntil != null ? { nowUntil: toActivityDateSec(derived.nowUntil) } : {}),
     },
   })
   return _handleUpdateOutcome(res, { supabase, logger, inst, derivedState: derived.state, emitTransition, emitFailed })

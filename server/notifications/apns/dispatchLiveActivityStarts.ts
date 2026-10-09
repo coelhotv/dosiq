@@ -399,7 +399,8 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
  * embarca a mudança (o pacote de loja é 0.34.0; a frota real está em ≤ 0.30.x). Abaixo disso o servidor não age: o bridge antigo recriaria a LA que
  * o servidor encerrasse, minuto a minuto (analysis-A C-8).
  */
-export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.12' // 1º build com a 101 (smoke); loja = 0.34.0
+// 0.33.12 matava a LA recriada ao subir em background (smoke iOS 2026-10-09, C-13) ⇒ corte em 0.33.13.
+export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.13' // 1º build com a 101 completa; loja = 0.34.0
 
 /** Algum device push-to-start ativo do usuário está em versão capaz? Versão nula/ilegível ⇒ não. */
 export function hasSnoozeCapableDevice(devices: Array<{ app_version?: unknown }> | null | undefined): boolean {
@@ -434,6 +435,21 @@ interface StartSnoozedParams {
   buildFn?: BuildFn
 }
 
+// C-14: o claim roda por minuto e reivindica a soneca do minuto corrente — até ~59 s ANTES de uma âncora
+// com segundos (soneca "agora + 5"). Folga para atraso do cron; além dela não antecipa a superfície.
+const SNOOZE_CLAIM_LEAD_MS = 90_000
+
+/**
+ * Instante em que a LA recriada nasce: a âncora, quando o claim a antecipou por segundos (senão o core
+ * deriva `null` — antes da âncora — e a recriação sai `skipped` em silêncio). @private
+ */
+function _claimInstant(snoozedUntil: unknown, now: Date): Date {
+  if (typeof snoozedUntil !== 'string' || snoozedUntil === '') return now // `snoozed_until` vem do banco (ISO)
+  const anchor = parseISO(snoozedUntil)
+  const ahead = anchor.getTime() - now.getTime()
+  return ahead > 0 && ahead <= SNOOZE_CLAIM_LEAD_MS ? anchor : now
+}
+
 /** FR-011: devices push-to-start do usuário SE algum está em versão capaz; senão null. @private */
 async function _snoozeCapableDevices(supabase: any, logger: Logger | undefined, userId: string) {
   const { data: devices, error } = await _fetchLiveActivityDevices(supabase, userId)
@@ -455,7 +471,7 @@ export async function startSnoozedLiveActivity({ supabase, logger, userId, item,
     if (!getApnsConfig()) return 'skipped'
     const devices = await _snoozeCapableDevices(supabase, logger, userId)
     if (!devices) return 'skipped'
-    const payload = buildFn(item as any, { discreet: false, now })
+    const payload = buildFn(item as any, { discreet: false, now: _claimInstant(item.snoozedUntil, now) })
     if (!payload) return 'skipped'
     const anySent = await _sendStartToDevices({ supabase, logger, userId, instanceId: item.instanceId, devices, payload, sendFn })
     await createCriticalAuditService({ client: supabase }).emit({

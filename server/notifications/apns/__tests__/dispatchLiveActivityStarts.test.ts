@@ -214,20 +214,42 @@ describe('startSnoozedLiveActivity (spec 101)', () => {
     delete process.env.APNS_TEAM_ID; delete process.env.APNS_BUNDLE_ID;
   });
 
-  it('🔴 PO-101-12: device em 0.33.12 (1º build com a 101) ⇒ 1 push-to-start em `now` com nowUntil, sem tocar la_push_started_at', async () => {
-    const supabase = makeSupabase([{ data: [dev('0.33.12')], error: null }]);
+  it('🔴 PO-101-12: device em 0.33.13 (1º build com a 101 completa) ⇒ 1 push-to-start em `now` com nowUntil, sem tocar la_push_started_at', async () => {
+    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
     const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
     const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });
     expect(r).toBe('sent');
     expect(sendFn).toHaveBeenCalledTimes(1);
     const cs = sendFn.mock.calls[0]![0].contentState;
     expect(cs.state).toBe('now');
-    expect(cs.nowUntil).toBe(Math.floor(CLAIM.getTime() / 1000) + 600);
+    expect(cs.nowUntil).toBe(Math.floor(CLAIM.getTime() / 1000) + 600 - 978307200); // Date do ActivityKit = s desde 2001
     expect(supabase._updates).not.toContainEqual(expect.objectContaining({ la_push_started_at: expect.anything() }));
   });
 
+  it('🔴 C-14: claim do minuto ANTES da âncora com segundos (soneca agora+5) ⇒ recria em `now` mesmo assim', async () => {
+    // Smoke iOS 2026-10-09: soneca 16:41:29.738, claim 16:41:03 ⇒ core devolvia null (antes da âncora) e
+    // a recriação saía `skipped` em silêncio.
+    const anchored = { ...item, snoozedUntil: '2026-07-01T12:35:29.738Z' };
+    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
+    const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
+    const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item: anchored, now: new Date('2026-07-01T12:35:03.000Z'), sendFn });
+    expect(r).toBe('sent');
+    const cs = sendFn.mock.calls[0]![0].contentState;
+    expect(cs.state).toBe('now');
+    expect(cs.nowUntil).toBe(Math.floor(Date.parse('2026-07-01T12:35:29.738Z') / 1000) + 600 - 978307200);
+  });
+
+  it('C-14: âncora longe no futuro (claim fora de hora) ⇒ não antecipa a superfície', async () => {
+    const far = { ...item, snoozedUntil: '2026-07-01T12:40:00.000Z' };
+    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
+    const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
+    const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item: far, now: CLAIM, sendFn });
+    expect(r).toBe('skipped');
+    expect(sendFn).not.toHaveBeenCalled();
+  });
+
   it('🔴 PO-101-12: device em 0.30.0 ou sem versão ⇒ 0 envios (cliente antigo = comportamento de hoje)', async () => {
-    for (const v of ['0.30.0', '0.33.11', null, 'lixo']) {
+    for (const v of ['0.30.0', '0.33.11', '0.33.12', null, 'lixo']) {
       const supabase = makeSupabase([{ data: [dev(v)], error: null }]);
       const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
       const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });

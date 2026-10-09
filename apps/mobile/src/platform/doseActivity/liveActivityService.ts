@@ -82,13 +82,18 @@ export async function startLiveActivity(activity, doseItem, { medicineLabel }: {
   }
 }
 
-/** Atualiza o estado da Live Activity ativa (transição sem recriar). */
-export async function updateLiveActivity(activity, doseItem, { medicineLabel }: { medicineLabel?: string } = {}) {
-  if (!available || !activity?.instanceId) return
+/**
+ * Atualiza o estado da Live Activity ativa (transição sem recriar).
+ * @returns {Promise<number|null>} quantas LAs nativas foram atualizadas (0 = nenhuma viva — Spec 101
+ *   C-13b: o bridge recria); null = indisponível/erro/nativo antigo (não sabe ⇒ não recria).
+ */
+export async function updateLiveActivity(activity, doseItem, { medicineLabel }: { medicineLabel?: string } = {}): Promise<number | null> {
+  if (!available || !activity?.instanceId) return null
   try {
-    await native.update(toParams(activity, doseItem, medicineLabel))
+    const n = await native.update(toParams(activity, doseItem, medicineLabel))
+    return typeof n === 'number' ? n : null
   } catch {
-    // best-effort
+    return null // best-effort
   }
 }
 
