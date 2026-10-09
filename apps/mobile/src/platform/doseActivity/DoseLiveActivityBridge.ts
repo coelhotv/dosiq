@@ -27,6 +27,7 @@ import {
   getRawNow,
   addDays,
   getTodayLocal,
+  formatTimePtBR,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
@@ -172,11 +173,10 @@ function buildRegisterParams(doseItem, fallbackTreatmentId) {
  */
 export function snoozeToastMessage(result) {
   if (!result || !Number.isFinite(result.fireAt)) return 'Não foi possível adiar esta dose agora.'
-  // fireAt é epoch ms (numérico, sem ambiguidade de tz — R-020 visa strings 'YYYY-MM-DD').
+  // Hora do aparelho, como o próprio alarme e o helper canônico (Hermes sem ICU: sem Intl/timeZone).
+  // fireAt é epoch ms — instante absoluto, sem a ambiguidade de 'YYYY-MM-DD' que o R-020 barra.
   // eslint-disable-next-line no-restricted-syntax
-  const d = new Date(result.fireAt)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `Alarme reagendado para ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `Alarme reagendado para ${formatTimePtBR(new Date(result.fireAt))}`
 }
 
 /**
