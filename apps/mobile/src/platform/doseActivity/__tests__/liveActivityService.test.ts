@@ -66,6 +66,17 @@ describe('liveActivityService — params', () => {
     expect(native.update.mock.calls[0][0].state).toBe('now')
   })
 
+  it('C-13b: update devolve quantas LAs nativas atualizou; nativo antigo (undefined) ⇒ null', async () => {
+    native.update.mockResolvedValueOnce(0)
+    expect(await updateLiveActivity(activity, doseItem)).toBe(0)
+    native.update.mockResolvedValueOnce(2)
+    expect(await updateLiveActivity(activity, doseItem)).toBe(2)
+    native.update.mockResolvedValueOnce(undefined)
+    expect(await updateLiveActivity(activity, doseItem)).toBeNull()
+    native.update.mockRejectedValueOnce(new Error('x'))
+    expect(await updateLiveActivity(activity, doseItem)).toBeNull()
+  })
+
   it('end encerra; activity sem instanceId → no-op no start', async () => {
     await endLiveActivity()
     expect(native.end).toHaveBeenCalledTimes(1)

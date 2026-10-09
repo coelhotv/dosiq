@@ -130,7 +130,7 @@ describe('dispatchLiveActivityLifecycle — soneca (spec 101)', () => {
     await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn(), isCapableFn: capable });
     const cs = updateFn.mock.calls[0]![0].contentState;
     expect(cs.state).toBe('now');
-    expect(cs.nowUntil).toBe(Math.floor((NOW.getTime() + 8 * 60000) / 1000));
+    expect(cs.nowUntil).toBe(Math.floor((NOW.getTime() + 8 * 60000) / 1000) - 978307200);
   });
 
   it('PO-101-10: depois de âncora+10 ⇒ relógio original (late)', async () => {

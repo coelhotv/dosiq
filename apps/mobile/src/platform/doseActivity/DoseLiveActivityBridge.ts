@@ -69,8 +69,16 @@ async function _clearActivityToken(instanceId) {
   }
 }
 
-/** Deriva a dose ativa (crítica pendente) e start/update/end a LA. Retorna o instanceId ativo. @private */
-async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
+/**
+ * Deriva a dose ativa (crítica pendente) e start/update/end a LA. Retorna o instanceId cuja LA este
+ * processo de fato mantém (ou null).
+ *
+ * Spec 101 C-13: só age em FOREGROUND. O push-to-start (recriação da soneca, start da janela) acorda o
+ * app em background; ali o `Activity.request` falha e o `start` encerrava a LA do servidor — em
+ * background quem dirige a LA é o servidor. E só marca a dose como armada quando a LA existe.
+ */
+export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, foreground = true }) {
+  if (!foreground) return prevInstanceId
   const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
@@ -105,7 +113,10 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
   }
   const doseItem = items.find((it) => it.instanceId === active.instanceId) || null
   if (prevInstanceId === active.instanceId) {
-    await updateLiveActivity(active, doseItem) // mesma dose → transição de estado sem recriar
+    // Mesma dose → transição de estado sem recriar. Nenhuma LA nativa atualizada (0) ⇒ ela sumiu por
+    // fora (encerrada pelo SO/servidor): recria (C-13b).
+    const updated = await updateLiveActivity(active, doseItem)
+    if (updated === 0 && !(await startLiveActivity(active, doseItem))) return null
   } else {
     // Trocou de dose: se a anterior foi tomada, confirma; senão encerra. Depois inicia a nova.
     if (prevInstanceId) {
@@ -114,7 +125,8 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
       else await endLiveActivity()
       await _clearActivityToken(prevInstanceId)
     }
-    await startLiveActivity(active, doseItem)
+    // C-13b: `start` falhou (LA desligada, background, iOS antigo) ⇒ nada armado; o próximo derive tenta.
+    if (!(await startLiveActivity(active, doseItem))) return null
   }
   // Fase 2: sincroniza o token per-Activity da LA ativa (idempotente; backend usa p/ update/end).
   await syncActivityToken(active.instanceId)
@@ -280,6 +292,7 @@ export default function DoseLiveActivityBridge() {
         protocols,
         tz,
         prevInstanceId: prevInstanceRef.current,
+        foreground: AppState.currentState === 'active',
       })
     } catch (err) {
       if (__DEV__) console.warn('[DoseLiveActivityBridge] derive falhou', err?.message)

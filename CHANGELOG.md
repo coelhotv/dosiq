@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Live Activity do iPhone volta de verdade depois de "Adiar" (spec 101, correção do smoke)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.12` → `0.33.13` só para build intermediário — não
+  é lançamento; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — muda código nativo
+  da Live Activity). Quando o servidor recriava a Live Activity no horário da soneca, o app, acordado
+  em segundo plano, a apagava em seguida e não conseguia criar outra; ao abrir o app, ela também não
+  voltava. Agora o app não mexe na Live Activity em segundo plano, só encerra a anterior depois de
+  criar a nova, e recria a Live Activity se ela tiver sumido.
+- **Backend/Infra** (`Fixed`, `patch` — deploy na Vercel no merge). A Live Activity não era recriada
+  quando a soneca terminava em segundos quebrados (soneca tocada depois do horário da dose). Agora é. A
+  recriação passa a valer só para o app `0.33.13` ou posterior.
+- **Backend/Infra** (`Fixed`, `patch`; corrige todas as versões do app já instaladas). A Live Activity
+  iniciada ou atualizada pelo servidor mostrava um contador absurdo (centenas de milhares de horas),
+  porque o horário da dose era enviado num formato de data que o iPhone lê como outro ano. Agora o
+  contador mostra o tempo certo.
+
 ### "Adiar" na dose essencial esconde o aviso fixo e nunca adianta o alarme (spec 101)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.11` → `0.33.12` só para build intermediário — não

@@ -49,6 +49,18 @@ function _resolveScheduledEpochSec(scheduledFor: string | Date | null | undefine
   return Number.isNaN(scheduledMs) ? Math.floor(nowMs / 1000) : Math.floor(scheduledMs / 1000)
 }
 
+/**
+ * Spec 101 C-15: segundos entre 1970-01-01 e 2001-01-01. O ActivityKit decodifica o content-state com o
+ * `JSONDecoder` padrão: número numa `Date` = segundos desde 2001 (`deferredToDate`), não epoch Unix.
+ * Mandar epoch Unix punha a data em 2057 (timer de 271751 h no smoke iOS 2026-10-09).
+ */
+export const APPLE_REFERENCE_EPOCH_SEC = 978307200
+
+/** Instante (epoch ms) → valor de uma `Date` do content-state da Live Activity. */
+export function toActivityDateSec(epochMs: number): number {
+  return Math.floor(epochMs / 1000) - APPLE_REFERENCE_EPOCH_SEC
+}
+
 type DerivedDoseState = ReturnType<typeof deriveDoseActivityState>
 
 /** Attributes explícitos por padrão (iOS não redige a LA pela config de privacidade). */
@@ -102,17 +114,18 @@ export function buildLiveActivityStartPayload(doseItem: DoseItem, { discreet = f
   const attributes = _buildAttributes(doseItem, derived, discreet)
 
   // ContentState — casa DoseActivityAttributes.ContentState (state, scheduledAt, doneAtLabel).
-  // ⚠️ scheduledAt em epoch SEGUNDOS: a estratégia de decode de Date do widget DEVE bater
+  // ⚠️ Datas em segundos desde 2001 (toActivityDateSec): é o decode padrão de Date do ActivityKit
   // (validação MANUAL em device — PO-1/PO-2). doneAtLabel vazio no start.
   // Spec 101 (D-2): `now` aberto pela soneca. O widget recalcula o estado só de scheduledAt; sem
-  // `nowUntil` mostraria `late`. Epoch em segundos, como scheduledAt. Chave ausente fora da soneca
+  // `nowUntil` mostraria `late`. Mesmo referencial de scheduledAt. Chave ausente fora da soneca
   // (payload idêntico ao de antes; widget antigo ignora a chave extra).
   const nowUntilSec = derived.nowUntil != null ? Math.floor(derived.nowUntil / 1000) : null
+  // Datas do content-state no referencial do ActivityKit (C-15); staleEpochSec abaixo é do APNs (Unix).
   const contentState = {
     state: derived.state,
-    scheduledAt: scheduledEpochSec,
+    scheduledAt: toActivityDateSec(scheduledEpochSec * 1000),
     doneAtLabel: '',
-    ...(nowUntilSec != null ? { nowUntil: nowUntilSec } : {}),
+    ...(derived.nowUntil != null ? { nowUntil: toActivityDateSec(derived.nowUntil) } : {}),
   }
 
   const boundaries = derived.scheduledFor ? doseActivityBoundaryTimes(derived.scheduledFor) : []
