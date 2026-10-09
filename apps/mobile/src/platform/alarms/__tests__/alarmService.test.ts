@@ -55,6 +55,26 @@ describe('cancelAll', () => {
     expect(notifee.cancelTriggerNotifications).toHaveBeenCalledTimes(1)
     expect(notifee.cancelNotification).not.toHaveBeenCalled()
   })
+
+  // Spec 101 (C-11, smoke 2026-10-09): o resync (`syncAlarms` → cancelAll) apagava também o boundary
+  // pendente da superfície (`<id>:surface`) e a cadeia congelava no estado exibido até o app abrir.
+  it('🔴 preserva os triggers da superfície; cancela só os de alarme', async () => {
+    ;(notifee.getTriggerNotificationIds as jest.Mock).mockResolvedValueOnce(['inst-1', 'inst-1:surface', 'inst-2'])
+    await cancelAll()
+    expect(notifee.cancelTriggerNotifications).toHaveBeenCalledWith(['inst-1', 'inst-2'])
+  })
+
+  it('só superfície pendente ⇒ nada a cancelar', async () => {
+    ;(notifee.getTriggerNotificationIds as jest.Mock).mockResolvedValueOnce(['inst-1:surface'])
+    await cancelAll()
+    expect(notifee.cancelTriggerNotifications).not.toHaveBeenCalled()
+  })
+
+  it('ids ilegíveis ⇒ cancela tudo como antes (nunca deixa alarme velho vivo)', async () => {
+    ;(notifee.getTriggerNotificationIds as jest.Mock).mockRejectedValueOnce(new Error('io'))
+    await cancelAll()
+    expect(notifee.cancelTriggerNotifications).toHaveBeenCalledWith()
+  })
 })
 
 describe('scheduleNag', () => {

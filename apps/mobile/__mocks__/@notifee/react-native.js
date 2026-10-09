@@ -16,6 +16,8 @@ const notifee = {
   getDisplayedNotifications: jest.fn(() => Promise.resolve([])),
   // 062 D-3: migração de canais legados
   getTriggerNotifications: jest.fn(() => Promise.resolve([])),
+  // Spec 101: null = "não sei" ⇒ a verificação do boundary não reage (testes antigos inalterados).
+  getTriggerNotificationIds: jest.fn(() => Promise.resolve(null)),
   deleteChannel: jest.fn(() => Promise.resolve()),
   getChannel: jest.fn(() => Promise.resolve(null)),
 }

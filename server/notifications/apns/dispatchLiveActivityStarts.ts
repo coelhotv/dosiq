@@ -12,7 +12,7 @@
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
-import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine } from '@dosiq/core'
+import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine, compareSemver } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
@@ -147,7 +147,7 @@ async function _alreadySignaledNoToken(supabase: any, logger: Logger | undefined
 async function _fetchLiveActivityDevices(supabase: any, userId: string) {
   return supabase
     .from('notification_devices')
-    .select('id, user_id, push_token, is_active')
+    .select('id, user_id, push_token, is_active, app_version')
     .eq('user_id', userId)
     .eq('provider', 'apns_liveactivity')
     .eq('is_active', true)
@@ -391,4 +391,79 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   }
 
   return result
+}
+
+/**
+ * Spec 101 (FR-011): versão mínima do app que sabe esconder a LA ao adiar e renderizar o `now` da
+ * soneca (`ContentState.nowUntil`). Mesmo critério da 062 F3-B: corta no 1º build intermediário que
+ * embarca a mudança (o pacote de loja é 0.34.0; a frota real está em ≤ 0.30.x). Abaixo disso o servidor não age: o bridge antigo recriaria a LA que
+ * o servidor encerrasse, minuto a minuto (analysis-A C-8).
+ */
+export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.12' // 1º build com a 101 (smoke); loja = 0.34.0
+
+/** Algum device push-to-start ativo do usuário está em versão capaz? Versão nula/ilegível ⇒ não. */
+export function hasSnoozeCapableDevice(devices: Array<{ app_version?: unknown }> | null | undefined): boolean {
+  return (devices || []).some((d) => {
+    const cmp = compareSemver(typeof d?.app_version === 'string' ? d.app_version : null, MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY)
+    return cmp !== null && cmp >= 0
+  })
+}
+
+/** Lê os devices push-to-start do usuário e responde FR-011. Erro ⇒ false (fail-safe: sem ação nova). */
+export async function isSnoozeLiveActivityCapable(supabase: any, logger: Logger | undefined, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await _fetchLiveActivityDevices(supabase, userId)
+    if (error) {
+      logger?.error?.('Falha ao ler app_version p/ soneca da LA (fail-safe: sem ação)', error, { userId })
+      return false
+    }
+    return hasSnoozeCapableDevice(data)
+  } catch {
+    return false
+  }
+}
+
+interface StartSnoozedParams {
+  supabase: any
+  logger?: Logger
+  userId: string
+  /** Dose no shape CON-029 COM `snoozedUntil` (âncora da soneca recém-reivindicada). */
+  item: Record<string, unknown> & { instanceId: string }
+  now?: Date
+  sendFn?: SendFn
+  buildFn?: BuildFn
+}
+
+/** FR-011: devices push-to-start do usuário SE algum está em versão capaz; senão null. @private */
+async function _snoozeCapableDevices(supabase: any, logger: Logger | undefined, userId: string) {
+  const { data: devices, error } = await _fetchLiveActivityDevices(supabase, userId)
+  if (error) {
+    logger?.error?.('Falha ao buscar dispositivos p/ recriar LA da soneca (fail-open)', error, { userId })
+    return null
+  }
+  return devices && devices.length > 0 && hasSnoozeCapableDevice(devices) ? devices : null
+}
+
+/**
+ * Spec 101 (FR-008 / ADR-110): recria a Live Activity no claim da soneca, já no estado `now`. Chamado
+ * pelo ciclo de lembretes DEPOIS do despacho, só para dose crítica adiada sem LA viva. Diferente do
+ * start da janela `upcoming`, NÃO usa a trava `la_push_started_at` (já preenchida desde o 1º start): a
+ * idempotência é o claim, que reivindica cada soneca uma única vez. Fail-open: nunca lança.
+ */
+export async function startSnoozedLiveActivity({ supabase, logger, userId, item, now = parseISO(getServerTimestamp()), sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload }: StartSnoozedParams): Promise<'sent' | 'skipped' | 'failed'> {
+  try {
+    if (!getApnsConfig()) return 'skipped'
+    const devices = await _snoozeCapableDevices(supabase, logger, userId)
+    if (!devices) return 'skipped'
+    const payload = buildFn(item as any, { discreet: false, now })
+    if (!payload) return 'skipped'
+    const anySent = await _sendStartToDevices({ supabase, logger, userId, instanceId: item.instanceId, devices, payload, sendFn })
+    await createCriticalAuditService({ client: supabase }).emit({
+      userId, doseInstanceId: item.instanceId, event: anySent ? 'push_sent' : 'push_failed', platform: 'server', actor: 'server', detail: null,
+    })
+    return anySent ? 'sent' : 'failed'
+  } catch (err) {
+    logger?.error?.('Recriação da LA da soneca falhou (fail-open)', err, { userId, instanceId: item?.instanceId })
+    return 'failed'
+  }
 }

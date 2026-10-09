@@ -73,6 +73,13 @@ jest.mock('../refusalNotice', () => ({
   showRefusalNotice: (...a: any[]) => mockShowRefusalNotice(...a),
 }))
 
+// Spec 101 (C-12): pular resolve a dose — a superfície dela sai de cena (cancel-on-resolve, AP-235).
+const mockEndDoseActivity = jest.fn((..._a: any[]) => Promise.resolve())
+jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
+  ...jest.requireActual('@platform/doseActivity/doseActivitySurfaceService'),
+  endDoseActivity: (...a: any[]) => mockEndDoseActivity(...a),
+}))
+
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
 import { isHandedOffToRegister, __resetRegisterHandoff } from '../registerHandoff'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
@@ -497,5 +504,28 @@ describe('handleAlarmAction — eventos de lembrete (065 AD-8)', () => {
   it('Tomei/Pular não contam como abertura', async () => {
     await handleAlarmAction(evt('dose-taken', BASE))
     expect(eventsOf('reminder_opened')).toEqual([])
+  })
+})
+
+describe('registerSkip — encerra a superfície da dose pulada (spec 101 C-12)', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  it('🔴 pulo aceito ⇒ endDoseActivity da dose (smoke: superfície ficava em "agora")', async () => {
+    await registerSkip(BASE)
+    expect(mockEndDoseActivity).toHaveBeenCalledWith('inst-1')
+  })
+
+  it('🔴 lote agrupado aceito ⇒ encerra a superfície de cada dose', async () => {
+    await registerSkip({ ...BASE, isGrouped: 'true', groupedDoses: JSON.stringify([{ instanceId: 'a' }, { instanceId: 'b' }]) })
+    expect(mockEndDoseActivity.mock.calls.map((c) => c[0]).sort()).toEqual(['a', 'b'])
+  })
+
+  it('recusa do banco ⇒ superfície intacta (dose segue pendente)', async () => {
+    mockSkipDose.mockImplementationOnce(() => Promise.reject(new Error('boom')))
+    await registerSkip(BASE)
+    expect(mockEndDoseActivity).not.toHaveBeenCalled()
   })
 })

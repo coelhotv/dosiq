@@ -42,6 +42,16 @@ jest.mock('@platform/analytics/productAnalytics', () => ({
   logEvent: (...args: any[]) => mockLogEvent(...args),
 }))
 
+// Spec 101: âncora local + ocultação da superfície (Android) só na soneca ACEITA.
+const mockSetAnchors = jest.fn((..._a: any[]) => Promise.resolve())
+jest.mock('../snoozeAnchorStore', () => ({
+  setSnoozeAnchors: (...a: any[]) => mockSetAnchors(...a),
+}))
+const mockDefer = jest.fn((..._a: any[]) => Promise.resolve())
+jest.mock('@platform/doseActivity/doseActivityScheduler', () => ({
+  deferDoseActivity: (...a: any[]) => mockDefer(...a),
+}))
+
 import { scheduleSnooze } from '../alarmService'
 
 const iso = (min: number) => new Date(Date.now() + min * 60000).toISOString()
@@ -196,5 +206,84 @@ describe('scheduleSnooze — contrato com o gate do servidor (082 D1 · E-2)', (
   it('dose NÃO-crítica não emite `snoozed` (o gate só olha crítica)', async () => {
     await scheduleSnooze({ ...CRITICA, isCritical: false })
     expect(mockEmit).not.toHaveBeenCalled()
+  })
+})
+
+// Spec 101 — FR-002 / FR-001 / FR-006: horário = max(agora, scheduled_for) + 5 min; soneca aceita
+// grava a âncora local, leva `snoozedUntil` no alarme e tira a superfície de cena.
+describe('scheduleSnooze — horário e âncora da soneca (spec 101)', () => {
+  const M = 60_000
+  // Relógio real (a guarda de janela lê `getRawNow`), congelado só para `Date.now`.
+  const NOW = Math.floor(Date.now() / M) * M
+  const at = (min: number) => new Date(NOW + min * M).toISOString()
+  const DOSE = {
+    doseInstanceId: 'inst-101', medicineName: 'Lantus', toleranceMinutes: 120,
+    earlyWindowMinutes: 120, currentSnoozeAttempt: 0, isCritical: true,
+  }
+  beforeEach(() => {
+    jest.spyOn(Date, 'now').mockReturnValue(NOW)
+  })
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+  const triggerTs = () => (notifee.createTriggerNotification as jest.Mock).mock.calls.at(-1)[1].timestamp
+
+  it('🔴 PO-101-4: adiar ANTES da hora (t0−42) ⇒ alarme em scheduled_for + 5, nunca antes de t0', async () => {
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(42) })
+    expect(triggerTs()).toBe(NOW + 47 * M)
+    expect(res).toEqual({ fireAt: NOW + 47 * M })
+    expect(mockSetSnoozedUntil).toHaveBeenCalledWith('inst-101', NOW + 47 * M)
+  })
+
+  it('PO-101-5: agora ≥ scheduled_for ⇒ agora + 5', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    expect(triggerTs()).toBe(NOW + 5 * M)
+  })
+
+  it('FM-8: scheduledFor inválido ⇒ agora + 5 (nunca NaN)', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: 'lixo' })
+    expect(triggerTs()).toBe(NOW + 5 * M)
+  })
+
+  it('🔴 `snoozed` leva detail.snoozedUntil = horário agendado (prova exata no servidor)', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(42) })
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'snoozed', detail: { snoozeAttempt: 1, snoozedUntil: NOW + 47 * M } }),
+    )
+  })
+
+  it('alarme da soneca carrega snoozedUntil (reconcile reaparece em now)', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    const notif = (notifee.createTriggerNotification as jest.Mock).mock.calls.at(-1)[0]
+    expect(notif.data.snoozedUntil).toBe(String(NOW + 5 * M))
+  })
+
+  it('PO-101-1/7: soneca aceita ⇒ âncora local + superfície adiada até snoozedUntil', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), data: { treatmentId: 'p1' } })
+    expect(mockSetAnchors).toHaveBeenCalledWith(['inst-101'], NOW + 5 * M, NOW)
+    expect(mockDefer).toHaveBeenCalledWith(
+      expect.objectContaining({ doseInstanceId: 'inst-101', snoozedUntil: String(NOW + 5 * M), treatmentId: 'p1' }),
+      NOW,
+    )
+  })
+
+  it('FM-10: alarme agrupado ⇒ âncora para todas, sem mexer em superfície', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), data: { isGrouped: 'true', doseInstanceIds: 'a,b' } })
+    expect(mockSetAnchors).toHaveBeenCalledWith(['a', 'b'], NOW + 5 * M, NOW)
+    expect(mockDefer).not.toHaveBeenCalled()
+  })
+
+  it('🔴 PO-101-3: recusa por tentativas esgotadas ⇒ sem âncora e superfície intocada', async () => {
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), currentSnoozeAttempt: 3 })
+    expect(res).toBe(false)
+    expect(mockSetAnchors).not.toHaveBeenCalled()
+    expect(mockDefer).not.toHaveBeenCalled()
+  })
+
+  it('🔴 PO-101-3: recusa fora da janela (early) ⇒ sem âncora e superfície intocada', async () => {
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(217), earlyWindowMinutes: 90 })
+    expect(res).toBe(false)
+    expect(mockSetAnchors).not.toHaveBeenCalled()
+    expect(mockDefer).not.toHaveBeenCalled()
   })
 })

@@ -124,11 +124,33 @@ export interface SnoozedInstance {
   snoozedUntil: string | null
 }
 
-/** O `snoozed` foi emitido pela soneca que gerou ESTE `snoozed_until`? */
-function _matchesCurrentSnooze(createdAt: string | null, snoozedUntil: string): boolean {
-  const createdMs = Date.parse(createdAt ?? '')
+// Spec 101: casamento exato pelo `detail.snoozedUntil` (app ≥ 0.33.12). Folga só para o arredondamento
+// de timestamptz/serialização — é o MESMO instante gravado em `snoozed_until`.
+export const SNOOZE_EVIDENCE_EXACT_TOLERANCE_MS = 2_000
+
+/** `detail.snoozedUntil` (epoch ms ou ISO) → ms; ausente → undefined; ilegível → NaN. @private */
+function _detailSnoozedUntilMs(detail: unknown): number | undefined {
+  const v = (detail as { snoozedUntil?: unknown } | null)?.snoozedUntil
+  if (v == null) return undefined
+  if (typeof v === 'number') return v
+  return typeof v === 'string' ? Date.parse(v) : Number.NaN
+}
+
+/**
+ * O `snoozed` foi emitido pela soneca que gerou ESTE `snoozed_until`?
+ *
+ * Spec 101: com `detail.snoozedUntil` o casamento é EXATO — a soneca antecipada grava
+ * `scheduled_for + 5 min`, longe do toque, e a janela abaixo a rejeitaria (o push sairia por cima do
+ * alarme). Valor presente e diferente NÃO cai na janela: é outra soneca. Sem o campo (frota antiga,
+ * sempre "agora + 5"), vale a janela de 082 D1 sem mudança.
+ */
+function _matchesCurrentSnooze(createdAt: string | null, snoozedUntil: string, detail: unknown = null): boolean {
   const untilMs = Date.parse(snoozedUntil)
-  if (Number.isNaN(createdMs) || Number.isNaN(untilMs)) return false
+  if (Number.isNaN(untilMs)) return false
+  const exactMs = _detailSnoozedUntilMs(detail)
+  if (exactMs !== undefined) return Math.abs(exactMs - untilMs) <= SNOOZE_EVIDENCE_EXACT_TOLERANCE_MS
+  const createdMs = Date.parse(createdAt ?? '')
+  if (Number.isNaN(createdMs)) return false
   const requestedMs = untilMs - SNOOZE_EVIDENCE_INTERVAL_MIN * 60_000
   return Math.abs(createdMs - requestedMs) <= SNOOZE_EVIDENCE_TOLERANCE_MIN * 60_000
 }
@@ -161,7 +183,7 @@ export async function findInstancesWithSnoozeEvidence(
     const chunk = ids.slice(i, i + ID_CHUNK_SIZE)
     const { data, error } = await client
       .from('dose_critical_events')
-      .select('dose_instance_id, created_at, platform')
+      .select('dose_instance_id, created_at, platform, detail')
       .eq('event', EVENT_SNOOZED)
       .in('platform', DEVICE_PLATFORMS)
       .in('dose_instance_id', chunk)
@@ -178,6 +200,7 @@ export async function findInstancesWithSnoozeEvidence(
       dose_instance_id: string | null
       created_at: string | null
       platform: string | null
+      detail?: unknown
     }>
 
     if (rows.length >= ROW_LIMIT) {
@@ -193,7 +216,7 @@ export async function findInstancesWithSnoozeEvidence(
       // Filtro de plataforma repetido aqui: o `.in` do banco é a primeira barreira, não a única.
       if (!row.dose_instance_id || !DEVICE_PLATFORMS.includes(row.platform ?? '')) continue
       const snoozedUntil = snoozedUntilById.get(row.dose_instance_id)
-      if (snoozedUntil && _matchesCurrentSnooze(row.created_at, snoozedUntil)) {
+      if (snoozedUntil && _matchesCurrentSnooze(row.created_at, snoozedUntil, row.detail)) {
         withEvidence.add(row.dose_instance_id)
       }
     }

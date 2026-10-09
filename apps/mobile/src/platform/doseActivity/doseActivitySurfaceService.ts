@@ -32,7 +32,7 @@ export const DOSE_ACTIVITY_CHANNEL_ID = 'dose-activity-v2'
 // seus boundaries (re-armados a cada foreground/60s) SOBRESCREVEM o trigger do alarme → o alarme NÃO
 // dispara no T0 (bug smoke 2026-06-29). Sufixo separa os dois namespaces. data.doseInstanceId segue
 // sendo o id REAL da dose (ações/registro/advance).
-const SURFACE_ID_SUFFIX = ':surface'
+export const SURFACE_ID_SUFFIX = ':surface'
 export const surfaceId = (instanceId) => `${instanceId}${SURFACE_ID_SUFFIX}`
 
 // CL-3 / T021a: count-up só nas primeiras ~2h de atraso. Acima disso (semanal/GLP-1, tolerância
@@ -139,6 +139,8 @@ function buildRegistrationData(activity, doseItem, discreet = false) {
     dosagePerPill: str(di.dosagePerPill),
     unitsPerMl: str(di.unitsPerMl),
     discreet: discreet ? 'true' : 'false',
+    // Spec 101: âncora da soneca — o próximo boundary (advance headless) segue ancorado.
+    snoozedUntil: str(di.snoozedUntil),
   }
 }
 

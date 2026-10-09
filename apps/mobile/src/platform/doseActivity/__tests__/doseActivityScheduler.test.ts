@@ -157,3 +157,77 @@ describe('reconcileDoseActivityFromAlarm — marca-passo do alarme mantém a cad
     expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
   })
 })
+
+// ─────────────────────────────────────────────
+// Spec 101 — soneca: superfície some até `snoozedUntil` e reaparece em `now`.
+// ─────────────────────────────────────────────
+describe('soneca na superfície (spec 101)', () => {
+  const { Platform } = require('react-native')
+  const originalOS = Platform.OS
+  beforeEach(() => {
+    Platform.OS = 'android'
+  })
+  afterEach(() => {
+    Platform.OS = originalOS
+  })
+  const { deferDoseActivity } = require('../doseActivityScheduler')
+  const snoozeData = (over = {}) => ({
+    doseInstanceId: 'inst-1',
+    scheduledFor: iso(-35), // dose de 35 min atrás (relógio original diria late)
+    toleranceMinutes: '120',
+    isCritical: 'true',
+    medicineName: 'Lantus',
+    scheduledTime: '17:00',
+    snoozedUntil: String(NOW.getTime() + 5 * M),
+    ...over,
+  })
+
+  it('🔴 PO-101-1: defer ⇒ encerra card + trigger e arma 1 trigger em snoozedUntil com payload now', async () => {
+    await deferDoseActivity(snoozeData(), NOW.getTime())
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1:surface')
+    expect(notifee.cancelTriggerNotification).toHaveBeenCalledWith('inst-1:surface')
+    expect(notifee.displayNotification).not.toHaveBeenCalled()
+    const [payload, trigger] = lastTrigger()
+    expect(trigger.timestamp).toBe(NOW.getTime() + 5 * M)
+    expect(payload.data.state).toBe('now')
+    expect(payload.data.__surfaceEnd).toBeUndefined()
+    expect(payload.data.snoozedUntil).toBe(String(NOW.getTime() + 5 * M)) // advance segue ancorado
+  })
+
+  it('R1: soneca antecipada (t0+5) não agenda END nos boundaries antes da âncora', async () => {
+    await deferDoseActivity(snoozeData({ scheduledFor: iso(42), snoozedUntil: String(NOW.getTime() + 47 * M) }), NOW.getTime())
+    const [payload, trigger] = lastTrigger()
+    expect(trigger.timestamp).toBe(NOW.getTime() + 47 * M)
+    expect(payload.data.state).toBe('now')
+  })
+
+  it('defer fora do Android / não-crítica / sem âncora → no-op', async () => {
+    Platform.OS = 'ios'
+    await deferDoseActivity(snoozeData(), NOW.getTime())
+    Platform.OS = 'android'
+    await deferDoseActivity(snoozeData({ isCritical: 'false' }), NOW.getTime())
+    await deferDoseActivity(snoozeData({ snoozedUntil: '' }), NOW.getTime())
+    expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
+    expect(notifee.cancelNotification).not.toHaveBeenCalled()
+  })
+
+  it('🔴 PO-101-1/AC-1.4: alarme de soneca entregue em snoozedUntil ⇒ reaparece em now (não late)', async () => {
+    const at = new Date(NOW.getTime() + 5 * M)
+    await reconcileDoseActivityFromAlarm(snoozeData(), at)
+    const shown = (notifee.displayNotification as jest.Mock).mock.calls.at(-1)[0]
+    expect(shown.data.state).toBe('now')
+    expect(shown.body).toContain('Dose crítica agora')
+    // próximo boundary = âncora+10 → relógio original (late)
+    const [payload, trigger] = lastTrigger()
+    expect(trigger.timestamp).toBe(at.getTime() + 10 * M)
+    expect(payload.data.state).toBe('late')
+  })
+
+  it('advance com snoozedUntil em ISO (vindo do banco) também ancora', async () => {
+    const data = { ...snoozeData({ snoozedUntil: new Date(NOW.getTime() + 5 * M).toISOString() }), __surface: 'true' }
+    await advanceDoseActivity(data, NOW)
+    const [payload, trigger] = lastTrigger()
+    expect(trigger.timestamp).toBe(NOW.getTime() + 5 * M)
+    expect(payload.data.state).toBe('now')
+  })
+})

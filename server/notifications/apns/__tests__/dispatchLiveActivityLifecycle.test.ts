@@ -105,3 +105,77 @@ describe('dispatchLiveActivityLifecycle', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 });
+
+// Spec 101: FR-009 (âncora da soneca no lifecycle), C-5 (limiar +2 min) e C-6 (encerrar a LA enquanto
+// adiada). Tudo atrás do corte de versão FR-011 — cliente antigo vê exatamente o lifecycle de hoje.
+describe('dispatchLiveActivityLifecycle — soneca (spec 101)', () => {
+  beforeEach(() => {
+    process.env.APNS_AUTH_KEY = Buffer.from(TEST_P8).toString('base64');
+    process.env.APNS_KEY_ID = 'KEY123';
+    process.env.APNS_TEAM_ID = 'TEAM123';
+    process.env.APNS_BUNDLE_ID = 'com.x.dosiq';
+  });
+  afterEach(() => {
+    vi.clearAllMocks();
+    delete process.env.APNS_AUTH_KEY; delete process.env.APNS_KEY_ID;
+    delete process.env.APNS_TEAM_ID; delete process.env.APNS_BUNDLE_ID;
+  });
+  const capable = vi.fn(() => Promise.resolve(true));
+  const old = vi.fn(() => Promise.resolve(false));
+  const ok = (_p: any) => Promise.resolve({ ok: true, status: 200 });
+
+  it('🔴 PO-101-10: claim de soneca (notified_at = t0+33) ⇒ update em `now` com nowUntil, não `late`', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-35), notified_at: at(-2), la_push_state: 'late' })]);
+    const updateFn = vi.fn(ok);
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn(), isCapableFn: capable });
+    const cs = updateFn.mock.calls[0]![0].contentState;
+    expect(cs.state).toBe('now');
+    expect(cs.nowUntil).toBe(Math.floor((NOW.getTime() + 8 * 60000) / 1000));
+  });
+
+  it('PO-101-10: depois de âncora+10 ⇒ relógio original (late)', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-45), notified_at: at(-11), la_push_state: 'now' })]);
+    const updateFn = vi.fn(ok);
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn(), isCapableFn: capable });
+    expect(updateFn.mock.calls[0]![0].contentState.state).toBe('late');
+  });
+
+  it('C-5: claim normal (notified_at segundos após scheduled_for) não vira âncora', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-35), notified_at: new Date(NOW.getTime() - 35 * 60000 + 30_000).toISOString(), la_push_state: 'now' })]);
+    const updateFn = vi.fn(ok);
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn(), isCapableFn: capable });
+    expect(updateFn.mock.calls[0]![0].contentState.state).toBe('late');
+  });
+
+  it('🔴 C-6: dose adiada com LA viva ⇒ end imediato + limpa token (o claim a recria)', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-30), snoozed_until: at(5), la_push_state: 'late' })]);
+    const endFn = vi.fn(ok);
+    const updateFn = vi.fn();
+    const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn, isCapableFn: capable });
+    expect(endFn).toHaveBeenCalledTimes(1);
+    expect(endFn.mock.calls[0]![0].dismissEpochSec).toBe(Math.floor(NOW.getTime() / 1000));
+    expect(updateFn).not.toHaveBeenCalled();
+    expect(supabase._updates).toContainEqual({ la_push_token: null, la_push_state: null });
+    expect(r.ended).toBe(1);
+  });
+
+  it('🔴 PO-101-12: cliente antigo ⇒ lifecycle de hoje (sem end por soneca, sem âncora)', async () => {
+    const supabase = makeSupabase([
+      row({ id: 'a', scheduled_for: at(-30), snoozed_until: at(5), la_push_state: 'now' }),
+      row({ id: 'b', scheduled_for: at(-35), notified_at: at(-2), la_push_state: 'now' }),
+    ]);
+    const endFn = vi.fn(ok);
+    const updateFn = vi.fn(ok);
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn, isCapableFn: old });
+    expect(endFn).not.toHaveBeenCalled();
+    expect(updateFn).toHaveBeenCalledTimes(2);
+    expect(updateFn.mock.calls.every((c: any[]) => c[0].contentState.state === 'late' && !('nowUntil' in c[0].contentState))).toBe(true);
+  });
+
+  it('linha sem soneca nem âncora não consulta a versão', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(0) })]);
+    const isCapableFn = vi.fn(() => Promise.resolve(true));
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn: vi.fn(ok), endFn: vi.fn(), isCapableFn });
+    expect(isCapableFn).not.toHaveBeenCalled();
+  });
+});

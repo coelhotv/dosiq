@@ -60,4 +60,20 @@ describe('syncAlarms — soneca re-armada no resync', () => {
     const arg = mockedScheduleAlarm.mock.calls[0][0]
     expect(arg.fireAt).toBeUndefined()
   })
+
+  it('🔴 PO-101-8: soneca antecipada (snoozed_until = scheduled+5, antes de t0) ⇒ só o alarme da soneca, nenhum em t0', async () => {
+    const t0 = NOW.getTime() + 30 * 60000
+    const snoozedTs = t0 + 5 * 60000
+    mockItems = [baseItem({ scheduledFor: new Date(t0).toISOString(), snoozedUntil: snoozedTs })]
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(alarmService.scheduleAlarm).toHaveBeenCalledTimes(1)
+    expect(mockedScheduleAlarm.mock.calls[0][0].fireAt).toBe(snoozedTs)
+  })
+
+  it('spec 101: alarme da soneca re-armado no resync leva snoozedUntil no data (reconcile reaparece em now)', async () => {
+    const snoozedTs = NOW.getTime() + 5 * 60000
+    mockItems = [baseItem({ snoozedUntil: snoozedTs })]
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(mockedScheduleAlarm.mock.calls[0][0].data.snoozedUntil).toBe(String(snoozedTs))
+  })
 })

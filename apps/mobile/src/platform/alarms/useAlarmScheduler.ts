@@ -152,7 +152,9 @@ async function _scheduleSnoozedAlarms(snoozed: any[]) {
       toleranceMinutes: it.toleranceMinutes,
       earlyWindowMinutes: it.earlyWindowMinutes, // 067 A2 (FR-024): o client lê, nunca recalcula
       isCritical: it.critical,
-      data: buildSingleAlarmData(it),
+      // Spec 101: âncora no alarme re-armado — o `cancelAll` do resync matou o trigger original, que a
+      // levava; sem ela o disparo reconcilia a superfície em `late` em vez de `now`.
+      data: { ...buildSingleAlarmData(it), snoozedUntil: String(it.snoozeFireAt) },
       fireAt: it.snoozeFireAt,
     })
   }

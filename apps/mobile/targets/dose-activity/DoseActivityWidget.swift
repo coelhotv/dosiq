@@ -189,6 +189,9 @@ private func doneCard(_ doneAtLabel: String, color: Color) -> some View {
 // 10..60 · now ±10 · late < -10). `done` vem do campo (registro). `missed` não chega aqui (JS encerra).
 private func displayState(_ s: DoseActivityAttributes.ContentState, now: Date = Date()) -> String {
     if s.state == "done" || s.state == "missed" { return s.state }
+    // Spec 101: dose adiada reaparece em `now` até `nowUntil`, mesmo com scheduledAt no passado; depois
+    // volta ao relógio original (staleDate = nowUntil re-renderiza sozinho, D-1 = A).
+    if let until = s.nowUntil, now < until { return "now" }
     let d = s.scheduledAt.timeIntervalSince(now) / 60.0
     if d >= 60 { return "later" }
     if d >= 10 { return "upcoming" }

@@ -40,9 +40,11 @@ function _resolveMedicineName(activity: any, doseItem: any, medicineName?: strin
   return 'Dose'
 }
 
-function _getStaleDateMs(scheduledFor: string | undefined, tol: number | null, nowMs: number): number | null {
+function _getStaleDateMs(scheduledFor: string | undefined, tol: number | null, nowMs: number, snoozedUntil: any = null): number | null {
   if (!scheduledFor) return null
-  const boundaries = doseActivityBoundaryTimes(scheduledFor, tol)
+  // Spec 101: com âncora, o próximo boundary é o fim do `now` da soneca (o widget re-renderiza e cai
+  // no relógio original sozinho).
+  const boundaries = doseActivityBoundaryTimes(scheduledFor, tol, {}, snoozedUntil ?? null)
   return boundaries.find((b) => b > nowMs) ?? null
 }
 
@@ -50,7 +52,7 @@ function toParams(activity: any, doseItem: any, medicineName?: string) {
   const nowMs = getRawNow().getTime()
   const scheduledAtMs = doseItem?.scheduledFor ? parseISO(doseItem.scheduledFor).getTime() : nowMs
   const tol = _getTolerance(doseItem)
-  const staleDateMs = _getStaleDateMs(doseItem?.scheduledFor, tol, nowMs)
+  const staleDateMs = _getStaleDateMs(doseItem?.scheduledFor, tol, nowMs, doseItem?.snoozedUntil)
   const name = _resolveMedicineName(activity, doseItem, medicineName)
 
   return {
@@ -65,6 +67,8 @@ function toParams(activity: any, doseItem: any, medicineName?: string) {
     scheduledAtMs,
     doneAtLabel: '',
     ...(staleDateMs ? { staleDateMs } : {}),
+    // Spec 101 (D-2): o widget mostra `now` até aqui mesmo com scheduledAt no passado.
+    ...(activity.nowUntil ? { nowUntilMs: activity.nowUntil } : {}),
   }
 }
 

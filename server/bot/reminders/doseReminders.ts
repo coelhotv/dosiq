@@ -3,7 +3,7 @@ import { createLogger } from '../logger.js';
 import { shouldSendGroupedNotification } from '../../services/notificationDeduplicator.js';
 import { getCurrentTime, getProtocolPeriodPrefilter, getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { dispatchLiveActivityStarts } from '../../notifications/apns/dispatchLiveActivityStarts.js';
+import { dispatchLiveActivityStarts, startSnoozedLiveActivity } from '../../notifications/apns/dispatchLiveActivityStarts.js';
 import { dispatchLiveActivityLifecycle } from '../../notifications/apns/dispatchLiveActivityLifecycle.js';
 import {
   resolveInstanceMedicine,
@@ -109,7 +109,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   // dose por tomada, unidade de tomada, plano) — nunca mais pela identidade do medicamento.
   const selectFields = `
     id, user_id, protocol_id, critical_alarm, scheduled_for, medicine_id,
-    notified_at, snoozed_until,
+    notified_at, snoozed_until, la_push_token, tolerance_minutes,
     medicine:medicines(name, dosage_unit, dosage_per_pill),
     protocol:protocols(
       id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
@@ -291,7 +291,50 @@ function mapInstanceToDose(inst) {
     scheduledFor: inst.scheduled_for ?? null,
     // Estado PRÉ-claim: define qual predicado reivindica esta dose e o que o release restaura.
     ..._claimStateOf(inst),
+    ..._surfaceStateOf(inst),
   };
+}
+
+/**
+ * Spec 101 (FR-008): o que a recriação da Live Activity na soneca precisa saber — se há LA viva
+ * (`la_push_token`) e a tolerância da dose (cutoff do `now` reaparecido). @private
+ */
+function _surfaceStateOf(inst) {
+  return {
+    laPushToken: inst.la_push_token ?? null,
+    toleranceMinutes: inst.tolerance_minutes ?? null,
+  };
+}
+
+/**
+ * Spec 101 (FR-008 / ADR-110): dose crítica ADIADA, reivindicada agora e sem LA viva ⇒ recria a Live
+ * Activity iOS em `now` por push-to-start. Roda DEPOIS do despacho: nunca atrasa nem condiciona o push
+ * (INV-5). Idempotência = o claim (cada soneca é reivindicada uma vez). O corte por versão do app
+ * (FR-011) fica dentro de `startSnoozedLiveActivity`. Fail-open por dose.
+ * @private
+ */
+async function _recreateSnoozedLiveActivities(userId, doses) {
+  const targets = (doses || []).filter(d => d.critical_alarm === true && d.snoozedUntil && !d.laPushToken);
+  for (const d of targets) {
+    try {
+      await startSnoozedLiveActivity({
+        supabase,
+        logger,
+        userId,
+        item: {
+          instanceId: d.instanceId,
+          scheduledFor: d.scheduledFor,
+          snoozedUntil: d.snoozedUntil,
+          toleranceMinutes: d.toleranceMinutes,
+          critical_alarm: true,
+          medicineName: d.medicineName,
+          treatmentPlanId: d.treatmentPlanId,
+        },
+      });
+    } catch (err) {
+      logger.error('Recriação da LA da soneca falhou (fail-open)', err, { userId, instanceId: d.instanceId });
+    }
+  }
 }
 
 /**
@@ -425,9 +468,13 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
     });
     // Devolve a dose ao estado pré-claim — falha de push não pode consumir a dose em silêncio.
     await _releaseInstances(claimedBlock.doses, claimedIds, claimedAt);
-  } else if (claimError) {
-    await _updateNotifiedAt(instanceIdsInBlock);
+    return;
   }
+  if (claimError) {
+    await _updateNotifiedAt(instanceIdsInBlock);
+    return;
+  }
+  await _recreateSnoozedLiveActivities(userId, claimedBlock.doses);
 }
 
 /**

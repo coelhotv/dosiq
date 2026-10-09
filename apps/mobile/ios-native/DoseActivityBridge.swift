@@ -31,8 +31,11 @@ class DoseActivityBridge: NSObject {
         let state = p["state"] as? String ?? "upcoming"
         let doneAtLabel = p["doneAtLabel"] as? String ?? ""
         let ms = p["scheduledAtMs"] as? Double ?? (Date().timeIntervalSince1970 * 1000)
+        // Spec 101: fim do `now` da soneca (JS `nowUntilMs`); ausente = relógio original.
+        let nowUntil = (p["nowUntilMs"] as? Double).map { Date(timeIntervalSince1970: $0 / 1000) }
         return DoseActivityAttributes.ContentState(
-            state: state, scheduledAt: Date(timeIntervalSince1970: ms / 1000), doneAtLabel: doneAtLabel
+            state: state, scheduledAt: Date(timeIntervalSince1970: ms / 1000), doneAtLabel: doneAtLabel,
+            nowUntil: nowUntil
         )
     }
 

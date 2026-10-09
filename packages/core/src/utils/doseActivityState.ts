@@ -53,6 +53,9 @@ interface DoseActivityItemInput {
   critical_alarm?: boolean
   medicineName?: string | null
   medicine?: { name?: string | null } | null
+  // Spec 101: âncora da soneca (fim do adiamento). Vem do banco (`snoozed_until`) ou da âncora local.
+  snoozedUntil?: string | Date | number | null
+  snoozed_until?: string | Date | number | null
 }
 
 interface SurfaceWindows {
@@ -72,6 +75,12 @@ export interface DoseActivityState {
   isCritical: boolean
   isRegistered: boolean
   medicineLabel: string
+  /**
+   * Spec 101: fim (epoch ms) do `now` aberto pela âncora da soneca; `null` fora dela. As superfícies
+   * que recalculam o estado sozinhas (widget iOS) precisam disto para não cair em `late` pelo relógio
+   * original durante a janela da soneca.
+   */
+  nowUntil: number | null
 }
 
 /**
@@ -125,6 +134,22 @@ function instantMs(scheduledFor: string | Date | null | undefined): number | nul
   if (!scheduledFor) return null
   const ms = scheduledFor instanceof Date ? scheduledFor.getTime() : parseISO(scheduledFor).getTime()
   return Number.isNaN(ms) ? null : ms
+}
+
+/** Aceita epoch ms além de ISO/Date (a âncora local guarda ms). @private */
+function anchorInstantMs(v: string | Date | number | null | undefined): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null
+  return instantMs(v)
+}
+
+/**
+ * Âncora da soneca válida (Spec 101): instante parseável e NÃO anterior ao horário da dose. Soneca
+ * gravada antes de `scheduledFor` (cliente antigo, sem FR-002) é ignorada — o relógio original manda.
+ * @private
+ */
+function validSnoozeAnchor(anchor: string | Date | number | null | undefined, scheduledMs: number): number | null {
+  const a = anchorInstantMs(anchor)
+  return a !== null && a >= scheduledMs ? a : null
 }
 
 /**
@@ -188,15 +213,27 @@ export function deriveDoseActivityState(
   const ms = instantMs(scheduledFor)
 
   let state: DoseActivityStateValue
+  let nowUntil: number | null = null
   if (isRegistered) {
     state = DOSE_ACTIVITY_STATES.DONE
   } else {
     if (ms === null) return null // instante inválido/ausente → sem superfície
-    const diffMinutes = (ms - nowDate.getTime()) / 60000
     const w = { ...SURFACE_WINDOWS, ...opts }
-    const resolved = resolveSurfaceState(diffMinutes, toleranceMinutes, w)
-    if (resolved === null) return null // distante demais → sem superfície
-    state = resolved
+    const nowMs = nowDate.getTime()
+    // Spec 101 (D-1 = A): enquanto adiada a dose não tem superfície; da âncora até âncora+nowAfter é
+    // `now`; depois volta ao relógio original — cutoff (`missed`) inclusive, nunca deslocado.
+    const anchor = validSnoozeAnchor(pick<string | Date | number>(item, 'snoozedUntil', 'snoozed_until'), ms)
+    if (anchor !== null && nowMs < anchor) return null
+    const cutoffMs = ms + (toleranceMinutes ?? w.lateMinutes) * 60000
+    const anchorNowEnd = anchor === null ? null : anchor + w.nowAfterMinutes * 60000
+    if (anchorNowEnd !== null && nowMs < anchorNowEnd && nowMs < cutoffMs) {
+      state = DOSE_ACTIVITY_STATES.NOW
+      nowUntil = anchorNowEnd
+    } else {
+      const resolved = resolveSurfaceState((ms - nowMs) / 60000, toleranceMinutes, w)
+      if (resolved === null) return null // distante demais → sem superfície
+      state = resolved
+    }
   }
 
   const remainingSeconds = ms === null ? null : Math.round((ms - nowDate.getTime()) / 1000)
@@ -210,6 +247,7 @@ export function deriveDoseActivityState(
     isCritical: item.critical === true || item.critical_alarm === true,
     isRegistered,
     medicineLabel: item.medicineName ?? item.medicine?.name ?? 'Dose',
+    nowUntil,
   }
 }
 
@@ -222,26 +260,34 @@ export function deriveDoseActivityState(
  * @param {string|Date} scheduledFor - instante agendado
  * @param {number|null} [toleranceMinutes] - tolerância da ocorrência (?? lateMinutes)
  * @param {Object} [opts] - override das janelas (mesmo de deriveDoseActivityState)
+ * @param {string|Date|number|null} [snoozedUntil] - Spec 101: âncora da soneca. Boundaries antes
+ *   dela saem (derivariam `null` e o scheduler gravaria um END que mata a cadeia — R1); entram a
+ *   âncora (reaparece em `now`) e âncora+nowAfter (volta ao relógio original).
  * @returns {number[]} timestamps absolutos (ms) ordenados asc; [] se instante inválido
  */
 export function doseActivityBoundaryTimes(
   scheduledFor: string | Date | null | undefined,
   toleranceMinutes: number | null = null,
-  opts: Partial<SurfaceWindows> = {}
+  opts: Partial<SurfaceWindows> = {},
+  snoozedUntil: string | Date | number | null = null
 ): number[] {
   const ms = instantMs(scheduledFor)
   if (ms === null) return []
   const w = { ...SURFACE_WINDOWS, ...opts }
   const tol = toleranceMinutes ?? w.lateMinutes
   const M = 60000
-  return [
+  const base = [
     ms - w.laterMinutes * M, // entra later (aparece)
     ms - w.upcomingMinutes * M, // later → upcoming (começa countdown)
     ms - w.nowBeforeMinutes * M, // upcoming → now
     ms, // horário: countdown para → "agora" estático
     ms + w.nowAfterMinutes * M, // now → late (count-up)
     ms + tol * M, // late → missed (encerra)
-  ].sort((a, b) => a - b)
+  ]
+  const anchor = validSnoozeAnchor(snoozedUntil, ms)
+  if (anchor === null) return base.sort((a, b) => a - b)
+  const kept = base.filter((t) => t >= anchor)
+  return [...new Set([...kept, anchor, anchor + w.nowAfterMinutes * M])].sort((a, b) => a - b)
 }
 
 /**

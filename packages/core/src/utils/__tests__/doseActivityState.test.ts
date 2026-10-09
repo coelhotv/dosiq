@@ -334,3 +334,97 @@ describe('selectActiveDoseActivity — agrupamento por plano (1 superfície, nun
     expect(winner.groupSize).toBe(1) // done não conta no grupo actionável
   })
 })
+
+// ─────────────────────────────────────────────
+// Spec 101 — âncora da soneca (`snoozedUntil`): oculta até a soneca, `now` por 10 min a partir
+// dela, depois relógio original (D-1 = A). `now` fixo = BASE; offsets relativos a "agora".
+// ─────────────────────────────────────────────
+describe('deriveDoseActivityState — âncora da soneca (spec 101)', () => {
+  it('antes de snoozedUntil → null (superfície oculta), mesmo com a dose em upcoming/late', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(30), snoozedUntil: iso(35) }), now)).toBeNull()
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-30), snoozedUntil: iso(5) }), now)).toBeNull()
+  })
+
+  it('em snoozedUntil → now com nowUntil = âncora+10min, mesmo se o relógio original diria late', () => {
+    const st = deriveDoseActivityState(item({ scheduledFor: iso(-35), snoozedUntil: iso(0) }), now)
+    expect(st.state).toBe(DOSE_ACTIVITY_STATES.NOW)
+    expect(st.nowUntil).toBe(BASE_MS + 10 * 60_000)
+    // contador segue ancorado no horário ORIGINAL (D-1 = A): remainingSeconds negativo
+    expect(st.remainingSeconds).toBe(-35 * 60)
+  })
+
+  it('âncora+10min → volta ao relógio original (late), nowUntil null', () => {
+    const st = deriveDoseActivityState(item({ scheduledFor: iso(-45), snoozedUntil: iso(-10) }), now)
+    expect(st.state).toBe(DOSE_ACTIVITY_STATES.LATE)
+    expect(st.nowUntil).toBeNull()
+  })
+
+  it('soneca antecipada (snoozedUntil = t0+5): oculta antes, now em t0+5', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(5), snoozedUntil: iso(10) }), now)).toBeNull()
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-5), snoozedUntil: iso(0) }), now).state).toBe(
+      DOSE_ACTIVITY_STATES.NOW
+    )
+  })
+
+  it('FM-5/6: reaparecimento além da tolerância → missed (cutoff original manda)', () => {
+    const st = deriveDoseActivityState(
+      item({ scheduledFor: iso(-62), toleranceMinutes: 60, snoozedUntil: iso(-2) }),
+      now
+    )
+    expect(st.state).toBe(DOSE_ACTIVITY_STATES.MISSED)
+  })
+
+  it('FM-1/2: snoozedUntil null/inválido → regra atual intacta', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-35), snoozedUntil: null }), now).state).toBe(
+      DOSE_ACTIVITY_STATES.LATE
+    )
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-35), snoozedUntil: 'lixo' }), now).state).toBe(
+      DOSE_ACTIVITY_STATES.LATE
+    )
+  })
+
+  it('FM-4: snoozedUntil antes de scheduledFor (soneca legada) → ignorado', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(30), snoozedUntil: iso(20) }), now).state).toBe(
+      DOSE_ACTIVITY_STATES.UPCOMING
+    )
+  })
+
+  it('aceita a forma crua snake_case (snoozed_until)', () => {
+    expect(
+      deriveDoseActivityState({ id: 'x', scheduled_for: iso(-35), snoozed_until: iso(5), status: 'pending' }, now)
+    ).toBeNull()
+  })
+
+  it('selectActiveDoseActivity: dose adiada cede a superfície a outra (R5)', () => {
+    const sel = selectActiveDoseActivity(
+      [
+        item({ instanceId: 'adiada', scheduledFor: iso(-35), snoozedUntil: iso(5), critical: true }),
+        item({ instanceId: 'outra', scheduledFor: iso(30), critical: true }),
+      ],
+      now
+    )
+    expect(sel.instanceId).toBe('outra')
+  })
+})
+
+describe('doseActivityBoundaryTimes — âncora da soneca (spec 101, R1)', () => {
+  const M = 60_000
+  it('sem âncora → idêntico ao comportamento atual', () => {
+    expect(doseActivityBoundaryTimes(iso(0), 120, {}, null)).toEqual(doseActivityBoundaryTimes(iso(0), 120))
+  })
+
+  it('remove boundaries antes da âncora e inclui âncora e âncora+10min', () => {
+    const t0 = BASE_MS
+    const b = doseActivityBoundaryTimes(iso(0), 120, {}, iso(35))
+    expect(b.every((t) => t >= t0 + 35 * M)).toBe(true)
+    expect(b).toContain(t0 + 35 * M)
+    expect(b).toContain(t0 + 45 * M)
+    expect(b).toContain(t0 + 120 * M) // cutoff original preservado
+  })
+
+  it('âncora inválida ou anterior ao horário → ignorada', () => {
+    const base = doseActivityBoundaryTimes(iso(0), 120)
+    expect(doseActivityBoundaryTimes(iso(0), 120, {}, 'lixo')).toEqual(base)
+    expect(doseActivityBoundaryTimes(iso(0), 120, {}, iso(-20))).toEqual(base)
+  })
+})

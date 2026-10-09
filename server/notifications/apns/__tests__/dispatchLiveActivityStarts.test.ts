@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
-import { dispatchLiveActivityStarts } from '../dispatchLiveActivityStarts';
+import { dispatchLiveActivityStarts, startSnoozedLiveActivity } from '../dispatchLiveActivityStarts';
 
 const TEST_P8 = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' });
 
@@ -190,5 +190,62 @@ describe('dispatchLiveActivityStarts', () => {
     expect(bounds.lte).toBe(new Date(NOW.getTime() + 60 * 60000).toISOString()); // fim = now + 60min
     expect(sendFn).toHaveBeenCalledTimes(1);                                      // dose a 18min ENTROU
     expect(r.sent).toBe(1);
+  });
+});
+
+// Spec 101 FR-008/FR-011: recriação da LA no claim da soneca. Sem trava `la_push_started_at` (a
+// idempotência é o próprio claim) e só para device apns_liveactivity em app_version ≥ 0.34.0.
+describe('startSnoozedLiveActivity (spec 101)', () => {
+  const CLAIM = new Date('2026-07-01T12:35:00.000Z');
+  const item = {
+    instanceId: 'inst-1', scheduledFor: '2026-07-01T12:00:00.000Z', snoozedUntil: '2026-07-01T12:35:00.000Z',
+    critical_alarm: true, medicineName: 'Lantus', treatmentPlanId: 'plan1', toleranceMinutes: 120,
+  };
+  const dev = (app_version: string | null) => ({ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true, app_version });
+  beforeEach(() => {
+    process.env.APNS_AUTH_KEY = Buffer.from(TEST_P8).toString('base64');
+    process.env.APNS_KEY_ID = 'KEY123';
+    process.env.APNS_TEAM_ID = 'TEAM123';
+    process.env.APNS_BUNDLE_ID = 'com.x.dosiq';
+  });
+  afterEach(() => {
+    vi.clearAllMocks();
+    delete process.env.APNS_AUTH_KEY; delete process.env.APNS_KEY_ID;
+    delete process.env.APNS_TEAM_ID; delete process.env.APNS_BUNDLE_ID;
+  });
+
+  it('🔴 PO-101-12: device em 0.33.12 (1º build com a 101) ⇒ 1 push-to-start em `now` com nowUntil, sem tocar la_push_started_at', async () => {
+    const supabase = makeSupabase([{ data: [dev('0.33.12')], error: null }]);
+    const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
+    const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });
+    expect(r).toBe('sent');
+    expect(sendFn).toHaveBeenCalledTimes(1);
+    const cs = sendFn.mock.calls[0]![0].contentState;
+    expect(cs.state).toBe('now');
+    expect(cs.nowUntil).toBe(Math.floor(CLAIM.getTime() / 1000) + 600);
+    expect(supabase._updates).not.toContainEqual(expect.objectContaining({ la_push_started_at: expect.anything() }));
+  });
+
+  it('🔴 PO-101-12: device em 0.30.0 ou sem versão ⇒ 0 envios (cliente antigo = comportamento de hoje)', async () => {
+    for (const v of ['0.30.0', '0.33.11', null, 'lixo']) {
+      const supabase = makeSupabase([{ data: [dev(v)], error: null }]);
+      const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
+      const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });
+      expect(r).toBe('skipped');
+      expect(sendFn).not.toHaveBeenCalled();
+    }
+  });
+
+  it('erro do APNs ⇒ `failed`, nunca lança (INV-5)', async () => {
+    const supabase = makeSupabase([{ data: [dev('0.34.0')], error: null }]);
+    const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: false, status: 500, reason: 'boom' }));
+    await expect(startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn })).resolves.toBe('failed');
+  });
+
+  it('busca de devices falha ⇒ `skipped` (fail-open)', async () => {
+    const supabase = makeSupabase([{ data: null, error: { message: 'x' } }]);
+    const sendFn = vi.fn();
+    await expect(startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn })).resolves.toBe('skipped');
+    expect(sendFn).not.toHaveBeenCalled();
   });
 });

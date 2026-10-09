@@ -78,3 +78,31 @@ describe('liveActivityService — params', () => {
     expect(q).toEqual([{ action: 'snooze', instanceId: 'i1' }])
   })
 })
+
+// Spec 101 (D-2 = a): o widget recalcula o estado só de scheduledAt; durante o `now` da soneca ele
+// precisa de `nowUntilMs` para não cair em `late`, e o staleDate passa a ser o fim desse `now`.
+describe('liveActivityService — âncora da soneca (spec 101)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-03-05T12:35:00.000Z')) // dose 12:00, soneca até 12:35
+  })
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('🔴 start em now ancorado ⇒ nowUntilMs e staleDateMs = âncora+10min', async () => {
+    const nowUntil = new Date('2026-03-05T12:45:00.000Z').getTime()
+    await startLiveActivity(
+      { ...activity, nowUntil },
+      { ...doseItem, snoozedUntil: '2026-03-05T12:35:00.000Z' }
+    )
+    const p = native.start.mock.calls[0][0]
+    expect(p.nowUntilMs).toBe(nowUntil)
+    expect(p.staleDateMs).toBe(nowUntil)
+  })
+
+  it('sem âncora ⇒ sem nowUntilMs (payload idêntico ao de hoje)', async () => {
+    await startLiveActivity({ ...activity, nowUntil: null }, doseItem)
+    expect(native.start.mock.calls[0][0]).not.toHaveProperty('nowUntilMs')
+  })
+})

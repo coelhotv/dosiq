@@ -23,9 +23,11 @@ import {
   createDoseInstanceRepository,
   buildDoseItemsFromInstances,
   selectActiveDoseActivity,
+  deriveDoseActivityState,
   getRawNow,
   addDays,
   getTodayLocal,
+  parseISO,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useAuth } from '@platform/auth/hooks/useAuth'
@@ -33,7 +35,8 @@ import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { endDoseActivity } from './doseActivitySurfaceService'
-import { armDoseActivity, advanceDoseActivity } from './doseActivityScheduler'
+import { armDoseActivity, advanceDoseActivity, deferDoseItem } from './doseActivityScheduler'
+import { getSnoozeAnchors, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3 // 72h — alinhado ao scheduler de alarmes
@@ -47,6 +50,19 @@ const LOOK_BACK_DAYS = 3
 // 60s re-exibia/re-agendava à toa (flicker + CPU); 15min basta como fallback (mount/foreground/bus
 // já re-sincronizam) (#910).
 const RESYNC_INTERVAL_MS = 15 * 60 * 1000
+
+/**
+ * Spec 101 (C-3): a dose que estava na superfície saiu do seletor. Se saiu porque foi ADIADA (o core
+ * devolve `null` antes da âncora), a superfície é reprogramada para `snoozedUntil` — `endDoseActivity`
+ * cancelaria também o trigger do reaparecimento. Qualquer outro motivo encerra. Puro.
+ * @returns {'defer'|'end'}
+ */
+export function prevSurfaceAction(prevItem, now) {
+  if (!prevItem || prevItem.snoozedUntil == null) return 'end'
+  if (deriveDoseActivityState(prevItem, now) !== null) return 'end'
+  const anchor = typeof prevItem.snoozedUntil === 'number' ? prevItem.snoozedUntil : parseISO(prevItem.snoozedUntil).getTime()
+  return Number.isFinite(anchor) && anchor > now.getTime() ? 'defer' : 'end'
+}
 
 /**
  * Deriva a dose ativa entre as CRÍTICAS pendentes e (re)arma a cadeia de boundaries (trigger-driven).
@@ -63,14 +79,21 @@ async function deriveAndRender({ userId, protocols, tz, prevInstanceId }) {
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
   // Apenas doses críticas pendentes — a superfície é extensão do alarme crítico (CL-4).
-  const items = buildDoseItemsFromInstances(instances, protocols, tz).filter(
-    (it) => it.status === 'pending' && it.critical
+  // Spec 101 (FR-006): âncora local mesclada — sobrevive a `setSnoozedUntil` falho e ao claim que zera
+  // `snoozed_until` no instante do reaparecimento.
+  const anchors = await getSnoozeAnchors(now.getTime())
+  const items = mergeSnoozeAnchors(
+    buildDoseItemsFromInstances(instances, protocols, tz).filter((it) => it.status === 'pending' && it.critical),
+    anchors
   )
 
   const active = selectActiveDoseActivity(items, now)
-  // Mudou a dose ativa (ou sumiu) → encerra a superfície anterior (+ trigger pendente) antes da nova.
+  // Mudou a dose ativa (ou sumiu) → encerra a superfície anterior (+ trigger pendente) antes da nova;
+  // se ela só foi adiada, reprograma o reaparecimento em vez de encerrar (C-3).
   if (prevInstanceId && (!active || active.instanceId !== prevInstanceId)) {
-    await endDoseActivity(prevInstanceId)
+    const prevItem = items.find((it) => it.instanceId === prevInstanceId)
+    if (prevSurfaceAction(prevItem, now) === 'defer') await deferDoseItem(prevItem, now.getTime())
+    else await endDoseActivity(prevInstanceId)
   }
   if (!active) return null
 

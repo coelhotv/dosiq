@@ -104,15 +104,22 @@ export function buildLiveActivityStartPayload(doseItem: DoseItem, { discreet = f
   // ContentState — casa DoseActivityAttributes.ContentState (state, scheduledAt, doneAtLabel).
   // ⚠️ scheduledAt em epoch SEGUNDOS: a estratégia de decode de Date do widget DEVE bater
   // (validação MANUAL em device — PO-1/PO-2). doneAtLabel vazio no start.
+  // Spec 101 (D-2): `now` aberto pela soneca. O widget recalcula o estado só de scheduledAt; sem
+  // `nowUntil` mostraria `late`. Epoch em segundos, como scheduledAt. Chave ausente fora da soneca
+  // (payload idêntico ao de antes; widget antigo ignora a chave extra).
+  const nowUntilSec = derived.nowUntil != null ? Math.floor(derived.nowUntil / 1000) : null
   const contentState = {
     state: derived.state,
     scheduledAt: scheduledEpochSec,
     doneAtLabel: '',
+    ...(nowUntilSec != null ? { nowUntil: nowUntilSec } : {}),
   }
 
   const boundaries = derived.scheduledFor ? doseActivityBoundaryTimes(derived.scheduledFor) : []
   const targetMs = _findStaleBoundaryMs(doseItem, derived.state, boundaries, nowMs)
-  const staleEpochSec = targetMs != null ? Math.floor(targetMs / 1000) : scheduledEpochSec + 3600
+  // Com soneca, a transição que importa é o fim do `now` (o widget cai sozinho no relógio original).
+  const staleEpochSec =
+    nowUntilSec ?? (targetMs != null ? Math.floor(targetMs / 1000) : scheduledEpochSec + 3600)
 
   return { attributes, contentState, staleEpochSec }
 }
