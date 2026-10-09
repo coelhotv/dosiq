@@ -16,6 +16,9 @@ struct DoseActivityAttributes: ActivityAttributes {
         var state: String        // later|upcoming|now|late|done (missed → JS encerra, não renderiza)
         var scheduledAt: Date    // instante-alvo da dose (timer vivo conta relativo a ele)
         var doneAtLabel: String  // "19:02" — só no `done` (card de confirmação); "" caso contrário
+        // Spec 101: fim do `now` aberto pela soneca. Opcional ⇒ Codable decodifica ausência como nil
+        // (push/app antigos) e a chave extra é ignorada por widget antigo. nil = relógio original.
+        var nowUntil: Date? = nil
     }
 
     var medicineName: String     // SÓ o nome (ex.: "Lantus") — mock separa nome do subtítulo de dose

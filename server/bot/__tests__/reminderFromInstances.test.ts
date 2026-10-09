@@ -27,6 +27,13 @@ const { mockSupabase } = vi.hoisted(() => {
   return { mockSupabase: m };
 });
 
+// Spec 101 (FR-008): a recriação da LA no claim da soneca é observada pelo spy; o resto do módulo é real.
+const { mockStartSnoozed } = vi.hoisted(() => ({ mockStartSnoozed: vi.fn((..._a: any[]) => Promise.resolve('sent')) }));
+vi.mock('../../notifications/apns/dispatchLiveActivityStarts.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  startSnoozedLiveActivity: (...a) => mockStartSnoozed(...a),
+}));
+
 vi.mock('../../services/supabase.js', () => ({
   supabase: mockSupabase
 }));
@@ -429,5 +436,73 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
     await checkRemindersViaDispatcher(mockDispatcher, 'corr-123');
 
     expect(mockSupabase.from).not.toHaveBeenCalledWith('dose_instances');
+  });
+});
+
+// Spec 101 FR-008 / PO-101-9: no claim de uma dose crítica ADIADA sem LA viva (`la_push_token` nulo), o
+// ciclo recria a Live Activity por push-to-start — depois do despacho, sem nunca atrasá-lo (INV-5).
+describe('checkRemindersViaDispatcher — recriação da LA na soneca (spec 101)', () => {
+  let mockDispatcher;
+  beforeEach(() => {
+    mockDataQueue.length = 0;
+    process.env.REMINDER_SOURCE = 'instances';
+    mockDispatcher = { dispatch: vi.fn(() => Promise.resolve({ success: true })) };
+  });
+  afterEach(() => {
+    vi.clearAllMocks();
+    delete process.env.REMINDER_SOURCE;
+  });
+
+  const SNOOZED_UNTIL = '2026-06-30T15:50:00.000Z';
+  const adiada = (over = {}) => ({
+    id: 'inst-1', user_id: 'user1', protocol_id: 'proto-1', critical_alarm: true,
+    scheduled_for: '2026-06-30T15:15:00.000Z', snoozed_until: SNOOZED_UNTIL, notified_at: null,
+    la_push_token: null, tolerance_minutes: 120,
+    protocol: {
+      id: 'proto-1', name: 'Lantus', dosage_per_intake: 10, treatment_plan_id: 'plan-1', medicine_id: 'med-1',
+      medicine: { name: 'Lantus', dosage_unit: 'ui/ml' }, treatment_plan: null,
+    },
+    ...over,
+  });
+  // settings → instâncias → snoozed → evidência(vazia) → soneca(vazia) → capacidade → claim
+  const armar = (inst) => {
+    setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
+    setMockData([inst]);
+    setMockData([]);
+    setMockData([]);
+    if (inst.snoozed_until) setMockData([]);
+    setMockData([{ id: 'ev-1' }]);
+    setMockData([{ id: inst.id }]);
+  };
+
+  it('🔴 PO-101-9: adiada + la_push_token nulo ⇒ 1 recriação com a âncora da soneca', async () => {
+    armar(adiada());
+    await checkRemindersViaDispatcher(mockDispatcher, 'corr-101');
+    expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockStartSnoozed).toHaveBeenCalledTimes(1);
+    const arg = mockStartSnoozed.mock.calls[0]![0];
+    expect(arg.userId).toBe('user1');
+    expect(arg.item).toEqual(expect.objectContaining({ instanceId: 'inst-1', snoozedUntil: SNOOZED_UNTIL, toleranceMinutes: 120 }));
+  });
+
+  it('🔴 PO-101-9: LA viva (la_push_token presente) ⇒ 0 recriações (INV-4)', async () => {
+    armar(adiada({ la_push_token: 'tok-activity' }));
+    await checkRemindersViaDispatcher(mockDispatcher, 'corr-101');
+    expect(mockStartSnoozed).not.toHaveBeenCalled();
+  });
+
+  it('dose não adiada ⇒ 0 recriações (start da janela upcoming é outro caminho)', async () => {
+    armar(adiada({ snoozed_until: null }));
+    await checkRemindersViaDispatcher(mockDispatcher, 'corr-101');
+    expect(mockStartSnoozed).not.toHaveBeenCalled();
+  });
+
+  it('🔴 PO-101-9: recriação explode ⇒ claim e despacho seguem intactos (INV-5)', async () => {
+    mockStartSnoozed.mockRejectedValueOnce(new Error('apns down'));
+    armar(adiada());
+    await checkRemindersViaDispatcher(mockDispatcher, 'corr-101'); // não lança
+    expect(mockStartSnoozed).toHaveBeenCalledTimes(1);
+    expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockSupabase.update).toHaveBeenCalledWith({ notified_at: expect.any(String), snoozed_until: null });
   });
 });

@@ -12,6 +12,7 @@
 // seguinte. Tudo self-contained: o payload carrega os campos p/ reconstruir o card sem fetch.
 
 import notifee, { AndroidImportance, TriggerType } from '@notifee/react-native'
+import { Platform } from 'react-native'
 import {
   deriveDoseActivityState,
   doseActivityBoundaryTimes,
@@ -31,6 +32,16 @@ import {
 const numOrNull = (v) => {
   const n = Number(v)
   return v == null || v === '' || Number.isNaN(n) ? null : n
+}
+
+/**
+ * Âncora da soneca (Spec 101) vinda do `data` (tudo string): epoch ms numérico (alarme/superfície) OU
+ * ISO (banco). Vazio → null. O core valida (inválido/antes do horário → ignorado). @private
+ */
+function anchorOrNull(v) {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isNaN(n) ? v : n
 }
 
 /**
@@ -54,6 +65,7 @@ function reconstructDoseItem(data) {
     dosagePerPill: numOrNull(data.dosagePerPill),
     unitsPerMl: numOrNull(data.unitsPerMl),
     scheduledTime: data.scheduledTime || '',
+    snoozedUntil: anchorOrNull(data.snoozedUntil),
   }
 }
 
@@ -80,7 +92,7 @@ function buildEndPayload(instanceId) {
  * cronômetro do `late` (presentation-only, mobile). Ordenado asc. @private
  */
 function allBoundaryTimes(doseItem) {
-  const core = doseActivityBoundaryTimes(doseItem.scheduledFor, doseItem.toleranceMinutes)
+  const core = doseActivityBoundaryTimes(doseItem.scheduledFor, doseItem.toleranceMinutes, {}, doseItem.snoozedUntil ?? null)
   if (core.length === 0) return []
   const ms = parseISO(doseItem.scheduledFor).getTime()
   const lateCap = ms + LATE_CHRONO_CAP_MINUTES * 60000
@@ -166,4 +178,32 @@ export async function reconcileDoseActivityFromAlarm(data, now = getRawNow()) {
   if (!doseItem.scheduledFor) return
   const activity = deriveDoseActivityState(doseItem, now)
   await armDoseActivity(activity, doseItem, { now, discreet: data.discreet === 'true' })
+}
+
+/**
+ * Spec 101 (FR-001): "Adiar" aceito tira a superfície de cena e a reprograma para `snoozedUntil`, onde
+ * reaparece em `now` (o core devolve `null` antes da âncora e os boundaries começam nela). Encerra o
+ * card E o boundary pendente — cancelar só o card deixaria o trigger seguinte re-exibi-lo (RC3 F1).
+ * Android-only e crítica-only (superfície 039). O alarme da soneca re-arma o mesmo estado no disparo
+ * (`reconcileDoseActivityFromAlarm`): este trigger é a redundância do marca-passo.
+ * @param {object} data - `data` do alarme da soneca (com `snoozedUntil`)
+ * @param {number} [nowMs]
+ */
+export async function deferDoseActivity(data, nowMs = getRawNow().getTime()) {
+  if (Platform.OS !== 'android') return
+  if (!data || !data.doseInstanceId) return
+  if (data.isCritical !== 'true' && data.isCritical !== true) return // superfície só p/ crítica
+  await deferDoseItem(reconstructDoseItem(data), nowMs)
+}
+
+/**
+ * Mesmo que `deferDoseActivity`, a partir de um DoseItem já montado (bridge em foreground, C-3).
+ * @param {object} doseItem - DoseItem com `snoozedUntil`
+ * @param {number} [nowMs]
+ */
+export async function deferDoseItem(doseItem, nowMs = getRawNow().getTime()) {
+  if (Platform.OS !== 'android') return
+  if (!doseItem?.instanceId || !doseItem.scheduledFor || doseItem.snoozedUntil == null) return
+  await endDoseActivity(doseItem.instanceId)
+  await scheduleNextBoundary(doseItem, nowMs, true) // crítica = discreto (PO-SEC-1)
 }

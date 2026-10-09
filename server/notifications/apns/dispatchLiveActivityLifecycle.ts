@@ -14,6 +14,7 @@
 import { deriveDoseActivityState, createCriticalAuditService, resolveInstanceMedicine } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
+import { isSnoozeLiveActivityCapable } from './dispatchLiveActivityStarts.js'
 
 interface Logger {
   info?: (...args: unknown[]) => void
@@ -29,6 +30,10 @@ interface DoseInstanceRow {
   status?: string
   la_push_token?: string | null
   la_push_state?: string | null
+  // Spec 101: soneca vigente, claim (âncora pós-claim, ADR-110) e tolerância da ocorrência.
+  snoozed_until?: string | null
+  notified_at?: string | null
+  tolerance_minutes?: number | null
   // 052 Slice B: identidade CONGELADA na ocorrência (embed direto pela FK própria).
   medicine_id?: string | null
   medicine?: { name?: string } | null
@@ -40,7 +45,8 @@ interface DoseInstanceRow {
 }
 
 type UpdateFn = (params: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise<ApnsResult>
-type EndFn = UpdateFn
+type EndFn = (params: { pushToken: string | null | undefined; contentState: Record<string, unknown>; dismissEpochSec?: number }) => Promise<ApnsResult>
+type IsCapableFn = (supabase: any, logger: Logger | undefined, userId: string) => Promise<boolean>
 
 // Status que encerram a LA (dose saiu de pendente).
 const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
@@ -49,14 +55,38 @@ const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
 // o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.
 const SELECT_FIELDS = `
   id, user_id, scheduled_for, critical_alarm, status, la_push_token, la_push_state, medicine_id,
+  snoozed_until, notified_at, tolerance_minutes,
   medicine:medicines(name),
   protocol:protocols(
     id, name, treatment_plan_id, medicine_id
   )
 `
 
+// Spec 101 (ADR-110 · C-5): o claim zera `snoozed_until` e carimba `notified_at`. Claim normal cai no
+// próprio minuto do horário (segundos depois); soneca é ≥ +5 min (FR-002). +2 min separa os dois.
+const SNOOZE_CLAIM_MIN_DELAY_MS = 2 * 60000
+
+/** Instante (ms) de uma coluna timestamptz; ausente/inválido → null. @private */
+function _ms(v: string | null | undefined): number | null {
+  if (!v) return null
+  const ms = parseISO(v).getTime()
+  return Number.isNaN(ms) ? null : ms
+}
+
+/**
+ * Âncora da soneca da ocorrência (Spec 101): `snoozed_until` vigente, ou — depois do claim — o
+ * `notified_at` de um claim de soneca. null = sem soneca (relógio original). @private
+ */
+function snoozeAnchorOf(inst: DoseInstanceRow): string | null {
+  if (inst.snoozed_until) return inst.snoozed_until
+  const notified = _ms(inst.notified_at)
+  const scheduled = _ms(inst.scheduled_for)
+  if (notified === null || scheduled === null) return null
+  return notified >= scheduled + SNOOZE_CLAIM_MIN_DELAY_MS ? inst.notified_at ?? null : null
+}
+
 /** dose_instance → shape CON-029 (mínimo p/ deriveDoseActivityState). @private */
-function mapInstance(inst: DoseInstanceRow) {
+function mapInstance(inst: DoseInstanceRow, snoozedUntil: string | null = null) {
   const protocol = inst.protocol || {}
   const medicine = resolveInstanceMedicine(inst, { protocol }).medicine || {}
   return {
@@ -65,6 +95,8 @@ function mapInstance(inst: DoseInstanceRow) {
     critical_alarm: inst.critical_alarm ?? false,
     medicineName: medicine.name || protocol.name || 'Dose',
     treatmentPlanId: protocol.treatment_plan_id ?? null,
+    toleranceMinutes: inst.tolerance_minutes ?? null,
+    snoozedUntil,
   }
 }
 
@@ -130,10 +162,12 @@ interface DriveInstanceParams {
   updateFn: UpdateFn
   endFn: EndFn
   audit: ReturnType<typeof createCriticalAuditService>
+  /** Spec 101 (FR-011): o app do usuário entende a soneca na LA (≥ MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY). false = lifecycle de hoje. */
+  snoozeCapable?: boolean
 }
 
 /** Processa UMA ocorrência com LA ativa: end se resolvida, update se o estado mudou. @private */
-async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit }: DriveInstanceParams): Promise<'ended' | 'failed' | 'skipped' | 'updated'> {
+async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit, snoozeCapable = false }: DriveInstanceParams): Promise<'ended' | 'failed' | 'skipped' | 'updated'> {
   // Auditoria (spec 042): surface_transitioned. userId = dono da instância (SEC-2). detail só
   // estados derivados (from/to) — sem PII (nome de medicamento/token nunca entram no trail).
   const emitTransition = (to: string) =>
@@ -173,8 +207,21 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
     })
   }
 
+  // Spec 101 (C-6): dose ADIADA com LA viva → encerra já e limpa o token; o claim da soneca a recria em
+  // `now` (FR-008). Sem isto a LA seguiria com o contador antigo e, com token, bloquearia a recriação.
+  const snoozedMs = _ms(inst.snoozed_until)
+  if (snoozeCapable && snoozedMs !== null && snoozedMs > now.getTime()) {
+    const res = await endFn({
+      pushToken: inst.la_push_token,
+      contentState: { state: inst.la_push_state ?? 'now', scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
+      dismissEpochSec: Math.floor(now.getTime() / 1000),
+    })
+    return _handleEndOutcome(res, { supabase, logger, inst, toState: 'snoozed', emitTransition, emitFailed })
+  }
+
   // Pendente → estado derivado no instante (dose pode ter sido editada). Idempotência por la_push_state.
-  const derived = deriveDoseActivityState(mapInstance(inst), now)
+  // Spec 101 (FR-009): com app capaz, deriva com a âncora da soneca (não empurra `late` sobre o `now`).
+  const derived = deriveDoseActivityState(mapInstance(inst, snoozeCapable ? snoozeAnchorOf(inst) : null), now)
   if (!derived) return 'skipped' // inválido / fora de janela
   if (derived.state === inst.la_push_state) return 'skipped' // nada mudou → não spammar APNs
 
@@ -189,7 +236,12 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
 
   const res = await updateFn({
     pushToken: inst.la_push_token,
-    contentState: { state: derived.state, scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
+    contentState: {
+      state: derived.state,
+      scheduledAt: scheduledEpochSec(inst, now),
+      doneAtLabel: '',
+      ...(derived.nowUntil != null ? { nowUntil: Math.floor(derived.nowUntil / 1000) } : {}),
+    },
   })
   return _handleUpdateOutcome(res, { supabase, logger, inst, derivedState: derived.state, emitTransition, emitFailed })
 }
@@ -240,6 +292,7 @@ interface DispatchLiveActivityLifecycleParams {
   now?: Date
   updateFn?: UpdateFn
   endFn?: EndFn
+  isCapableFn?: IsCapableFn
 }
 
 interface DispatchLiveActivityLifecycleResult {
@@ -250,8 +303,18 @@ interface DispatchLiveActivityLifecycleResult {
   failed: number
 }
 
+/**
+ * FR-011 memorizado por usuário e consultado só quando a ocorrência tem soneca/âncora (as demais seguem
+ * o lifecycle de hoje sem custo). Erro ⇒ false. @private
+ */
+async function _snoozeCapability(cache: Map<string, Promise<boolean>>, inst: DoseInstanceRow, check: () => Promise<boolean>): Promise<boolean> {
+  if (!inst.snoozed_until && !snoozeAnchorOf(inst)) return false
+  if (!cache.has(inst.user_id)) cache.set(inst.user_id, check().catch(() => false))
+  return cache.get(inst.user_id) as Promise<boolean>
+}
+
 /** Empurra update/end para todas as LAs iOS ativas (la_push_token IS NOT NULL) no loop de minuto. */
-export async function dispatchLiveActivityLifecycle({ supabase, logger, now = parseISO(getServerTimestamp()), updateFn = sendLiveActivityUpdate, endFn = sendLiveActivityEnd }: DispatchLiveActivityLifecycleParams): Promise<DispatchLiveActivityLifecycleResult> {
+export async function dispatchLiveActivityLifecycle({ supabase, logger, now = parseISO(getServerTimestamp()), updateFn = sendLiveActivityUpdate, endFn = sendLiveActivityEnd, isCapableFn = isSnoozeLiveActivityCapable }: DispatchLiveActivityLifecycleParams): Promise<DispatchLiveActivityLifecycleResult> {
   const result: DispatchLiveActivityLifecycleResult = { processed: 0, updated: 0, ended: 0, skipped: 0, failed: 0 }
 
   // Fail-closed na config (R-088): sem APNs, sem ciclo (LA degrada p/ foreground 039).
@@ -278,10 +341,12 @@ export async function dispatchLiveActivityLifecycle({ supabase, logger, now = pa
   // Auditoria de dose crítica (spec 042). Server sem sessão → userId explícito por emit.
   const audit = createCriticalAuditService({ client: supabase })
 
+  const capableByUser = new Map<string, Promise<boolean>>()
   for (const inst of instances) {
     result.processed += 1
     try {
-      const outcome = await _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit })
+      const snoozeCapable = await _snoozeCapability(capableByUser, inst, () => isCapableFn(supabase, logger, inst.user_id))
+      const outcome = await _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit, snoozeCapable })
       result[outcome] += 1
     } catch (err) {
       result.failed += 1

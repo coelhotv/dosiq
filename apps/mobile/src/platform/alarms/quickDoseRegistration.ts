@@ -20,7 +20,7 @@ import { EVENTS, SURFACES, REMINDER_SOURCES } from '@platform/analytics/analytic
 import { emitReminderOpened } from '@platform/analytics/reminderEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
-import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
+import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
 import { navigateToDose } from '@navigation/navigateToDose'
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
@@ -211,6 +211,15 @@ async function _emitDoseSkipped(skipInstances, surface) {
 }
 
 /**
+ * Spec 101 (C-12, smoke 2026-10-09): pular RESOLVE a dose — a superfície de cada dose pulada sai de
+ * cena (cancel-on-resolve, AP-235). O "Tomei" já fazia isso pelo `doseService`; o pulo pela
+ * notificação deixava a superfície em "agora" até o app abrir. Best-effort por dose. @private
+ */
+async function _endSkippedSurfaces(ids) {
+  await Promise.all(ids.map((id) => Promise.resolve(endDoseActivity(id)).catch(() => {})))
+}
+
+/**
  * Pula a dose: status='skipped_user' (sem log, sem consumo).
  * @param {object} data - { doseInstanceId }
  */
@@ -272,6 +281,7 @@ export async function registerSkip(data, { surface = null } = {}) {
   }
 
   await invalidate(SNAPSHOTS_SKIP)
+  await _endSkippedSurfaces(ids)
 
   // FR-043: só APÓS a RPC confirmar. Skip RECUSADO (fora da janela / erro) retorna acima e NÃO
   // emite — não houve resolução, e uma trilha que diz "resolvido" sobre uma recusa mente.

@@ -19,6 +19,8 @@ import { createDoseInstanceRepository, createCriticalAuditService, parseISO, for
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
+import { setSnoozeAnchors } from './snoozeAnchorStore'
+import { SURFACE_ID_SUFFIX } from '@platform/doseActivity/doseActivitySurfaceService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
   AndroidImportance,
@@ -598,10 +600,38 @@ function _emitSnoozed(source, surface) {
 }
 
 /**
+ * Spec 101 (FR-002 / INV-1): a soneca nunca antecipa o aviso. Antes da hora da dose, "Adiar" vale
+ * `scheduled_for + 5 min`; dali em diante, `agora + 5 min`. `scheduledFor` inválido cai em `agora`.
+ * @private
+ */
+function _snoozeFireAt(scheduledFor, nowMs) {
+  const scheduledMs = scheduledFor ? parseISO(scheduledFor).getTime() : NaN
+  return Math.max(nowMs, Number.isNaN(scheduledMs) ? nowMs : scheduledMs) + SNOOZE_INTERVAL_MS
+}
+
+/**
+ * Spec 101 (FR-001 / FR-006): soneca ACEITA grava a âncora local e tira a superfície de cena até
+ * `snoozedUntil` (Android; no-op nas outras plataformas). Alarme agrupado não tem superfície (039).
+ * Lazy-require: o scheduler da superfície puxa Notifee + core e roda também headless (AP-205).
+ * Best-effort — nunca derruba a soneca, que já está armada. @private
+ */
+async function _anchorAndDeferSurface(snoozedIds, fireAt, nowMs, alarmData) {
+  await setSnoozeAnchors(snoozedIds, fireAt, nowMs)
+  if (alarmData?.isGrouped === 'true') return
+  try {
+    const { deferDoseActivity } = require('@platform/doseActivity/doseActivityScheduler')
+    await deferDoseActivity(alarmData, nowMs)
+  } catch (err) {
+    if (__DEV__) console.warn('[alarmService] deferDoseActivity falhou', err?.message)
+  }
+}
+
+/**
  * Soneca manual (FR-003 v2): o usuário toca "Soneca" → re-agenda a MESMA dose pra
  * +5min, máx 3 vezes. Reusa o id da instância (substitui a notif atual e PARA o
  * loop do som). Diferente do nag (automático ao ignorar); aqui é ação consciente.
- * @returns {Promise<boolean>} true se re-agendou; false se estourou o teto.
+ * @returns {Promise<false | { fireAt: number }>} `{ fireAt }` (epoch ms do alarme agendado — Spec 101,
+ *   fonte do "Alarme reagendado para HH:MM") se re-agendou; `false` se recusou (janela/teto).
  */
 export async function scheduleSnooze({
   doseInstanceId,
@@ -629,21 +659,27 @@ export async function scheduleSnooze({
   if (next > MAX_SNOOZE_ATTEMPTS) return false
 
   await ensureAlarmSetup()
-  const nextTs = Date.now() + SNOOZE_INTERVAL_MS
+  const nowMs = Date.now()
+  const nextTs = _snoozeFireAt(scheduledFor, nowMs)
+  const alarmData = {
+    ...data,
+    doseInstanceId,
+    medicineName,
+    scheduledFor,
+    toleranceMinutes,
+    isCritical,
+    nagAttempt: '0',
+    snoozeAttempt: String(next),
+    // Spec 101: âncora viaja no alarme — no disparo, `reconcileDoseActivityFromAlarm` re-arma a
+    // superfície em `now` (e não em `late` pelo relógio original).
+    snoozedUntil: String(nextTs),
+  }
   const notification = buildNotification({
     doseInstanceId,
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
-    data: {
-      ...data,
-      medicineName,
-      scheduledFor,
-      toleranceMinutes,
-      isCritical,
-      nagAttempt: '0',
-      snoozeAttempt: String(next),
-    },
+    data: alarmData,
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -652,8 +688,10 @@ export async function scheduleSnooze({
     alarmManager: { allowWhileIdle: true },
   })
 
-  // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
   const snoozedIds = _resolveSnoozedIds(doseInstanceId, data)
+  await _anchorAndDeferSurface(snoozedIds, nextTs, nowMs, alarmData)
+
+  // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
   try {
     const repo = createDoseInstanceRepository({ client: supabase as any })
     await Promise.all(snoozedIds.map((id) => repo.setSnoozedUntil(id, nextTs)))
@@ -676,7 +714,9 @@ export async function scheduleSnooze({
           event: 'snoozed',
           platform: Platform.OS,
           actor: 'user',
-          detail: { snoozeAttempt: next },
+          // Spec 101: instante exato da soneca — o servidor casa a prova por ele (soneca antecipada
+          // fica longe do toque e a janela de 082 D1 a rejeitaria).
+          detail: { snoozeAttempt: next, snoozedUntil: nextTs },
         }),
       ),
     )
@@ -687,12 +727,30 @@ export async function scheduleSnooze({
   _emitSnoozed(source, surface)
 
   debugLog('[alarmService] snooze', next, doseInstanceId)
-  return true
+  return { fireAt: nextTs }
 }
 
-/** Cancela TODOS os triggers do Notifee (não toca expo-notifications). */
+/**
+ * Cancela os triggers de ALARME do Notifee (não toca expo-notifications).
+ *
+ * Spec 101 (C-11): preserva os da superfície (`<id>:surface`). O resync (`syncAlarms`) roda ao abrir o
+ * app, a cada foreground e a cada mutação; apagar tudo derrubava o boundary pendente da superfície e
+ * ela congelava no estado exibido (smoke 2026-10-09: 4/4). A superfície tem dono próprio (bridges +
+ * cancel-on-resolve). Ids ilegíveis ⇒ cancela tudo como antes: nunca deixar alarme velho vivo.
+ */
 export async function cancelAll() {
-  await notifee.cancelTriggerNotifications()
+  let ids = null
+  try {
+    ids = await notifee.getTriggerNotificationIds()
+  } catch {
+    ids = null
+  }
+  if (!Array.isArray(ids)) {
+    await notifee.cancelTriggerNotifications()
+  } else {
+    const alarmIds = ids.filter((id) => !String(id).endsWith(SURFACE_ID_SUFFIX))
+    if (alarmIds.length > 0) await notifee.cancelTriggerNotifications(alarmIds)
+  }
   debugLog('[alarmService] cancelAll')
 }
 

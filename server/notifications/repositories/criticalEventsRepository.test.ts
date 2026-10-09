@@ -222,3 +222,40 @@ describe('findInstancesWithSnoozeEvidence (082 D1 · FR-016b)', () => {
     expect(set.size).toBe(0)
   })
 })
+
+// Spec 101 (FR-012): soneca ANTECIPADA grava `snoozed_until = scheduled_for + 5`, longe do toque.
+// O app ≥ 0.33.12 manda o instante exato em `detail.snoozedUntil`; o servidor casa por ele. Evento
+// sem o campo (frota ≤ 0.33.11) segue na janela de 082 D1, idêntica a antes.
+describe('findInstancesWithSnoozeEvidence — prova exata da soneca (spec 101)', () => {
+  const SNOOZED_UNTIL = '2026-10-09T13:20:00.000Z' // dose 10:15 BRT adiada às 10:01 ⇒ 10:20
+  const TAP = '2026-10-09T13:01:16.000Z' // 14 min fora da janela de 082 D1
+  const UNTIL_MS = Date.parse(SNOOZED_UNTIL)
+  const row = (createdAt: string, detail: unknown = null, id = 'i1') => ({ dose_instance_id: id, created_at: createdAt, platform: 'android', detail })
+
+  it('🔴 soneca antecipada com detail.snoozedUntil igual ⇒ prova (antes: push por cima do alarme)', async () => {
+    const client = makeClient({ data: [row(TAP, { snoozeAttempt: 1, snoozedUntil: UNTIL_MS })] })
+    const set = await findInstancesWithSnoozeEvidence(client, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])
+    expect(set.has('i1')).toBe(true)
+    expect(client._spy).toHaveBeenCalledWith('select', expect.stringContaining('detail'))
+  })
+
+  it('🔴 detail.snoozedUntil de OUTRA soneca não prova a vigente, mesmo dentro da janela antiga', async () => {
+    const client = makeClient({ data: [row('2026-10-09T13:15:05.000Z', { snoozeAttempt: 1, snoozedUntil: UNTIL_MS - 10 * 60_000 })] })
+    const set = await findInstancesWithSnoozeEvidence(client, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])
+    expect(set.size).toBe(0)
+  })
+
+  it('🔴 frota antiga (detail sem snoozedUntil) ⇒ janela de 082 D1 inalterada', async () => {
+    const dentro = makeClient({ data: [row('2026-10-09T13:15:05.000Z', { snoozeAttempt: 1 })] })
+    expect((await findInstancesWithSnoozeEvidence(dentro, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).has('i1')).toBe(true)
+    const fora = makeClient({ data: [row(TAP, { snoozeAttempt: 1 })] })
+    expect((await findInstancesWithSnoozeEvidence(fora, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).size).toBe(0)
+  })
+
+  it('aceita snoozedUntil em ISO e tolera ±2 s; lixo cai na janela antiga', async () => {
+    const iso = makeClient({ data: [row(TAP, { snoozedUntil: '2026-10-09T13:20:01.500Z' })] })
+    expect((await findInstancesWithSnoozeEvidence(iso, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).has('i1')).toBe(true)
+    const lixo = makeClient({ data: [row(TAP, { snoozedUntil: 'lixo' })] })
+    expect((await findInstancesWithSnoozeEvidence(lixo, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).size).toBe(0)
+  })
+})

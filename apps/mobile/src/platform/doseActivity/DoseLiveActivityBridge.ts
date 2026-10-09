@@ -37,6 +37,8 @@ import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { onDoseActivityRefresh } from './doseActivityRefreshBus'
 import { navigateToDose } from '@navigation/navigateToDose'
 import { scheduleSnooze } from '@platform/alarms/alarmService'
+import { getSnoozeAnchors, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
+import { useToast } from '@shared/components/feedback/Toast'
 import {
   startLiveActivity,
   updateLiveActivity,
@@ -71,7 +73,13 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
   const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
-  const allItems = buildDoseItemsFromInstances(instances, protocols, tz)
+  // Spec 101 (FR-006): âncora local mesclada — dose adiada fica fora do seletor até `snoozedUntil`, e a LA
+  // é encerrada pelo ramo `!active`/troca abaixo (que também zera `la_push_token`: pré-condição para o
+  // servidor recriá-la no claim da soneca, FR-008).
+  const allItems = mergeSnoozeAnchors(
+    buildDoseItemsFromInstances(instances, protocols, tz),
+    await getSnoozeAnchors(now.getTime())
+  )
   const items = allItems.filter((it) => it.status === 'pending' && it.critical)
   const active = selectActiveDoseActivity(items, now)
 
@@ -158,8 +166,46 @@ function buildRegisterParams(doseItem, fallbackTreatmentId) {
   return null
 }
 
-/** Processa a fila de ações do App Intent (App Group) com sessão viva. @private */
-async function processPendingActions(tz) {
+/**
+ * Spec 101 (FR-010): texto da confirmação do "Adiar" vindo da LA. HH:MM sai do retorno do agendamento
+ * (`fireAt`), nunca recomputado aqui. Recusa (janela/teto/dose não resolvida) nunca mostra sucesso.
+ */
+export function snoozeToastMessage(result) {
+  if (!result || !Number.isFinite(result.fireAt)) return 'Não foi possível adiar esta dose agora.'
+  // fireAt é epoch ms (numérico, sem ambiguidade de tz — R-020 visa strings 'YYYY-MM-DD').
+  // eslint-disable-next-line no-restricted-syntax
+  const d = new Date(result.fireAt)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `Alarme reagendado para ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/**
+ * "Adiar" da LA: enriquece a soneca com o doseItem (nome/horário/tolerância/criticidade) — senão a notif
+ * reagendada fica genérica. doseItem null (deletado/offline) → não agenda: scheduledFor undefined num
+ * param obrigatório daria agendamento inválido (Gemini #692). Retorna o resultado do agendamento
+ * (`{ fireAt }` | false). @private
+ */
+async function _snoozeQueuedItem(uid, protocols, tz, instanceId) {
+  const doseItem = await resolveDoseItem(uid, protocols, tz, instanceId).catch(() => null)
+  if (!doseItem) return false
+  return scheduleSnooze({
+    doseInstanceId: instanceId,
+    medicineName: doseItem.medicineName,
+    scheduledFor: doseItem.scheduledFor,
+    toleranceMinutes: doseItem.toleranceMinutes ?? null,
+    isCritical: doseItem.critical ?? true,
+    data: { doseInstanceId: instanceId, medicineName: doseItem.medicineName, scheduledFor: doseItem.scheduledFor },
+    source: REMINDER_SOURCES.DOSE_ACTIVITY,
+    surface: SURFACES.PUSH,
+  })
+}
+
+/**
+ * Processa a fila de ações do App Intent (App Group) com sessão viva.
+ * @param {string} tz
+ * @param {{ onSnoozeResult?: (instanceId: string, result: false | { fireAt: number }) => unknown }} [hooks]
+ */
+export async function processPendingActions(tz, { onSnoozeResult }: { onSnoozeResult?: (id: string, r: any) => unknown } = {}) {
   const queue = await drainPendingActions()
   if (queue.length === 0) return
   const uid = await liveUserId()
@@ -179,28 +225,8 @@ async function processPendingActions(tz) {
       // 090 D-2 (RC3 F2): mesmo helper do Android — tiro aninhado TABS → Hoje, espera as abas.
       if (params) navigateToDose(params)
     } else if (item.action === 'snooze') {
-      // Enriquece a soneca com o doseItem (nome/horário/tolerância/criticidade) — senão a notif
-      // reagendada fica genérica (sem nome do remédio). Paridade com o path de alarme do Android.
       if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
-      // doseItem null (deletado/offline) → não agenda: passar scheduledFor undefined a um param
-      // obrigatório do scheduleSnooze daria agendamento inválido. Pular é mais seguro (Gemini #692).
-      if (doseItem) {
-        await scheduleSnooze({
-          doseInstanceId: item.instanceId,
-          medicineName: doseItem.medicineName,
-          scheduledFor: doseItem.scheduledFor,
-          toleranceMinutes: doseItem.toleranceMinutes ?? null,
-          isCritical: doseItem.critical ?? true,
-          data: {
-            doseInstanceId: item.instanceId,
-            medicineName: doseItem.medicineName,
-            scheduledFor: doseItem.scheduledFor,
-          },
-          source: REMINDER_SOURCES.DOSE_ACTIVITY,
-          surface: SURFACES.PUSH,
-        })
-      }
+      await onSnoozeResult?.(item.instanceId, await _snoozeQueuedItem(uid, protocols, tz, item.instanceId))
     } else if (item.action === 'open') {
       // "Abrir" (later) — só traz o app pra Hoje, sem registrar.
       navigateToDose(null)
@@ -217,6 +243,8 @@ export default function DoseLiveActivityBridge() {
   const consentSuppressed = useConsentSuppressed(user?.id ?? null)
   const userId = consentSuppressed ? null : (user?.id ?? null)
   const prevInstanceRef = useRef(null)
+  const toast = useToast()
+  const toastRef = useRef(toast)
   // tz espelhado em ref p/ o effect de AppState NÃO depender de tz (senão load() atualiza tz no
   // mount → re-dispara o effect → load() duplicado p/ fuso ≠ DEFAULT_TZ). Gemini #692. Sync em effect
   // (R-010: refs no topo; não escrever ref durante render).
@@ -226,6 +254,11 @@ export default function DoseLiveActivityBridge() {
   useEffect(() => {
     tzRef.current = tz
   }, [tz])
+
+  // O contexto do Toast muda a cada render do provider: ref evita re-disparar o effect de foreground.
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
 
   const load = useCallback(async () => {
     if (!userId) return
@@ -253,6 +286,16 @@ export default function DoseLiveActivityBridge() {
     }
   }, [userId, protocols, tz])
 
+  // Spec 101 (FR-001/FR-010): "Adiar" da LA → confirmação com o horário real; aceita ⇒ a LA da dose sai
+  // de cena já (e o token per-Activity é zerado: o servidor a recria em `snoozed_until`, FR-008).
+  const onSnoozeResult = useCallback(async (instanceId, result) => {
+    toastRef.current?.show?.(snoozeToastMessage(result), { variant: result ? 'success' : 'error' })
+    if (!result || prevInstanceRef.current !== instanceId) return
+    await endLiveActivity()
+    await _clearActivityToken(instanceId)
+    prevInstanceRef.current = null
+  }, [])
+
   // Logout → encerra a LA ativa.
   useEffect(() => {
     if (userId || !enabled) return
@@ -271,16 +314,16 @@ export default function DoseLiveActivityBridge() {
     if (!enabled || !userId) return undefined
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
-    processPendingActions(tzRef.current)
+    processPendingActions(tzRef.current, { onSnoozeResult })
     registerPushToStart(userId) // Spec 041: registra token push-to-start no mount/foreground
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
-      processPendingActions(tzRef.current)
+      processPendingActions(tzRef.current, { onSnoozeResult })
       registerPushToStart(userId)
     })
     return () => sub.remove()
-  }, [enabled, userId, load])
+  }, [enabled, userId, load, onSnoozeResult])
 
   // Re-sync sob demanda (mutação de tratamento).
   useEffect(() => {

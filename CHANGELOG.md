@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "Adiar" na dose essencial esconde o aviso fixo e nunca adianta o alarme (spec 101)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.11` → `0.33.12` só para build intermediário — não
+  é lançamento; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — muda código nativo
+  do widget da Live Activity). Ao tocar "Adiar" no aviso fixo da dose (Android) ou na Live Activity
+  (iPhone), o aviso sai da tela e volta no novo horário como "Dose crítica agora". Antes, ele ficava
+  com o contador do horário antigo, que passava de zero e seguia negativo. "Adiar" antes da hora da
+  dose agora marca o alarme para 5 minutos depois do horário da dose; antes, marcava para 5 minutos a
+  partir do toque e podia adiantar o aviso. No iPhone, aparece a confirmação "Alarme reagendado para
+  HH:MM".
+- **Mobile** (`Fixed`, `patch`, mesmo build). No Android, o aviso fixo da dose essencial volta a
+  mudar de estado sozinho ("agora" → "pendente") com o app fechado; antes, abrir o app ou criar uma
+  dose apagava a próxima mudança e o aviso ficava parado. E "Pular" pela notificação do alarme agora
+  também tira o aviso fixo da tela, como já fazia o "Tomei".
+- **Backend/Infra** (`Fixed`, `patch` — sem arquivo de versão; deploy na Vercel no merge). Quando uma
+  dose essencial adiada chega no novo horário, o servidor recria a Live Activity do iPhone já em
+  "agora", mesmo com o app fechado; enquanto a dose está adiada, encerra a Live Activity antiga. Só
+  age para quem tem o app na versão `0.33.12` ou posterior; versões anteriores seguem como hoje.
+- **Backend/Infra** (`Fixed`, `patch`). Ao adiar antes do horário da dose, o servidor deixava de
+  reconhecer a soneca e mandava o aviso por cima do alarme. Agora ele confere o horário exato da
+  soneca informado pelo app (`0.33.12` ou posterior); versões anteriores seguem a regra de antes.
+- **Nota de loja:** ao adiar uma dose essencial, o aviso fixo some e volta no novo horário.
+
 ### Alarme adiado de dose essencial não é mais interrompido pelo aviso do servidor (spec 082 D1)
 
 - **Backend/Infra** (`Fixed`, `patch` — sem arquivo de versão; deploy na Vercel no merge; corrige
