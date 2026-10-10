@@ -19,7 +19,7 @@ import { createDoseInstanceRepository, createCriticalAuditService, parseISO, for
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
-import { setSnoozeAnchors, setSnoozeAttempts } from './snoozeAnchorStore'
+import { setSnoozeAnchors, setSnoozeAttempts, getSnoozeAttempts } from './snoozeAnchorStore'
 import { SURFACE_ID_SUFFIX } from '@platform/doseActivity/doseActivitySurfaceService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
@@ -674,7 +674,11 @@ export async function scheduleSnooze({
     return false
   }
 
-  const next = currentSnoozeAttempt + 1
+  // Spec 101 C-28: a contagem vale para TODOS os caminhos. O "Adiar" da LA (fila do App Intent) não
+  // conhece a tentativa e mandava 0 — cada Adiar recomeçava do zero e o teto nunca valia. Fonte: a maior
+  // entre o chamador e a gravada localmente na soneca anterior (C-25).
+  const stored = (await getSnoozeAttempts())[String(doseInstanceId)] ?? 0
+  const next = Math.max(currentSnoozeAttempt, stored) + 1
   if (next > MAX_SNOOZE_ATTEMPTS) return false
 
   await ensureAlarmSetup()

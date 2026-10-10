@@ -7,13 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### iPhone deixa de mostrar a notificação "Dose crítica agora" sem botões (spec 101, correção do smoke)
+### iPhone deixa de mostrar a notificação "Dose crítica agora" sem botões e o limite de sonecas vale no "Adiar" da Live Activity (spec 101, correção do smoke)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.16` → `0.33.17` só para build intermediário; entra no
   pacote de loja `0.34.0`; canal: **build de loja**, R-314). Quando um alarme tocava com o app aberto, o
   iPhone podia mostrar uma notificação extra "Dose crítica agora", sem botões, que não saía da tela —
   era a notificação contínua do Android rodando no iPhone. Ela não aparece mais, e as que ficaram
   presas somem quando o app abre.
+- **Mobile** (`Fixed`, `patch`; mesmo build). O "Adiar" da Live Activity respeitava o limite de 3
+  sonecas só na tela do alarme: pela Live Activity, cada toque recomeçava a contagem. Agora a 4ª
+  tentativa é recusada em qualquer caminho.
 
 ### "Pular" tira a Live Activity da tela (spec 101, correção do smoke)
 
