@@ -78,7 +78,6 @@ async function _clearActivityToken(instanceId) {
  * background quem dirige a LA é o servidor. E só marca a dose como armada quando a LA existe.
  */
 export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, foreground = true }) {
-  if (!foreground) return prevInstanceId
   const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
@@ -91,6 +90,13 @@ export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, fo
   )
   const items = allItems.filter((it) => it.status === 'pending' && it.critical)
   const active = selectActiveDoseActivity(items, now)
+
+  // C-13a/C-16: em background só leva ao servidor o token da LA que já está na tela (criada pelo
+  // push-to-start, que acordou o app) — sem ele o servidor não atualiza nem encerra essa LA.
+  if (!foreground) {
+    if (active) await syncActivityToken(active.instanceId)
+    return prevInstanceId
+  }
 
   // A dose que mostrávamos virou `taken`? → card `done` (~3min) em vez de só encerrar. Retorna o
   // HORÁRIO REAL da tomada (registeredAt), NÃO `now` — senão o card mostra a hora do re-derive
@@ -108,6 +114,10 @@ export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, fo
       if (takenAt) await showDoneLiveActivity({ instanceId: prevInstanceId, takenAt })
       else await endLiveActivity()
       await _clearActivityToken(prevInstanceId) // LA encerrada → token não serve mais
+    } else {
+      // C-17: LA que este processo não criou (push-to-start do servidor) também sai — sem dose ativa
+      // não há o que mostrar. Sem LA na tela, é no-op.
+      await endLiveActivity()
     }
     return null
   }
@@ -303,10 +313,12 @@ export default function DoseLiveActivityBridge() {
   // de cena já (e o token per-Activity é zerado: o servidor a recria em `snoozed_until`, FR-008).
   const onSnoozeResult = useCallback(async (instanceId, result) => {
     toastRef.current?.show?.(snoozeToastMessage(result), { variant: result ? 'success' : 'error' })
-    if (!result || prevInstanceRef.current !== instanceId) return
+    if (!result) return
+    // C-17: encerra mesmo quando a LA veio do servidor (push-to-start) e não deste processo — o
+    // "Adiar" saiu dela, então é a LA desta dose.
     await endLiveActivity()
     await _clearActivityToken(instanceId)
-    prevInstanceRef.current = null
+    if (prevInstanceRef.current === instanceId) prevInstanceRef.current = null
   }, [])
 
   // Logout → encerra a LA ativa.

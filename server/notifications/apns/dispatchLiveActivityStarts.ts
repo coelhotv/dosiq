@@ -28,6 +28,7 @@ interface DoseInstanceRow {
   user_id: string
   scheduled_for: string
   critical_alarm?: boolean
+  snoozed_until?: string | null
   // 052 Slice B: identidade CONGELADA na ocorrência (embed direto pela FK própria).
   medicine_id?: string | null
   medicine?: { name?: string } | null
@@ -46,7 +47,7 @@ const DEFAULT_LEAD_MINUTES = 60 // = SURFACE_WINDOWS.upcomingMinutes (later→up
 // 052 Slice B: `medicine:medicines(...)` pendura na ocorrência (FK própria), não no protocolo —
 // o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.
 const SELECT_FIELDS = `
-  id, user_id, scheduled_for, critical_alarm, medicine_id,
+  id, user_id, scheduled_for, critical_alarm, medicine_id, snoozed_until,
   medicine:medicines(name, dosage_unit, dosage_per_pill),
   protocol:protocols(
     id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
@@ -260,9 +261,18 @@ interface DispatchForUserParams {
   audit: ReturnType<typeof createCriticalAuditService>
 }
 
+/** `snoozed_until` no futuro? Ausente/ilegível ⇒ não. @private */
+function _isSnoozedAt(inst: DoseInstanceRow, now: Date): boolean {
+  if (!inst.snoozed_until) return false
+  const ms = parseISO(inst.snoozed_until).getTime()
+  return !Number.isNaN(ms) && ms > now.getTime()
+}
+
 /** Envia o start p/ os devices de UM usuário (IDOR guard + 410 + idempotência). @private */
 async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit }: DispatchForUserParams): Promise<'skipped' | 'failed' | 'sent'> {
-  const items = instances.map(mapInstance)
+  // Spec 101 C-18: dose com soneca vigente está escondida (Adiar) — o start da janela não a ressuscita.
+  // Quem a traz de volta é a recriação no claim da soneca (`startSnoozedLiveActivity`).
+  const items = instances.filter((inst) => !_isSnoozedAt(inst, now)).map(mapInstance)
   const active = selectActiveDoseActivity(items, now)
   if (!active || !active.instanceId) return 'skipped'
   // Auditoria (spec 042): userId é o dono da dose (SEC-2 — derivado da instância, não de sessão).
@@ -399,8 +409,9 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
  * embarca a mudança (o pacote de loja é 0.34.0; a frota real está em ≤ 0.30.x). Abaixo disso o servidor não age: o bridge antigo recriaria a LA que
  * o servidor encerrasse, minuto a minuto (analysis-A C-8).
  */
-// 0.33.12 matava a LA recriada ao subir em background (smoke iOS 2026-10-09, C-13) ⇒ corte em 0.33.13.
-export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.13' // 1º build com a 101 completa; loja = 0.34.0
+// 0.33.12 matava a LA recriada ao subir em background (C-13); 0.33.13 não capturava o token da LA
+// criada pelo servidor, que ficava sem update/end (C-16) ⇒ corte em 0.33.14.
+export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.14' // 1º build com a 101 completa; loja = 0.34.0
 
 /** Algum device push-to-start ativo do usuário está em versão capaz? Versão nula/ilegível ⇒ não. */
 export function hasSnoozeCapableDevice(devices: Array<{ app_version?: unknown }> | null | undefined): boolean {

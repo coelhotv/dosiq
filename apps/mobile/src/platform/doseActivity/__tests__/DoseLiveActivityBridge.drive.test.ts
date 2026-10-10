@@ -22,15 +22,17 @@ jest.mock('@dashboard/services/dashboardService', () => ({
 }))
 jest.mock('@navigation/navigateToDose', () => ({ navigateToDose: jest.fn() }))
 jest.mock('../pushToStartRegistration', () => ({ registerPushToStart: jest.fn(), resetPushToStartDedupe: jest.fn() }))
-jest.mock('../syncActivityToken', () => ({ syncActivityToken: jest.fn(), forgetSyncedToken: jest.fn() }))
+const mockSync = jest.fn()
+jest.mock('../syncActivityToken', () => ({ syncActivityToken: (...a: any[]) => mockSync(...a), forgetSyncedToken: jest.fn() }))
 jest.mock('@platform/analytics/reminderEvents', () => ({ emitReminderOpened: jest.fn() }))
 jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: jest.fn() }))
+let mockActive: any = { instanceId: 'i1', state: 'now' }
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true, status: 'pending' }]
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
   createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
   buildDoseItemsFromInstances: () => mockItems,
-  selectActiveDoseActivity: () => ({ instanceId: 'i1', state: 'now' }),
+  selectActiveDoseActivity: () => mockActive,
 }))
 
 import { deriveAndDrive } from '../DoseLiveActivityBridge'
@@ -38,6 +40,7 @@ import { deriveAndDrive } from '../DoseLiveActivityBridge'
 const base = { userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' }
 
 afterEach(() => {
+  mockActive = { instanceId: 'i1', state: 'now' }
   jest.clearAllMocks()
   jest.clearAllTimers()
 })
@@ -49,6 +52,12 @@ describe('deriveAndDrive — C-13 (LA recriada pelo servidor)', () => {
     expect(mockEnd).not.toHaveBeenCalled()
     expect(mockUpdate).not.toHaveBeenCalled()
     expect(r).toBeNull() // nada armado por este processo
+  })
+
+  it('🔴 C-16: app em background ⇒ leva ao servidor o token da LA que o push-to-start criou', async () => {
+    await deriveAndDrive({ ...base, prevInstanceId: null, foreground: false })
+    expect(mockSync).toHaveBeenCalledWith('i1')
+    expect(mockStart).not.toHaveBeenCalled()
   })
 
   it('🔴 C-13b: start falhou ⇒ não marca a dose como armada (próximo derive tenta de novo)', async () => {
@@ -77,5 +86,12 @@ describe('deriveAndDrive — C-13 (LA recriada pelo servidor)', () => {
     const r = await deriveAndDrive({ ...base, prevInstanceId: 'i1', foreground: true })
     expect(mockStart).not.toHaveBeenCalled()
     expect(r).toBe('i1')
+  })
+
+  it('🔴 C-17: sem dose ativa e LA na tela que este processo não criou (servidor) ⇒ encerra', async () => {
+    mockActive = null // dose adiada: oculta até a âncora
+    const r = await deriveAndDrive({ ...base, prevInstanceId: null, foreground: true })
+    expect(mockEnd).toHaveBeenCalledTimes(1)
+    expect(r).toBeNull()
   })
 })

@@ -72,6 +72,31 @@ describe('dispatchLiveActivityStarts', () => {
     expect(supabase._updates).toContainEqual({ la_push_started_at: NOW.toISOString() });
   });
 
+  it('🔴 101 C-18: dose com soneca vigente não ganha LA da janela (estava escondida pelo Adiar)', async () => {
+    // Smoke iOS 2026-10-10: Adiar às 13:50:44 (soneca 14:05); start da janela às 13:51:03 criou LA nova,
+    // sem token, contador parado em zero.
+    const snoozed = { ...doseRow(), snoozed_until: '2026-07-01T13:05:00.000Z' };
+    const supabase = makeSupabase([
+      { data: [snoozed], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.sent).toBe(0);
+  });
+
+  it('C-18: soneca já vencida não bloqueia o start', async () => {
+    const past = { ...doseRow(), snoozed_until: '2026-07-01T11:00:00.000Z' };
+    const supabase = makeSupabase([
+      { data: [past], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(r.sent).toBe(1);
+  });
+
   it('S-1 IDOR: token de outro user_id → não envia (guard)', async () => {
     const supabase = makeSupabase([
       { data: [doseRow('userA')], error: null },
@@ -214,8 +239,8 @@ describe('startSnoozedLiveActivity (spec 101)', () => {
     delete process.env.APNS_TEAM_ID; delete process.env.APNS_BUNDLE_ID;
   });
 
-  it('🔴 PO-101-12: device em 0.33.13 (1º build com a 101 completa) ⇒ 1 push-to-start em `now` com nowUntil, sem tocar la_push_started_at', async () => {
-    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
+  it('🔴 PO-101-12: device em 0.33.14 (1º build com a 101 completa) ⇒ 1 push-to-start em `now` com nowUntil, sem tocar la_push_started_at', async () => {
+    const supabase = makeSupabase([{ data: [dev('0.33.14')], error: null }]);
     const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
     const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });
     expect(r).toBe('sent');
@@ -230,7 +255,7 @@ describe('startSnoozedLiveActivity (spec 101)', () => {
     // Smoke iOS 2026-10-09: soneca 16:41:29.738, claim 16:41:03 ⇒ core devolvia null (antes da âncora) e
     // a recriação saía `skipped` em silêncio.
     const anchored = { ...item, snoozedUntil: '2026-07-01T12:35:29.738Z' };
-    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
+    const supabase = makeSupabase([{ data: [dev('0.33.14')], error: null }]);
     const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
     const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item: anchored, now: new Date('2026-07-01T12:35:03.000Z'), sendFn });
     expect(r).toBe('sent');
@@ -241,7 +266,7 @@ describe('startSnoozedLiveActivity (spec 101)', () => {
 
   it('C-14: âncora longe no futuro (claim fora de hora) ⇒ não antecipa a superfície', async () => {
     const far = { ...item, snoozedUntil: '2026-07-01T12:40:00.000Z' };
-    const supabase = makeSupabase([{ data: [dev('0.33.13')], error: null }]);
+    const supabase = makeSupabase([{ data: [dev('0.33.14')], error: null }]);
     const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
     const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item: far, now: CLAIM, sendFn });
     expect(r).toBe('skipped');
@@ -249,7 +274,7 @@ describe('startSnoozedLiveActivity (spec 101)', () => {
   });
 
   it('🔴 PO-101-12: device em 0.30.0 ou sem versão ⇒ 0 envios (cliente antigo = comportamento de hoje)', async () => {
-    for (const v of ['0.30.0', '0.33.11', '0.33.12', null, 'lixo']) {
+    for (const v of ['0.30.0', '0.33.11', '0.33.12', '0.33.13', null, 'lixo']) {
       const supabase = makeSupabase([{ data: [dev(v)], error: null }]);
       const sendFn = vi.fn((_p: any) => Promise.resolve({ ok: true, status: 200 }));
       const r = await startSnoozedLiveActivity({ supabase, logger, userId: 'userA', item, now: CLAIM, sendFn });

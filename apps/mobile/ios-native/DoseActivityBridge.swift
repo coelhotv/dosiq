@@ -24,6 +24,7 @@ class DoseActivityBridge: NSObject {
         // sendo observado/persistido quando o JS chama getPushToStartToken (mount/foreground).
         if #available(iOS 17.2, *) {
             DoseActivityBridge.startPushToStartObserver()
+            DoseActivityBridge.startActivityUpdatesObserver()
         }
     }
 
@@ -110,6 +111,11 @@ class DoseActivityBridge: NSObject {
     @available(iOS 17.2, *)
     private static func observeActivityPushToken(_ activity: Activity<DoseActivityAttributes>, instanceId: String) {
         guard !instanceId.isEmpty else { return }
+        // Uma Activity, um observer: a mesma LA chega pelo `start` local E pelo `activityUpdates`.
+        observedLock.lock()
+        let isNew = observedActivityIds.insert(activity.id).inserted
+        observedLock.unlock()
+        guard isNew else { return }
         Task {
             for await tokenData in activity.pushTokenUpdates {
                 let hex = tokenData.map { String(format: "%02x", $0) }.joined()
@@ -172,7 +178,9 @@ class DoseActivityBridge: NSObject {
              rejecter reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 16.2, *) else { resolve(nil); return }
         Task {
-            for activity in Activity<DoseActivityAttributes>.activities {
+            // Spec 101 C-17: o RN encerra também sem saber se há LA (dose saiu de cena). Pula as já
+            // encerradas — o card `done` (end com dismissal em ~3 min) não pode sumir antes da hora.
+            for activity in Activity<DoseActivityAttributes>.activities where activity.activityState != .ended && activity.activityState != .dismissed {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
             resolve(nil)
@@ -187,6 +195,27 @@ class DoseActivityBridge: NSObject {
         let queue = defaults.array(forKey: DoseActivityAppGroup.pendingActionKey) ?? []
         defaults.removeObject(forKey: DoseActivityAppGroup.pendingActionKey)
         resolve(queue)
+    }
+
+    private static var observedActivityIds = Set<String>()
+    private static let observedLock = NSLock()
+    private static var activityUpdatesObserverStarted = false
+
+    // Spec 101 C-16: LA criada FORA do app (push-to-start do servidor — janela `upcoming` e recriação da
+    // soneca) também tem token per-Activity; sem capturá-lo o servidor não consegue atualizar nem
+    // encerrar essa LA (ficava órfã: 103-B). Observa as já existentes e as que chegarem.
+    @available(iOS 17.2, *)
+    private static func startActivityUpdatesObserver() {
+        if activityUpdatesObserverStarted { return }
+        activityUpdatesObserverStarted = true
+        for activity in Activity<DoseActivityAttributes>.activities {
+            observeActivityPushToken(activity, instanceId: activity.attributes.instanceId)
+        }
+        Task {
+            for await activity in Activity<DoseActivityAttributes>.activityUpdates {
+                observeActivityPushToken(activity, instanceId: activity.attributes.instanceId)
+            }
+        }
     }
 
     // Spec 041 — push-to-start (ActivityKit, iOS 17.2+). O SO gera um token por-device via a
