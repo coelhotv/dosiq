@@ -141,6 +141,9 @@ async function scheduleNextBoundary(doseItem, fromMs, discreet) {
  * (done/missed) → encerra. @param {object} activity - DoseActivityState atual (selectActiveDoseActivity)
  */
 export async function armDoseActivity(activity, doseItem, { now = getRawNow(), discreet = false } = {}) {
+  // Spec 101 C-27: superfície por notificação é SÓ Android (no iOS é a Live Activity). Sem esta guarda o
+  // reconcile do alarme entregue em foreground exibia "Dose crítica agora" e agendava `:surface` no iPhone.
+  if (Platform.OS !== 'android') return
   if (!activity || !activity.instanceId || !doseItem) return
   if (activity.state === DOSE_ACTIVITY_STATES.DONE || activity.state === DOSE_ACTIVITY_STATES.MISSED) {
     await endDoseActivity(activity.instanceId)
@@ -156,6 +159,7 @@ export async function armDoseActivity(activity, doseItem, { now = getRawNow(), d
  * @param {object} data - data da notificação de superfície entregue (__surface)
  */
 export async function advanceDoseActivity(data, now = getRawNow()) {
+  if (Platform.OS !== 'android') return // C-27
   if (!data || data.__surface !== 'true' || !data.doseInstanceId) return
   const doseItem = reconstructDoseItem(data)
   if (!doseItem.scheduledFor) return
@@ -171,6 +175,7 @@ export async function advanceDoseActivity(data, now = getRawNow()) {
  * Só dose crítica single (superfície não cobre alarme agrupado). @param {object} data - data do alarme
  */
 export async function reconcileDoseActivityFromAlarm(data, now = getRawNow()) {
+  if (Platform.OS !== 'android') return // C-27
   if (!data || !data.doseInstanceId) return
   if (data.isGrouped === 'true') return // superfície é por-dose; alarme agrupado não mapeia 1:1
   if (data.isCritical !== 'true' && data.isCritical !== true) return // superfície só p/ crítica
