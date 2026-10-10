@@ -11,7 +11,7 @@
 // Idempotência do update: dose_instances.la_push_state guarda o último estado empurrado.
 // Fail-open total (FR-008): qualquer falha loga e segue — NUNCA propaga, NUNCA toca o alarme.
 
-import { deriveDoseActivityState, createCriticalAuditService, resolveInstanceMedicine } from '@dosiq/core'
+import { deriveDoseActivityState, createCriticalAuditService, resolveInstanceMedicine, SNOOZE_RETURN_LEAD_MS } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { isSnoozeLiveActivityCapable } from './dispatchLiveActivityStarts.js'
@@ -170,6 +170,23 @@ interface DriveInstanceParams {
   snoozeCapable?: boolean
 }
 
+// Spec 101 C-19: o widget só troca o contador por "agora" quando é redesenhado; o stale-date já está no
+// `late` e T0 não é troca de estado. `now_due` = `now` depois do horário (sem soneca) — força UM update
+// em T0. Só existe em `la_push_state`; o widget recebe `now`.
+const NOW_DUE = 'now_due'
+
+/** Chave de idempotência do update: o estado derivado, ou `now_due` a partir de T0. @private */
+function _pushStateKey(derived: { state: string, nowUntil: number | null }, inst: DoseInstanceRow, now: Date): string {
+  if (derived.state !== 'now' || derived.nowUntil != null) return derived.state
+  const scheduled = _ms(inst.scheduled_for)
+  return scheduled !== null && now.getTime() >= scheduled ? NOW_DUE : derived.state
+}
+
+/** `la_push_state` → estado do widget (`now_due` é só chave do servidor). @private */
+function _widgetState(pushState: string | null | undefined): string {
+  return !pushState || pushState === NOW_DUE ? 'now' : pushState
+}
+
 /** Processa UMA ocorrência com LA ativa: end se resolvida, update se o estado mudou. @private */
 async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit, snoozeCapable = false }: DriveInstanceParams): Promise<'ended' | 'failed' | 'skipped' | 'updated'> {
   // Auditoria (spec 042): surface_transitioned. userId = dono da instância (SEC-2). detail só
@@ -214,10 +231,11 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
   // Spec 101 (C-6): dose ADIADA com LA viva → encerra já e limpa o token; o claim da soneca a recria em
   // `now` (FR-008). Sem isto a LA seguiria com o contador antigo e, com token, bloquearia a recriação.
   const snoozedMs = _ms(inst.snoozed_until)
-  if (snoozeCapable && snoozedMs !== null && snoozedMs > now.getTime()) {
+  // C-20: dentro da folga da âncora a dose já está de volta — não encerra a LA que app/claim acabam de criar.
+  if (snoozeCapable && snoozedMs !== null && snoozedMs - SNOOZE_RETURN_LEAD_MS > now.getTime()) {
     const res = await endFn({
       pushToken: inst.la_push_token,
-      contentState: { state: inst.la_push_state ?? 'now', scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
+      contentState: { state: _widgetState(inst.la_push_state), scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
       dismissEpochSec: Math.floor(now.getTime() / 1000),
     })
     return _handleEndOutcome(res, { supabase, logger, inst, toState: 'snoozed', emitTransition, emitFailed })
@@ -227,7 +245,8 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
   // Spec 101 (FR-009): com app capaz, deriva com a âncora da soneca (não empurra `late` sobre o `now`).
   const derived = deriveDoseActivityState(mapInstance(inst, snoozeCapable ? snoozeAnchorOf(inst) : null), now)
   if (!derived) return 'skipped' // inválido / fora de janela
-  if (derived.state === inst.la_push_state) return 'skipped' // nada mudou → não spammar APNs
+  const pushKey = _pushStateKey(derived, inst, now)
+  if (pushKey === inst.la_push_state) return 'skipped' // nada mudou → não spammar APNs
 
   // 'missed' num item pendente = passou a tolerância sem registro → encerra (paridade cancel/dismiss).
   if (derived.state === 'missed') {
@@ -247,7 +266,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       ...(derived.nowUntil != null ? { nowUntil: toActivityDateSec(derived.nowUntil) } : {}),
     },
   })
-  return _handleUpdateOutcome(res, { supabase, logger, inst, derivedState: derived.state, emitTransition, emitFailed })
+  return _handleUpdateOutcome(res, { supabase, logger, inst, derivedState: pushKey, emitTransition, emitFailed })
 }
 
 /**

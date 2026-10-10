@@ -58,7 +58,7 @@ describe('dispatchLiveActivityLifecycle', () => {
   });
 
   it('estado mudou (now) e la_push_state=null → 1 update + marca la_push_state', async () => {
-    const supabase = makeSupabase([row({ scheduled_for: at(0), la_push_state: null })]); // now
+    const supabase = makeSupabase([row({ scheduled_for: at(5), la_push_state: null })]); // now, antes de T0
     const updateFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
     const endFn = vi.fn();
     const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn });
@@ -69,7 +69,25 @@ describe('dispatchLiveActivityLifecycle', () => {
   });
 
   it('estado igual ao já empurrado → skip (não spammar APNs)', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(5), la_push_state: 'now' })]);
+    const updateFn = vi.fn();
+    const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+    expect(updateFn).not.toHaveBeenCalled();
+    expect(r.skipped).toBe(1);
+  });
+
+  it('🔴 C-19: `now` empurrado antes de T0 ⇒ em T0 manda UM update (widget troca contador por "agora")', async () => {
     const supabase = makeSupabase([row({ scheduled_for: at(0), la_push_state: 'now' })]);
+    const updateFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+    expect(updateFn).toHaveBeenCalledTimes(1);
+    expect(updateFn.mock.calls[0]![0].contentState.state).toBe('now'); // widget nunca vê `now_due`
+    expect(r.updated).toBe(1);
+    expect(supabase._updates).toContainEqual({ la_push_state: 'now_due' });
+  });
+
+  it('C-19: `now_due` já empurrado ⇒ skip até virar `late`', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-3), la_push_state: 'now_due' })]);
     const updateFn = vi.fn();
     const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
     expect(updateFn).not.toHaveBeenCalled();
@@ -157,6 +175,13 @@ describe('dispatchLiveActivityLifecycle — soneca (spec 101)', () => {
     expect(updateFn).not.toHaveBeenCalled();
     expect(supabase._updates).toContainEqual({ la_push_token: null, la_push_state: null });
     expect(r.ended).toBe(1);
+  });
+
+  it('🔴 C-20: soneca a 1 min da âncora (dentro da folga) ⇒ NÃO encerra a LA que o app/claim acabou de criar', async () => {
+    const supabase = makeSupabase([row({ scheduled_for: at(-30), snoozed_until: at(1), la_push_state: 'now' })]);
+    const endFn = vi.fn(ok);
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn: vi.fn(ok), endFn, isCapableFn: capable });
+    expect(endFn).not.toHaveBeenCalled();
   });
 
   it('🔴 PO-101-12: cliente antigo ⇒ lifecycle de hoje (sem end por soneca, sem âncora)', async () => {

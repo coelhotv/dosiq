@@ -12,7 +12,7 @@
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
-import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine, compareSemver } from '@dosiq/core'
+import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine, compareSemver, SNOOZE_RETURN_LEAD_MS } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
@@ -447,8 +447,7 @@ interface StartSnoozedParams {
 }
 
 // C-14: o claim roda por minuto e reivindica a soneca do minuto corrente — até ~59 s ANTES de uma âncora
-// com segundos (soneca "agora + 5"). Folga para atraso do cron; além dela não antecipa a superfície.
-const SNOOZE_CLAIM_LEAD_MS = 90_000
+// com segundos (soneca "agora + 5"). A folga é a do core (C-20: regra única com o app).
 
 /**
  * Instante em que a LA recriada nasce: a âncora, quando o claim a antecipou por segundos (senão o core
@@ -458,7 +457,7 @@ function _claimInstant(snoozedUntil: unknown, now: Date): Date {
   if (typeof snoozedUntil !== 'string' || snoozedUntil === '') return now // `snoozed_until` vem do banco (ISO)
   const anchor = parseISO(snoozedUntil)
   const ahead = anchor.getTime() - now.getTime()
-  return ahead > 0 && ahead <= SNOOZE_CLAIM_LEAD_MS ? anchor : now
+  return ahead > 0 && ahead <= SNOOZE_RETURN_LEAD_MS ? anchor : now
 }
 
 /** FR-011: devices push-to-start do usuário SE algum está em versão capaz; senão null. @private */

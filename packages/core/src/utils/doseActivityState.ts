@@ -142,6 +142,14 @@ function anchorInstantMs(v: string | Date | number | null | undefined): number |
   return instantMs(v)
 }
 
+
+/**
+ * Spec 101 C-14/C-20: folga antes da âncora da soneca em que a dose já conta como de volta (`now`).
+ * O claim da soneca roda por minuto e recria a LA até ~59 s antes de uma âncora com segundos; +30 s
+ * para atraso do cron. Regra ÚNICA para app e servidor.
+ */
+export const SNOOZE_RETURN_LEAD_MS = 90_000
+
 /**
  * Âncora da soneca válida (Spec 101): instante parseável e NÃO anterior ao horário da dose. Soneca
  * gravada antes de `scheduledFor` (cliente antigo, sem FR-002) é ignorada — o relógio original manda.
@@ -223,7 +231,9 @@ export function deriveDoseActivityState(
     // Spec 101 (D-1 = A): enquanto adiada a dose não tem superfície; da âncora até âncora+nowAfter é
     // `now`; depois volta ao relógio original — cutoff (`missed`) inclusive, nunca deslocado.
     const anchor = validSnoozeAnchor(pick<string | Date | number>(item, 'snoozedUntil', 'snoozed_until'), ms)
-    if (anchor !== null && nowMs < anchor) return null
+    // C-20: o servidor recria a LA até SNOOZE_RETURN_LEAD_MS antes da âncora (claim por minuto); app e
+    // servidor tratam essa folga como "já de volta" — senão o foreground do app encerra a LA recriada.
+    if (anchor !== null && nowMs < anchor - SNOOZE_RETURN_LEAD_MS) return null
     const cutoffMs = ms + (toleranceMinutes ?? w.lateMinutes) * 60000
     const anchorNowEnd = anchor === null ? null : anchor + w.nowAfterMinutes * 60000
     if (anchorNowEnd !== null && nowMs < anchorNowEnd && nowMs < cutoffMs) {

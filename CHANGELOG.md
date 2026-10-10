@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Live Activity mostra "agora" no horário e não some ao tocar na volta da soneca (spec 101, correção do smoke)
+
+- **Backend/Infra** (`Fixed`, `patch`; todas as versões). No horário da dose, a Live Activity troca o
+  contador zerado por "agora" — antes ficava em 00:00 até virar "atrasada".
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.14` → `0.33.15` só para build intermediário; entra
+  no pacote de loja `0.34.0`; canal: **build de loja**, R-314). Abrir o app no minuto em que a Live
+  Activity volta da soneca não a encerra mais: app e servidor tratam a dose como de volta a partir de
+  90 s antes do fim da soneca.
+
 ### Live Activity criada pelo servidor passa a ser atualizada e encerrada (spec 101, correção do smoke)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.13` → `0.33.14` só para build intermediário;

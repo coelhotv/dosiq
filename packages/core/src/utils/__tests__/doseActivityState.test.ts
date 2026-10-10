@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   deriveDoseActivityState,
+  SNOOZE_RETURN_LEAD_MS,
   selectActiveDoseActivity,
   doseActivityBoundaryTimes,
   DOSE_ACTIVITY_STATES,
@@ -343,6 +344,15 @@ describe('deriveDoseActivityState — âncora da soneca (spec 101)', () => {
   it('antes de snoozedUntil → null (superfície oculta), mesmo com a dose em upcoming/late', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(30), snoozedUntil: iso(35) }), now)).toBeNull()
     expect(deriveDoseActivityState(item({ scheduledFor: iso(-30), snoozedUntil: iso(5) }), now)).toBeNull()
+  })
+
+  it('🔴 C-20: a menos de SNOOZE_RETURN_LEAD_MS da âncora → já `now` (app não encerra a LA recriada)', () => {
+    const anchorMs = now.getTime() + 36_000 // smoke 10/10: recriação 36 s antes da âncora
+    const st = deriveDoseActivityState(item({ scheduledFor: iso(-5), snoozedUntil: anchorMs }), now)
+    expect(st?.state).toBe('now')
+    expect(st?.nowUntil).toBe(anchorMs + 10 * 60000)
+    const longe = now.getTime() + SNOOZE_RETURN_LEAD_MS + 1000
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-5), snoozedUntil: longe }), now)).toBeNull()
   })
 
   it('em snoozedUntil → now com nowUntil = âncora+10min, mesmo se o relógio original diria late', () => {
