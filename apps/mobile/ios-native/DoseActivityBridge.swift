@@ -197,9 +197,6 @@ class DoseActivityBridge: NSObject {
         resolve(queue)
     }
 
-    // Spec 041 — push-to-start (ActivityKit, iOS 17.2+). O SO gera um token por-device via a
-    // sequência estática `pushToStartTokenUpdates`; o backend (server/notifications/apns) o usa p/
-    // iniciar a LA com o app fechado. Observer idempotente persiste o último token no App Group;
     private static var observedActivityIds = Set<String>()
     private static let observedLock = NSLock()
     private static var activityUpdatesObserverStarted = false
@@ -221,6 +218,9 @@ class DoseActivityBridge: NSObject {
         }
     }
 
+    // Spec 041 — push-to-start (ActivityKit, iOS 17.2+). O SO gera um token por-device via a
+    // sequência estática `pushToStartTokenUpdates`; o backend (server/notifications/apns) o usa p/
+    // iniciar a LA com o app fechado. Observer idempotente persiste o último token no App Group;
     // o getter retorna o persistido (o RN registra no backend com sessão VIVA — PO-SEC-2).
     private static let pushToStartKey = "pushToStartToken"
     private static var pushToStartObserverStarted = false
