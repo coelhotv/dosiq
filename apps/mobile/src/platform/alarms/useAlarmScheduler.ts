@@ -28,6 +28,7 @@ import {
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
+import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from './snoozeAnchorStore'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
@@ -144,6 +145,7 @@ function _filterCriticalAlarmItems(items: any[], nowMs: number) {
 }
 
 async function _scheduleSnoozedAlarms(snoozed: any[]) {
+  const attempts = snoozed.length > 0 ? await getSnoozeAttempts() : {}
   for (const it of snoozed) {
     await alarmService.scheduleAlarm({
       doseInstanceId: it.instanceId,
@@ -154,7 +156,7 @@ async function _scheduleSnoozedAlarms(snoozed: any[]) {
       isCritical: it.critical,
       // Spec 101: âncora no alarme re-armado — o `cancelAll` do resync matou o trigger original, que a
       // levava; sem ela o disparo reconcilia a superfície em `late` em vez de `now`.
-      data: { ...buildSingleAlarmData(it), snoozedUntil: String(it.snoozeFireAt) },
+      data: { ...buildSingleAlarmData(it), snoozedUntil: String(it.snoozeFireAt), snoozeAttempt: String(attempts[String(it.instanceId)] ?? 1) },
       fireAt: it.snoozeFireAt,
     })
   }
@@ -189,7 +191,13 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
   }
 
   const instances = await repo.getWindow(userId, from, end)
-  const rawItems = buildDoseItemsFromInstances(instances, protocols, tz)
+  // Spec 101 C-23: âncora LOCAL da soneca mesclada, como nos bridges. O claim do servidor zera
+  // `snoozed_until` até ~1 min ANTES da âncora; um resync nesse intervalo (app aberto pela LA recriada)
+  // lia só o banco, via a dose no passado e o `cancelAll` matava o alarme da soneca sem re-armar.
+  const rawItems = mergeSnoozeAnchors(
+    buildDoseItemsFromInstances(instances, protocols, tz),
+    await getSnoozeAnchors(now.getTime())
+  )
   const items = _filterCriticalAlarmItems(rawItems, now.getTime())
 
   await alarmService.cancelAll()

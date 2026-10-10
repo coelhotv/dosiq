@@ -74,3 +74,35 @@ export function mergeSnoozeAnchors<T extends { instanceId?: string | null; snooz
     return db !== null && db >= local ? it : { ...it, snoozedUntil: local }
   })
 }
+
+// Spec 101 C-25: contagem de sonecas por ocorrência. O resync (`syncAlarms`) re-arma o alarme da
+// soneca a partir da âncora; sem a contagem ele voltava com `snoozeAttempt: 0` e o teto de sonecas
+// zerava. Só vale enquanto a âncora existir (poda junto).
+export const SNOOZE_ATTEMPT_KEY = '@dosiq/snooze-attempt'
+
+/** Grava a tentativa de soneca de cada ocorrência. Best-effort. */
+export async function setSnoozeAttempts(ids: string[], attempt: number): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(SNOOZE_ATTEMPT_KEY)
+    const map = { ...(raw ? JSON.parse(raw) : {}) }
+    for (const id of ids) if (id) map[String(id)] = attempt
+    const anchors = await _read(Date.now())
+    for (const id of Object.keys(map)) if (!(id in anchors) && !ids.includes(id)) delete map[id]
+    await AsyncStorage.setItem(SNOOZE_ATTEMPT_KEY, JSON.stringify(map))
+  } catch {
+    // best-effort — sem contagem, o re-arme volta a 0 (comportamento anterior)
+  }
+}
+
+/** Mapa `{ id: tentativa }`. Fail-open → {}. */
+export async function getSnoozeAttempts(): Promise<Record<string, number>> {
+  try {
+    const raw = await AsyncStorage.getItem(SNOOZE_ATTEMPT_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    const out: Record<string, number> = {}
+    for (const [id, n] of Object.entries(parsed || {})) if (typeof n === 'number' && Number.isFinite(n)) out[id] = n
+    return out
+  } catch {
+    return {}
+  }
+}
