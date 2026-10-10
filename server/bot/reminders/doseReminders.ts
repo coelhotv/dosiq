@@ -7,6 +7,7 @@ import { dispatchLiveActivityStarts, startSnoozedLiveActivity } from '../../noti
 import { dispatchLiveActivityLifecycle } from '../../notifications/apns/dispatchLiveActivityLifecycle.js';
 import {
   resolveInstanceMedicine,
+  formatDoseItem,
   isProtocolActiveOnDate,
   getTodayLocal as getTodayLocalInTz,
 } from '@dosiq/core';
@@ -28,7 +29,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM: Record<string, string[]>, 
         .from('protocols')
         .select(`
           id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, interval_days, weekdays, start_date, end_date,
-          medicine:medicines(name, dosage_unit, dosage_per_pill),
+          medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml),
           treatment_plan:treatment_plans(id, name)
         `)
         .in('user_id', chunk)
@@ -110,7 +111,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   const selectFields = `
     id, user_id, protocol_id, critical_alarm, scheduled_for, medicine_id,
     notified_at, snoozed_until, la_push_token, tolerance_minutes,
-    medicine:medicines(name, dosage_unit, dosage_per_pill),
+    medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml),
     protocol:protocols(
       id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
       treatment_plan:treatment_plans(id, name)
@@ -264,6 +265,7 @@ function mapInstanceToDose(inst) {
     name?: string;
     dosage_unit?: string;
     dosage_per_pill?: number | string | null;
+    units_per_ml?: number | string | null;
   }>(inst, { protocol });
   const medicine = resolvedMedicine || {};
   const protocolName = protocol.name || '';
@@ -284,6 +286,7 @@ function mapInstanceToDose(inst) {
     dosageUnit: medicine.dosage_unit,
     dosagePerPill,
     intakeUnit: protocol.intake_unit ?? null,
+    unitsPerMl: medicine.units_per_ml ?? null,
     medicineId,
     critical_alarm: inst.critical_alarm ?? false,
     // Horário ORIGINAL agendado da ocorrência (não o instante de saída do push). Sem isto, doses
@@ -329,6 +332,8 @@ async function _recreateSnoozedLiveActivities(userId, doses) {
           critical_alarm: true,
           medicineName: d.medicineName,
           treatmentPlanId: d.treatmentPlanId,
+          // C-22: subtítulo da dose (paridade com a LA iniciada pelo app — formatDoseItem).
+          doseLabel: formatDoseItem(d),
         },
       });
     } catch (err) {

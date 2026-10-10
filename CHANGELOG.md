@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Live Activity não duplica quando a dose é criada perto do horário (spec 101, correção do smoke)
+
+- **Backend/Infra** (`Fixed`, `patch`; todas as versões; sem build). Com o app já mostrando a Live
+  Activity da dose, o servidor não abre uma segunda — antes a cópia do app ficava parada em 0:00.
+- **Backend/Infra** (`Fixed`, `patch`; todas as versões). A Live Activity aberta pelo servidor (janela da
+  dose e volta da soneca) passa a mostrar a dose, como "10 UI (≈ 0,1 mL)", igual à aberta pelo app.
+
 ### Live Activity mostra "agora" no horário e não some ao tocar na volta da soneca (spec 101, correção do smoke)
 
 - **Backend/Infra** (`Fixed`, `patch`; todas as versões). No horário da dose, a Live Activity troca o

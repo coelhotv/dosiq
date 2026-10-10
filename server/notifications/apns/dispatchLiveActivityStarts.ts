@@ -12,7 +12,7 @@
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
-import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine, compareSemver, SNOOZE_RETURN_LEAD_MS } from '@dosiq/core'
+import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine, compareSemver, SNOOZE_RETURN_LEAD_MS, formatDoseItem } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
@@ -29,11 +29,15 @@ interface DoseInstanceRow {
   scheduled_for: string
   critical_alarm?: boolean
   snoozed_until?: string | null
+  la_push_token?: string | null
+  expected_dose?: number | string | null
   // 052 Slice B: identidade CONGELADA na ocorrência (embed direto pela FK própria).
   medicine_id?: string | null
-  medicine?: { name?: string } | null
+  medicine?: { name?: string, dosage_unit?: string | null, dosage_per_pill?: number | string | null, units_per_ml?: number | string | null } | null
   protocol?: {
     name?: string
+    dosage_per_intake?: number | string | null
+    intake_unit?: string | null
     treatment_plan_id?: string | null
     medicine_id?: string | null
   }
@@ -47,8 +51,8 @@ const DEFAULT_LEAD_MINUTES = 60 // = SURFACE_WINDOWS.upcomingMinutes (later→up
 // 052 Slice B: `medicine:medicines(...)` pendura na ocorrência (FK própria), não no protocolo —
 // o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.
 const SELECT_FIELDS = `
-  id, user_id, scheduled_for, critical_alarm, medicine_id, snoozed_until,
-  medicine:medicines(name, dosage_unit, dosage_per_pill),
+  id, user_id, scheduled_for, critical_alarm, medicine_id, snoozed_until, la_push_token, expected_dose,
+  medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml),
   protocol:protocols(
     id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
     treatment_plan:treatment_plans(id, name)
@@ -65,6 +69,14 @@ function mapInstance(inst: DoseInstanceRow) {
     critical_alarm: inst.critical_alarm ?? false,
     medicineName: medicine.name || protocol.name || 'Dose',
     treatmentPlanId: protocol.treatment_plan_id ?? null,
+    // C-22: subtítulo da dose, mesma regra do DoseItem do app (doseZones: expected_dose ?? protocolo).
+    doseLabel: formatDoseItem({
+      dosagePerIntake: inst.expected_dose ?? protocol.dosage_per_intake ?? 1,
+      intakeUnit: protocol.intake_unit ?? null,
+      dosageUnit: medicine.dosage_unit,
+      dosagePerPill: medicine.dosage_per_pill,
+      unitsPerMl: medicine.units_per_ml,
+    }),
   }
 }
 
@@ -275,6 +287,13 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   const items = instances.filter((inst) => !_isSnoozedAt(inst, now)).map(mapInstance)
   const active = selectActiveDoseActivity(items, now)
   if (!active || !active.instanceId) return 'skipped'
+  // Spec 101 C-21 (103-B): token per-Activity gravado = o app já tem LA viva desta dose. Push-to-start
+  // criaria a 2ª (e o token dela sobrescreveria o da 1ª, que ficaria órfã). Trava sem enviar: o app é o dono.
+  const activeRow = instances.find((inst) => String(inst.id) === String(active.instanceId))
+  if (activeRow?.la_push_token) {
+    await _lockInstanceStarted({ supabase, logger, instanceId: active.instanceId, now })
+    return 'skipped'
+  }
   // Auditoria (spec 042): userId é o dono da dose (SEC-2 — derivado da instância, não de sessão).
   // detail sem PII (sem nome de medicamento/token) — só status HTTP/APNs quando útil.
   const emitAudit = (event: string, detail: Record<string, unknown> | null = null) =>

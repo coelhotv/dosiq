@@ -97,6 +97,36 @@ describe('dispatchLiveActivityStarts', () => {
     expect(r.sent).toBe(1);
   });
 
+  it('🔴 101 C-21: dose com LA do app (token gravado) ⇒ não faz push-to-start, só trava', async () => {
+    // Smoke iOS 2026-10-10 15:49: LA local (token 18:49:28Z) + start da janela 18:50:10Z ⇒ 2 LAs.
+    const withLa = { ...doseRow(), la_push_token: 'act-token' };
+    const supabase = makeSupabase([
+      { data: [withLa], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.sent).toBe(0);
+    expect(supabase._updates).toContainEqual({ la_push_started_at: NOW.toISOString() });
+  });
+
+  it('🔴 101 C-22: payload leva o subtítulo da dose (paridade com a LA do app)', async () => {
+    const liquid = {
+      ...doseRow(), expected_dose: null,
+      medicine: { name: 'Glatus', dosage_unit: 'ui/ml', dosage_per_pill: 100, units_per_ml: 100 },
+      protocol: { id: 'p1', name: 'Glatus', dosage_per_intake: 10, intake_unit: 'UI', treatment_plan_id: 'plan1' },
+    };
+    const supabase = makeSupabase([
+      { data: [liquid], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn((_p: { attributes: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
+    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(sendFn).toHaveBeenCalledTimes(1);
+    expect(String(sendFn.mock.calls[0]![0].attributes.doseLabel)).toMatch(/^10 UI/);
+  });
+
   it('S-1 IDOR: token de outro user_id → não envia (guard)', async () => {
     const supabase = makeSupabase([
       { data: [doseRow('userA')], error: null },
