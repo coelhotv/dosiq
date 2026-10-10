@@ -7,6 +7,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "Pular" tira a Live Activity da tela (spec 101, correção do smoke)
+
+- **Backend/Infra** (`Fixed`, `patch`; todas as versões; sem build). Pular a dose (ou a dose passar do
+  prazo) não encerrava a Live Activity do iPhone: o servidor procurava status que não existem no banco
+  e ainda a atualizava como "na hora". Agora ela sai em até 1 minuto.
+
 ### Soneca volta a tocar e some com a Live Activity na hora (spec 101, correção do smoke)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.15` → `0.33.16` só para build intermediário; entra no

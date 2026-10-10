@@ -50,7 +50,10 @@ type EndFn = (params: { pushToken: string | null | undefined; contentState: Reco
 type IsCapableFn = (supabase: any, logger: Logger | undefined, userId: string) => Promise<boolean>
 
 // Status que encerram a LA (dose saiu de pendente).
-const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
+// Spec 101 C-29: valores REAIS do banco (`dose_instances.status`: pending · taken · missed · skipped_user ·
+// skipped_paused — conferido em 2026-10-10). O conjunto antigo tinha 'skipped'/'completed'/'done', que não
+// existem: "Pular" deixava a LA viva e o lifecycle ainda a atualizava como `now`.
+const RESOLVED_STATUSES = new Set(['taken', 'missed', 'skipped_user', 'skipped_paused'])
 
 // 052 Slice B: `medicine:medicines(...)` pendura na ocorrência (FK própria), não no protocolo —
 // o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.

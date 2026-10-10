@@ -94,6 +94,18 @@ describe('dispatchLiveActivityLifecycle', () => {
     expect(r.skipped).toBe(1);
   });
 
+  it.each(['skipped_user', 'skipped_paused', 'missed'])('🔴 C-29: status real %s ⇒ end (não update)', async (status) => {
+    // Smoke iOS 2026-10-10 18:21: "Pular" gravou skipped_user e o lifecycle mandou update `now`.
+    const supabase = makeSupabase([row({ status, la_push_state: 'now' })]);
+    const endFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
+    const updateFn = vi.fn();
+    const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn });
+    expect(updateFn).not.toHaveBeenCalled();
+    expect(endFn).toHaveBeenCalledTimes(1);
+    expect(endFn.mock.calls[0]![0].contentState.state).toBe('missed');
+    expect(r.ended).toBe(1);
+  });
+
   it('dose taken → end (done) + limpa token/estado', async () => {
     const supabase = makeSupabase([row({ status: 'taken', la_push_state: 'late' })]);
     const endFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
