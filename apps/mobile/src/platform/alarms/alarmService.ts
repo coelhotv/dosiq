@@ -749,6 +749,23 @@ export async function scheduleSnooze({
   return { fireAt: nextTs }
 }
 
+
+/**
+ * Spec 101 C-27: até 0.33.16 o reconcile da superfície rodava no iOS e deixava a notificação
+ * "Dose crítica agora" (sem ações) exibida, sem dono para removê-la. Limpa as `:surface` exibidas no
+ * iOS a cada resync. Best-effort. @private
+ */
+async function _clearIosSurfaceLeftovers() {
+  if (Platform.OS !== 'ios') return
+  try {
+    const shown = await notifee.getDisplayedNotifications()
+    const ids = (shown || []).map((n) => n?.id ?? n?.notification?.id).filter((id) => id && String(id).endsWith(SURFACE_ID_SUFFIX))
+    for (const id of ids) await notifee.cancelNotification(String(id))
+  } catch {
+    // best-effort
+  }
+}
+
 /**
  * Cancela os triggers de ALARME do Notifee (não toca expo-notifications).
  *
@@ -767,9 +784,11 @@ export async function cancelAll() {
   if (!Array.isArray(ids)) {
     await notifee.cancelTriggerNotifications()
   } else {
-    const alarmIds = ids.filter((id) => !String(id).endsWith(SURFACE_ID_SUFFIX))
+    // C-27: no iOS não existe superfície por notificação — `:surface` lá é resto do bug (limpa junto).
+    const alarmIds = Platform.OS === 'android' ? ids.filter((id) => !String(id).endsWith(SURFACE_ID_SUFFIX)) : ids
     if (alarmIds.length > 0) await notifee.cancelTriggerNotifications(alarmIds)
   }
+  await _clearIosSurfaceLeftovers()
   debugLog('[alarmService] cancelAll')
 }
 

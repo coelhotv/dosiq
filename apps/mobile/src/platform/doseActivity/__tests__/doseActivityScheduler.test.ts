@@ -2,6 +2,12 @@ import notifee from '@notifee/react-native'
 import { deriveDoseActivityState } from '@dosiq/core'
 import { armDoseActivity, advanceDoseActivity, reconcileDoseActivityFromAlarm } from '../doseActivityScheduler'
 
+// Superfície por notificação é Android-only (spec 101 C-27); casos que testam iOS trocam dentro do teste.
+const RNPlatform = require('react-native').Platform
+const ORIGINAL_OS = RNPlatform.OS
+beforeEach(() => { RNPlatform.OS = 'android' })
+afterAll(() => { RNPlatform.OS = ORIGINAL_OS })
+
 afterEach(() => jest.clearAllMocks())
 
 const NOW = new Date('2026-03-05T12:00:00.000Z')
@@ -229,5 +235,19 @@ describe('soneca na superfície (spec 101)', () => {
     const [payload, trigger] = lastTrigger()
     expect(trigger.timestamp).toBe(NOW.getTime() + 5 * M)
     expect(payload.data.state).toBe('now')
+  })
+})
+
+describe('C-27 — superfície por notificação não roda no iOS', () => {
+  it('🔴 reconcile do alarme entregue (iOS) ⇒ nada exibido nem agendado', async () => {
+    RNPlatform.OS = 'ios'
+    const notifee = require('@notifee/react-native').default
+    const { reconcileDoseActivityFromAlarm } = require('../doseActivityScheduler')
+    await reconcileDoseActivityFromAlarm({
+      doseInstanceId: 'inst-1', isCritical: 'true', medicineName: 'Glatus',
+      scheduledFor: new Date(Date.now() - 60000).toISOString(),
+    })
+    expect(notifee.displayNotification).not.toHaveBeenCalled()
+    expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
   })
 })

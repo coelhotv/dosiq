@@ -56,6 +56,12 @@ describe('cancelAll', () => {
     expect(notifee.cancelNotification).not.toHaveBeenCalled()
   })
 
+  // Superfície por notificação é Android-only (C-27): os casos C-11 rodam no Android.
+  const RN = require('react-native')
+  const OS0 = RN.Platform.OS
+  beforeEach(() => { RN.Platform.OS = 'android' })
+  afterEach(() => { RN.Platform.OS = OS0 })
+
   // Spec 101 (C-11, smoke 2026-10-09): o resync (`syncAlarms` → cancelAll) apagava também o boundary
   // pendente da superfície (`<id>:surface`) e a cadeia congelava no estado exibido até o app abrir.
   it('🔴 preserva os triggers da superfície; cancela só os de alarme', async () => {
@@ -68,6 +74,16 @@ describe('cancelAll', () => {
     ;(notifee.getTriggerNotificationIds as jest.Mock).mockResolvedValueOnce(['inst-1:surface'])
     await cancelAll()
     expect(notifee.cancelTriggerNotifications).not.toHaveBeenCalled()
+  })
+
+  it('🔴 C-27 iOS: `:surface` não é preservado e as exibidas são removidas', async () => {
+    RN.Platform.OS = 'ios'
+    ;(notifee.getTriggerNotificationIds as jest.Mock).mockResolvedValueOnce(['inst-1', 'inst-1:surface'])
+    ;(notifee.getDisplayedNotifications as jest.Mock).mockResolvedValueOnce([{ id: 'inst-1:surface' }, { id: 'inst-2' }])
+    await cancelAll()
+    expect(notifee.cancelTriggerNotifications).toHaveBeenCalledWith(['inst-1', 'inst-1:surface'])
+    expect(notifee.cancelNotification).toHaveBeenCalledTimes(1)
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1:surface')
   })
 
   it('ids ilegíveis ⇒ cancela tudo como antes (nunca deixa alarme velho vivo)', async () => {
