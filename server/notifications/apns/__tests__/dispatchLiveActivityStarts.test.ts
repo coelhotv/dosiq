@@ -72,6 +72,31 @@ describe('dispatchLiveActivityStarts', () => {
     expect(supabase._updates).toContainEqual({ la_push_started_at: NOW.toISOString() });
   });
 
+  it('🔴 101 C-18: dose com soneca vigente não ganha LA da janela (estava escondida pelo Adiar)', async () => {
+    // Smoke iOS 2026-10-10: Adiar às 13:50:44 (soneca 14:05); start da janela às 13:51:03 criou LA nova,
+    // sem token, contador parado em zero.
+    const snoozed = { ...doseRow(), snoozed_until: '2026-07-01T13:05:00.000Z' };
+    const supabase = makeSupabase([
+      { data: [snoozed], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.sent).toBe(0);
+  });
+
+  it('C-18: soneca já vencida não bloqueia o start', async () => {
+    const past = { ...doseRow(), snoozed_until: '2026-07-01T11:00:00.000Z' };
+    const supabase = makeSupabase([
+      { data: [past], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(r.sent).toBe(1);
+  });
+
   it('S-1 IDOR: token de outro user_id → não envia (guard)', async () => {
     const supabase = makeSupabase([
       { data: [doseRow('userA')], error: null },

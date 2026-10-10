@@ -16,6 +16,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   o app registra essa Live Activity no servidor, mesmo em segundo plano.
 - **Backend/Infra** (`Fixed`, `patch`). A recriação da Live Activity na soneca passa a valer só para o
   app `0.33.14` ou posterior.
+- **Backend/Infra** (`Fixed`, `patch`; todas as versões). O servidor não cria mais Live Activity para
+  uma dose adiada: logo depois do "Adiar", ele podia abrir uma Live Activity nova, com o contador
+  parado em zero.
 
 ### Live Activity do iPhone volta de verdade depois de "Adiar" (spec 101, correção do smoke)
 
