@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Soneca volta a tocar e some com a Live Activity na hora (spec 101, correção do smoke)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.15` → `0.33.16` só para build intermediário; entra no
+  pacote de loja `0.34.0`; canal: **build de loja**, R-314). Abrir o app logo antes do fim da soneca
+  (por exemplo, tocando na Live Activity que acabou de voltar) não cancela mais o aviso da soneca.
+  "Soneca" na notificação tira a Live Activity da tela na hora no iPhone, como o "Adiar" dela. O
+  limite de sonecas não zera mais quando o app reorganiza os alarmes.
+
 ### Live Activity não duplica quando a dose é criada perto do horário (spec 101, correção do smoke)
 
 - **Backend/Infra** (`Fixed`, `patch`; todas as versões; sem build). Com o app já mostrando a Live

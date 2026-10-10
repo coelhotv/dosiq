@@ -19,7 +19,7 @@ import { createDoseInstanceRepository, createCriticalAuditService, parseISO, for
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
-import { setSnoozeAnchors } from './snoozeAnchorStore'
+import { setSnoozeAnchors, setSnoozeAttempts } from './snoozeAnchorStore'
 import { SURFACE_ID_SUFFIX } from '@platform/doseActivity/doseActivitySurfaceService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
@@ -468,7 +468,8 @@ export async function scheduleAlarm({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, isCritical, nagAttempt: '0', snoozeAttempt: '0' },
+    // C-25: re-arme da soneca pelo resync mantém a contagem (senão o teto MAX_SNOOZE_ATTEMPTS zera).
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, isCritical, nagAttempt: '0', snoozeAttempt: (data as any)?.snoozeAttempt ?? '0' },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -617,12 +618,30 @@ function _snoozeFireAt(scheduledFor, nowMs) {
  */
 async function _anchorAndDeferSurface(snoozedIds, fireAt, nowMs, alarmData) {
   await setSnoozeAnchors(snoozedIds, fireAt, nowMs)
+  await setSnoozeAttempts(snoozedIds, Number(alarmData?.snoozeAttempt) || 1)
   if (alarmData?.isGrouped === 'true') return
   try {
     const { deferDoseActivity } = require('@platform/doseActivity/doseActivityScheduler')
     await deferDoseActivity(alarmData, nowMs)
   } catch (err) {
     if (__DEV__) console.warn('[alarmService] deferDoseActivity falhou', err?.message)
+  }
+  await _endIosLiveActivity(alarmData)
+}
+
+/**
+ * Spec 101 C-24: no iOS a "Soneca" da notificação tira a Live Activity de cena na hora, como o "Adiar"
+ * da própria LA — antes ela ficava até o servidor encerrar (≤ 1 min, cron). O token fica: o end do
+ * servidor o limpa (pré-condição da recriação na soneca). Best-effort. @private
+ */
+async function _endIosLiveActivity(alarmData) {
+  if (Platform.OS !== 'ios') return
+  if (alarmData?.isCritical !== true && alarmData?.isCritical !== 'true') return
+  try {
+    const { endLiveActivity } = require('@platform/doseActivity/liveActivityService')
+    await endLiveActivity()
+  } catch (err) {
+    if (__DEV__) console.warn('[alarmService] endLiveActivity falhou', err?.message)
   }
 }
 

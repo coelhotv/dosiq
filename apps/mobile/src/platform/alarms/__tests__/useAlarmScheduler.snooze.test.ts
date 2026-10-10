@@ -18,6 +18,13 @@ jest.mock('../alarmService', () => ({
 }))
 
 let mockItems = []
+let mockAnchors: Record<string, number> = {}
+let mockAttempts: Record<string, number> = {}
+jest.mock('../snoozeAnchorStore', () => ({
+  ...jest.requireActual('../snoozeAnchorStore'),
+  getSnoozeAnchors: () => Promise.resolve(mockAnchors),
+  getSnoozeAttempts: () => Promise.resolve(mockAttempts),
+}))
 jest.mock('@dosiq/core', () => ({
   createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
   createCriticalAuditService: () => ({ emit: jest.fn().mockResolvedValue({ ok: true }) }),
@@ -38,7 +45,11 @@ const baseItem = (over = {}) => ({
   ...over,
 })
 
-afterEach(() => jest.clearAllMocks())
+afterEach(() => {
+  mockAnchors = {}
+  mockAttempts = {}
+  jest.clearAllMocks()
+})
 
 describe('syncAlarms — soneca re-armada no resync', () => {
   it('item snoozed (snoozed_until futuro) → scheduleAlarm com fireAt = snoozed_until', async () => {
@@ -75,5 +86,22 @@ describe('syncAlarms — soneca re-armada no resync', () => {
     mockItems = [baseItem({ snoozedUntil: snoozedTs })]
     await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
     expect(mockedScheduleAlarm.mock.calls[0][0].data.snoozedUntil).toBe(String(snoozedTs))
+  })
+
+  it('🔴 C-23: claim zerou snoozed_until no banco antes da âncora ⇒ âncora local re-arma o alarme da soneca', async () => {
+    // Smoke iOS 2026-10-10 17:23: claim 17:23:04 (snoozed_until=null), app aberto 17:23:10, âncora 17:23:24.
+    const anchor = NOW.getTime() + 20_000
+    mockItems = [baseItem({ snoozedUntil: null })]
+    mockAnchors = { 'inst-1': anchor }
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(alarmService.scheduleAlarm).toHaveBeenCalledTimes(1)
+    expect(mockedScheduleAlarm.mock.calls[0][0].fireAt).toBe(anchor)
+  })
+
+  it('🔴 C-25: re-arme mantém a contagem de sonecas', async () => {
+    mockItems = [baseItem({ snoozedUntil: NOW.getTime() + 5 * 60000 })]
+    mockAttempts = { 'inst-1': 2 }
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(mockedScheduleAlarm.mock.calls[0][0].data.snoozeAttempt).toBe('2')
   })
 })

@@ -44,9 +44,13 @@ jest.mock('@platform/analytics/productAnalytics', () => ({
 
 // Spec 101: âncora local + ocultação da superfície (Android) só na soneca ACEITA.
 const mockSetAnchors = jest.fn((..._a: any[]) => Promise.resolve())
+const mockSetAttempts = jest.fn((..._a: any[]) => Promise.resolve())
 jest.mock('../snoozeAnchorStore', () => ({
   setSnoozeAnchors: (...a: any[]) => mockSetAnchors(...a),
+  setSnoozeAttempts: (...a: any[]) => mockSetAttempts(...a),
 }))
+const mockEndLa = jest.fn(() => Promise.resolve())
+jest.mock('@platform/doseActivity/liveActivityService', () => ({ endLiveActivity: () => mockEndLa() }))
 const mockDefer = jest.fn((..._a: any[]) => Promise.resolve())
 jest.mock('@platform/doseActivity/doseActivityScheduler', () => ({
   deferDoseActivity: (...a: any[]) => mockDefer(...a),
@@ -265,6 +269,19 @@ describe('scheduleSnooze — horário e âncora da soneca (spec 101)', () => {
       expect.objectContaining({ doseInstanceId: 'inst-101', snoozedUntil: String(NOW + 5 * M), treatmentId: 'p1' }),
       NOW,
     )
+  })
+
+  it('🔴 C-24: soneca aceita (iOS) ⇒ Live Activity sai na hora + contagem gravada', async () => {
+    const { Platform } = require('react-native')
+    expect(Platform.OS).toBe('ios')
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    expect(mockEndLa).toHaveBeenCalledTimes(1)
+    expect(mockSetAttempts).toHaveBeenCalledWith(['inst-101'], 1)
+  })
+
+  it('C-24: alarme agrupado ⇒ não mexe na Live Activity', async () => {
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), data: { isGrouped: 'true', doseInstanceIds: 'a,b' } })
+    expect(mockEndLa).not.toHaveBeenCalled()
   })
 
   it('FM-10: alarme agrupado ⇒ âncora para todas, sem mexer em superfície', async () => {
