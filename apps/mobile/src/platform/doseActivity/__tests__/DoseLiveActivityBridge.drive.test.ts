@@ -26,12 +26,13 @@ const mockSync = jest.fn()
 jest.mock('../syncActivityToken', () => ({ syncActivityToken: (...a: any[]) => mockSync(...a), forgetSyncedToken: jest.fn() }))
 jest.mock('@platform/analytics/reminderEvents', () => ({ emitReminderOpened: jest.fn() }))
 jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: jest.fn() }))
+let mockActive: any = { instanceId: 'i1', state: 'now' }
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true, status: 'pending' }]
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
   createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
   buildDoseItemsFromInstances: () => mockItems,
-  selectActiveDoseActivity: () => ({ instanceId: 'i1', state: 'now' }),
+  selectActiveDoseActivity: () => mockActive,
 }))
 
 import { deriveAndDrive } from '../DoseLiveActivityBridge'
@@ -39,6 +40,7 @@ import { deriveAndDrive } from '../DoseLiveActivityBridge'
 const base = { userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' }
 
 afterEach(() => {
+  mockActive = { instanceId: 'i1', state: 'now' }
   jest.clearAllMocks()
   jest.clearAllTimers()
 })
@@ -84,5 +86,12 @@ describe('deriveAndDrive — C-13 (LA recriada pelo servidor)', () => {
     const r = await deriveAndDrive({ ...base, prevInstanceId: 'i1', foreground: true })
     expect(mockStart).not.toHaveBeenCalled()
     expect(r).toBe('i1')
+  })
+
+  it('🔴 C-17: sem dose ativa e LA na tela que este processo não criou (servidor) ⇒ encerra', async () => {
+    mockActive = null // dose adiada: oculta até a âncora
+    const r = await deriveAndDrive({ ...base, prevInstanceId: null, foreground: true })
+    expect(mockEnd).toHaveBeenCalledTimes(1)
+    expect(r).toBeNull()
   })
 })

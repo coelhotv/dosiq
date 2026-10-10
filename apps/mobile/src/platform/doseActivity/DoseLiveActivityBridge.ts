@@ -114,6 +114,10 @@ export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, fo
       if (takenAt) await showDoneLiveActivity({ instanceId: prevInstanceId, takenAt })
       else await endLiveActivity()
       await _clearActivityToken(prevInstanceId) // LA encerrada → token não serve mais
+    } else {
+      // C-17: LA que este processo não criou (push-to-start do servidor) também sai — sem dose ativa
+      // não há o que mostrar. Sem LA na tela, é no-op.
+      await endLiveActivity()
     }
     return null
   }
@@ -309,10 +313,12 @@ export default function DoseLiveActivityBridge() {
   // de cena já (e o token per-Activity é zerado: o servidor a recria em `snoozed_until`, FR-008).
   const onSnoozeResult = useCallback(async (instanceId, result) => {
     toastRef.current?.show?.(snoozeToastMessage(result), { variant: result ? 'success' : 'error' })
-    if (!result || prevInstanceRef.current !== instanceId) return
+    if (!result) return
+    // C-17: encerra mesmo quando a LA veio do servidor (push-to-start) e não deste processo — o
+    // "Adiar" saiu dela, então é a LA desta dose.
     await endLiveActivity()
     await _clearActivityToken(instanceId)
-    prevInstanceRef.current = null
+    if (prevInstanceRef.current === instanceId) prevInstanceRef.current = null
   }, [])
 
   // Logout → encerra a LA ativa.

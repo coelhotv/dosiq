@@ -178,7 +178,9 @@ class DoseActivityBridge: NSObject {
              rejecter reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 16.2, *) else { resolve(nil); return }
         Task {
-            for activity in Activity<DoseActivityAttributes>.activities {
+            // Spec 101 C-17: o RN encerra também sem saber se há LA (dose saiu de cena). Pula as já
+            // encerradas — o card `done` (end com dismissal em ~3 min) não pode sumir antes da hora.
+            for activity in Activity<DoseActivityAttributes>.activities where activity.activityState != .ended && activity.activityState != .dismissed {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
             resolve(nil)
