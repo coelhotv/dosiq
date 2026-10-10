@@ -24,6 +24,7 @@ class DoseActivityBridge: NSObject {
         // sendo observado/persistido quando o JS chama getPushToStartToken (mount/foreground).
         if #available(iOS 17.2, *) {
             DoseActivityBridge.startPushToStartObserver()
+            DoseActivityBridge.startActivityUpdatesObserver()
         }
     }
 
@@ -110,6 +111,11 @@ class DoseActivityBridge: NSObject {
     @available(iOS 17.2, *)
     private static func observeActivityPushToken(_ activity: Activity<DoseActivityAttributes>, instanceId: String) {
         guard !instanceId.isEmpty else { return }
+        // Uma Activity, um observer: a mesma LA chega pelo `start` local E pelo `activityUpdates`.
+        observedLock.lock()
+        let isNew = observedActivityIds.insert(activity.id).inserted
+        observedLock.unlock()
+        guard isNew else { return }
         Task {
             for await tokenData in activity.pushTokenUpdates {
                 let hex = tokenData.map { String(format: "%02x", $0) }.joined()
@@ -192,6 +198,27 @@ class DoseActivityBridge: NSObject {
     // Spec 041 — push-to-start (ActivityKit, iOS 17.2+). O SO gera um token por-device via a
     // sequência estática `pushToStartTokenUpdates`; o backend (server/notifications/apns) o usa p/
     // iniciar a LA com o app fechado. Observer idempotente persiste o último token no App Group;
+    private static var observedActivityIds = Set<String>()
+    private static let observedLock = NSLock()
+    private static var activityUpdatesObserverStarted = false
+
+    // Spec 101 C-16: LA criada FORA do app (push-to-start do servidor — janela `upcoming` e recriação da
+    // soneca) também tem token per-Activity; sem capturá-lo o servidor não consegue atualizar nem
+    // encerrar essa LA (ficava órfã: 103-B). Observa as já existentes e as que chegarem.
+    @available(iOS 17.2, *)
+    private static func startActivityUpdatesObserver() {
+        if activityUpdatesObserverStarted { return }
+        activityUpdatesObserverStarted = true
+        for activity in Activity<DoseActivityAttributes>.activities {
+            observeActivityPushToken(activity, instanceId: activity.attributes.instanceId)
+        }
+        Task {
+            for await activity in Activity<DoseActivityAttributes>.activityUpdates {
+                observeActivityPushToken(activity, instanceId: activity.attributes.instanceId)
+            }
+        }
+    }
+
     // o getter retorna o persistido (o RN registra no backend com sessão VIVA — PO-SEC-2).
     private static let pushToStartKey = "pushToStartToken"
     private static var pushToStartObserverStarted = false

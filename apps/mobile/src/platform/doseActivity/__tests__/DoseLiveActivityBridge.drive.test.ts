@@ -22,7 +22,8 @@ jest.mock('@dashboard/services/dashboardService', () => ({
 }))
 jest.mock('@navigation/navigateToDose', () => ({ navigateToDose: jest.fn() }))
 jest.mock('../pushToStartRegistration', () => ({ registerPushToStart: jest.fn(), resetPushToStartDedupe: jest.fn() }))
-jest.mock('../syncActivityToken', () => ({ syncActivityToken: jest.fn(), forgetSyncedToken: jest.fn() }))
+const mockSync = jest.fn()
+jest.mock('../syncActivityToken', () => ({ syncActivityToken: (...a: any[]) => mockSync(...a), forgetSyncedToken: jest.fn() }))
 jest.mock('@platform/analytics/reminderEvents', () => ({ emitReminderOpened: jest.fn() }))
 jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: jest.fn() }))
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true, status: 'pending' }]
@@ -49,6 +50,12 @@ describe('deriveAndDrive — C-13 (LA recriada pelo servidor)', () => {
     expect(mockEnd).not.toHaveBeenCalled()
     expect(mockUpdate).not.toHaveBeenCalled()
     expect(r).toBeNull() // nada armado por este processo
+  })
+
+  it('🔴 C-16: app em background ⇒ leva ao servidor o token da LA que o push-to-start criou', async () => {
+    await deriveAndDrive({ ...base, prevInstanceId: null, foreground: false })
+    expect(mockSync).toHaveBeenCalledWith('i1')
+    expect(mockStart).not.toHaveBeenCalled()
   })
 
   it('🔴 C-13b: start falhou ⇒ não marca a dose como armada (próximo derive tenta de novo)', async () => {

@@ -78,7 +78,6 @@ async function _clearActivityToken(instanceId) {
  * background quem dirige a LA é o servidor. E só marca a dose como armada quando a LA existe.
  */
 export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, foreground = true }) {
-  if (!foreground) return prevInstanceId
   const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
@@ -91,6 +90,13 @@ export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, fo
   )
   const items = allItems.filter((it) => it.status === 'pending' && it.critical)
   const active = selectActiveDoseActivity(items, now)
+
+  // C-13a/C-16: em background só leva ao servidor o token da LA que já está na tela (criada pelo
+  // push-to-start, que acordou o app) — sem ele o servidor não atualiza nem encerra essa LA.
+  if (!foreground) {
+    if (active) await syncActivityToken(active.instanceId)
+    return prevInstanceId
+  }
 
   // A dose que mostrávamos virou `taken`? → card `done` (~3min) em vez de só encerrar. Retorna o
   // HORÁRIO REAL da tomada (registeredAt), NÃO `now` — senão o card mostra a hora do re-derive

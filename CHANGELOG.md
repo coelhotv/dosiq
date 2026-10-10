@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Live Activity criada pelo servidor passa a ser atualizada e encerrada (spec 101, correção do smoke)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.13` → `0.33.14` só para build intermediário;
+  entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — muda código nativo). A Live
+  Activity que o servidor cria com o app fechado (na janela da dose e na volta da soneca) não podia
+  ser atualizada nem encerrada depois: ao adiar de novo ou tomar a dose, ela continuava na tela. Agora
+  o app registra essa Live Activity no servidor, mesmo em segundo plano.
+- **Backend/Infra** (`Fixed`, `patch`). A recriação da Live Activity na soneca passa a valer só para o
+  app `0.33.14` ou posterior.
+
 ### Live Activity do iPhone volta de verdade depois de "Adiar" (spec 101, correção do smoke)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.12` → `0.33.13` só para build intermediário — não

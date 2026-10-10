@@ -399,8 +399,9 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
  * embarca a mudança (o pacote de loja é 0.34.0; a frota real está em ≤ 0.30.x). Abaixo disso o servidor não age: o bridge antigo recriaria a LA que
  * o servidor encerrasse, minuto a minuto (analysis-A C-8).
  */
-// 0.33.12 matava a LA recriada ao subir em background (smoke iOS 2026-10-09, C-13) ⇒ corte em 0.33.13.
-export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.13' // 1º build com a 101 completa; loja = 0.34.0
+// 0.33.12 matava a LA recriada ao subir em background (C-13); 0.33.13 não capturava o token da LA
+// criada pelo servidor, que ficava sem update/end (C-16) ⇒ corte em 0.33.14.
+export const MIN_APP_VERSION_FOR_SNOOZE_LIVE_ACTIVITY = '0.33.14' // 1º build com a 101 completa; loja = 0.34.0
 
 /** Algum device push-to-start ativo do usuário está em versão capaz? Versão nula/ilegível ⇒ não. */
 export function hasSnoozeCapableDevice(devices: Array<{ app_version?: unknown }> | null | undefined): boolean {
