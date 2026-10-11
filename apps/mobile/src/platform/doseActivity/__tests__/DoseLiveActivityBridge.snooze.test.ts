@@ -24,7 +24,13 @@ jest.mock('../pushToStartRegistration', () => ({ registerPushToStart: jest.fn(),
 jest.mock('../syncActivityToken', () => ({ syncActivityToken: jest.fn(), forgetSyncedToken: jest.fn() }))
 jest.mock('@platform/analytics/reminderEvents', () => ({ emitReminderOpened: jest.fn() }))
 const mockSnooze = jest.fn()
-jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: (...a: any[]) => mockSnooze(...a) }))
+jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: (...a: any[]) => mockSnooze(...a), MAX_SNOOZE_ATTEMPTS: 3 }))
+let mockAttempts: Record<string, number> = {}
+jest.mock('@platform/alarms/snoozeAnchorStore', () => ({
+  getSnoozeAnchors: () => Promise.resolve({}),
+  getSnoozeAttempts: () => Promise.resolve(mockAttempts),
+  mergeSnoozeAnchors: (items: any[]) => items,
+}))
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true }]
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
@@ -46,7 +52,7 @@ describe('processPendingActions — Adiar da LA (spec 101)', () => {
     mockSnooze.mockResolvedValueOnce({ fireAt })
     const onSnoozeResult = jest.fn()
     await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
-    expect(onSnoozeResult).toHaveBeenCalledWith('i1', { fireAt })
+    expect(onSnoozeResult).toHaveBeenCalledWith('i1', { fireAt }, { reason: null })
     expect(snoozeToastMessage({ fireAt })).toBe('Alarme reagendado para 09:35')
   })
 
@@ -55,8 +61,19 @@ describe('processPendingActions — Adiar da LA (spec 101)', () => {
     mockSnooze.mockResolvedValueOnce(false)
     const onSnoozeResult = jest.fn()
     await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
-    expect(onSnoozeResult).toHaveBeenCalledWith('i1', false)
+    expect(onSnoozeResult).toHaveBeenCalledWith('i1', false, { reason: null })
     expect(snoozeToastMessage(false)).not.toContain('reagendado')
+  })
+
+  it('🔴 C-28: recusa pelo teto ⇒ toast explica o limite', async () => {
+    mockAttempts = { i1: 3 }
+    mockDrain.mockResolvedValueOnce([{ action: 'snooze', instanceId: 'i1' }])
+    mockSnooze.mockResolvedValueOnce(false)
+    const onSnoozeResult = jest.fn()
+    await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
+    mockAttempts = {}
+    expect(onSnoozeResult).toHaveBeenCalledWith('i1', false, { reason: 'limit' })
+    expect(snoozeToastMessage(false, { reason: 'limit' })).toBe('Limite de 3 sonecas atingido. Tome ou pule a dose.')
   })
 
   it('dose não resolvida ⇒ não agenda e reporta recusa', async () => {
@@ -64,6 +81,6 @@ describe('processPendingActions — Adiar da LA (spec 101)', () => {
     const onSnoozeResult = jest.fn()
     await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
     expect(mockSnooze).not.toHaveBeenCalled()
-    expect(onSnoozeResult).toHaveBeenCalledWith('desconhecida', false)
+    expect(onSnoozeResult).toHaveBeenCalledWith('desconhecida', false, { reason: null })
   })
 })

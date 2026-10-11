@@ -16,7 +16,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   presas somem quando o app abre.
 - **Mobile** (`Fixed`, `patch`; mesmo build). O "Adiar" da Live Activity respeitava o limite de 3
   sonecas só na tela do alarme: pela Live Activity, cada toque recomeçava a contagem. Agora a 4ª
-  tentativa é recusada em qualquer caminho.
+  tentativa é recusada em qualquer caminho, com o aviso "Limite de 3 sonecas atingido. Tome ou pule a
+  dose." em vez de um "não foi possível" sem motivo.
 - **Mobile** (`Fixed`, `patch`; mesmo build; muda código nativo). Criar uma dose crítica a poucos minutos
   do horário podia deixar duas Live Activities na tela (a do app e a do servidor), uma delas parada em
   0:00. Agora a que chega por último substitui a anterior.

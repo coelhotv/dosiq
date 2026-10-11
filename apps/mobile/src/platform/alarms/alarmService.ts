@@ -74,7 +74,7 @@ const IOS_INTERRUPTION_LEVEL = 'timeSensitive' as const
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
-const MAX_SNOOZE_ATTEMPTS = 3
+export const MAX_SNOOZE_ATTEMPTS = 3
 
 // Auditoria de dose crítica (spec 042). getUserId resolve o usuário logado a partir
 // da sessão persistida (AsyncStorage) — funciona também no handler headless do Android.

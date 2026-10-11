@@ -37,8 +37,8 @@ import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboar
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { onDoseActivityRefresh } from './doseActivityRefreshBus'
 import { navigateToDose } from '@navigation/navigateToDose'
-import { scheduleSnooze } from '@platform/alarms/alarmService'
-import { getSnoozeAnchors, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
+import { scheduleSnooze, MAX_SNOOZE_ATTEMPTS } from '@platform/alarms/alarmService'
+import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
 import { useToast } from '@shared/components/feedback/Toast'
 import {
   startLiveActivity,
@@ -193,7 +193,9 @@ function buildRegisterParams(doseItem, fallbackTreatmentId) {
  * Spec 101 (FR-010): texto da confirmação do "Adiar" vindo da LA. HH:MM sai do retorno do agendamento
  * (`fireAt`), nunca recomputado aqui. Recusa (janela/teto/dose não resolvida) nunca mostra sucesso.
  */
-export function snoozeToastMessage(result) {
+export function snoozeToastMessage(result, { reason = null }: { reason?: string | null } = {}) {
+  // C-28 (smoke 2026-10-10): a recusa pelo teto dizia só "não foi possível" — o PO não entendeu o motivo.
+  if (reason === 'limit') return `Limite de ${MAX_SNOOZE_ATTEMPTS} sonecas atingido. Tome ou pule a dose.`
   if (!result || !Number.isFinite(result.fireAt)) return 'Não foi possível adiar esta dose agora.'
   // Hora do aparelho, como o próprio alarme e o helper canônico (Hermes sem ICU: sem Intl/timeZone).
   // fireAt é epoch ms — instante absoluto, sem a ambiguidade de 'YYYY-MM-DD' que o R-020 barra.
@@ -222,12 +224,18 @@ async function _snoozeQueuedItem(uid, protocols, tz, instanceId) {
   })
 }
 
+/** Motivo da recusa da soneca: `limit` quando a contagem gravada já bateu o teto (C-28). @private */
+async function _refusalReason(instanceId) {
+  const attempts = await getSnoozeAttempts().catch(() => ({}))
+  return (attempts[String(instanceId)] ?? 0) >= MAX_SNOOZE_ATTEMPTS ? 'limit' : null
+}
+
 /**
  * Processa a fila de ações do App Intent (App Group) com sessão viva.
  * @param {string} tz
  * @param {{ onSnoozeResult?: (instanceId: string, result: false | { fireAt: number }) => unknown }} [hooks]
  */
-export async function processPendingActions(tz, { onSnoozeResult }: { onSnoozeResult?: (id: string, r: any) => unknown } = {}) {
+export async function processPendingActions(tz, { onSnoozeResult }: { onSnoozeResult?: (id: string, r: any, meta?: { reason: string | null }) => unknown } = {}) {
   const queue = await drainPendingActions()
   if (queue.length === 0) return
   const uid = await liveUserId()
@@ -248,7 +256,8 @@ export async function processPendingActions(tz, { onSnoozeResult }: { onSnoozeRe
       if (params) navigateToDose(params)
     } else if (item.action === 'snooze') {
       if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      await onSnoozeResult?.(item.instanceId, await _snoozeQueuedItem(uid, protocols, tz, item.instanceId))
+      const result = await _snoozeQueuedItem(uid, protocols, tz, item.instanceId)
+      await onSnoozeResult?.(item.instanceId, result, { reason: result ? null : await _refusalReason(item.instanceId) })
     } else if (item.action === 'open') {
       // "Abrir" (later) — só traz o app pra Hoje, sem registrar.
       navigateToDose(null)
@@ -311,8 +320,8 @@ export default function DoseLiveActivityBridge() {
 
   // Spec 101 (FR-001/FR-010): "Adiar" da LA → confirmação com o horário real; aceita ⇒ a LA da dose sai
   // de cena já (e o token per-Activity é zerado: o servidor a recria em `snoozed_until`, FR-008).
-  const onSnoozeResult = useCallback(async (instanceId, result) => {
-    toastRef.current?.show?.(snoozeToastMessage(result), { variant: result ? 'success' : 'error' })
+  const onSnoozeResult = useCallback(async (instanceId, result, { reason = null } = {}) => {
+    toastRef.current?.show?.(snoozeToastMessage(result, { reason }), { variant: result ? 'success' : 'error' })
     if (!result) return
     // C-17: encerra mesmo quando a LA veio do servidor (push-to-start) e não deste processo — o
     // "Adiar" saiu dela, então é a LA desta dose.

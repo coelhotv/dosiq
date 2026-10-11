@@ -25,7 +25,7 @@ jest.mock('../pushToStartRegistration', () => ({ registerPushToStart: jest.fn(),
 const mockSync = jest.fn()
 jest.mock('../syncActivityToken', () => ({ syncActivityToken: (...a: any[]) => mockSync(...a), forgetSyncedToken: jest.fn() }))
 jest.mock('@platform/analytics/reminderEvents', () => ({ emitReminderOpened: jest.fn() }))
-jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: jest.fn() }))
+jest.mock('@platform/alarms/alarmService', () => ({ scheduleSnooze: jest.fn(), MAX_SNOOZE_ATTEMPTS: 3 }))
 let mockActive: any = { instanceId: 'i1', state: 'now' }
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true, status: 'pending' }]
 jest.mock('@dosiq/core', () => ({
