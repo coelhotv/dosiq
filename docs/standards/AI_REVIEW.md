@@ -38,6 +38,8 @@ Script vive na skill devflow (repo externo):
 ```bash
 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>          # dry-run (default): imprime JSON, não muta nada
 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR + events.jsonl
+# devflow ≥ v3.3.0: o veredito também vai para ${TMPDIR}/rc6-<PR#>.json (ou --json-out=PATH).
+# LEIA ESSE ARQUIVO — com 2>&1 o log e as mensagens do --post caem no mesmo stream e o parse quebra.
 ```
 
 Motores: `agy` primário (Gemini, quota OAuth extensa + diversidade de vendor) · `claude` pass B
@@ -116,6 +118,7 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | `RC6_MAX_CHUNKS` | `6` | teto de chunks revisados. Acima dele um **ranking de risco** escolhe quais entram e a cobertura fica `partial` (`not_reviewed` no JSON lista o que ficou de fora). Suba (ex.: `8`) quando o arquivo central do PR cair fora — #852: o componente principal da 069 A2 ficou fora do top-6; re-run com `=8` deu `coverage=full`. Re-run assim é exceção à regra 1×/PR e vai declarado no PR |
 | `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
 | `RC6_PASSB_TIMEOUT` | `480` | teto wall-clock (s) do claude no Pass B; um claude que HANGA (esperando quota liberar) é morto e cai no fallback agy — não wedgeia o RC6 |
+| `RC6_JSON_OUT` | `${TMPDIR}/rc6-<PR>.json` | **(devflow v3.3.0)** onde o veredito é gravado (= `--json-out=PATH`). É a fonte para ler achados e cobertura. Arquivo de risco fora dos globs de código (`.sql .swift .kt .java .m .py .sh`) aparece em `coverage.not_reviewed_by_type` e deixa o veredito `partial` — declarar no PR quem revisou esses arquivos |
 | `RC6_MAIN` | **auto** (`baseRefName` do PR) | branch-base do diff. **Desde 2026-07-29 é derivada do próprio PR** (`gh pr view --json baseRefName`), não mais `main` fixo. Só defina à mão para revisar contra outra base |
 | `RC6_PROBE_TIMEOUT` | `30s` | teto do probe de liveness do agy (roda uma vez por run, antes do Pass A). Um agy que não responde é tratado como ausente em ≤30s em vez de custar 8min × nº de chunks |
 | `RC6_SKIP_PROBE` | `0` | `=1` pula o probe. Só use se souber que o agy está saudável e quiser poupar ~6s + uma chamada barata |
