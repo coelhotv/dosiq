@@ -31,18 +31,17 @@ describe('withServerMonitor (082 D1 · S-3)', () => {
     expect(mockCaptureCheckIn).toHaveBeenCalledTimes(2)
     const [start, config] = mockCaptureCheckIn.mock.calls[0] as [Record<string, unknown>, Record<string, unknown>]
     expect(start).toEqual({ monitorSlug: 'critical-delivery-audit', status: 'in_progress' })
-    // Espelha o `currentHour === 8 && currentMinute === 0` de api/notify.ts, que roda em São Paulo.
+    // Espelha o `currentHour === 5 && currentMinute === 0` de api/notify.ts, que roda em São Paulo (spec 102 FR-007).
     expect(config).toEqual({
-      schedule: { type: 'crontab', value: '0 8 * * *' },
+      schedule: { type: 'crontab', value: '0 5 * * *' },
       timezone: 'America/Sao_Paulo',
       checkinMargin: 10,
       maxRuntime: 5,
     })
-    expect(mockCaptureCheckIn.mock.calls[1][0]).toMatchObject({
-      monitorSlug: 'critical-delivery-audit',
-      status: 'ok',
-      checkInId: 'check-in-1',
-    })
+    // toEqual (não toMatchObject): campo a mais/a menos no check-in final muda o que o Sentry fecha (spec 102 FR-004).
+    expect(mockCaptureCheckIn.mock.calls[1]).toEqual([
+      { monitorSlug: 'critical-delivery-audit', status: 'ok', checkInId: 'check-in-1', duration: expect.any(Number) },
+    ])
   })
 
   it('🔴 job lança ⇒ check-in error e o erro REPROPAGA (o runJob isola e reporta)', async () => {
@@ -52,7 +51,10 @@ describe('withServerMonitor (082 D1 · S-3)', () => {
       })
     ).rejects.toThrow('banco fora')
 
-    expect(mockCaptureCheckIn.mock.calls[1][0]).toMatchObject({ status: 'error', checkInId: 'check-in-1' })
+    expect(mockCaptureCheckIn).toHaveBeenCalledTimes(2)
+    expect(mockCaptureCheckIn.mock.calls[1]).toEqual([
+      { monitorSlug: 'critical-delivery-audit', status: 'error', checkInId: 'check-in-1', duration: expect.any(Number) },
+    ])
   })
 
   it('🔴 SDK lança no check-in ⇒ o job roda igual [PO-D1-8]', async () => {

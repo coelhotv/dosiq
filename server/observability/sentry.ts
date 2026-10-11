@@ -265,11 +265,11 @@ export interface ServerMonitor {
 
 /**
  * Heartbeat da apuração diária de entrega crítica (082 D1 · S-3). Espelha o
- * `currentHour === 8 && currentMinute === 0` de `api/notify.ts`, que roda em horário de São Paulo.
+ * `currentHour === 5 && currentMinute === 0` de `api/notify.ts`, que roda em horário de São Paulo.
  */
 export const CRITICAL_DELIVERY_AUDIT_MONITOR: ServerMonitor = {
   slug: 'critical-delivery-audit',
-  crontab: '0 8 * * *',
+  crontab: '0 5 * * *',
   timezone: 'America/Sao_Paulo',
   checkinMargin: 10,
   maxRuntime: 5,
