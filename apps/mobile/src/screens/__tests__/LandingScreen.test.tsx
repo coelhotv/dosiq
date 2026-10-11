@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 import LandingScreen from '../LandingScreen';
 import { ROUTES } from '../../navigation/routes';
 import { Alert } from 'react-native';
@@ -96,6 +96,18 @@ describe('LandingScreen — sessão encerrada (spec 091)', () => {
     const { findByText } = render(<LandingScreen navigation={mockNavigation} />)
     expect(await findByText('Sua sessão terminou. Entre de novo.')).toBeTruthy()
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@dosiq/session-ended-reason')
+  })
+
+  // Spec 103 D (FR-D1): o aviso dividia a linha com os dois botões e espremia o texto deles em tela
+  // estreita. Agora fica em linha própria, acima da linha de botões.
+  it('PO-103-D1: aviso fora da linha dos botões, que segue com os dois botões', async () => {
+    AsyncStorage.getItem.mockImplementation(async (k) => (k === '@dosiq/session-ended-reason' ? 'invalid' : null))
+    const { findByText, getByTestId } = render(<LandingScreen navigation={mockNavigation} />)
+    await findByText('Sua sessão terminou. Entre de novo.')
+    const row = within(getByTestId('landing-button-row'))
+    expect(row.queryByText('Sua sessão terminou. Entre de novo.')).toBeNull()
+    expect(row.getByText('Criar conta')).toBeTruthy()
+    expect(row.getByText('Já tenho conta')).toBeTruthy()
   })
 
   it('sem marca ⇒ nenhuma mensagem', async () => {
