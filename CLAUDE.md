@@ -159,7 +159,7 @@ Factory em `@dosiq/core/repositories/` (DI de `client`/`getUserId`/selects); val
 
 ## Schemas — enums (verificados contra CHECK de prod 2026-07-16)
 
-> Acento e caixa fazem parte do valor: `'diario'` e `'cp'` são REJEITADOS pelo banco (23514).
+> Valores literais também se verificam no banco (R-295 §valores). Acento e caixa fazem parte do valor: `'diario'` e `'cp'` são REJEITADOS pelo banco (23514).
 > Fonte: `packages/core/src/schemas/{medicineSchema,protocolSchema}.ts` — na dúvida, o banco.
 
 | Enum | Valores | Coluna |
@@ -169,6 +169,7 @@ Factory em `@dosiq/core/repositories/` (DI de `client`/`getUserId`/selects); val
 | `PRESENTATIONS` | `comprimido` `capsula` `liquido` `injetavel` `pomada` `spray` `outro` | `medicines.presentation` (a FORMA) |
 | `FREQUENCIES` | `diário` `dias_alternados` `semanal` `personalizado` `quando_necessário` | `protocols.frequency` — ⚠️ COM acento |
 | `INTAKE_UNITS` | `gotas` `ml` `UI` `mg` | `protocols.intake_unit` — ⚠️ `UI` maiúsculo; comprimido = **NULL**, não `'cp'` |
+| `DOSE_STATUS` | `pending` `taken` `missed` `skipped_user` `skipped_paused` | `dose_instances.status` — ⚠️ não existe `'skipped'`/`'done'`/`'completed'` (C-29, 2026-10-11) |
 
 **Armadilhas que já causaram bug (AP-299, #749):** `DOSAGE_UNITS` ≠ `INTAKE_UNITS` (enums diferentes; `cp` não existe em nenhum) · `titration_steps.intake_unit` aceita `'cp'`, `protocols.intake_unit` não → fronteira N2→N1 usa `NULLIF(unit,'cp')` (CON-032 §5).
 

@@ -1,7 +1,7 @@
 ---
 title: "Arquitetura de Live Activities (Dose Activity)"
 description: "Documentação técnica das três camadas de orquestração de Live Activities no iOS e sua equivalência no Android."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: architecture
 audience:
@@ -14,7 +14,7 @@ tags:
   - swiftui
   - typescript
 created_at: "2026-07-14"
-updated_at: "2026-07-14"
+updated_at: "2026-10-11"
 epic: "049"
 ---
 
@@ -445,6 +445,28 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
   }
 }
 ```
+
+## Contratos de plataforma verificados (R-324)
+
+> **Regra:** comportamento de ActivityKit / notifee / APNs que o código ASSUME tem de estar nesta tabela,
+> com evidência. Fora dela ⇒ spike no device ANTES de codar (R-324 §3). Cada linha foi descoberta em
+> smoke da spec 101 (2026-10-09..11) depois de o código já supor o contrário.
+
+| # | Contrato | Consequência para o código | Evidência |
+|---|---|---|---|
+| P-1 | `Activity.request` **falha com o app em background** (inclusive quando acordado por push-to-start). `update`/`end` funcionam em background | Background nunca inicia LA; só sincroniza token e encerra | 101 C-13 (PostHog `cold_start` sem `Became Active`) · AP-246 |
+| P-2 | `Date` no `content-state` é decodificada como **segundos desde 2001-01-01** (`.deferredToDate`); `timestamp`/`stale-date`/`dismissal-date` do `aps` são **epoch Unix** | `toActivityDateSec(ms)` = `floor(ms/1000) − 978307200` só no content-state | 101 C-15 · AP-363 |
+| P-3 | LA criada por **push-to-start** tem token per-Activity próprio, que só chega por `Activity.activityUpdates` (não por quem chamou `request`) | Observer de `activityUpdates` no `init` do bridge nativo; sem ele o servidor não atualiza nem encerra a LA remota | 101 C-16 |
+| P-4 | O widget só **redesenha** em push de update/end ou quando o `stale-date` vence. `Text(timerInterval:)` para em 0:00 e não troca de view | Toda transição visual (ex.: "agora" em T0) precisa de push ou stale-date; o stale-date é UM por push | 101 C-19 (`now_due`) |
+| P-5 | Push-to-start com `alert` vazio acende a tela **sem som** e conta como "notificação" para o usuário | Chegada da LA ≠ alarme; o som é do alarme local | 101 C-26 (refutada) |
+| P-6 | A ação de **notificação** (notifee) roda JS headless com o app fechado; o botão da **LA** (`LiveActivityIntent`) só enfileira no App Group e abre o app — não há JS sem abrir | Lógica do "Adiar" da LA roda no foreground; a da notificação, em headless | 101 C-24, C-31 · PostHog `Application Opened` sem `Became Active` |
+| P-7 | O `start` nativo só encerra as LAs que **já existem**; LA remota que chega depois convive com a local | Observer de `activityUpdates` encerra as outras (a última vence) | 101 C-30 |
+| P-8 | `supabase.auth.getUser()` **valida no servidor** (offline ⇒ `null`); `getSession()` é local | Caminho que precisa funcionar offline usa sessão local, só onde não grava em conta (PO-SEC-2) | 101 C-31 |
+| P-9 | iOS sem entitlement de Critical Alert: a notificação local toca **uma vez** (≤ 30 s) e respeita o silencioso — não é alarme | Paridade com o alarme Android depende da spec 054 | 101 (pergunta do PO, 10/10) |
+
+**Relógios (R-324 §2):** cron do servidor = 1×/min (claim, lifecycle, start da janela); âncora da soneca
+com segundos; recriação da LA até `SNOOZE_RETURN_LEAD_MS` (90 s) antes da âncora; app em foreground em
+qualquer instante. Desalinhamento LA × alarme de até 60 s é conhecido (103, fatia E).
 
 ## Paridade Android
 
