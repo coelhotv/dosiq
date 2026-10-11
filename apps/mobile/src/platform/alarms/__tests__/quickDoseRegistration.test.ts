@@ -81,6 +81,7 @@ jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
 }))
 
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
+import { onDoseChanged } from '../doseChangedBus'
 import { isHandedOffToRegister, __resetRegisterHandoff } from '../registerHandoff'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
@@ -527,5 +528,38 @@ describe('registerSkip — encerra a superfície da dose pulada (spec 101 C-12)'
     mockSkipDose.mockImplementationOnce(() => Promise.reject(new Error('boom')))
     await registerSkip(BASE)
     expect(mockEndDoseActivity).not.toHaveBeenCalled()
+  })
+})
+
+// 103 A (FR-A4): escrita ok avisa o Hoje montado; recusa ou falha não.
+describe('103 A — doseChangedBus após escrita', () => {
+  const iso = (min: number) => new Date(Date.now() + min * 60000).toISOString()
+  let heard = 0
+  let off: () => void = () => {}
+  beforeEach(() => {
+    heard = 0
+    off = onDoseChanged(() => { heard += 1 })
+  })
+  afterEach(() => off())
+
+  it('Tomei pela notificação ok ⇒ 1 aviso', async () => {
+    await handleAlarmAction(evt('dose-taken', BASE))
+    expect(heard).toBe(1)
+  })
+
+  it('Pular ok ⇒ 1 aviso', async () => {
+    await registerSkip(BASE)
+    expect(heard).toBe(1)
+  })
+
+  it('recusa fora da janela ⇒ 0 aviso', async () => {
+    await registerTaken({ ...BASE, scheduledFor: iso(217), earlyWindowMinutes: '90' })
+    expect(heard).toBe(0)
+  })
+
+  it('registerDose lança ⇒ 0 aviso', async () => {
+    mockRegisterDose.mockRejectedValueOnce(new Error('rede'))
+    await expect(registerTaken(BASE)).rejects.toThrow('rede')
+    expect(heard).toBe(0)
   })
 })

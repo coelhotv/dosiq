@@ -5,7 +5,7 @@
 // notificação heads-up. A11y idoso: fontes grandes, alto contraste, ícone+texto
 // (R-137 peso ≥700 / R-138 nunca ícone solo), hit-targets ≥ 64px.
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Check, X, Pill, Clock } from 'lucide-react-native'
@@ -17,6 +17,7 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { registerTaken, registerSkip } from '@platform/alarms/quickDoseRegistration'
 import { SURFACES, REMINDER_SOURCES } from '@platform/analytics/analyticsEvents'
 import { scheduleSnooze, cancelAlarm } from '@platform/alarms/alarmService'
+import { onDoseChanged } from '@platform/alarms/doseChangedBus'
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
 
@@ -25,6 +26,9 @@ const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
  * está mais `pending` (resolvida por outra superfície/web/bot ou corrida) → cancela o
  * alarme e fecha (`onClose`). Grupo: só fecha quando TODAS já saíram de `pending`.
  * Falha de leitura NÃO fecha a tela (não esconder alarme legítimo por erro de rede).
+ * 103 A (C-1): revalida também a cada escrita de dose neste aparelho (`doseChangedBus`) — "Tomei"
+ * pelo botão da notificação/Live Activity com a tela aberta a fechava só com um 2º toque (que o
+ * banco recusava com 400). Adiar mantém `pending` ⇒ a tela segue aberta, como antes.
  */
 function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClose }) {
   useEffect(() => {
@@ -54,7 +58,11 @@ function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClo
       }
     }
     revalidate()
-    return () => { cancelled = true }
+    const offDoseChanged = onDoseChanged(() => { revalidate() })
+    return () => {
+      cancelled = true
+      offDoseChanged()
+    }
   }, [isGrouped, doseInstanceId, doseInstanceIds, onClose])
 }
 
@@ -140,12 +148,17 @@ function DoseHeadline({ data, isGrouped, medicineName }) {
 export default function AlarmFullScreen({ navigation, route }) {
   // Ordem R-010: States → Memos → derivados (previne TDZ).
   const [busy, setBusy] = useState(false)
+  // RC6 #880: fecha no máximo 1×. O Tomei/Pular da própria tela grava (avisa o bus) e fecha; a
+  // revalidação do C-1 pode voltar antes do fim da transição e pedir o fechamento de novo.
+  const closedRef = useRef(false)
   const data = useMemo(() => route?.params || {}, [route?.params])
   const { medicineName, scheduledTime } = data
   const snoozeMaxed = parseInt(data.snoozeAttempt || '0', 10) >= 3
   const isGrouped = data.isGrouped === 'true'
 
   const close = useCallback(() => {
+    if (closedRef.current) return
+    closedRef.current = true
     if (navigation.canGoBack()) navigation.goBack()
     else navigation.navigate(ROUTES.TABS)
   }, [navigation])

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   getTodayLocal,
   getNow,
+  getRawNow,
   parseISO,
   formatLocalDate,
   getUserTime,
@@ -22,8 +23,13 @@ import { useTodayDerived } from './_useTodayDerived'
 import { setMode, setTreatmentCountBucket } from '@platform/analytics/productAnalytics'
 import { protocolService } from '@treatments/services/protocolService'
 import { isNetworkError } from '@shared/utils/networkError'
+import { onDoseChanged } from '@platform/alarms/doseChangedBus'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
+// 103 A (FR-A3): no iOS, `inactive → active` acontece a cada puxada da central/Face ID/tela de
+// alarme. Vindo de lá, só recarrega se a última carga tiver pelo menos isto.
+const FOREGROUND_RELOAD_MIN_MS = 30_000
+const MINUTE_MS = 60_000
 
 export function useTodayData() {
   const [data, setData] = useState(null)
@@ -31,8 +37,16 @@ export function useTodayData() {
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
   const [isDaySegregated, setIsDaySegregated] = useState(false)
+  // 103 A (FR-A2): "agora" do Hoje. Antes congelava na última carga (getRawNow dentro do memo de `data`).
+  const [now, setNow] = useState(() => getRawNow())
   const dataRef = useRef(null)
-  const enhancedData = useTodayDerived(data)
+  const lastLoadAtRef = useRef(0)
+  // RC5 103 A: só a carga mais recente aplica estado. Foreground, foco, pull e o evento de escrita
+  // (FR-A4) disparam cargas concorrentes; uma iniciada ANTES da escrita que termine depois traria a
+  // dose de volta a "pendente" (e o relógio a levaria a "atrasada").
+  const loadGenRef = useRef(0)
+  const appStateRef = useRef(AppState.currentState)
+  const enhancedData = useTodayDerived(data, now)
 
   const handleOnlineSuccess = useCallback(async (user, protocols, logs, medicines, userSettings, today, doseInstances, scheduledProtocols = []) => {
     const enrichedProtocols = protocols.map(p => ({ ...p, medicine: medicines[p.medicine_id] || null }))
@@ -56,15 +70,18 @@ export function useTodayData() {
       capturedAt: getNow().toISOString(),
       localDay: today
     }
-    await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
+    // RC6 #880: estado ANTES do await — o guard de geração (load) é checado logo antes desta chamada;
+    // aplicar depois de persistir abriria uma janela para carga mais nova ser sobrescrita.
     dataRef.current = newData
     setData(newData)
     setStale(false)
     setIsDaySegregated(false)
+    await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
   }, [])
 
-  const handleCacheFallback = useCallback(async (expectedUserId: string | null) => {
+  const handleCacheFallback = useCallback(async (expectedUserId: string | null, isLatest: () => boolean = () => true) => {
     const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
+    if (!isLatest()) return
     // Sem cache pra tentar (1ª abertura do app, ou storage limpo) — NÃO relançar `originalErr` cru:
     // em modo avião/sem rede ele é um erro de fetch nativo (RN), sempre em inglês, e vazaria pra
     // tela via describeLoadFailure. Mensagem própria, em PT, cobre esse caso (achado no smoke 055).
@@ -110,6 +127,9 @@ export function useTodayData() {
   }, [])
 
   const load = useCallback(async () => {
+    const gen = ++loadGenRef.current
+    const isLatest = () => gen === loadGenRef.current
+    lastLoadAtRef.current = getRawNow().getTime()
     setLoading(true)
     setError(null)
     let sessionUserId: string | null = null
@@ -154,8 +174,10 @@ export function useTodayData() {
         })
         .catch(() => {})
       const medicines = await getMedicinesData([...new Set([...protocols, ...scheduledProtocols].map(p => p.medicine_id))])
+      if (!isLatest()) return
       await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances, scheduledProtocols)
     } catch (err) {
+      if (!isLatest()) return
       // Spec 091 (FR-006): só QUEDA DE REDE cai no snapshot. Erro de sessão/servidor/código mostrado
       // como "sem conexão" escondia conta excluída atrás da própria agenda (smoke do 065 PR D).
       if (!isNetworkError(err)) {
@@ -163,14 +185,14 @@ export function useTodayData() {
         return
       }
       try {
-        await handleCacheFallback(sessionUserId)
+        await handleCacheFallback(sessionUserId, isLatest)
       } catch (fallbackErr) {
         // AP-314: erro de servidor (42703, 42501…) tem precedência sobre "Cache expirado" —
         // sem isso, schema quebrado em produção se disfarça de app offline.
-        setError(describeLoadFailure(err, fallbackErr))
+        if (isLatest()) setError(describeLoadFailure(err, fallbackErr))
       }
     } finally {
-      setLoading(false)
+      if (isLatest()) setLoading(false)
     }
   }, [handleOnlineSuccess, handleCacheFallback])
 
@@ -180,14 +202,65 @@ export function useTodayData() {
     })
   }, [load])
 
+  // 103 A — relógio + foreground + escrita fora do Hoje. Um listener de AppState só (RC3 A-5).
   useEffect(() => {
-    const handleStateChange = (nextState) => {
-      if (nextState === 'active' && dataRef.current?.localDay && dataRef.current.localDay !== getTodayLocal(dataRef.current.timezone || 'America/Sao_Paulo')) {
-        load()
-      }
+    let timeoutId = null
+    let intervalId = null
+
+    // Virada de dia no fuso do snapshot ⇒ dados de ontem não servem (RC3 A-4).
+    const dayChanged = () => {
+      const d = dataRef.current
+      return !!d?.localDay && d.localDay !== getTodayLocal(d.timezone || 'America/Sao_Paulo')
     }
+
+    // Tick só recalcula as zonas — sem rede (INV-2), exceto quando o dia vira.
+    const tick = () => {
+      setNow(getRawNow())
+      if (dayChanged()) load()
+    }
+
+    const stopClock = () => {
+      clearTimeout(timeoutId)
+      clearInterval(intervalId)
+      timeoutId = null
+      intervalId = null
+    }
+
+    // Alinhado ao minuto cheio: os horários de dose são HH:MM (RC3 A-3).
+    const startClock = () => {
+      stopClock()
+      const msToNextMinute = MINUTE_MS - (getRawNow().getTime() % MINUTE_MS)
+      timeoutId = setTimeout(() => {
+        tick()
+        intervalId = setInterval(tick, MINUTE_MS)
+      }, msToNextMinute)
+    }
+
+    const handleStateChange = (nextState) => {
+      const prevState = appStateRef.current
+      appStateRef.current = nextState
+      if (nextState !== 'active') {
+        stopClock()
+        return
+      }
+      // FR-A1: zonas com o "agora" atual sempre (barato).
+      setNow(getRawNow())
+      startClock()
+      // FR-A3: recarga só vindo de background (doses podem ter sido resolvidas fora), dia virado ou
+      // última carga velha — nunca a cada puxada da central de notificações.
+      const sinceLoad = getRawNow().getTime() - lastLoadAtRef.current
+      if (prevState === 'background' || dayChanged() || sinceLoad >= FOREGROUND_RELOAD_MIN_MS) load()
+    }
+
+    if (AppState.currentState === 'active') startClock()
     const subscription = AppState.addEventListener('change', handleStateChange)
-    return () => subscription.remove()
+    // FR-A4: escrita de dose fora do Hoje (notificação/LA/tela cheia) é ação do usuário — sem freio.
+    const unsubscribeDose = onDoseChanged(() => { load() })
+    return () => {
+      stopClock()
+      subscription.remove()
+      unsubscribeDose()
+    }
   }, [load])
 
   return { data: enhancedData, loading, error, stale, isDaySegregated, refresh: load }

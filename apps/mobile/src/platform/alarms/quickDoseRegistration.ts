@@ -25,6 +25,7 @@ import { navigateToDose } from '@navigation/navigateToDose'
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
+import { emitDoseChanged } from './doseChangedBus'
 import { markRegisterHandoff } from './registerHandoff'
 
 // 067 C.2 (FR-043): trilha do SKIP. Só o registrar emitia `resolved` (doseLogService.ts:311), então
@@ -66,12 +67,15 @@ async function resolveUserId() {
   return data.user.id
 }
 
+// Chamado só após escrita ok (taken/skip). 103 A (FR-A4): além de apagar os snapshots, avisa o Hoje
+// montado — com o app aberto, a ação da notificação/tela cheia não muda AppState nem foco.
 async function invalidate(keys) {
   try {
     await AsyncStorage.multiRemove(keys)
   } catch {
     // best-effort — a UI re-busca na próxima abertura
   }
+  emitDoseChanged()
 }
 
 /**

@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A tela Hoje acompanha o relógio e as ações feitas pela notificação (spec 103, fatia A)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.19` → `0.33.20` só para build intermediário; entra no
+  pacote de loja `0.34.0`; canal: **build de loja**, R-314). A tela Hoje congelava o horário na última
+  vez que carregou: uma dose que atrasava com o app aberto, ou enquanto ele estava em segundo plano,
+  continuava "na hora" até trocar de aba ou puxar para atualizar. Agora o card passa sozinho para
+  "agora" e "atrasada" com o passar dos minutos e, ao voltar ao app, mostra o estado atual.
+- **Mobile** (`Fixed`, `patch`; mesmo build). Tomar, pular ou adiar uma dose pelos botões da
+  notificação ou da Live Activity, com o app aberto, passa a atualizar a tela Hoje na hora, sem
+  precisar trocar de aba.
+- **Mobile** (`Fixed`, `patch`; mesmo build). Com a tela do alarme aberta, tomar a dose pelo botão da
+  notificação deixava a tela do alarme parada, e era preciso tocar de novo nela. Agora ela fecha sozinha.
+
 ### A apuração diária de entrega crítica passa a rodar às 05:00 (spec 102)
 
 - **Backend/Infra** (`Changed`, `patch` — sem arquivo de versão; deploy na Vercel no merge). A apuração

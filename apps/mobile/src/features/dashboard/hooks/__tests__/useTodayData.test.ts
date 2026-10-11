@@ -1,4 +1,7 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { renderHook, waitFor, act } from '@testing-library/react-native';
+import { AppState } from 'react-native';
+import { emitDoseChanged } from '@platform/alarms/doseChangedBus';
+import { useTodayDerived } from '../_useTodayDerived';
 import { useTodayData } from '../useTodayData';
 import * as dashboardService from '../../services/dashboardService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -254,3 +257,145 @@ describe('useTodayData', () => {
     expect(result.current.data).toBeNull();
   }, 20000);
 });
+
+// 103 A — relógio do Hoje, freio do foreground (FR-A3) e escrita fora do Hoje (FR-A4).
+describe('useTodayData — relógio e recarga (spec 103 A)', () => {
+  const mockUser = { id: 'user-123' };
+  let appStateHandler: (s: string) => void = () => {};
+  const mockedDerived = jest.mocked(useTodayDerived);
+  // Horário LOCAL fixo (AP-270): 08:59:30 — dose às 09:00.
+  const T0 = new Date(2026, 9, 11, 8, 59, 30);
+
+  const loads = () => mockedDashboardService.getActiveProtocols.mock.calls.length;
+  const lastNow = () => mockedDerived.mock.calls[mockedDerived.mock.calls.length - 1][1] as Date;
+  const flush = () => act(async () => { await Promise.resolve(); });
+
+  beforeEach(() => {
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+    jest.setSystemTime(T0);
+    mockedAsyncStorage.getItem.mockResolvedValue(null);
+    mockedAsyncStorage.setItem.mockResolvedValue();
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+    mockedDashboardService.getUserSettings.mockResolvedValue({ timezone: 'America/Sao_Paulo' } as any);
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
+    mockedDashboardService.getScheduledProtocols.mockResolvedValue([]);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({});
+    mockGetAllProtocols.mockResolvedValue([]);
+    Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_e, h: any) => {
+      appStateHandler = h;
+      return { remove: jest.fn() } as any;
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  const mount = async () => {
+    const hook = renderHook(() => useTodayData());
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    return hook;
+  };
+
+  it('PO-103-A2: T−1 → T avança o "agora" do derive no minuto cheio, sem nova busca', async () => {
+    await mount();
+    const before = loads();
+    expect(lastNow().getTime()).toBe(T0.getTime());
+
+    await act(async () => { jest.advanceTimersByTime(30_000); }); // 09:00:00
+    expect(lastNow().getHours()).toBe(9);
+    expect(lastNow().getMinutes()).toBe(0);
+    await act(async () => { jest.advanceTimersByTime(60_000); }); // 09:01:00
+    expect(lastNow().getMinutes()).toBe(1);
+    expect(loads()).toBe(before); // INV-2: tick sem rede
+  });
+
+  it('PO-103-A2: tick para fora de active', async () => {
+    await mount();
+    act(() => { appStateHandler('background'); });
+    const calls = mockedDerived.mock.calls.length;
+    await act(async () => { jest.advanceTimersByTime(5 * 60_000); });
+    expect(mockedDerived.mock.calls.length).toBe(calls);
+  });
+
+  it('PO-103-A2: virada de dia no tick ⇒ 1 recarga', async () => {
+    jest.setSystemTime(new Date(2026, 9, 11, 23, 59, 30));
+    await mount();
+    const before = loads();
+    await act(async () => { jest.advanceTimersByTime(30_000); }); // 00:00 do dia seguinte
+    await flush();
+    expect(loads()).toBe(before + 1);
+  });
+
+  it('PO-103-A1: background → active após T+11 ⇒ "agora" novo + 1 recarga', async () => {
+    await mount();
+    act(() => { appStateHandler('background'); });
+    const before = loads();
+    jest.setSystemTime(new Date(2026, 9, 11, 9, 11, 0));
+    act(() => { appStateHandler('active'); });
+    await flush();
+    expect(lastNow().getMinutes()).toBe(11);
+    expect(loads()).toBe(before + 1);
+  });
+
+  it('PO-103-A1 / FR-A3: inactive → active < 30 s ⇒ zonas atualizadas, 0 recarga', async () => {
+    await mount();
+    act(() => { appStateHandler('inactive'); });
+    const before = loads();
+    jest.setSystemTime(new Date(T0.getTime() + 10_000));
+    act(() => { appStateHandler('active'); });
+    await flush();
+    expect(lastNow().getTime()).toBe(T0.getTime() + 10_000);
+    expect(loads()).toBe(before);
+  });
+
+  it('FR-A3: inactive → active com última carga ≥ 30 s ⇒ 1 recarga', async () => {
+    await mount();
+    act(() => { appStateHandler('inactive'); });
+    const before = loads();
+    jest.setSystemTime(new Date(T0.getTime() + 31_000));
+    act(() => { appStateHandler('active'); });
+    await flush();
+    expect(loads()).toBe(before + 1);
+  });
+
+  it('PO-103-A3: escrita de dose fora do Hoje ⇒ 1 recarga, sem freio', async () => {
+    await mount();
+    const before = loads();
+    act(() => { emitDoseChanged(); });
+    await flush();
+    expect(loads()).toBe(before + 1);
+  });
+
+  // RC5 103 A: recarga antiga terminando depois da nova não pode sobrescrever o dado novo.
+  it('RC5: carga A (antes da escrita) termina DEPOIS da carga B ⇒ estado fica com B', async () => {
+    const hook = await mount();
+    let releaseA: (v: unknown) => void = () => {};
+    mockedDashboardService.getActiveProtocols
+      .mockReturnValueOnce(new Promise((r) => { releaseA = r; }) as any) // A: segura
+      .mockResolvedValueOnce([{ id: 'p-novo', medicine_id: 'm1' }] as any); // B
+    act(() => { emitDoseChanged(); }); // A
+    act(() => { emitDoseChanged(); }); // B
+    await waitFor(() => expect(hook.result.current.data.protocols[0]?.id).toBe('p-novo'));
+    await act(async () => { releaseA([{ id: 'p-velho', medicine_id: 'm1' }]); });
+    await flush();
+    expect(hook.result.current.data.protocols[0].id).toBe('p-novo');
+    expect(hook.result.current.loading).toBe(false);
+  });
+
+  it('PO-103-A3: desmontado ⇒ escrita não recarrega (unsubscribe)', async () => {
+    const { unmount } = await mount();
+    unmount();
+    const before = loads();
+    emitDoseChanged();
+    await flush();
+    expect(loads()).toBe(before);
+  });
+});
+
