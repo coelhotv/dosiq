@@ -48,7 +48,9 @@ const mockSetAttempts = jest.fn((..._a: any[]) => Promise.resolve())
 jest.mock('../snoozeAnchorStore', () => ({
   setSnoozeAnchors: (...a: any[]) => mockSetAnchors(...a),
   setSnoozeAttempts: (...a: any[]) => mockSetAttempts(...a),
+  getSnoozeAttempts: () => Promise.resolve(mockStoredAttempts),
 }))
+let mockStoredAttempts: Record<string, number> = {}
 const mockEndLa = jest.fn(() => Promise.resolve())
 jest.mock('@platform/doseActivity/liveActivityService', () => ({ endLiveActivity: () => mockEndLa() }))
 const mockDefer = jest.fn((..._a: any[]) => Promise.resolve())
@@ -277,6 +279,20 @@ describe('scheduleSnooze — horário e âncora da soneca (spec 101)', () => {
     await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
     expect(mockEndLa).toHaveBeenCalledTimes(1)
     expect(mockSetAttempts).toHaveBeenCalledWith(['inst-101'], 1)
+  })
+
+  it('🔴 C-28: Adiar da LA sem contagem (0) depois de 3 sonecas gravadas ⇒ recusa (teto vale)', async () => {
+    mockStoredAttempts = { 'inst-101': 3 }
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), currentSnoozeAttempt: 0 })
+    mockStoredAttempts = {}
+    expect(res).toBe(false)
+  })
+
+  it('C-28: contagem gravada 1 + chamador 0 ⇒ 2ª soneca', async () => {
+    mockStoredAttempts = { 'inst-101': 1 }
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30), currentSnoozeAttempt: 0 })
+    mockStoredAttempts = {}
+    expect(mockSetAttempts).toHaveBeenCalledWith(['inst-101'], 2)
   })
 
   it('C-24: alarme agrupado ⇒ não mexe na Live Activity', async () => {

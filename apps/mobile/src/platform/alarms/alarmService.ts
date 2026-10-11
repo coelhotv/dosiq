@@ -19,7 +19,7 @@ import { createDoseInstanceRepository, createCriticalAuditService, parseISO, for
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
-import { setSnoozeAnchors, setSnoozeAttempts } from './snoozeAnchorStore'
+import { setSnoozeAnchors, setSnoozeAttempts, getSnoozeAttempts } from './snoozeAnchorStore'
 import { SURFACE_ID_SUFFIX } from '@platform/doseActivity/doseActivitySurfaceService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
@@ -74,7 +74,7 @@ const IOS_INTERRUPTION_LEVEL = 'timeSensitive' as const
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
-const MAX_SNOOZE_ATTEMPTS = 3
+export const MAX_SNOOZE_ATTEMPTS = 3
 
 // Auditoria de dose crítica (spec 042). getUserId resolve o usuário logado a partir
 // da sessão persistida (AsyncStorage) — funciona também no handler headless do Android.
@@ -674,7 +674,11 @@ export async function scheduleSnooze({
     return false
   }
 
-  const next = currentSnoozeAttempt + 1
+  // Spec 101 C-28: a contagem vale para TODOS os caminhos. O "Adiar" da LA (fila do App Intent) não
+  // conhece a tentativa e mandava 0 — cada Adiar recomeçava do zero e o teto nunca valia. Fonte: a maior
+  // entre o chamador e a gravada localmente na soneca anterior (C-25).
+  const stored = (await getSnoozeAttempts())[String(doseInstanceId)] ?? 0
+  const next = Math.max(currentSnoozeAttempt, stored) + 1
   if (next > MAX_SNOOZE_ATTEMPTS) return false
 
   await ensureAlarmSetup()
@@ -749,6 +753,23 @@ export async function scheduleSnooze({
   return { fireAt: nextTs }
 }
 
+
+/**
+ * Spec 101 C-27: até 0.33.16 o reconcile da superfície rodava no iOS e deixava a notificação
+ * "Dose crítica agora" (sem ações) exibida, sem dono para removê-la. Limpa as `:surface` exibidas no
+ * iOS a cada resync. Best-effort. @private
+ */
+async function _clearIosSurfaceLeftovers() {
+  if (Platform.OS !== 'ios') return
+  try {
+    const shown = await notifee.getDisplayedNotifications()
+    const ids = (shown || []).map((n) => n?.id ?? n?.notification?.id).filter((id) => id && String(id).endsWith(SURFACE_ID_SUFFIX))
+    for (const id of ids) await notifee.cancelNotification(String(id))
+  } catch {
+    // best-effort
+  }
+}
+
 /**
  * Cancela os triggers de ALARME do Notifee (não toca expo-notifications).
  *
@@ -767,9 +788,11 @@ export async function cancelAll() {
   if (!Array.isArray(ids)) {
     await notifee.cancelTriggerNotifications()
   } else {
-    const alarmIds = ids.filter((id) => !String(id).endsWith(SURFACE_ID_SUFFIX))
+    // C-27: no iOS não existe superfície por notificação — `:surface` lá é resto do bug (limpa junto).
+    const alarmIds = Platform.OS === 'android' ? ids.filter((id) => !String(id).endsWith(SURFACE_ID_SUFFIX)) : ids
     if (alarmIds.length > 0) await notifee.cancelTriggerNotifications(alarmIds)
   }
+  await _clearIosSurfaceLeftovers()
   debugLog('[alarmService] cancelAll')
 }
 

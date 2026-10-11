@@ -7,6 +7,27 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### iPhone deixa de mostrar a notificação "Dose crítica agora" sem botões e o limite de sonecas vale no "Adiar" da Live Activity (spec 101, correção do smoke)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.16` → `0.33.19` só para build intermediário (0.33.17 e 0.33.18 foram builds locais de smoke); entra no
+  pacote de loja `0.34.0`; canal: **build de loja**, R-314). Quando um alarme tocava com o app aberto, o
+  iPhone podia mostrar uma notificação extra "Dose crítica agora", sem botões, que não saía da tela —
+  era a notificação contínua do Android rodando no iPhone. Ela não aparece mais, e as que ficaram
+  presas somem quando o app abre.
+- **Mobile** (`Fixed`, `patch`; mesmo build). O "Adiar" da Live Activity respeitava o limite de 3
+  sonecas só na tela do alarme: pela Live Activity, cada toque recomeçava a contagem. Agora a 4ª
+  tentativa é recusada em qualquer caminho, com o aviso "Limite de 3 sonecas atingido. Tome ou pule a
+  dose." em vez de um "não foi possível" sem motivo.
+- **Mobile** (`Fixed`, `patch`; mesmo build; muda código nativo). Criar uma dose crítica a poucos minutos
+  do horário podia deixar duas Live Activities na tela (a do app e a do servidor), uma delas parada em
+  0:00. Agora a que chega por último substitui a anterior.
+- **Mobile** (`Fixed`, `patch`; mesmo build). Sem internet, o "Adiar" da Live Activity abria o app e não
+  fazia nada: a Live Activity ficava e o aviso da soneca não tocava. Agora a soneca é agendada no
+  aparelho mesmo offline, com o aviso e a saída da Live Activity como online.
+- **Mobile** (`Fixed`, `patch`; mesmo build). O aviso da soneca pedida pelo "Adiar" da Live Activity
+  vinha simplificado (só nome e quantidade) e o "Tomei" dele ficava sem os dados do tratamento. Agora é
+  igual ao do alarme normal, com concentração e horário original.
+
 ### "Pular" tira a Live Activity da tela (spec 101, correção do smoke)
 
 - **Backend/Infra** (`Fixed`, `patch`; todas as versões; sem build). Pular a dose (ou a dose passar do

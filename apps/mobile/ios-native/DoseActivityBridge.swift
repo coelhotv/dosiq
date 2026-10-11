@@ -214,6 +214,13 @@ class DoseActivityBridge: NSObject {
         Task {
             for await activity in Activity<DoseActivityAttributes>.activityUpdates {
                 observeActivityPushToken(activity, instanceId: activity.attributes.instanceId)
+                // Spec 101 C-30: uma LA por vez. A do push-to-start pode chegar DEPOIS de o app ter criado a
+                // sua (dose criada perto do horário: janela do servidor e app no mesmo segundo) — o `start`
+                // só encerra as que já existiam. A que chega por último vence, como no `start`.
+                for other in Activity<DoseActivityAttributes>.activities
+                    where other.id != activity.id && other.activityState != .ended && other.activityState != .dismissed {
+                    await other.end(nil, dismissalPolicy: .immediate)
+                }
             }
         }
     }
