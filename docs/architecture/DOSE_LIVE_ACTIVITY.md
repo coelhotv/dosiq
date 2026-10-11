@@ -446,10 +446,10 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
 }
 ```
 
-## Contratos de plataforma verificados (R-324)
+## Contratos de plataforma verificados (AP-257)
 
 > **Regra:** comportamento de ActivityKit / notifee / APNs que o código ASSUME tem de estar nesta tabela,
-> com evidência. Fora dela ⇒ spike no device ANTES de codar (R-324 §3). Cada linha foi descoberta em
+> com evidência. Fora dela ⇒ spike no device ANTES de codar (AP-257, emenda 2026-10-11). Cada linha foi descoberta em
 > smoke da spec 101 (2026-10-09..11) depois de o código já supor o contrário.
 
 | # | Contrato | Consequência para o código | Evidência |
@@ -464,7 +464,7 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
 | P-8 | `supabase.auth.getUser()` **valida no servidor** (offline ⇒ `null`); `getSession()` é local | Caminho que precisa funcionar offline usa sessão local, só onde não grava em conta (PO-SEC-2) | 101 C-31 |
 | P-9 | iOS sem entitlement de Critical Alert: a notificação local toca **uma vez** (≤ 30 s) e respeita o silencioso — não é alarme | Paridade com o alarme Android depende da spec 054 | 101 (pergunta do PO, 10/10) |
 
-**Relógios (R-324 §2):** cron do servidor = 1×/min (claim, lifecycle, start da janela); âncora da soneca
+**Relógios (R-288, emenda 2026-10-11):** cron do servidor = 1×/min (claim, lifecycle, start da janela); âncora da soneca
 com segundos; recriação da LA até `SNOOZE_RETURN_LEAD_MS` (90 s) antes da âncora; app em foreground em
 qualquer instante. Desalinhamento LA × alarme de até 60 s é conhecido (103, fatia E).
 
