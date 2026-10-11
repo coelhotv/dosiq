@@ -9,9 +9,22 @@ jest.mock('../liveActivityService', () => ({
   showDoneLiveActivity: jest.fn(),
   liveActivitySupported: true,
 }))
+let mockOnline = true
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
-  supabase: { auth: { getUser: () => Promise.resolve({ data: { user: { id: 'u1' } } }) } },
+  supabase: {
+    auth: {
+      // Offline: getUser valida no servidor e falha; getSession é local.
+      getUser: () => (mockOnline ? Promise.resolve({ data: { user: { id: 'u1' } } }) : Promise.resolve({ data: { user: null } })),
+      getSession: () => Promise.resolve({ data: { session: { user: { id: 'u1' } } } }),
+    },
+  },
 }))
+let mockCached: any = null
+jest.mock('../activeDoseItemCache', () => ({
+  cacheActiveDoseItem: jest.fn(),
+  getCachedDoseItem: () => Promise.resolve(mockCached),
+}))
+let mockWindowFails = false
 jest.mock('@platform/auth/hooks/useAuth', () => ({ useAuth: () => ({ user: null }) }))
 jest.mock('@platform/consent/useConsentSuppressed', () => ({ useConsentSuppressed: () => false }))
 jest.mock('@dashboard/services/dashboardService', () => ({
@@ -34,13 +47,16 @@ jest.mock('@platform/alarms/snoozeAnchorStore', () => ({
 const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true }]
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
-  createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
+  createDoseInstanceRepository: () => ({ getWindow: jest.fn(() => (mockWindowFails ? Promise.reject(new Error('offline')) : Promise.resolve([]))) }),
   buildDoseItemsFromInstances: () => mockItems,
 }))
 
 import { processPendingActions, snoozeToastMessage } from '../DoseLiveActivityBridge'
 
 afterEach(() => {
+  mockOnline = true
+  mockCached = null
+  mockWindowFails = false
   jest.clearAllMocks()
   jest.clearAllTimers()
 })
@@ -82,5 +98,25 @@ describe('processPendingActions — Adiar da LA (spec 101)', () => {
     await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
     expect(mockSnooze).not.toHaveBeenCalled()
     expect(onSnoozeResult).toHaveBeenCalledWith('desconhecida', false, { reason: null })
+  })
+
+  it('🔴 C-31: offline (sem sessão validada nem banco) ⇒ soneca agenda com sessão local + DoseItem gravado', async () => {
+    mockOnline = false
+    mockWindowFails = true
+    mockCached = { instanceId: 'i9', medicineName: 'Glatus', scheduledFor: '2026-03-05T12:00:00.000Z', toleranceMinutes: 120, critical: true }
+    mockDrain.mockResolvedValueOnce([{ action: 'snooze', instanceId: 'i9' }])
+    mockSnooze.mockResolvedValueOnce({ fireAt: 1 })
+    const onSnoozeResult = jest.fn()
+    await processPendingActions('America/Sao_Paulo', { onSnoozeResult })
+    expect(mockSnooze).toHaveBeenCalledWith(expect.objectContaining({ doseInstanceId: 'i9', medicineName: 'Glatus', scheduledFor: '2026-03-05T12:00:00.000Z' }))
+    expect(onSnoozeResult).toHaveBeenCalledWith('i9', { fireAt: 1 }, { reason: null })
+  })
+
+  it('C-31: offline ⇒ "Registrar" NÃO roda com a sessão local (PO-SEC-2)', async () => {
+    mockOnline = false
+    const { navigateToDose } = require('@navigation/navigateToDose')
+    mockDrain.mockResolvedValueOnce([{ action: 'register', instanceId: 'i1' }])
+    await processPendingActions('America/Sao_Paulo', {})
+    expect(navigateToDose).not.toHaveBeenCalled()
   })
 })

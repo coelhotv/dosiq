@@ -21,6 +21,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Mobile** (`Fixed`, `patch`; mesmo build; muda código nativo). Criar uma dose crítica a poucos minutos
   do horário podia deixar duas Live Activities na tela (a do app e a do servidor), uma delas parada em
   0:00. Agora a que chega por último substitui a anterior.
+- **Mobile** (`Fixed`, `patch`; mesmo build). Sem internet, o "Adiar" da Live Activity abria o app e não
+  fazia nada: a Live Activity ficava e o aviso da soneca não tocava. Agora a soneca é agendada no
+  aparelho mesmo offline, com o aviso e a saída da Live Activity como online.
 
 ### "Pular" tira a Live Activity da tela (spec 101, correção do smoke)
 

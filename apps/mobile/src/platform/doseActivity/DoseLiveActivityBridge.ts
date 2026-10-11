@@ -50,6 +50,7 @@ import {
 } from './liveActivityService'
 import { registerPushToStart, resetPushToStartDedupe } from './pushToStartRegistration'
 import { syncActivityToken, forgetSyncedToken } from './syncActivityToken'
+import { cacheActiveDoseItem, getCachedDoseItem } from './activeDoseItemCache'
 import { emitReminderOpened } from '@platform/analytics/reminderEvents'
 import { REMINDER_SOURCES, SURFACES } from '@platform/analytics/analyticsEvents'
 
@@ -90,6 +91,8 @@ export async function deriveAndDrive({ userId, protocols, tz, prevInstanceId, fo
   )
   const items = allItems.filter((it) => it.status === 'pending' && it.critical)
   const active = selectActiveDoseActivity(items, now)
+  // C-31: guarda o DoseItem da dose ativa — o "Adiar" offline agenda a soneca com ele.
+  if (active) await cacheActiveDoseItem(items.find((it) => it.instanceId === active.instanceId))
 
   // C-13a/C-16: em background só leva ao servidor o token da LA que já está na tela (criada pelo
   // push-to-start, que acordou o app) — sem ele o servidor não atualiza nem encerra essa LA.
@@ -153,6 +156,19 @@ async function liveUserId() {
   }
 }
 
+/**
+ * C-31: sessão LOCAL (sem rede). Só para a soneca, que é alarme local: offline o `getUser` (valida no
+ * servidor) falha e o "Adiar" se perdia. `register` segue exigindo a sessão validada (PO-SEC-2). @private
+ */
+async function localUserId() {
+  try {
+    const { data } = await supabase.auth.getSession()
+    return data?.session?.user?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 /** Protocolos ativos enriquecidos com o medicamento (compartilhado por load() e pela ação). @private */
 async function fetchEnrichedProtocols(userId, tz) {
   const protos = await getActiveProtocols(userId, getTodayLocal(tz))
@@ -210,7 +226,8 @@ export function snoozeToastMessage(result, { reason = null }: { reason?: string 
  * (`{ fireAt }` | false). @private
  */
 async function _snoozeQueuedItem(uid, protocols, tz, instanceId) {
-  const doseItem = await resolveDoseItem(uid, protocols, tz, instanceId).catch(() => null)
+  // C-31: offline o banco não responde — cai no DoseItem gravado no último derive.
+  const doseItem = (await resolveDoseItem(uid, protocols, tz, instanceId).catch(() => null)) ?? (await getCachedDoseItem(instanceId))
   if (!doseItem) return false
   return scheduleSnooze({
     doseInstanceId: instanceId,
@@ -218,10 +235,28 @@ async function _snoozeQueuedItem(uid, protocols, tz, instanceId) {
     scheduledFor: doseItem.scheduledFor,
     toleranceMinutes: doseItem.toleranceMinutes ?? null,
     isCritical: doseItem.critical ?? true,
+    earlyWindowMinutes: doseItem.earlyWindowMinutes ?? null,
     data: { doseInstanceId: instanceId, medicineName: doseItem.medicineName, scheduledFor: doseItem.scheduledFor },
     source: REMINDER_SOURCES.DOSE_ACTIVITY,
     surface: SURFACES.PUSH,
   })
+}
+
+/**
+ * "Registrar" abre a modal bulk (sítio do injetável só selecionável lá) — paridade Android. Resolve o
+ * doseItem p/ obter protocolId/treatmentPlanId/horário (o widget só tem instanceId). 090 D-2 (RC3 F2):
+ * mesmo helper do Android — tiro aninhado TABS → Hoje, espera as abas. @private
+ */
+async function _processQueuedRegister(uid, protocols, tz, item) {
+  const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
+  const params = buildRegisterParams(doseItem, item.treatmentId)
+  if (params) navigateToDose(params)
+}
+
+/** Soneca da fila: agenda e reporta (com o motivo da recusa — C-28). @private */
+async function _processQueuedSnooze(uid, protocols, tz, instanceId, onSnoozeResult) {
+  const result = await _snoozeQueuedItem(uid, protocols, tz, instanceId)
+  await onSnoozeResult?.(instanceId, result, { reason: result ? null : await _refusalReason(instanceId) })
 }
 
 /** Motivo da recusa da soneca: `limit` quando a contagem gravada já bateu o teto (C-28). @private */
@@ -239,25 +274,22 @@ export async function processPendingActions(tz, { onSnoozeResult }: { onSnoozeRe
   const queue = await drainPendingActions()
   if (queue.length === 0) return
   const uid = await liveUserId()
-  if (!uid) return // sessão não-viva → não registra em conta errada (PO-SEC-2)
+  // C-31: sem sessão validada (offline), só a soneca segue — com a sessão local. O resto exige sessão viva.
+  const snoozeUid = uid ?? (await localUserId())
+  if (!snoozeUid) return // sem sessão nenhuma → não registra em conta errada (PO-SEC-2)
   let protocols = null
   for (const item of queue) {
+    if (!uid && item.action !== 'snooze') continue
     if (item.action === 'register' || item.action === 'open') {
       // 065 AD-8 (G-3): Live Activity é a superfície de dose ativa do iOS — mesmo `source` do Android.
       emitReminderOpened(REMINDER_SOURCES.DOSE_ACTIVITY, item.instanceId)
     }
     if (item.action === 'register') {
-      // "Registrar" abre a modal bulk (sítio do injetável só selecionável lá) — paridade Android.
-      // Resolve o doseItem p/ obter protocolId/treatmentPlanId/horário (o widget só tem instanceId).
       if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
-      const params = buildRegisterParams(doseItem, item.treatmentId)
-      // 090 D-2 (RC3 F2): mesmo helper do Android — tiro aninhado TABS → Hoje, espera as abas.
-      if (params) navigateToDose(params)
+      await _processQueuedRegister(uid, protocols, tz, item)
     } else if (item.action === 'snooze') {
-      if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      const result = await _snoozeQueuedItem(uid, protocols, tz, item.instanceId)
-      await onSnoozeResult?.(item.instanceId, result, { reason: result ? null : await _refusalReason(item.instanceId) })
+      if (!protocols) protocols = await fetchEnrichedProtocols(snoozeUid, tz).catch(() => [])
+      await _processQueuedSnooze(snoozeUid, protocols, tz, item.instanceId, onSnoozeResult)
     } else if (item.action === 'open') {
       // "Abrir" (later) — só traz o app pra Hoje, sem registrar.
       navigateToDose(null)
