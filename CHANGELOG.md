@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A apuração diária de entrega crítica passa a rodar às 05:00 (spec 102)
+
+- **Backend/Infra** (`Changed`, `patch` — sem arquivo de versão; deploy na Vercel no merge). A apuração
+  que confere se as doses críticas das últimas 24 h chegaram ao paciente passa a rodar às 05:00
+  (antes, 08:00), fora do horário de maior volume de lembretes. Isso reduz doses contadas por engano
+  como "sem registro". Os avisos de titulação e de receita continuam às 08:00.
+
 ### iPhone deixa de mostrar a notificação "Dose crítica agora" sem botões e o limite de sonecas vale no "Adiar" da Live Activity (spec 101, correção do smoke)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.16` → `0.33.19` só para build intermediário (0.33.17 e 0.33.18 foram builds locais de smoke); entra no

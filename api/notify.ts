@@ -457,10 +457,10 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       (context) => sendDLQDigest(notificationDispatcher, context));
   }
 
-  // 082 Slice B — apuração diária da entrega de dose crítica. 1×/dia, junto dos jobs das 08:00,
-  // olhando as 24 h anteriores. Não envia nada ao paciente: emite UM evento ao Sentry do backend
+  // 082 Slice B — apuração diária da entrega de dose crítica. 1×/dia às 05:00 SP — fora do pico de
+  // lembretes das 08:00 (spec 102 FR-007), olhando as 24 h anteriores. Não envia nada ao paciente: emite UM evento ao Sentry do backend
   // quando há não-entrega ou paciente sem canal (FR-009/FR-010).
-  if (currentHour === 8 && currentMinute === 0) {
+  if (currentHour === 5 && currentMinute === 0) {
     // 082 D1 · S-3: heartbeat — job que morre ou não roda vira alerta de cron perdido no Sentry, em
     // vez de um silêncio igual ao de "nada a reportar". O monitor fica DENTRO do runJob: vê o erro,
     // e o runJob segue isolando e reportando.
