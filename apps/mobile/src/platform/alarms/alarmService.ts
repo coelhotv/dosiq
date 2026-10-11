@@ -34,6 +34,7 @@ import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import { colors } from '@shared/styles/tokens'
 import { debugLog } from '@shared/utils/debugLog'
+import { emitDoseChanged } from './doseChangedBus'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
 
@@ -748,6 +749,8 @@ export async function scheduleSnooze({
   // 065 AD-8: `dose_snoozed` só quando a soneca FOI agendada (recusa fora da janela e teto estourado
   // saem antes). 1 por ação, não por ocorrência agrupada. Fail-silent (CON-021).
   _emitSnoozed(source, surface)
+  // 103 A (FR-A4): soneca gravada (notificação ou Live Activity) avisa o Hoje montado.
+  emitDoseChanged()
 
   debugLog('[alarmService] snooze', next, doseInstanceId)
   return { fireAt: nextTs }

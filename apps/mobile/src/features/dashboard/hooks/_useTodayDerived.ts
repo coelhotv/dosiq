@@ -58,14 +58,53 @@ export function deriveStockAlerts(stockItems) {
     .filter((a) => a.daysRemaining <= STOCK_ALERT_MAX_DAYS)
 }
 
-export function useTodayDerived(data) {
+/**
+ * @param data  snapshot carregado por `useTodayData`
+ * @param now   "agora" do relógio do Hoje (103 A, FR-A2). Ausente ⇒ `getRawNow()` no cálculo.
+ *
+ * RC3 A-1: dois memos. As ZONAS dependem do relógio (`[data, now]`); as estatísticas 7d/7d (14 dias
+ * de `dose_instances`) só mudam com dados novos (`[data]`) — o tick de 1 min não as recalcula.
+ */
+export function useTodayDerived(data, now?: Date) {
+  const stats = useMemo(() => {
+    if (!data) return null
+    const todayStr = getTodayLocal(data.timezone || DEFAULT_TZ)
+    const instances = data.doseInstances || []
+
+    // 2. Estatísticas e tendências ← dose_instances (S3.6/ADR-054): adesão =
+    // taken/(taken+missed), skipped_* neutro. Janela 7d (atual) vs 7d (anterior).
+    // scheduled_for é instante absoluto; o filtro por dia local usa boundaries via addDays.
+    const curStart = addDays(todayStr, -6).getTime()
+    const curEnd = addDays(todayStr, 1).getTime()
+    const prevStart = addDays(todayStr, -13).getTime()
+    const prevEnd = curStart
+    const inWindow = (inst, start, end) => {
+      if (!inst?.scheduled_for) return false
+      const t = parseISO(inst.scheduled_for).getTime()
+      return t >= start && t < end
+    }
+    const curAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, curStart, curEnd)))
+    const prevAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, prevStart, prevEnd)))
+    const score = Math.round((curAgg.rate ?? 0) * 100)
+    const prevScore = Math.round((prevAgg.rate ?? 0) * 100)
+    const hasPreviousData = (prevAgg.taken + prevAgg.missed) > 0
+
+    return {
+      taken: curAgg.taken,
+      missed: curAgg.missed,
+      expected: curAgg.taken + curAgg.missed,
+      score,
+      trend: hasPreviousData ? (score - prevScore) : 0,
+      hasPreviousData,
+    }
+  }, [data])
+
   return useMemo(() => {
     if (!data) return null
 
     // F4.3f.1: fuso do perfil governa "hoje" + partição cross-dia. Fallback SP.
     const tz = data.timezone || DEFAULT_TZ
-    const todayStr = getTodayLocal(tz)
-    const nowRaw = getRawNow()
+    const nowRaw = now ?? getRawNow()
     const protocols = data.protocols || []
     const instances = data.doseInstances || []
 
@@ -100,39 +139,12 @@ export function useTodayDerived(data) {
     const carryOver = carryItems.map(mapToTimeline).sort(byScheduledTime)
     const lookAhead = aheadItems.map(mapToTimeline).sort(byScheduledTime)
 
-    // 2. Estatísticas e tendências ← dose_instances (S3.6/ADR-054): adesão =
-    // taken/(taken+missed), skipped_* neutro. Janela 7d (atual) vs 7d (anterior).
-    // scheduled_for é instante absoluto; o filtro por dia local usa boundaries via addDays.
-    const curStart = addDays(todayStr, -6).getTime()
-    const curEnd = addDays(todayStr, 1).getTime()
-    const prevStart = addDays(todayStr, -13).getTime()
-    const prevEnd = curStart
-    const inWindow = (inst, start, end) => {
-      if (!inst?.scheduled_for) return false
-      const t = parseISO(inst.scheduled_for).getTime()
-      return t >= start && t < end
-    }
-    const curAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, curStart, curEnd)))
-    const prevAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, prevStart, prevEnd)))
-    const score = Math.round((curAgg.rate ?? 0) * 100)
-    const prevScore = Math.round((prevAgg.rate ?? 0) * 100)
-    const hasPreviousData = (prevAgg.taken + prevAgg.missed) > 0
-
-    const statsWithTrend = {
-      taken: curAgg.taken,
-      missed: curAgg.missed,
-      expected: curAgg.taken + curAgg.missed,
-      score,
-      trend: hasPreviousData ? (score - prevScore) : 0,
-      hasPreviousData,
-    }
-
     return {
       ...data,
-      stats: statsWithTrend,
+      stats,
       timeline,
       carryOver,
       lookAhead,
     }
-  }, [data])
+  }, [data, now, stats])
 }

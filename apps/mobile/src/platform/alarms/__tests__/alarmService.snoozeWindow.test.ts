@@ -59,6 +59,7 @@ jest.mock('@platform/doseActivity/doseActivityScheduler', () => ({
 }))
 
 import { scheduleSnooze } from '../alarmService'
+import { onDoseChanged } from '../doseChangedBus'
 
 const iso = (min: number) => new Date(Date.now() + min * 60000).toISOString()
 
@@ -141,6 +142,18 @@ describe('scheduleSnooze — não-regressão da soneca legítima (AC-3.2)', () =
     expect(ok).not.toBe(false)
     expect(mockSetSnoozedUntil).toHaveBeenCalledTimes(1)
     expect(mockReportOutOfWindow).not.toHaveBeenCalled()
+  })
+
+  // 103 A (FR-A4): soneca gravada (notificação ou Live Activity) avisa o Hoje; recusa não.
+  it('103 A: soneca aceita ⇒ 1 aviso ao Hoje; teto/fora da janela ⇒ 0', async () => {
+    let heard = 0
+    const off = onDoseChanged(() => { heard += 1 })
+    await scheduleSnooze(DENTRO)
+    expect(heard).toBe(1)
+    await scheduleSnooze({ ...DENTRO, currentSnoozeAttempt: 3 })
+    await scheduleSnooze({ ...DENTRO, scheduledFor: iso(217) })
+    expect(heard).toBe(1)
+    off()
   })
 
   it('teto de 3 sonecas preservado', async () => {

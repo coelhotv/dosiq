@@ -46,6 +46,7 @@ jest.mock('lucide-react-native', () => ({
 }))
 
 import AlarmFullScreen from '../AlarmFullScreen'
+import { emitDoseChanged } from '@platform/alarms/doseChangedBus'
 
 function makeNav() {
   return { canGoBack: jest.fn(() => true), goBack: jest.fn(), navigate: jest.fn() }
@@ -90,6 +91,37 @@ describe('AlarmFullScreen — auto-dismiss (US2/FR-004)', () => {
     expect(mockCancelAlarm).not.toHaveBeenCalled()
     expect(nav.goBack).not.toHaveBeenCalled()
     expect(getByText('Selozok', { exact: false })).toBeTruthy()
+  })
+
+  // 103 A (C-1): "Tomei" pela notificação/Live Activity com a tela aberta — a escrita avisa e a tela fecha.
+  it('103 C-1: tela aberta (pending) + escrita resolve a dose ⇒ revalida e fecha sozinha', async () => {
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(1))
+    expect(nav.goBack).not.toHaveBeenCalled()
+    mockIn.mockResolvedValue({ data: [{ id: 'inst-1', status: 'taken' }], error: null })
+    emitDoseChanged()
+    await waitFor(() => expect(nav.goBack).toHaveBeenCalledTimes(1))
+    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-1')
+  })
+
+  it('103 C-1: escrita que mantém pending (Adiar) ⇒ revalida e NÃO fecha', async () => {
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(1))
+    emitDoseChanged()
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(2))
+    expect(nav.goBack).not.toHaveBeenCalled()
+  })
+
+  it('103 C-1: tela desmontada ⇒ escrita não revalida (unsubscribe)', async () => {
+    const nav = makeNav()
+    const { unmount } = render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(1))
+    unmount()
+    emitDoseChanged()
+    await new Promise((r) => setImmediate(r))
+    expect(mockIn).toHaveBeenCalledTimes(1)
   })
 
   it('falha de leitura → mantém a tela aberta (não esconde alarme legítimo)', async () => {

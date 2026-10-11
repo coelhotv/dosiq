@@ -17,6 +17,7 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { registerTaken, registerSkip } from '@platform/alarms/quickDoseRegistration'
 import { SURFACES, REMINDER_SOURCES } from '@platform/analytics/analyticsEvents'
 import { scheduleSnooze, cancelAlarm } from '@platform/alarms/alarmService'
+import { onDoseChanged } from '@platform/alarms/doseChangedBus'
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
 
@@ -25,6 +26,9 @@ const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
  * está mais `pending` (resolvida por outra superfície/web/bot ou corrida) → cancela o
  * alarme e fecha (`onClose`). Grupo: só fecha quando TODAS já saíram de `pending`.
  * Falha de leitura NÃO fecha a tela (não esconder alarme legítimo por erro de rede).
+ * 103 A (C-1): revalida também a cada escrita de dose neste aparelho (`doseChangedBus`) — "Tomei"
+ * pelo botão da notificação/Live Activity com a tela aberta a fechava só com um 2º toque (que o
+ * banco recusava com 400). Adiar mantém `pending` ⇒ a tela segue aberta, como antes.
  */
 function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClose }) {
   useEffect(() => {
@@ -54,7 +58,11 @@ function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClo
       }
     }
     revalidate()
-    return () => { cancelled = true }
+    const offDoseChanged = onDoseChanged(() => { revalidate() })
+    return () => {
+      cancelled = true
+      offDoseChanged()
+    }
   }, [isGrouped, doseInstanceId, doseInstanceIds, onClose])
 }
 

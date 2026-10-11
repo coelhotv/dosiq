@@ -74,6 +74,25 @@ describe('useTodayDerived — timeline ← dose_instances (F4.3b)', () => {
     expect(timeline[0].timelineStatus).toBe('ATRASADA')
   })
 
+  // 103 A (FR-A2): o "agora" vem por parâmetro — o relógio do Hoje avança a zona sem `data` novo.
+  it('103 A: mesmo `data`, `now` avança T−1 → T ⇒ PLANEJADA vira PROXIMA (zona segue o relógio)', () => {
+    const data = { protocols, doseInstances: [inst('i1', 61, 'pending')], logs: [], medicines: {} }
+    const { result, rerender } = renderHook(({ now }) => useTodayDerived(data, now), {
+      initialProps: { now: new Date(NOW_MS) },
+    })
+    expect(result.current.timeline[0].timelineStatus).toBe('PLANEJADA')
+    const statsBefore = result.current.stats
+    rerender({ now: new Date(NOW_MS + 2 * 60_000) })
+    expect(result.current.timeline[0].timelineStatus).toBe('PROXIMA')
+    // RC3 A-1: estatísticas 7d/7d não recalculam a cada tick (memo só em `data`).
+    expect(result.current.stats).toBe(statsBefore)
+  })
+
+  it('103 A: `now` ausente ⇒ cai no getRawNow() (contrato antigo preservado)', () => {
+    const { timeline } = build([inst('i1', 30, 'pending')])
+    expect(timeline[0].timelineStatus).toBe('PROXIMA')
+  })
+
   it('pending no instante → PROXIMA', () => {
     const { timeline } = build([inst('i1', 30, 'pending')])
     expect(timeline[0].timelineStatus).toBe('PROXIMA')
