@@ -13,7 +13,7 @@ tags:
   - alarms
   - push
 created_at: "2026-07-14"
-updated_at: "2026-07-14"
+updated_at: "2026-10-11"
 epic: "049"
 ---
 
@@ -252,6 +252,17 @@ export async function registerTaken(data) {
 }
 ```
 
+### Soneca (Adiar)
+
+Todas as entradas — botão da notificação, tela cheia, superfície Android e "Adiar" da Live Activity —
+terminam em `alarmService.scheduleSnooze`: +5 min a partir de `max(agora, horário da dose)`, teto de 3
+(`MAX_SNOOZE_ATTEMPTS`, contagem local em `snoozeAnchorStore` — vale mesmo quando o chamador não sabe a
+tentativa), âncora gravada local e no banco (`snoozed_until`), superfície/LA saem de cena até a volta.
+Matriz completa por entrada, plataforma e estado do app: [DOSE_ACTIONS.md](./DOSE_ACTIONS.md).
+
+No iOS, sem o entitlement de Critical Alert, o alarme local toca **uma vez** e respeita o silencioso
+(P-9) — paridade com o Android é a spec 054.
+
 ### Gerenciamento de Estado dos Alarmes
 
 O estado mestre do alarme mudou do cache local para as flags de banco de dados por-protocolo.
@@ -272,7 +283,7 @@ O iOS restringe execuções no momento de disparo passivo. Resolvemos isso utili
 | `alarm_scheduled` | Confirmação de agendamento | ID único da instância de dose |
 | `alarm_fired` | Confirmação de renderização | Nível de acesso e importância |
 | `alarm_suppressed` | Rejeição por bloqueio | Causa documentada do bloqueio |
-| `snoozed` | Interação de adiamento | Contador de tentativas extras |
+| `snoozed` | Soneca aceita (emitido DEPOIS de armar o alarme — prova p/ o gate de push, 082 D1) | `snoozeAttempt` e `snoozedUntil` (instante exato) |
 
 ## Feature de Notificações do Usuário
 

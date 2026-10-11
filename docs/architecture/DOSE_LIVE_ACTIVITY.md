@@ -1,7 +1,7 @@
 ---
 title: "Arquitetura de Live Activities (Dose Activity)"
 description: "Documentação técnica das três camadas de orquestração de Live Activities no iOS e sua equivalência no Android."
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: architecture
 audience:
@@ -95,7 +95,8 @@ struct DoseActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var state: String        // later|upcoming|now|late|done
         var scheduledAt: Date    // instante-alvo da dose
-        var doneAtLabel: String  // "19:02" 
+        var doneAtLabel: String  // "19:02" — só no `done`
+        var nowUntil: Date? = nil // Spec 101: fim do `now` aberto pela soneca; nil = relógio original
     }
 
     var medicineName: String
@@ -259,39 +260,31 @@ async function deriveAndRender({ userId, protocols, tz, prevInstanceId }) {
 
 A contraparte para iOS, especializada em governar a Live Activity. Diferentemente do Android (que confia em triggers encadeados do Notifee para acordar em background), a Live Activity usa um relógio vivo nativo. 
 
+O "Adiar" da LA **não roda no widget**: o App Intent só enfileira e abre o app (P-6). A fila é drenada no
+foreground por `processPendingActions`, e toda ação termina na mesma função das outras entradas — ver
+[DOSE_ACTIONS.md](./DOSE_ACTIONS.md) (matriz de caminhos, R-324).
+
 Este script implementa o loop principal de ciclo de vida para derivar a próxima dose e empurrá-la à ponte nativa (`startLiveActivity`, `updateLiveActivity`, `endLiveActivity`). Ele também é responsável por drenar a fila do App Group (App Intents interativos) e invocar ações seguras sob uma sessão validada.
 
 ```typescript
 // apps/mobile/src/platform/doseActivity/DoseLiveActivityBridge.ts
 // ... (restante do arquivo)
-async function processPendingActions(tz) {
+export async function processPendingActions(tz, { onSnoozeResult } = {}) {
   const queue = await drainPendingActions()
   if (queue.length === 0) return
   const uid = await liveUserId()
-  if (!uid) return 
-  let protocols = null
+  // C-31: sem sessão validada (offline), só a soneca segue — com a sessão local (P-8).
+  const snoozeUid = uid ?? (await localUserId())
+  if (!snoozeUid) return // sem sessão nenhuma → não registra em conta errada (PO-SEC-2)
   for (const item of queue) {
-    if (item.action === 'register') {
-      if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
-      const params = buildRegisterParams(doseItem, item.treatmentId)
-      if (params) navigateTodayWithRetry(params)
-    } else if (item.action === 'snooze') {
-      if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
-      const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
-      if (doseItem) {
-        await scheduleSnooze({
-          doseInstanceId: item.instanceId,
-          medicineName: doseItem.medicineName,
-          scheduledFor: doseItem.scheduledFor,
-          toleranceMinutes: doseItem.toleranceMinutes ?? null,
-          isCritical: doseItem.critical ?? true,
-          data: { /* ... */ },
-        })
-      }
-    }
+    if (!uid && item.action !== 'snooze') continue
+    if (item.action === 'register') await _processQueuedRegister(uid, protocols, tz, item)   // abre a modal
+    else if (item.action === 'snooze') await _processQueuedSnooze(snoozeUid, protocols, tz, item.instanceId, onSnoozeResult)
+    else if (item.action === 'open') navigateToDose(null)
   }
 }
+// _snoozeQueuedItem: doseItem do banco ?? getCachedDoseItem (offline) → scheduleSnooze com
+// data = buildSingleAlarmData(doseItem) (C-32). Recusa pelo teto → toast com o motivo (C-28).
 // ... (restante do arquivo)
 ```
 
@@ -388,7 +381,9 @@ sequenceDiagram
     APNS->>Device: Encerra Widget
 ```
 
-A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Apple (APS).
+A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Apple (APS). Atenção às duas
+bases de tempo (P-2): `scheduledAt`/`nowUntil` no `content-state` são **segundos desde 2001**
+(`toActivityDateSec`); `timestamp`, `stale-date` e `dismissal-date` são epoch Unix.
 
 **Exemplo: Payload APNS Push-to-Start**
 ```json
@@ -398,7 +393,7 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
     "event": "start",
     "content-state": {
       "state": "upcoming",
-      "scheduledAtMs": 1718003600000,
+      "scheduledAt": 739696400,
       "doneAtLabel": ""
     },
     "attributes-type": "DoseActivityAttributes",
@@ -423,7 +418,7 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
     "event": "update",
     "content-state": {
       "state": "now",
-      "scheduledAtMs": 1718003600000,
+      "scheduledAt": 739696400,
       "doneAtLabel": ""
     }
   }
@@ -439,12 +434,32 @@ A comunicação server-side usa JSON estruturado no cabeçalho exigido pela Appl
     "dismissal-date": 1718007380,
     "content-state": {
       "state": "done",
-      "scheduledAtMs": 1718003600000,
+      "scheduledAt": 739696400,
       "doneAtLabel": "19:02"
     }
   }
 }
 ```
+
+## Ciclo de vida no servidor (estado pós-spec 101)
+
+O cron roda **1×/min** e faz três passes (`server/notifications/apns/`):
+
+| Passe | Arquivo | O que faz |
+|---|---|---|
+| Start da janela | `dispatchLiveActivityStarts.ts` | push-to-start na entrada de `upcoming` (trava `la_push_started_at IS NULL`); **pula** dose que já tem `la_push_token` (LA local viva); `doseLabel` via `formatDoseItem` com `expected_dose`/`units_per_ml` (C-22) |
+| Recriação na soneca | `dispatchLiveActivityStarts.ts` (`startSnoozedLiveActivity`) | no claim da soneca do minuto, recria a LA já em `now`, até `SNOOZE_RETURN_LEAD_MS` (90 s, `@dosiq/core`) antes da âncora; idempotência = o claim, não a trava do start |
+| Lifecycle | `dispatchLiveActivityLifecycle.ts` | para toda LA com `la_push_token`: status em `RESOLVED_STATUSES` (`taken`, `missed`, `skipped_user`, `skipped_paused`) ⇒ `end` e limpa token; soneca futura ⇒ `end` (a recriação traz de volta); senão `update` quando muda a chave `la_push_state` |
+
+**`now_due`:** o widget não troca o contador por "agora" sozinho (P-4). A partir de T0, sem soneca, a
+chave de idempotência vira `now_due` e força **um** update (C-19). É só chave do servidor — o widget
+recebe `now`.
+
+**Token remoto:** LA criada por push-to-start entrega o token só via `activityUpdates` (P-3); o bridge
+nativo observa e grava, e o mesmo observer encerra as outras LAs (P-7).
+
+**Offline:** o bridge grava o DoseItem da dose ativa a cada derive online (`activeDoseItemCache.ts`),
+para o "Adiar" funcionar sem rede (C-31).
 
 ## Contratos de plataforma verificados (AP-257)
 

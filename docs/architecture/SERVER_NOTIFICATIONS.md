@@ -15,7 +15,7 @@ tags:
   - dlq
   - architecture
 created_at: "2026-07-30"
-updated_at: "2026-07-30"
+updated_at: "2026-10-11"
 epic: "049"
 ---
 
@@ -323,6 +323,12 @@ sequenceDiagram
     Engine->>DB: UPDATE dose_instances SET la_push_token = NULL
     APNs->>iOS: Encerra widget Live Activity na tela de bloqueio
 ```
+
+> **Estado pós-spec 101:** o diagrama acima é o esqueleto. O start pula dose com `la_push_token`
+> (LA local viva); há um terceiro passe que **recria a LA na volta da soneca** (claim do minuto,
+> `SNOOZE_RETURN_LEAD_MS` = 90 s); o lifecycle encerra em qualquer status de `RESOLVED_STATUSES`
+> (`taken`, `missed`, `skipped_user`, `skipped_paused`) e força um update em T0 (`now_due`).
+> Detalhe e contratos de plataforma: [DOSE_LIVE_ACTIVITY.md §Ciclo de vida no servidor](./DOSE_LIVE_ACTIVITY.md#ciclo-de-vida-no-servidor-estado-pós-spec-101).
 
 Exemplo real de payload JSON enviado no `push-to-start` via HTTP/2 para a Apple:
 

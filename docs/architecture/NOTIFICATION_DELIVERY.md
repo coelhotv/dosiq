@@ -13,7 +13,7 @@ tags:
   - observabilidade
   - notification-log
 created_at: "2026-09-11"
-updated_at: "2026-09-11"
+updated_at: "2026-10-11"
 ---
 
 # 📬 Entrega de notificação — desfechos, gate por evidência e a série
@@ -129,6 +129,9 @@ crítico tem **6** aparelhos.
   Motivo: desde a 062 F3-B o push crítico toca em USAGE_ALARM e **preempta** o alarme INSISTENT da
   soneca — o loop morre em ~14 s (062 PO-21). O status segue `suprimida_alarme`; a origem fica no log
   `prova de soneca` do reminder.
+  Desde a spec 101 o `snoozed` traz `detail.snoozedUntil` (instante exato da soneca): a soneca pode ser
+  antecipada (antes do horário da dose a âncora é `scheduled_for + 5 min`), e o servidor casa a prova
+  por esse instante. Todas as entradas de soneca passam pela mesma função — [DOSE_ACTIONS.md](./DOSE_ACTIONS.md).
 - **Supressão sem aparelho não existe.** Se o usuário tem zero device expo, o desfecho é
   `sem_canal`, não supressão: não havia push a suprimir, e o problema é falta de canal.
 - **Dose não-crítica não passa pelo gate** (FR-014, R-191 intacto).
