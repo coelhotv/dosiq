@@ -9,8 +9,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export const ACTIVE_DOSE_ITEM_KEY = '@dosiq/live-activity-dose-item'
 
-// Só o que a soneca usa — nada de nome de tratamento/plano além do necessário.
-const FIELDS = ['instanceId', 'medicineName', 'scheduledFor', 'toleranceMinutes', 'earlyWindowMinutes', 'critical'] as const
+// O que a soneca usa: agendamento + o `data` do alarme (`buildSingleAlarmData` — corpo da notificação e
+// registro pelo "Tomei" dela, C-32). Nada de nome de tratamento/plano.
+const FIELDS = [
+  'instanceId', 'medicineName', 'scheduledFor', 'toleranceMinutes', 'earlyWindowMinutes', 'critical',
+  'protocolId', 'medicineId', 'dosagePerIntake', 'scheduledTime', 'dosagePerPill', 'dosageUnit',
+  'concentrationVolumeMl', 'intakeUnit', 'unitsPerMl', 'medicineType', 'presentation',
+] as const
 
 /** Grava o DoseItem da dose ativa. Best-effort. */
 export async function cacheActiveDoseItem(doseItem: Record<string, unknown> | null | undefined): Promise<void> {

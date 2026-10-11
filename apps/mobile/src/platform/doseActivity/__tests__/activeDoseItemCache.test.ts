@@ -22,7 +22,8 @@ describe('activeDoseItemCache', () => {
   it('grava e devolve só os campos da soneca, para a mesma dose', async () => {
     await cacheActiveDoseItem(item)
     const got = await getCachedDoseItem('i1')
-    expect(got).toEqual({ instanceId: 'i1', medicineName: 'Glatus', scheduledFor: '2026-03-05T12:00:00.000Z', toleranceMinutes: 120, earlyWindowMinutes: 120, critical: true })
+    expect(got).toMatchObject({ instanceId: 'i1', medicineName: 'Glatus', scheduledFor: '2026-03-05T12:00:00.000Z', toleranceMinutes: 120, earlyWindowMinutes: 120, critical: true })
+    expect(got).not.toHaveProperty('treatmentPlanName')
   })
 
   it('outra dose ⇒ null', async () => {

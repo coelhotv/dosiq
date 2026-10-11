@@ -88,7 +88,7 @@ async function emitScheduledDedupe(criticalIds, userId) {
 
 // Campos do `data` da notificação (single): tudo string (contrato Notifee). Inclui os
 // campos clínicos (036) p/ a tela cheia exibir concentração/dose/ícone contextual.
-function buildSingleAlarmData(it) {
+export function buildSingleAlarmData(it) {
   return {
     protocolId: it.protocolId,
     medicineId: it.medicineId,

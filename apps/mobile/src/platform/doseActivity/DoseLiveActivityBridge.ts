@@ -38,6 +38,7 @@ import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { onDoseActivityRefresh } from './doseActivityRefreshBus'
 import { navigateToDose } from '@navigation/navigateToDose'
 import { scheduleSnooze, MAX_SNOOZE_ATTEMPTS } from '@platform/alarms/alarmService'
+import { buildSingleAlarmData } from '@platform/alarms/useAlarmScheduler'
 import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
 import { useToast } from '@shared/components/feedback/Toast'
 import {
@@ -236,7 +237,9 @@ async function _snoozeQueuedItem(uid, protocols, tz, instanceId) {
     toleranceMinutes: doseItem.toleranceMinutes ?? null,
     isCritical: doseItem.critical ?? true,
     earlyWindowMinutes: doseItem.earlyWindowMinutes ?? null,
-    data: { doseInstanceId: instanceId, medicineName: doseItem.medicineName, scheduledFor: doseItem.scheduledFor },
+    // C-32: mesmo `data` do alarme normal — sem ele a notificação da soneca saía sem concentração/horário
+    // e o "Tomei" dela ficava sem protocolo/quantidade.
+    data: { ...buildSingleAlarmData(doseItem), doseInstanceId: instanceId, medicineName: doseItem.medicineName, scheduledFor: doseItem.scheduledFor },
     source: REMINDER_SOURCES.DOSE_ACTIVITY,
     surface: SURFACES.PUSH,
   })

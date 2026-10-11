@@ -44,7 +44,7 @@ jest.mock('@platform/alarms/snoozeAnchorStore', () => ({
   getSnoozeAttempts: () => Promise.resolve(mockAttempts),
   mergeSnoozeAnchors: (items: any[]) => items,
 }))
-const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true }]
+const mockItems = [{ instanceId: 'i1', medicineName: 'Lantus', scheduledFor: '2026-03-05T12:00:00.000Z', critical: true, protocolId: 'p1', dosagePerIntake: 10, intakeUnit: 'UI', unitsPerMl: 100, dosageUnit: 'ui/ml', scheduledTime: '09:00' }]
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
   createDoseInstanceRepository: () => ({ getWindow: jest.fn(() => (mockWindowFails ? Promise.reject(new Error('offline')) : Promise.resolve([]))) }),
@@ -118,5 +118,14 @@ describe('processPendingActions — Adiar da LA (spec 101)', () => {
     mockDrain.mockResolvedValueOnce([{ action: 'register', instanceId: 'i1' }])
     await processPendingActions('America/Sao_Paulo', {})
     expect(navigateToDose).not.toHaveBeenCalled()
+  })
+
+  it('🔴 C-32: soneca do Adiar leva o data completo do alarme (corpo da notificação + Tomei)', async () => {
+    mockDrain.mockResolvedValueOnce([{ action: 'snooze', instanceId: 'i1' }])
+    mockSnooze.mockResolvedValueOnce({ fireAt: 1 })
+    await processPendingActions('America/Sao_Paulo', { onSnoozeResult: jest.fn() })
+    expect(mockSnooze.mock.calls[0][0].data).toMatchObject({
+      protocolId: 'p1', quantityTaken: '10', intakeUnit: 'UI', unitsPerMl: '100', scheduledTime: '09:00', doseInstanceId: 'i1',
+    })
   })
 })
