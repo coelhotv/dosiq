@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A soneca toca no minuto cheio, junto com a Live Activity, e a tela de entrada não espreme os botões (spec 103, fatias D e E)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.20` → `0.33.21` só para build intermediário; entra no
+  pacote de loja `0.34.0`; canal: **build de loja**, R-314). Ao adiar uma dose, o alarme tocava 5 minutos
+  depois contados em segundos, enquanto a Live Activity do iPhone voltava no minuto cheio: os dois
+  chegavam com até 1 minuto de diferença. Agora a soneca vai para o minuto cheio seguinte (nunca antes de
+  5 minutos), alarme e Live Activity chegam juntos, e o aviso "Alarme reagendado para HH:MM" mostra
+  exatamente o minuto em que o alarme toca.
+- **Mobile** (`Fixed`, `patch`; mesmo build). Na tela de entrada, o aviso "Sua sessão terminou. Entre de
+  novo." dividia a linha com os botões "Criar conta" e "Já tenho conta" e quebrava o texto deles em
+  celulares pequenos. Agora o aviso fica em linha própria, acima dos botões.
+
 ### A tela Hoje acompanha o relógio e as ações feitas pela notificação (spec 103, fatia A)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.19` → `0.33.20` só para build intermediário; entra no
