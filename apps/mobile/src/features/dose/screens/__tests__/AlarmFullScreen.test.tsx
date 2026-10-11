@@ -114,6 +114,18 @@ describe('AlarmFullScreen — auto-dismiss (US2/FR-004)', () => {
     expect(nav.goBack).not.toHaveBeenCalled()
   })
 
+  it('RC6 #880: fechamento duplo (botão + revalidação) ⇒ goBack 1× só', async () => {
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(1))
+    mockIn.mockResolvedValue({ data: [{ id: 'inst-1', status: 'taken' }], error: null })
+    emitDoseChanged()
+    emitDoseChanged()
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(3))
+    await new Promise((r) => setImmediate(r))
+    expect(nav.goBack).toHaveBeenCalledTimes(1)
+  })
+
   it('103 C-1: tela desmontada ⇒ escrita não revalida (unsubscribe)', async () => {
     const nav = makeNav()
     const { unmount } = render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)

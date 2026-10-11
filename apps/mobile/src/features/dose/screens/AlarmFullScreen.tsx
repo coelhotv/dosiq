@@ -5,7 +5,7 @@
 // notificação heads-up. A11y idoso: fontes grandes, alto contraste, ícone+texto
 // (R-137 peso ≥700 / R-138 nunca ícone solo), hit-targets ≥ 64px.
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Check, X, Pill, Clock } from 'lucide-react-native'
@@ -148,12 +148,17 @@ function DoseHeadline({ data, isGrouped, medicineName }) {
 export default function AlarmFullScreen({ navigation, route }) {
   // Ordem R-010: States → Memos → derivados (previne TDZ).
   const [busy, setBusy] = useState(false)
+  // RC6 #880: fecha no máximo 1×. O Tomei/Pular da própria tela grava (avisa o bus) e fecha; a
+  // revalidação do C-1 pode voltar antes do fim da transição e pedir o fechamento de novo.
+  const closedRef = useRef(false)
   const data = useMemo(() => route?.params || {}, [route?.params])
   const { medicineName, scheduledTime } = data
   const snoozeMaxed = parseInt(data.snoozeAttempt || '0', 10) >= 3
   const isGrouped = data.isGrouped === 'true'
 
   const close = useCallback(() => {
+    if (closedRef.current) return
+    closedRef.current = true
     if (navigation.canGoBack()) navigation.goBack()
     else navigation.navigate(ROUTES.TABS)
   }, [navigation])

@@ -70,15 +70,18 @@ export function useTodayData() {
       capturedAt: getNow().toISOString(),
       localDay: today
     }
-    await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
+    // RC6 #880: estado ANTES do await — o guard de geração (load) é checado logo antes desta chamada;
+    // aplicar depois de persistir abriria uma janela para carga mais nova ser sobrescrita.
     dataRef.current = newData
     setData(newData)
     setStale(false)
     setIsDaySegregated(false)
+    await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify(newData))
   }, [])
 
-  const handleCacheFallback = useCallback(async (expectedUserId: string | null) => {
+  const handleCacheFallback = useCallback(async (expectedUserId: string | null, isLatest: () => boolean = () => true) => {
     const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
+    if (!isLatest()) return
     // Sem cache pra tentar (1ª abertura do app, ou storage limpo) — NÃO relançar `originalErr` cru:
     // em modo avião/sem rede ele é um erro de fetch nativo (RN), sempre em inglês, e vazaria pra
     // tela via describeLoadFailure. Mensagem própria, em PT, cobre esse caso (achado no smoke 055).
@@ -182,11 +185,11 @@ export function useTodayData() {
         return
       }
       try {
-        await handleCacheFallback(sessionUserId)
+        await handleCacheFallback(sessionUserId, isLatest)
       } catch (fallbackErr) {
         // AP-314: erro de servidor (42703, 42501…) tem precedência sobre "Cache expirado" —
         // sem isso, schema quebrado em produção se disfarça de app offline.
-        setError(describeLoadFailure(err, fallbackErr))
+        if (isLatest()) setError(describeLoadFailure(err, fallbackErr))
       }
     } finally {
       if (isLatest()) setLoading(false)
