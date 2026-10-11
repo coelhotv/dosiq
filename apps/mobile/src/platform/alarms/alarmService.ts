@@ -75,6 +75,7 @@ const IOS_INTERRUPTION_LEVEL = 'timeSensitive' as const
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
+const MINUTE_MS = 60 * 1000
 export const MAX_SNOOZE_ATTEMPTS = 3
 
 // Auditoria de dose crítica (spec 042). getUserId resolve o usuário logado a partir
@@ -604,11 +605,15 @@ function _emitSnoozed(source, surface) {
 /**
  * Spec 101 (FR-002 / INV-1): a soneca nunca antecipa o aviso. Antes da hora da dose, "Adiar" vale
  * `scheduled_for + 5 min`; dali em diante, `agora + 5 min`. `scheduledFor` inválido cai em `agora`.
+ * Spec 103 E (FR-E1): arredonda PARA CIMA até o minuto cheio — o servidor recria a Live Activity no
+ * minuto do claim (cron 1×/min), então alarme e LA chegam juntos. Ceil: nunca antecipa (INV-1) e um
+ * valor já em minuto cheio não muda. Fonte única do trigger, `snoozed_until`, âncora, prova e toast.
  * @private
  */
 function _snoozeFireAt(scheduledFor, nowMs) {
   const scheduledMs = scheduledFor ? parseISO(scheduledFor).getTime() : NaN
-  return Math.max(nowMs, Number.isNaN(scheduledMs) ? nowMs : scheduledMs) + SNOOZE_INTERVAL_MS
+  const fireAt = Math.max(nowMs, Number.isNaN(scheduledMs) ? nowMs : scheduledMs) + SNOOZE_INTERVAL_MS
+  return Math.ceil(fireAt / MINUTE_MS) * MINUTE_MS
 }
 
 /**
