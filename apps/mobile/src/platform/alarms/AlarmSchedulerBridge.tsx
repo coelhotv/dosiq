@@ -20,6 +20,7 @@ import {
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
+import { drainSurfaceAudit } from '@platform/audit/surfaceAuditBeacon'
 import { deriveIosAlarmOutcome } from '@platform/audit/deriveIosAlarmOutcome'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
@@ -118,13 +119,17 @@ async function flushCriticalAudit(userId, consentSuppressed = false) {
     // Os demais eventos seguem drenando pelo motivo já documentado acima (:79-82): JÁ ocorreram.
     // O cancelamento do alarme é idêntico nos dois regimes — consentimento nunca deixa a paciente
     // com um alarme errado tocando.
-    await auditQueue.flush((evt) => {
+    const insertOne = (evt) => {
       if (shouldDropOnRevokedConsent(evt, consentSuppressed)) {
         // `true` = item consumido: sai da fila sem insert (descarte, não retry infinito).
         return Promise.resolve(true)
       }
       return auditEmitter.emit(evt as unknown as CriticalAuditEvent)
-    })
+    }
+    await auditQueue.flush(insertOne)
+    // Spec 084: fila PRÓPRIA da superfície Android (INV-4), drenada pela mesma regra. Transição de
+    // superfície já ocorreu: com consentimento revogado drena como alarm_fired (não é anomalia).
+    await drainSurfaceAudit(insertOne)
   } catch (err) {
     if (__DEV__) console.warn('[AlarmSchedulerBridge] flush audit falhou', err?.message)
   }

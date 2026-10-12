@@ -249,8 +249,10 @@ export {
   deriveDoseActivityState,
   selectActiveDoseActivity,
   doseActivityBoundaryTimes,
+  classifySurfaceTransition,
   SNOOZE_RETURN_LEAD_MS,
 } from './doseActivityState'
+export type { SurfaceTransition } from './doseActivityState'
 
 // Sítios de injeção — locais corporais de aplicação + rotação (031, ADR-072)
 export {
