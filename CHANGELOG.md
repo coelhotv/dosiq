@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O aviso de "iPhone sem Live Activity" diz o motivo e para de repetir para aparelho abandonado (spec 083)
+
+- **Backend/Infra** (`Changed`, `patch` — sem arquivo de versão; deploy na Vercel no merge). Quando a
+  Live Activity de uma dose crítica não pode ser aberta no iPhone por falta de registro do aparelho, o
+  registro na trilha de auditoria passa a dizer o motivo: o aparelho nunca registrou a Live Activity,
+  ou todos os registros dele estão desativados, com quantos dias faz desde que o app foi aberto (sem
+  nenhum dado do aparelho). iPhones sem abrir o app há mais de 30 dias deixam de gerar esse registro
+  todo dia.
+
 ### A notificação contínua da dose crítica no Android mostra o estado certo e deixa rastro (spec 084)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.21` → `0.33.22` só para build intermediário; entra no

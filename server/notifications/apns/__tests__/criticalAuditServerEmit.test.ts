@@ -25,7 +25,7 @@ interface AuditPayload {
   event?: string
   platform?: string
   actor?: string
-  detail?: { from?: string | null; to?: string; phase?: string; status?: number; reason?: string } | null
+  detail?: { from?: string | null; to?: string; phase?: string; status?: number; reason?: string; days_since_seen?: number } | null
 }
 function makeSupabase(selectQueue: QueryResult[]) {
   const captured: AuditPayload[] = [];
@@ -114,70 +114,80 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     assertNoPii(payload);
   });
 
-  // 067 C.1 / FR-040 — o sinal passa a ter CANDIDATURA (device iOS, mesmo inativo) e trava de
-  // idempotência (uma linha por ocorrência). A ordem das queries no ramo "sem token" é:
-  // [instâncias] → [devices apns_liveactivity] → [devices platform=ios] → [eventos já emitidos].
-  it('starts: push_skipped_no_token — usuário com device iOS e sem token de LA (o sinal legítimo do 041)', async () => {
+  // 067 C.1 / FR-040 + spec 083 — o sinal tem CANDIDATURA (device iOS visto em ≤ 30 d) e uma linha por
+  // ocorrência. A ordem das queries no ramo "sem token" é:
+  // [instâncias] → [devices apns_liveactivity ativos] → [linhas platform=ios] → [eventos já emitidos].
+  const daysAgo = (d: number) => new Date(NOW.getTime() - d * 86_400_000).toISOString();
+  const iosRow = (provider: string, seenDaysAgo: number, isActive = false) =>
+    ({ provider, is_active: isActive, last_seen_at: daysAgo(seenDaysAgo) });
+
+  async function runNoToken(iosResult: QueryResult, signaled: unknown[] = []) {
     const supabase = makeSupabase([
       { data: [doseRow()], error: null },
-      { data: [], error: null },                    // sem device apns_liveactivity
-      { data: [{ id: 'dev-ios' }], error: null },   // MAS tem device platform=ios → candidato
-      { data: [], error: null },                    // ainda não sinalizado p/ esta ocorrência
+      { data: [], error: null },          // sem device apns_liveactivity ativo
+      iosResult,                          // diagnóstico iOS
+      { data: signaled, error: null },    // eventos já emitidos desta ocorrência
     ]);
-    const sendFn = vi.fn();
-    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn: vi.fn() });
+    return { supabase, r };
+  }
 
+  it('starts: push_skipped_no_token — só expo iOS visto há 3 d ⇒ never_registered (083 AC-1.1)', async () => {
+    const { supabase } = await runNoToken({ data: [iosRow('expo', 3)], error: null });
     expect(supabase._captured).toHaveLength(1);
     const payload = supabase._captured[0];
     expect(payload).toMatchObject({
       event: 'push_skipped_no_token', platform: 'server', actor: 'server',
       user_id: USER_A, dose_instance_id: INST_1,
+      detail: { reason: 'never_registered', days_since_seen: 3 },
     });
+    // INV-4: só reason/days_since_seen — nenhum token, id de device ou versão.
+    expect(Object.keys(payload.detail ?? {}).sort()).toEqual(['days_since_seen', 'reason']);
     assertNoPii(payload);
+  });
+
+  it('starts: só apns_liveactivity inativos, mais recente há 9 d ⇒ all_inactive (083 AC-1.2)', async () => {
+    const { supabase } = await runNoToken({
+      data: [iosRow('apns_liveactivity', 20), iosRow('apns_liveactivity', 9), iosRow('expo', 12, true)],
+      error: null,
+    });
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0].detail).toEqual({ reason: 'all_inactive', days_since_seen: 9 });
+  });
+
+  it('starts: iOS mais recente visto há 31 d NÃO emite (083 AC-2.1 — aparelho abandonado)', async () => {
+    const { supabase, r } = await runNoToken({ data: [iosRow('expo', 31), iosRow('expo', 120)], error: null });
+    expect(supabase._captured).toHaveLength(0);
+    expect(r.skipped).toBe(1);
+  });
+
+  it('starts: iOS visto há 29 d EMITE (083 AC-2.2 — dentro da janela)', async () => {
+    const { supabase } = await runNoToken({ data: [iosRow('expo', 29)], error: null });
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0].detail).toEqual({ reason: 'never_registered', days_since_seen: 29 });
+  });
+
+  it('starts: erro na consulta iOS ⇒ EMITE com reason unknown (083 AC-1.3/AC-2.3, fail-open)', async () => {
+    // Fail-open deliberado e assimétrico: ruído é bounded e reversível; perder o diagnóstico de
+    // um iPhone real, não.
+    const { supabase, r } = await runNoToken({ data: null, error: { message: 'boom' } });
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0]).toMatchObject({ event: 'push_skipped_no_token' });
+    expect(supabase._captured[0].detail).toEqual({ reason: 'unknown' });
+    expect(r.skipped).toBe(1); // INV-2: o diagnóstico nunca vira `failed`
   });
 
   it('starts: usuário SEM nenhum device iOS (Android-only) NÃO gera push_skipped_no_token', async () => {
     // O caso que enchia a trilha: ~60 linhas/dose, para sempre, sobre um recurso que não existe
     // no aparelho. Medido em prod: 1079 linhas em 7 dias de um único usuário.
-    const supabase = makeSupabase([
-      { data: [doseRow()], error: null },
-      { data: [], error: null }, // sem apns_liveactivity
-      { data: [], error: null }, // sem NENHUM device platform=ios → não é candidato
-    ]);
-    const sendFn = vi.fn();
-    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
-
+    const { supabase, r } = await runNoToken({ data: [], error: null });
     expect(supabase._captured).toHaveLength(0);
     expect(r.skipped).toBe(1); // o start segue degradando p/ o foreground (039) — só a linha some
   });
 
   it('starts: candidato iOS já sinalizado nesta ocorrência NÃO repete o evento (trava de idempotência)', async () => {
-    const supabase = makeSupabase([
-      { data: [doseRow()], error: null },
-      { data: [], error: null },
-      { data: [{ id: 'dev-ios' }], error: null },        // candidato
-      { data: [{ id: 'evt-anterior' }], error: null },   // já existe a linha desta ocorrência
-    ]);
-    const sendFn = vi.fn();
-    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
-
+    const { supabase } = await runNoToken({ data: [iosRow('expo', 1)], error: null }, [{ id: 'evt-anterior' }]);
     expect(supabase._captured).toHaveLength(0);
-  });
-
-  it('starts: erro ao checar candidatura → EMITE (fail-open preserva o sinal, não o silêncio)', async () => {
-    // Fail-open aqui é deliberado e assimétrico: ruído é bounded e reversível; perder o
-    // diagnóstico de um iPhone real, não.
-    const supabase = makeSupabase([
-      { data: [doseRow()], error: null },
-      { data: [], error: null },
-      { data: null, error: { message: 'boom' } }, // candidatura indeterminada
-      { data: [], error: null },
-    ]);
-    const sendFn = vi.fn();
-    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
-
-    expect(supabase._captured).toHaveLength(1);
-    expect(supabase._captured[0]).toMatchObject({ event: 'push_skipped_no_token' });
   });
 
   it('starts: push_failed — sendFn 410 (anySent=false)', async () => {

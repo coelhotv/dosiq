@@ -80,39 +80,61 @@ function mapInstance(inst: DoseInstanceRow) {
   }
 }
 
+// Spec 083 (Q1) — emenda da Decisão 23 da 067: candidato = device iOS visto em ≤ 30 d.
+// Cala o aparelho abandonado (medido: 112–122 d sem abrir, emitindo todo dia) e ainda pega o iPhone
+// que perdeu o token há semanas (mediana real do iOS ativo: 3,5–5 d desde o último visto).
+const APPLE_CANDIDATE_RECENCY_DAYS = 30
+const DAY_MS = 24 * 60 * 60 * 1000
+
+type NoTokenReason = 'never_registered' | 'all_inactive' | 'unknown'
+interface AppleDiagnosis {
+  candidate: boolean
+  reason: NoTokenReason
+  daysSinceSeen: number | null
+}
+
 /**
- * O usuário é CANDIDATO ao sinal `push_skipped_no_token`? (067 C.1 / FR-040, Decisão 23)
+ * Diagnóstico do ramo "sem token de LA" (067 C.1 / FR-040, Decisão 23 emendada pela spec 083).
  *
- * Candidato := tem device `platform='ios'` — de QUALQUER provider e INCLUSIVE `is_active=false`.
- * O teste NÃO é "tem apns_liveactivity ativo": iPhone com token expo inativo e sem linha de LA é
- * exatamente o caso que o evento existe p/ diagnosticar (usuário iOS cujo push parou de funcionar).
- * Usuário sem NENHUM device iOS não tem o recurso no aparelho — ausência de recurso inexistente não
- * é evento clínico, e emiti-la custava ~60 linhas por dose, para sempre (medido: 1079 linhas/7d de
- * um único usuário Android-only).
+ * UMA consulta às linhas `platform='ios'` do usuário responde as duas perguntas:
+ *  - candidatura: existe linha iOS (de QUALQUER provider, inclusive inativa) cujo `last_seen_at` mais
+ *    recente está a ≤ 30 d do `now` do dispatcher (nunca o relógio do sistema). Usuário sem device iOS
+ *    não tem o recurso no aparelho; iPhone calado há meses é churn, não diagnóstico.
+ *  - motivo: só roda quando NÃO há `apns_liveactivity` ativo, então os casos são exaustivos — alguma
+ *    linha `apns_liveactivity` (todas inativas) ⇒ `all_inactive`; nenhuma ⇒ `never_registered`.
  *
- * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ trata como candidato (emite). O ruído é
- * bounded (60 linhas/dose) e reversível; perder o diagnóstico de um iPhone real, não.
+ * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ candidato com `reason:'unknown'` (emite). O ruído
+ * é bounded (1 linha/dose) e reversível; perder o diagnóstico de um iPhone real, não.
  * @private
  */
-async function _isAppleCandidate(supabase: any, logger: Logger | undefined, userId: string): Promise<boolean> {
+async function _diagnoseAppleCandidate(supabase: any, logger: Logger | undefined, userId: string, now: Date): Promise<AppleDiagnosis> {
+  const unknown: AppleDiagnosis = { candidate: true, reason: 'unknown', daysSinceSeen: null }
   try {
     const { data, error } = await supabase
       .from('notification_devices')
-      .select('id')
+      .select('provider, is_active, last_seen_at')
       .eq('user_id', userId)
       .eq('platform', 'ios')
-      .limit(1)
     if (error) {
       logger?.warn?.('Falha ao checar candidatura iOS (fail-open: emite o sinal)', error, { userId })
-      return true
+      return unknown
     }
-    return Boolean(data && data.length > 0)
+    const rows: Array<{ provider?: string; last_seen_at?: string | null }> = data || []
+    if (rows.length === 0) return { candidate: false, reason: 'never_registered', daysSinceSeen: null }
+    const reason: NoTokenReason = rows.some((r) => r.provider === 'apns_liveactivity') ? 'all_inactive' : 'never_registered'
+    const seenMs = rows
+      .map((r) => (r.last_seen_at ? parseISO(r.last_seen_at).getTime() : NaN))
+      .filter((ms) => !Number.isNaN(ms))
+    // `last_seen_at` é NOT NULL no banco; linha ilegível não decide nada ⇒ fica candidato, sem idade.
+    if (seenMs.length === 0) return { candidate: true, reason, daysSinceSeen: null }
+    const daysSinceSeen = Math.max(0, Math.floor((now.getTime() - Math.max(...seenMs)) / DAY_MS))
+    return { candidate: daysSinceSeen <= APPLE_CANDIDATE_RECENCY_DAYS, reason, daysSinceSeen }
   } catch (err) {
     // A auditoria é BEST-EFFORT e não pode alterar o desfecho do dispatch: um throw aqui subiria
     // até o catch do loop e transformaria um `skipped` legítimo em `failed` — falseando a métrica
     // do próprio dispatcher por causa de um evento de diagnóstico.
     logger?.warn?.('Erro ao checar candidatura iOS (fail-open: emite o sinal)', err, { userId })
-    return true
+    return unknown
   }
 }
 
@@ -134,7 +156,7 @@ async function _isAppleCandidate(supabase: any, logger: Logger | undefined, user
  * trilha clínica, o que o PO recusou por decisão explícita. Se um dia o histórico expirar pelo
  * prune de 90 dias, o índice passa a ser viável e esta função vira redundante.
  *
- * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ emite (mesmo racional de `_isAppleCandidate`).
+ * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ emite (mesmo racional de `_diagnoseAppleCandidate`).
  * @private
  */
 async function _alreadySignaledNoToken(supabase: any, logger: Logger | undefined, instanceId: string): Promise<boolean> {
@@ -306,12 +328,14 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     return 'skipped'
   }
   if (!devices || devices.length === 0) {
-    // FR-040 (Decisão 23): só emite p/ quem é CANDIDATO ao recurso (tem device iOS, mesmo inativo)
-    // e uma vez por ocorrência (best-effort — ver `_alreadySignaledNoToken`); antes eram ~60
-    // linhas/dose, para sempre, em usuário Android-only.
-    const candidate = await _isAppleCandidate(supabase, logger, userId)
-    if (candidate && !(await _alreadySignaledNoToken(supabase, logger, active.instanceId))) {
-      await emitAudit('push_skipped_no_token')
+    // FR-040 (Decisão 23, emendada pela 083): só emite p/ quem é CANDIDATO ao recurso (device iOS
+    // visto em ≤ 30 d, mesmo inativo) e uma vez por ocorrência (best-effort — ver
+    // `_alreadySignaledNoToken`). O detail diz o porquê, sem PII (INV-4/R-321).
+    const diagnosis = await _diagnoseAppleCandidate(supabase, logger, userId, now)
+    if (diagnosis.candidate && !(await _alreadySignaledNoToken(supabase, logger, active.instanceId))) {
+      const detail: Record<string, unknown> = { reason: diagnosis.reason }
+      if (diagnosis.daysSinceSeen !== null) detail.days_since_seen = diagnosis.daysSinceSeen
+      await emitAudit('push_skipped_no_token', detail)
     }
     return 'skipped'
   }
