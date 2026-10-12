@@ -264,6 +264,43 @@ describe('scheduleSnooze — horário e âncora da soneca (spec 101)', () => {
     expect(triggerTs()).toBe(NOW + 5 * M)
   })
 
+  // Spec 103 E (FR-E1/E2): o servidor recria a LA no minuto cheio do claim (cron 1×/min) — a soneca
+  // arredonda PARA CIMA até o minuto cheio, para alarme e LA chegarem juntos; nunca antecipa (INV-1).
+  it('🔴 PO-103-E1: adiar às HH:MM:37 ⇒ alarme no minuto cheio seguinte a agora + 5', async () => {
+    ;(Date.now as jest.Mock).mockReturnValue(NOW + 37_000)
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    expect(triggerTs()).toBe(NOW + 6 * M)
+    expect(res).toEqual({ fireAt: NOW + 6 * M })
+    expect(mockSetSnoozedUntil).toHaveBeenCalledWith('inst-101', NOW + 6 * M)
+    const notif = (notifee.createTriggerNotification as jest.Mock).mock.calls.at(-1)[0]
+    expect(notif.data.snoozedUntil).toBe(String(NOW + 6 * M))
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({ detail: { snoozeAttempt: 1, snoozedUntil: NOW + 6 * M } }),
+    )
+  })
+
+  it('PO-103-E1: 1 ms depois do minuto cheio também sobe (nunca antes de agora + 5)', async () => {
+    ;(Date.now as jest.Mock).mockReturnValue(NOW + 1)
+    await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    expect(triggerTs()).toBe(NOW + 6 * M)
+    expect(triggerTs()).toBeGreaterThanOrEqual(NOW + 1 + 5 * M)
+  })
+
+  it('PO-103-E1: horário futuro com segundos ⇒ max(agora, horário) preservado e arredondado', async () => {
+    ;(Date.now as jest.Mock).mockReturnValue(NOW + 20_000)
+    await scheduleSnooze({ ...DOSE, scheduledFor: new Date(NOW + 42 * M + 15_000).toISOString() })
+    expect(triggerTs()).toBe(NOW + 48 * M)
+  })
+
+  it('PO-103-E1: toast mostra o mesmo minuto do alarme', async () => {
+    ;(Date.now as jest.Mock).mockReturnValue(NOW + 59_000)
+    const res = await scheduleSnooze({ ...DOSE, scheduledFor: at(-30) })
+    const fireAt = (res as { fireAt: number }).fireAt
+    expect(new Date(fireAt).getSeconds()).toBe(0)
+    expect(new Date(fireAt).getMilliseconds()).toBe(0)
+    expect(fireAt).toBe(triggerTs())
+  })
+
   it('🔴 `snoozed` leva detail.snoozedUntil = horário agendado (prova exata no servidor)', async () => {
     await scheduleSnooze({ ...DOSE, scheduledFor: at(42) })
     expect(mockEmit).toHaveBeenCalledWith(

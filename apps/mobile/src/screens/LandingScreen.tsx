@@ -16,9 +16,12 @@ import AdherenceRing from '@features/dashboard/components/AdherenceRing';
 import { SESSION_ENDED_REASON_KEY } from '@platform/session/localDataWipe';
 
 const SESSION_ENDED_MESSAGE = 'Sua sessão terminou. Entre de novo.';
+// Altura da barra antes da primeira medição (barra sem aviso, iOS com home indicator).
+const ACTION_BAR_FALLBACK_HEIGHT = 140;
 
 export default function LandingScreen({ navigation }) {
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [actionBarHeight, setActionBarHeight] = useState(ACTION_BAR_FALLBACK_HEIGHT);
   const insets = useSafeAreaInsets();
 
   // Spec 091 (AC-2.1): encerramento por sessão inválida (conta excluída em outro aparelho, sessão
@@ -36,6 +39,12 @@ export default function LandingScreen({ navigation }) {
     return () => { active = false; };
   }, []);
 
+  // Spec 103 D (RC3 D-1): a barra é fixa sobre o scroll e cresce com o aviso — o fim do conteúdo
+  // acompanha a altura medida, senão o aviso cobriria os chips.
+  const handleActionBarLayout = (event) => {
+    setActionBarHeight(event.nativeEvent.layout.height);
+  };
+
   const handleCreateAccount = () => {
     navigation.navigate(ROUTES.SIGNUP);
   };
@@ -47,7 +56,7 @@ export default function LandingScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ paddingBottom: actionBarHeight }}
         showsVerticalScrollIndicator={false}
       >
         {/* 1. Header Branding - Copied assets pattern from LoginScreen */}
@@ -143,35 +152,41 @@ export default function LandingScreen({ navigation }) {
       </ScrollView>
 
       {/* 6. Action Bar (Fixed at bottom) */}
-      <View style={[
-        styles.actionBar, 
-        { paddingBottom: Math.max(insets.bottom, spacing[6]) }
-      ]}>
-        {/* Spec 091: perto dos botões — é a ação que a pessoa precisa tomar (entrar de novo). */}
+      <View
+        style={[
+          styles.actionBar,
+          { paddingBottom: Math.max(insets.bottom, spacing[6]) }
+        ]}
+        onLayout={handleActionBarLayout}
+      >
+        {/* Spec 091: perto dos botões — é a ação que a pessoa precisa tomar (entrar de novo).
+            Spec 103 D: em linha própria, acima dos botões (na mesma linha espremia o texto deles). */}
         {sessionEnded && (
           <Text style={styles.sessionEnded} accessibilityRole="alert">
             {SESSION_ENDED_MESSAGE}
           </Text>
         )}
-        <Pressable 
-          style={styles.createAccountBtn} 
-          onPress={handleCreateAccount}
-          accessibilityRole="button"
-          accessibilityLabel="Criar conta"
-        >
-          <UserPlus size={20} color={colors.text.inverse} />
-          <Text style={styles.createAccountText}>Criar conta</Text>
-        </Pressable>
+        <View style={styles.buttonRow} testID="landing-button-row">
+          <Pressable
+            style={styles.createAccountBtn}
+            onPress={handleCreateAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Criar conta"
+          >
+            <UserPlus size={20} color={colors.text.inverse} />
+            <Text style={styles.createAccountText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>Criar conta</Text>
+          </Pressable>
         
-        <Pressable 
-          style={styles.loginBtn} 
-          onPress={handleLogin}
-          accessibilityRole="button"
-          accessibilityLabel="Já tenho conta"
-        >
-          <LogIn size={24} color={colors.primary[600]} />
-          <Text style={styles.loginBtnText}>Já tenho conta</Text>
-        </Pressable>
+          <Pressable
+            style={styles.loginBtn}
+            onPress={handleLogin}
+            accessibilityRole="button"
+            accessibilityLabel="Já tenho conta"
+          >
+            <LogIn size={24} color={colors.primary[600]} />
+            <Text style={styles.loginBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>Já tenho conta</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -188,9 +203,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,
-  },
-  scrollContent: {
-    paddingBottom: 140, // More space for the fixed bottom bar on iOS
   },
   header: {
     flexDirection: 'row',
@@ -426,12 +438,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
     backgroundColor: colors.bg.card,
     paddingHorizontal: spacing[6],
     paddingTop: spacing[4],
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
+  },
+  buttonRow: {
+    flexDirection: 'row',
     gap: spacing[3],
   },
   createAccountBtn: {
