@@ -447,7 +447,7 @@ O cron roda **1×/min** e faz três passes (`server/notifications/apns/`):
 
 | Passe | Arquivo | O que faz |
 |---|---|---|
-| Start da janela | `dispatchLiveActivityStarts.ts` | push-to-start na entrada de `upcoming` (trava `la_push_started_at IS NULL`); **pula** dose que já tem `la_push_token` (LA local viva); `doseLabel` via `formatDoseItem` com `expected_dose`/`units_per_ml` (C-22) |
+| Start da janela | `dispatchLiveActivityStarts.ts` | push-to-start na entrada de `upcoming` (trava `la_push_started_at IS NULL`); **pula** dose que já tem `la_push_token` (LA local viva); `doseLabel` via `formatDoseItem` com `expected_dose`/`units_per_ml` (C-22); sem token de aparelho ⇒ `push_skipped_no_token` (1×/dose) com `detail.reason` ∈ `never_registered`·`all_inactive`·`unknown` e `days_since_seen`, só para usuário com device iOS visto em ≤ 30 d (spec 083) |
 | Recriação na soneca | `dispatchLiveActivityStarts.ts` (`startSnoozedLiveActivity`) | no claim da soneca do minuto, recria a LA já em `now`, até `SNOOZE_RETURN_LEAD_MS` (90 s, `@dosiq/core`) antes da âncora; idempotência = o claim, não a trava do start |
 | Lifecycle | `dispatchLiveActivityLifecycle.ts` | para toda LA com `la_push_token`: status em `RESOLVED_STATUSES` (`taken`, `missed`, `skipped_user`, `skipped_paused`) ⇒ `end` e limpa token; soneca futura ⇒ `end` (a recriação traz de volta); senão `update` quando muda a chave `la_push_state` |
 
@@ -457,6 +457,13 @@ recebe `now`.
 
 **Token remoto:** LA criada por push-to-start entrega o token só via `activityUpdates` (P-3); o bridge
 nativo observa e grava, e o mesmo observer encerra as outras LAs (P-7).
+
+**Dois tokens, nunca misturar (spec 083):** o **push-to-start** é do APARELHO
+(`notification_devices`, `provider='apns_liveactivity'`) e é o que o start da janela usa; o
+**per-Activity** é de UMA LA viva (`dose_instances.la_push_token`), transitório, zerado ao encerrar.
+Contagem da coluna mede só LAs vivas naquele segundo — nunca é métrica histórica. Na trilha,
+`push_sent` = pedido de start enviado; `token_captured` = a LA existiu **e** o app abriu com ela viva
+(não prova que ela iniciou — P-1/P-3).
 
 **Offline:** o bridge grava o DoseItem da dose ativa a cada derive online (`activeDoseItemCache.ts`),
 para o "Adiar" funcionar sem rede (C-31).
