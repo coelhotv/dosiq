@@ -35,7 +35,7 @@ import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { endDoseActivity } from './doseActivitySurfaceService'
-import { armDoseActivity, advanceDoseActivity, deferDoseItem } from './doseActivityScheduler'
+import { armDoseActivity, advanceDoseActivity, deferDoseItem, finishDoseActivity } from './doseActivityScheduler'
 import { getSnoozeAnchors, mergeSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
@@ -153,7 +153,7 @@ export default function DoseActivityBridge() {
       if (type !== EventType.DELIVERED) return
       const data = detail?.notification?.data
       if (data?.__surface === 'true') advanceDoseActivity(data)
-      else if (data?.__surfaceEnd === 'true') endDoseActivity(data.doseInstanceId)
+      else if (data?.__surfaceEnd === 'true') finishDoseActivity(data) // encerra + rastro do missed (084)
     })
   }, [userId])
 

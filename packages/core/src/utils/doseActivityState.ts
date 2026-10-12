@@ -300,6 +300,38 @@ export function doseActivityBoundaryTimes(
   return [...new Set([...kept, anchor, anchor + w.nowAfterMinutes * M])].sort((a, b) => a - b)
 }
 
+/** Transição real da superfície num boundary (spec 084). `from` nulo = a superfície aparece. */
+export interface SurfaceTransition {
+  from: DoseActivityStateValue | null
+  to: DoseActivityStateValue
+}
+
+/**
+ * Spec 084: diz se o boundary `atMs` MUDA o estado da superfície (→ 1 linha `surface_transitioned`)
+ * ou só re-exibe o mesmo (T0, cap do cronômetro → `null`). As janelas são `[x, y)` em `d`: no
+ * instante exato do boundary a dose ainda está no intervalo anterior, então compara `atMs − 1` com
+ * `atMs + 1` (F-A da 084: derivar NO boundary exibia o estado velho). Na âncora da soneca a superfície
+ * estava oculta, logo `from = null` (a folga de retorno faria `atMs − 1` já parecer `now`).
+ * @param {object} item - DoseItem (com `snoozedUntil` quando adiada)
+ * @param {number} atMs - instante do boundary (epoch ms)
+ * @returns {SurfaceTransition|null}
+ */
+export function classifySurfaceTransition(
+  item: DoseActivityItemInput | null | undefined,
+  atMs: number,
+  opts: Partial<SurfaceWindows> = {}
+): SurfaceTransition | null {
+  if (!item || !Number.isFinite(atMs)) return null
+  // eslint-disable-next-line no-restricted-syntax -- epoch ms, não 'YYYY-MM-DD' (R-020)
+  const to = deriveDoseActivityState(item, new Date(atMs + 1), opts)?.state ?? null
+  if (to === null || to === DOSE_ACTIVITY_STATES.DONE) return null
+  const ms = instantMs(pick<string | Date>(item, 'scheduledFor', 'scheduled_for'))
+  const anchor = ms === null ? null : validSnoozeAnchor(pick<string | Date | number>(item, 'snoozedUntil', 'snoozed_until'), ms)
+  // eslint-disable-next-line no-restricted-syntax -- epoch ms, não 'YYYY-MM-DD' (R-020)
+  const from = anchor === atMs ? null : (deriveDoseActivityState(item, new Date(atMs - 1), opts)?.state ?? null)
+  return from === to ? null : { from, to }
+}
+
 /**
  * Estados que disputam a superfície ativa (actionáveis). `done`/`missed` são
  * terminais — não competem (a superfície encerra ou nem aparece).

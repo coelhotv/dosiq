@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A notificação contínua da dose crítica no Android mostra o estado certo e deixa rastro (spec 084)
+
+- **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.21` → `0.33.22` só para build intermediário; entra no
+  pacote de loja `0.34.0`; canal: **build de loja**, R-314, mudança só de JS e elegível a OTA depois do
+  pacote). Com o app fechado, a notificação contínua da dose crítica no Android mudava de estado um passo
+  atrasada: "Próxima dose" só começava a contagem 10 minutos antes do horário, e "Dose pendente" só
+  aparecia no fim da tolerância. Com a tolerância padrão, a notificação nunca encerrava e continuava
+  "Dose pendente" depois que a dose já tinha passado. Agora cada mudança acontece no minuto certo, e a
+  notificação some quando a dose passa da tolerância.
+- **Mobile** (`Added`, `patch`; mesmo build). Cada mudança de estado dessa notificação no Android passa a
+  gravar um registro na trilha de auditoria da dose crítica (de onde veio e para onde foi, sem nome de
+  medicamento). O registro é guardado no aparelho quando está sem rede e enviado na próxima abertura do
+  app, com a hora em que aconteceu. A consulta que lista as doses críticas sem esse registro está em
+  `docs/operations/RUNBOOK_SURFACE_ANDROID.md`.
+
 ### A soneca toca no minuto cheio, junto com a Live Activity, e a tela de entrada não espreme os botões (spec 103, fatias D e E)
 
 - **Mobile** (`Fixed`, `patch`; `APP_VERSION` `0.33.20` → `0.33.21` só para build intermediário; entra no

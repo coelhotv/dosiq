@@ -4,6 +4,7 @@ import {
   SNOOZE_RETURN_LEAD_MS,
   selectActiveDoseActivity,
   doseActivityBoundaryTimes,
+  classifySurfaceTransition,
   DOSE_ACTIVITY_STATES,
 } from '../doseActivityState'
 
@@ -436,5 +437,47 @@ describe('doseActivityBoundaryTimes — âncora da soneca (spec 101, R1)', () =>
     const base = doseActivityBoundaryTimes(iso(0), 120)
     expect(doseActivityBoundaryTimes(iso(0), 120, {}, 'lixo')).toEqual(base)
     expect(doseActivityBoundaryTimes(iso(0), 120, {}, iso(-20))).toEqual(base)
+  })
+})
+
+describe('classifySurfaceTransition — transição real em cada boundary (spec 084)', () => {
+  const M = 60000
+  const T = BASE_MS
+  /** Percorre os boundaries do mobile (core + cap do cronômetro em T+120) e devolve as transições. */
+  const walk = (it0) => {
+    const times = [...new Set([...doseActivityBoundaryTimes(it0.scheduledFor, it0.toleranceMinutes, {}, it0.snoozedUntil ?? null), T + 120 * M])].sort((a, b) => a - b)
+    return times.map((t) => [(t - T) / M, classifySurfaceTransition(it0, t)])
+  }
+
+  it('tol default (120): 7 boundaries ⇒ 5 transições; T0 e cap ⇒ null; missed existe', () => {
+    expect(walk(item({ scheduledFor: iso(0) }))).toEqual([
+      [-240, { from: null, to: 'later' }],
+      [-60, { from: 'later', to: 'upcoming' }],
+      [-10, { from: 'upcoming', to: 'now' }],
+      [0, null], // T0 re-exibe now
+      [10, { from: 'now', to: 'late' }],
+      [120, { from: 'late', to: 'missed' }], // cap coincide com o cutoff (dedupe #908)
+    ])
+  })
+
+  it('tol 30: missed em T+30 e o cap (T+120) não gera transição', () => {
+    const out = walk(item({ scheduledFor: iso(0), toleranceMinutes: 30 }))
+    expect(out.filter(([, t]) => t).map(([m, t]) => [m, t.to])).toEqual([
+      [-240, 'later'], [-60, 'upcoming'], [-10, 'now'], [10, 'late'], [30, 'missed'],
+    ])
+    expect(out.find(([m]) => m === 120)[1]).toBeNull()
+  })
+
+  it('soneca: âncora reaparece em now vindo de null; âncora+10 volta a late', () => {
+    const it0 = item({ scheduledFor: iso(0), snoozedUntil: T + 30 * M })
+    expect(classifySurfaceTransition(it0, T + 30 * M)).toEqual({ from: null, to: 'now' })
+    expect(classifySurfaceTransition(it0, T + 40 * M)).toEqual({ from: 'now', to: 'late' })
+  })
+
+  it('degenerados: dose registrada, instante inválido, item nulo, at não finito ⇒ null', () => {
+    expect(classifySurfaceTransition(item({ isRegistered: true }), T)).toBeNull()
+    expect(classifySurfaceTransition(item({ scheduledFor: 'lixo' }), T)).toBeNull()
+    expect(classifySurfaceTransition(null, T)).toBeNull()
+    expect(classifySurfaceTransition(item(), Number.NaN)).toBeNull()
   })
 })

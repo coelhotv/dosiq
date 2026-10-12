@@ -14,6 +14,7 @@
 import notifee, { AndroidImportance, TriggerType } from '@notifee/react-native'
 import { Platform } from 'react-native'
 import {
+  classifySurfaceTransition,
   deriveDoseActivityState,
   doseActivityBoundaryTimes,
   DOSE_ACTIVITY_STATES,
@@ -28,6 +29,7 @@ import {
   DOSE_ACTIVITY_CHANNEL_ID,
   LATE_CHRONO_CAP_MINUTES,
 } from './doseActivitySurfaceService'
+import { enqueueSurfaceTransition, emitDeliveredTransition } from '@platform/audit/surfaceAuditBeacon'
 
 const numOrNull = (v) => {
   const n = Number(v)
@@ -69,13 +71,23 @@ function reconstructDoseItem(data) {
   }
 }
 
+/**
+ * Spec 084: a transição do boundary viaja no `data` do trigger (strings, sem PII). Classificada AQUI,
+ * no agendamento, onde o instante exato do boundary é conhecido — o atraso de entrega do AlarmManager
+ * não importa. Vazio = re-exibição (T0, cap do cronômetro) → a entrega não emite. @private
+ */
+function transitionData(doseItem, atMs) {
+  const t = classifySurfaceTransition(doseItem, atMs)
+  return { transitionFrom: t?.from ?? '', transitionTo: t?.to ?? '' }
+}
+
 /** Payload mínimo que ENCERRA a superfície no boundary `missed` (não dá p/ ter trigger silencioso). */
-function buildEndPayload(instanceId) {
+function buildEndPayload(instanceId, transition = {}) {
   return {
     id: surfaceId(instanceId), // id próprio da superfície (não colide com o alarme)
     title: ' ',
     body: ' ',
-    data: { doseInstanceId: String(instanceId), __surfaceEnd: 'true' },
+    data: { doseInstanceId: String(instanceId), __surfaceEnd: 'true', ...transition },
     android: {
       channelId: DOSE_ACTIVITY_CHANNEL_ID,
       importance: AndroidImportance.HIGH,
@@ -117,17 +129,24 @@ async function scheduleNextBoundary(doseItem, fromMs, discreet) {
   // `next` é epoch ms (numérico, sem ambiguidade de tz — R-020 visa strings 'YYYY-MM-DD').
   // eslint-disable-next-line no-restricted-syntax
   const at = new Date(next)
-  const act = deriveDoseActivityState(doseItem, at)
+  // Spec 084 F-A: as janelas são `[x, y)`; NO instante do boundary a dose ainda está no intervalo
+  // anterior. Derivar em `at` exibia o estado velho (upcoming só em T−10, late só no cutoff) e, com a
+  // tolerância default (= cap do cronômetro), o END nunca era agendado. O estado é o de logo depois;
+  // o cronômetro continua ancorado em `at`.
+  // eslint-disable-next-line no-restricted-syntax
+  const act = deriveDoseActivityState(doseItem, new Date(next + 1))
+  const transition = transitionData(doseItem, next)
   // Boundary terminal (missed) ou sem estado → encerra a superfície nesse instante.
   if (!act || act.state === DOSE_ACTIVITY_STATES.MISSED || act.state === DOSE_ACTIVITY_STATES.DONE) {
-    await notifee.createTriggerNotification(buildEndPayload(doseItem.instanceId), {
+    await notifee.createTriggerNotification(buildEndPayload(doseItem.instanceId, transition), {
       type: TriggerType.TIMESTAMP,
       timestamp: next,
       alarmManager: { allowWhileIdle: true },
     })
     return
   }
-  const payload = buildSurfaceNotification(act, { now: at, discreet, doseItem })
+  const built = buildSurfaceNotification(act, { now: at, discreet, doseItem })
+  const payload = { ...built, data: { ...built.data, ...transition } }
   await notifee.createTriggerNotification(payload, {
     type: TriggerType.TIMESTAMP,
     timestamp: next,
@@ -136,15 +155,52 @@ async function scheduleNextBoundary(doseItem, fromMs, discreet) {
 }
 
 /**
+ * Estado do card `:surface` EXIBIDO agora. Quem guarda o "último estado" é o SO, que sobrevive à morte
+ * do JS (spec 084 RC3 F2). `null` = nada exibido; `undefined` = leitura falhou. @private
+ */
+async function readDisplayedSurfaceState(instanceId): Promise<string | null | undefined> {
+  try {
+    const id = surfaceId(instanceId)
+    const displayed = await notifee.getDisplayedNotifications()
+    const found = displayed.find((n) => (n?.id ?? n?.notification?.id) === id)
+    const data = found?.notification?.data
+    return data?.__surface === 'true' && typeof data.state === 'string' ? data.state : null
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Spec 084: emite a transição do `arm` comparando com o card exibido (INV-2: re-exibição não emite).
+ * Leitura falhou ⇒ emite (duplicata é tolerável, perda não — spec A3). `missed` só emite se havia card:
+ * sem ele, cada resync após o cutoff repetiria a linha. Fail-open. @private
+ */
+async function emitArmTransition(activity, source, occurredAt) {
+  try {
+    const shown = await readDisplayedSurfaceState(activity.instanceId)
+    if (shown === activity.state) return
+    if (activity.state === DOSE_ACTIVITY_STATES.MISSED && !shown) return
+    await enqueueSurfaceTransition({ instanceId: activity.instanceId, from: shown ?? null, to: activity.state, source, occurredAt })
+  } catch {
+    // INV-1: o rastro nunca quebra a superfície.
+  }
+}
+
+/**
  * (Re)arma a superfície de uma dose: exibe o estado ATUAL + agenda o próximo boundary. Idempotente
  * (re-sync na reabertura: cancela o pendente antigo via novo agendamento de mesmo id). Terminal
  * (done/missed) → encerra. @param {object} activity - DoseActivityState atual (selectActiveDoseActivity)
+ * @param {{ now?: Date, discreet?: boolean, source?: 'app'|'alarm' }} [opts] - `source` (spec 084):
+ *   quem armou — `app` (derive do app) ou `alarm` (reconciliação pelo alarme entregue)
  */
-export async function armDoseActivity(activity, doseItem, { now = getRawNow(), discreet = false } = {}) {
+export async function armDoseActivity(activity, doseItem, { now = getRawNow(), discreet = false, source = 'app' } = {}) {
   // Spec 101 C-27: superfície por notificação é SÓ Android (no iOS é a Live Activity). Sem esta guarda o
   // reconcile do alarme entregue em foreground exibia "Dose crítica agora" e agendava `:surface` no iPhone.
   if (Platform.OS !== 'android') return
   if (!activity || !activity.instanceId || !doseItem) return
+  const occurredAt = now.toISOString() // INV-5: instante do fato, antes de qualquer await
+  // Lido ANTES de exibir/encerrar: depois disso o exibido já é o estado novo (ou nenhum).
+  await emitArmTransition(activity, source, occurredAt)
   if (activity.state === DOSE_ACTIVITY_STATES.DONE || activity.state === DOSE_ACTIVITY_STATES.MISSED) {
     await endDoseActivity(activity.instanceId)
     return
@@ -161,9 +217,32 @@ export async function armDoseActivity(activity, doseItem, { now = getRawNow(), d
 export async function advanceDoseActivity(data, now = getRawNow()) {
   if (Platform.OS !== 'android') return // C-27
   if (!data || data.__surface !== 'true' || !data.doseInstanceId) return
+  const occurredAt = now.toISOString() // INV-5: carimbado na entrega, antes de qualquer await
   const doseItem = reconstructDoseItem(data)
   if (!doseItem.scheduledFor) return
   await scheduleNextBoundary(doseItem, now.getTime(), data.discreet === 'true')
+  // Spec 084: encadear PRIMEIRO; o rastro vem depois, em try próprio (INV-1).
+  try {
+    await emitDeliveredTransition(data, occurredAt)
+  } catch {
+    // fail-open
+  }
+}
+
+/**
+ * Spec 084: entrega do END (`__surfaceEnd`, boundary `missed`) — encerra a superfície e registra a
+ * transição. Ponto único para os handlers bg e fg. @param {object} data - data do END entregue
+ */
+export async function finishDoseActivity(data, now = getRawNow()) {
+  if (Platform.OS !== 'android') return
+  if (!data || !data.doseInstanceId) return
+  const occurredAt = now.toISOString()
+  await endDoseActivity(data.doseInstanceId)
+  try {
+    await emitDeliveredTransition(data, occurredAt)
+  } catch {
+    // fail-open
+  }
 }
 
 /**
@@ -182,7 +261,7 @@ export async function reconcileDoseActivityFromAlarm(data, now = getRawNow()) {
   const doseItem = reconstructDoseItem(data)
   if (!doseItem.scheduledFor) return
   const activity = deriveDoseActivityState(doseItem, now)
-  await armDoseActivity(activity, doseItem, { now, discreet: data.discreet === 'true' })
+  await armDoseActivity(activity, doseItem, { now, discreet: data.discreet === 'true', source: 'alarm' })
 }
 
 /**

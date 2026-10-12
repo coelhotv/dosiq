@@ -23,15 +23,16 @@ async function onActionOrDismiss(event) {
 }
 
 // Entrega de notificação (boundary da superfície 039 F2 trigger-driven): __surface → agenda o
-// próximo boundary (encadeamento headless); __surfaceEnd → encerra no missed. DEV: encadeia o spike.
+// próximo boundary (encadeamento headless); __surfaceEnd → encerra no missed. Os dois registram a
+// transição no rastro (spec 084) DENTRO do scheduler, depois de encadear. DEV: encadeia o spike.
 async function onDelivered(data) {
   try {
     if (data?.__surface === 'true') {
       const { advanceDoseActivity } = require('../doseActivity/doseActivityScheduler')
       await advanceDoseActivity(data)
     } else if (data?.__surfaceEnd === 'true') {
-      const { endDoseActivity } = require('../doseActivity/doseActivitySurfaceService')
-      await endDoseActivity(data.doseInstanceId)
+      const { finishDoseActivity } = require('../doseActivity/doseActivityScheduler')
+      await finishDoseActivity(data)
     } else if (data?.doseInstanceId) {
       // Alarme entregue (não-superfície): marca-passo confiável → reconcilia a superfície da dose
       // (mantém a cadeia viva atravessando T0/soneca, onde a race do fullScreen droparia o boundary).
