@@ -10,6 +10,10 @@ import {
 } from '../localDataWipe'
 import { PUSH_TOKEN_KEY } from '@platform/notifications/registerPushToken'
 import { ALARM_PERMS_GUIDE_KEY } from '@platform/alarms/alarmEnabledStore'
+import { FILE_MANIFEST_KEY_PREFIX } from '@shared/services/_fileSystemStorageAdapter'
+
+// O adapter em disco só é importado pela constante; o módulo nativo não entra no teste.
+jest.mock('expo-file-system', () => ({}))
 
 
 const mocked = jest.mocked(AsyncStorage)
@@ -72,6 +76,8 @@ describe('localDataWipe (spec 091)', () => {
     expect(isDeviceKey(ALARM_PERMS_GUIDE_KEY)).toBe(true)
     expect(isDeviceKey(DEVICE_OWNER_KEY)).toBe(true)
     expect(isDeviceKey(SESSION_ENDED_REASON_KEY)).toBe(true)
+    // 066 Slice B: manifest do índice CMED em disco — sem ele, o logout deixava 4 MB órfãos.
+    expect(isDeviceKey(`${FILE_MANIFEST_KEY_PREFIX}cmedIndex`)).toBe(true)
   })
 
   it('lista vazia não chama multiRemove; getAllKeys lançando não lança', async () => {

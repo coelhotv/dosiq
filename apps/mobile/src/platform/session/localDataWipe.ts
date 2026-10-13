@@ -33,6 +33,10 @@ type AllowlistEntry = { key: string; why: string } | { prefix: string; why: stri
 export const DEVICE_KEY_ALLOWLIST: ReadonlyArray<AllowlistEntry> = [
   { key: '@dosiq/anvisa-manifest', why: 'base ANVISA pública (CON-027); apagar força re-download' },
   { key: '@dosiq/anvisa-data', why: 'base ANVISA pública (CON-027); apagar força re-download' },
+  {
+    prefix: '@dosiq/anvisa-file-manifest:',
+    why: 'manifest das bases públicas em disco (066, ADR-107); apagar deixa o arquivo órfão no cache',
+  },
   { prefix: 'ota_update:', why: 'throttle do checador de OTA — estado do binário, não da pessoa' },
   { key: '@dosiq/alarm-perms-guide-shown', why: 'guia de permissão do SO — a permissão é do aparelho' },
   {
