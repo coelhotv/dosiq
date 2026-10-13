@@ -137,6 +137,7 @@ export {
   formatDoseItem,
   formatDoseHint,
   formatConcentration,
+  formatStrength,
   formatMedicineConcentration,
   formatMedicineFullName,
   formatActiveIngredientHint,

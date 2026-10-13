@@ -716,3 +716,37 @@ export function formatStockDoses(
   // Sólido: saldo e dose já estão na mesma unidade (comprimidos/cápsulas).
   return formatStockApplications(qty, perIntake, label)
 }
+
+/**
+ * Força completa de uma apresentação CMED para exibição (spec 066, D9).
+ *
+ * `ds` do índice vem do pipeline em grafia de máquina ("0.8 mg/ml + 0.12 mg/ml"): ponto
+ * decimal e unidades fora do enum (`mg/g`, `meq/l`, `%`). Cada componente "<número> <unidade>"
+ * sai com número pt-BR e rótulo de `DOSAGE_UNIT_LABELS` quando a unidade é do enum; fora do
+ * enum a unidade fica como na caixa, só com `ml`→`mL` e `ui`→`UI` (AP-306). Componente que não
+ * segue o padrão volta com `.`→`,`, nunca é descartado. Sem `ds`, usa a dose escalar.
+ *
+ * @returns ex: '500 mg + 125 mg' · '0,8 mg/mL + 0,12 mg/mL' · '1 mg/g + 25 mg/g' · null
+ */
+export function formatStrength(
+  ds: string | null | undefined,
+  dose: number | null | undefined = null,
+  unit: string | null | undefined = null
+): string | null {
+  if (typeof ds === 'string' && ds.trim()) {
+    return ds
+      .split(' + ')
+      .map((part) => {
+        const match = /^(\d+(?:\.\d+)?) ([^\s]+)$/.exec(part.trim())
+        if (!match) return part.trim().replace(/(\d)\.(\d)/g, '$1,$2')
+        const [, num, rawUnit] = match
+        const label =
+          DOSAGE_UNIT_LABELS[rawUnit as keyof typeof DOSAGE_UNIT_LABELS] ||
+          rawUnit.replace(/ml\b/g, 'mL').replace(/\bui\b/g, 'UI')
+        return `${formatNumberPtBR(num)} ${label}`
+      })
+      .join(' + ')
+  }
+  if (dose === null || dose === undefined) return null
+  return formatConcentration(dose, unit) || null
+}

@@ -133,3 +133,34 @@ export type {
   MeasureBridgeStepRow,
   ProtocolMeasureSeries,
 } from './protocolMeasureSeries'
+
+// Índice CMED (spec 066 · CON-038) — núcleo puro: decode colunar, EAN → linhas, 2C, rascunho, candidatos
+export {
+  CMED_INDEX_VERSION,
+  decodeCmedIndex,
+  isValidEan13,
+  buildEanLookup,
+  resolveEan,
+  searchCmedByName,
+  findRowsByProductName,
+  groupForPicker,
+} from './cmed/cmedIndex'
+export type {
+  CmedRow,
+  CmedIndex,
+  CmedDecodeResult,
+  EanLookup,
+  EanResolution,
+  PickerStrength,
+  PickerQuantity,
+  PickerLab,
+} from './cmed/cmedIndex'
+export { medicineDraftFromRow } from './cmed/cmedMedicine'
+export type { CmedMedicineDraft } from './cmed/cmedMedicine'
+export { findMedicineCandidates } from './cmed/medicineCandidates'
+export type {
+  CandidateMedicineLike,
+  CandidateDraftLike,
+  CandidateMatch,
+  MedicineCandidate,
+} from './cmed/medicineCandidates'
