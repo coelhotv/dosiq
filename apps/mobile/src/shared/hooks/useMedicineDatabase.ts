@@ -55,7 +55,7 @@ function getErrorMessage(err: unknown): string | undefined {
 
 // Subdomínio do Supabase vem do env (EXPO_PUBLIC_SUPABASE_URL via nativePublicAppConfig),
 // nunca hardcoded — repo é opensource público.
-const ANVISA_BASE_URL = `${nativePublicAppConfig.supabaseUrl}/storage/v1/object/public/dosiq-assets/anvisa/v1`
+export const ANVISA_BASE_URL = `${nativePublicAppConfig.supabaseUrl}/storage/v1/object/public/dosiq-assets/anvisa/v1`
 
 const FILE_KEY = 'medicineDatabase'
 
@@ -112,7 +112,7 @@ export function useMedicineDatabase({
 
     async function bootstrap() {
       // 1. Cache local primeiro (UX instantânea)
-      const cached = (await storageAdapter.read()) as
+      const cached = (await storageAdapter.read(FILE_KEY)) as
         | { manifest: CachedManifest; data: Medicine[] }
         | null
       let hasData = false
