@@ -18,7 +18,7 @@ jest.mock('@dosiq/core/utils/dateUtils', () => {
 
 import { renderHook, waitFor } from '@testing-library/react-native'
 import fixture from '@dosiq/core/services/cmed/__tests__/fixtures/cmed-fixture.json'
-import { useCmedIndex } from '../useCmedIndex'
+import { useCmedIndex, resetCmedIndexMemory, handleCmedAppState } from '../useCmedIndex'
 
 global.fetch = jest.fn() as unknown as typeof fetch
 const fetchMock = global.fetch as unknown as jest.Mock
@@ -50,6 +50,7 @@ describe('useCmedIndex — carga sob demanda do índice CMED (FR-023)', () => {
   beforeEach(() => {
     mockCache.clear()
     mockWriteFail.on = false
+    resetCmedIndexMemory()
   })
   afterEach(() => {
     jest.clearAllMocks()
@@ -82,6 +83,60 @@ describe('useCmedIndex — carga sob demanda do índice CMED (FR-023)', () => {
     expect(result.current.index?.n).toBe((fixture as { n: number }).n)
     expect(result.current.lookup?.size).toBeGreaterThan(0)
     expect(mockCache.get('cmedIndex')?.manifest).toMatchObject({ version: '1.1.11', cachedAt: '2026-10-13T12:00:00.000Z' })
+  })
+
+  it('onLoaded (PO-8): rede → source network com tempo e linhas; disco → source disk', async () => {
+    routeFetch({ 'manifest.json': () => ok(remoteManifest), 'cmedIndex.json': () => ok(fixture) })
+    const onLoaded = jest.fn()
+    const first = render({ onLoaded })
+    await waitFor(() => expect(first.result.current.status).toBe('ready'))
+    expect(onLoaded).toHaveBeenCalledWith(expect.objectContaining({ source: 'network', status: 'ready', rowCount: (fixture as { n: number }).n }))
+    expect(onLoaded.mock.calls[0][0].durationMs).toBeGreaterThanOrEqual(0)
+    first.unmount()
+    resetCmedIndexMemory() // app reaberto: a memória se foi, o disco ficou
+
+    onLoaded.mockClear()
+    const second = render({ onLoaded })
+    await waitFor(() => expect(second.result.current.status).toBe('ready'))
+    expect(onLoaded).toHaveBeenCalledWith(expect.objectContaining({ source: 'disk', status: 'ready' }))
+  })
+
+  it('2ª abertura na mesma sessão: ready no 1º render, sem ler o disco nem reportar carga (C-C6)', async () => {
+    seedCache()
+    routeFetch({ 'manifest.json': () => ok(remoteManifest) })
+    const first = render()
+    await waitFor(() => expect(first.result.current.status).toBe('ready'))
+    first.unmount()
+    mockCache.clear()
+
+    const onLoaded = jest.fn()
+    const second = render({ onLoaded })
+    expect(second.result.current.status).toBe('ready')
+    expect(second.result.current.index?.n).toBe((fixture as { n: number }).n)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(onLoaded).not.toHaveBeenCalled()
+  })
+
+  it('app em background solta a memória: a próxima abertura volta a ler o disco (LG K8)', async () => {
+    seedCache()
+    routeFetch({ 'manifest.json': () => ok(remoteManifest) })
+    const first = render()
+    await waitFor(() => expect(first.result.current.status).toBe('ready'))
+    first.unmount()
+    handleCmedAppState('inactive')
+    expect(render().result.current.status).toBe('ready')
+    handleCmedAppState('background')
+    const third = render()
+    expect(third.result.current.status).toBe('preparing')
+    await waitFor(() => expect(third.result.current.status).toBe('ready'))
+  })
+
+  it('onLoaded: sem cache + rede cai ⇒ reporta offline', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Network request failed'))
+    const onLoaded = jest.fn()
+    const { result } = render({ onLoaded })
+    await waitFor(() => expect(result.current.status).toBe('offline'))
+    expect(onLoaded).toHaveBeenCalledWith(expect.objectContaining({ source: 'network', status: 'offline', rowCount: 0 }))
   })
 
   it('cache fresco e mesma versão: ready sem baixar o índice', async () => {

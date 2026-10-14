@@ -90,8 +90,10 @@ export function useMedicineMutation() {
   })
 
   const create = useCallback(
-    async (payload, { goBack = false } = {}) => {
-      const result = await mutationCreate.mutate(() => medicineService.create(payload, { surface: SURFACES.MOBILE }))
+    async (payload, { goBack = false, source = null } = {}) => {
+      const result = await mutationCreate.mutate(() =>
+        medicineService.create(payload, { surface: SURFACES.MOBILE, source })
+      )
       if (result && goBack) navigation.goBack()
       return result
     },

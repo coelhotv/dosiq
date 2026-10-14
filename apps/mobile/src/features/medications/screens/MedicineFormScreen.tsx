@@ -24,6 +24,8 @@ import {
   normalizeRegulatoryCategory,
   cleanFloat,
   isLiquidDosageUnit,
+  formatStrength,
+  type CmedStrengthChoice,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -60,6 +62,16 @@ const REGULATORY_OPTIONS = REGULATORY_CATEGORIES.map((value) => ({
 
 const DEFAULT_INITIAL = { type: 'medicamento', dosage_unit: 'mg' }
 
+// 066 Slice C (T023a): "Ver todas" no fim do dropdown filtrado por `forms` (INV-3).
+const ALL_FORMS_VALUE = '__all__'
+const PRESENTATION_SET = new Set<string>(PRESENTATIONS)
+
+// `forms` do item da base (manifest ≥ 1.1.11); cache antigo não tem o campo.
+function validForms(forms: unknown): string[] {
+  if (!Array.isArray(forms)) return []
+  return [...new Set(forms.filter((f): f is string => typeof f === 'string' && PRESENTATION_SET.has(f)))]
+}
+
 function formProps(form, name) {
   return {
     value: form.values[name],
@@ -69,12 +81,44 @@ function formProps(form, name) {
   }
 }
 
+// 066 Slice C: valores do form a partir da embalagem escolhida no passo 2 (o rascunho prevalece).
+function valuesFromDraft(base, draft, current) {
+  const presentation = draft.presentation
+  return {
+    ...base,
+    name: draft.name || base.name,
+    active_ingredient: draft.active_ingredient ?? base.active_ingredient,
+    therapeutic_class: draft.therapeutic_class ?? base.therapeutic_class,
+    regulatory_category: draft.regulatory_category ?? base.regulatory_category,
+    laboratory: draft.laboratory ?? '',
+    anvisa_registration: draft.anvisa_registration,
+    // INV-2: dose ambígua nunca é preenchida.
+    dosage_per_pill: draft.dosage_per_pill !== null ? String(draft.dosage_per_pill) : '',
+    // C-C10 (B8 "500 mg/"): unidade que o app não reconhece fica vazia — o "mg" padrão seria um chute.
+    dosage_unit: draft.dosage_unit ?? (draft.strengthLabel ? '' : current.dosage_unit),
+    presentation,
+    shelf_life_days: presentation === 'injetavel' && !current.shelf_life_days ? '28' : current.shelf_life_days,
+  }
+}
+
 // eslint-disable-next-line max-lines-per-function
 export default function MedicineFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const [sheetOpen, setSheetOpen] = useState(false)
+  // 066: formas do item escolhido (filtro do dropdown), "Ver todas", edição manual da forma,
+  // dose ambígua (INV-2) e força completa da caixa (D9).
+  const [itemForms, setItemForms] = useState<string[]>([])
+  const [showAllForms, setShowAllForms] = useState(false)
+  const [presentationTouched, setPresentationTouched] = useState(false)
+  const [doseCheckRequired, setDoseCheckRequired] = useState(false)
+  const [strengthLabel, setStrengthLabel] = useState<string | null>(null)
+  // C-C10: concentrações de 1 toque do composto ambíguo; erro no campo ao salvar sem escolher.
+  const [strengthChoices, setStrengthChoices] = useState<CmedStrengthChoice[]>([])
+  const [doseChoiceError, setDoseChoiceError] = useState(false)
+  // C5.3: o que veio da busca (card vira selo de origem + "Trocar") e a origem do medicine_added.
+  const [anvisaFilledLabel, setAnvisaFilledLabel] = useState<string | null>(null)
   const medicine = route.params?.medicine ?? null
   const isEditing = !!medicine
 
@@ -105,6 +149,14 @@ export default function MedicineFormScreen() {
     }
   }, [medicine])
 
+  const presentationOptions = useMemo(() => {
+    if (showAllForms || itemForms.length < 2) return PRESENTATION_OPTIONS
+    return [
+      ...PRESENTATION_OPTIONS.filter((o) => itemForms.includes(o.value)),
+      { value: ALL_FORMS_VALUE, label: 'Ver todas' },
+    ]
+  }, [itemForms, showAllForms])
+
   // Hooks dependentes (consomem memos acima)
   // Usa createSchema para create + edit — em edit todos obrigatórios continuam exigidos
   // (não pode apagar nome/dose/unidade ao editar).
@@ -115,14 +167,18 @@ export default function MedicineFormScreen() {
   const openSheet = useCallback(() => setSheetOpen(true), [])
   const closeSheet = useCallback(() => setSheetOpen(false), [])
 
+  // 066 Slice C: o sheet devolve { anvisaItem, cmedDraft? }. Com caixa escolhida no passo 2, o
+  // rascunho da CMED prevalece (dose/unidade/forma/registro; laboratório só de não-genérico — D11).
+  // Sem caixa: preenche como antes, `forms` sugere a forma e o registro é limpo (C-C4).
   const handleAnvisaSelect = useCallback(
-    (item) => {
+    ({ anvisaItem: item, cmedDraft: draft }) => {
       // Genéricos não trazem laboratório (será preenchido no estoque por compra).
       // Demais categorias: usar laboratory do registro ANVISA.
       const isGeneric = (item.regulatoryCategory ?? '')
         .toLowerCase()
         .startsWith('gener')
-      form.setValues({
+      const forms = validForms(item.forms)
+      const base = {
         name: item.name ?? form.values.name,
         active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
         therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
@@ -132,10 +188,33 @@ export default function MedicineFormScreen() {
         regulatory_category:
           normalizeRegulatoryCategory(item.regulatoryCategory) ?? form.values.regulatory_category,
         laboratory: isGeneric ? '' : (item.laboratory ?? form.values.laboratory ?? ''),
-      })
+        anvisa_registration: null,
+      }
+      setAnvisaFilledLabel(
+        draft ? [draft.name, draft.strengthLabel].filter(Boolean).join(' ') : (item.name ?? null)
+      )
+      setItemForms(draft ? [] : forms)
+      setShowAllForms(false)
+      if (draft) {
+        form.setValues(valuesFromDraft(base, draft, form.values))
+        setDoseCheckRequired(draft.doseAmbiguous)
+        setStrengthChoices(draft.strengthChoices)
+        setDoseChoiceError(false)
+        // Referência "Na embalagem": composto, ou força que o app não converte (C-C10, B8 "500 mg/").
+        const showStrength = !!draft.strengthLabel && (draft.strengthLabel.includes('+') || draft.dosage_per_pill === null)
+        setStrengthLabel(showStrength ? draft.strengthLabel : null)
+        setPresentationTouched(false)
+      } else {
+        const presentation = forms.length === 1 && !presentationTouched ? forms[0] : undefined
+        form.setValues(presentation ? { ...base, presentation } : base)
+        setDoseCheckRequired(false)
+        setStrengthChoices([])
+        setDoseChoiceError(false)
+        setStrengthLabel(null)
+      }
       setSheetOpen(false)
     },
-    [form]
+    [form, presentationTouched]
   )
 
   // Normaliza vírgula→ponto em tempo real (PT-BR digita 1,5; JS/Postgres esperam 1.5).
@@ -171,6 +250,11 @@ export default function MedicineFormScreen() {
   // Outras presentations: limpa apenas o prefill 28 — preserva valor digitado manualmente.
   const handlePresentationChange = useCallback(
     (_name, value) => {
+      if (value === ALL_FORMS_VALUE) {
+        setShowAllForms(true)
+        return
+      }
+      setPresentationTouched(true)
       form.handleChange('presentation', value)
       if (value === 'injetavel') {
         const current = form.values.shelf_life_days
@@ -196,6 +280,13 @@ export default function MedicineFormScreen() {
   )
 
   const handleSubmit = useCallback(async () => {
+    // INV-2 (C-C2): o Zod aceita dose vazia; o composto ambíguo exige a escolha. O botão não muda
+    // de rótulo nem trava (C-C10): o erro aparece no campo, como em qualquer obrigatório.
+    if (doseCheckRequired && String(form.values.dosage_per_pill ?? '').trim() === '') {
+      setDoseChoiceError(true)
+      Alert.alert('Verifique o formulário', 'Escolha a concentração do remédio.')
+      return
+    }
     if (!form.validate()) {
       // Anti-silent-no-op (smoke iOS 022): nunca falhar sem feedback. Mostra 1º erro.
       // form.errors fica stale neste tick (setErrors async); reparse p/ msg precisa.
@@ -225,9 +316,20 @@ export default function MedicineFormScreen() {
     if (isEditing) {
       await update(medicine.id, payload, { goBack: true })
     } else {
-      await create(payload, { goBack: true })
+      await create(payload, { goBack: true, source: anvisaFilledLabel ? 'anvisa_search' : 'manual' })
     }
-  }, [form, isEditing, medicine, create, update])
+  }, [form, isEditing, medicine, create, update, anvisaFilledLabel, doseCheckRequired])
+
+  const handleStrengthChoice = useCallback(
+    (choice: CmedStrengthChoice) => {
+      form.setValues({ ...form.values, dosage_per_pill: String(choice.dose), dosage_unit: choice.unit })
+      setDoseChoiceError(false)
+    },
+    [form]
+  )
+
+  const hasDose = String(form.values.dosage_per_pill ?? '').trim() !== ''
+  const askStrength = doseCheckRequired && !hasDose
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -256,7 +358,7 @@ export default function MedicineFormScreen() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {!isEditing && <AnvisaBanner onPress={openSheet} />}
+        {!isEditing && <AnvisaBanner onPress={openSheet} filledLabel={anvisaFilledLabel} />}
 
         <FormSection title="Identificação">
           <FormInput
@@ -281,6 +383,7 @@ export default function MedicineFormScreen() {
                 required
                 keyboardType="decimal-pad"
                 {...formProps(form, 'dosage_per_pill')}
+                {...(doseChoiceError && askStrength ? { error: 'Escolha a concentração abaixo' } : null)}
                 onChange={handleDoseChange}
               />
             </View>
@@ -295,6 +398,33 @@ export default function MedicineFormScreen() {
               />
             </View>
           </View>
+          {askStrength ? (
+            <View style={styles.choiceBox}>
+              <Text style={styles.choiceTitle}>Este remédio junta mais de uma substância</Text>
+              {strengthLabel ? <Text style={styles.choiceText}>Na embalagem: {strengthLabel}</Text> : null}
+              <Text style={styles.choiceText}>
+                Qual concentração você quer usar no cadastro? Na dúvida, escolha a que aparece primeiro na embalagem ou na receita.
+              </Text>
+              <View style={styles.choiceRow}>
+                {strengthChoices.map((choice) => {
+                  const label = formatStrength(`${choice.dose} ${choice.unit}`) ?? `${choice.dose} ${choice.unit}`
+                  return (
+                    <Pressable
+                      key={`${choice.dose}|${choice.unit}`}
+                      style={({ pressed }) => [styles.choiceChip, pressed && styles.choiceChipPressed]}
+                      onPress={() => handleStrengthChoice(choice)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Usar ${label}`}
+                    >
+                      <Text style={styles.choiceChipText}>{label}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+          ) : strengthLabel ? (
+            <Text style={styles.strengthText}>Na embalagem: {strengthLabel}</Text>
+          ) : null}
           {/* FR-031 (ADR-066): denominador do rótulo. Default 1 mL; muda só p/ Mounjaro etc. */}
           {isLiquidUnit(form.values.dosage_unit as string | undefined) && (
             <FormInput
@@ -326,7 +456,7 @@ export default function MedicineFormScreen() {
           <FormSelect
             name="presentation"
             label="Apresentação"
-            options={PRESENTATION_OPTIONS}
+            options={presentationOptions}
             {...formProps(form, 'presentation')}
             onChange={handlePresentationChange}
           />
@@ -444,5 +574,50 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: FORM_WARNING_TEXT,
     lineHeight: 18,
+  },
+  choiceBox: {
+    padding: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bg.card,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    marginTop: spacing[2],
+    gap: spacing[2],
+  },
+  choiceTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  choiceText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+  },
+  choiceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  choiceChip: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colors.primary[500],
+  },
+  choiceChipPressed: {
+    backgroundColor: colors.primary[50],
+  },
+  choiceChipText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary[700],
+  },
+  strengthText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: spacing[2],
   },
 })

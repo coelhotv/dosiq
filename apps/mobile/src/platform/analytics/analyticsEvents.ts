@@ -31,6 +31,14 @@ export const EVENTS = {
   MEDICINE_EDITED: 'medicine_edited',
   MEDICINE_DELETED: 'medicine_deleted',
 
+  // Busca na base ANVISA + passo 2 da CMED (spec 066 Slice C · TRACKING_PLAN §5.3). Setup, sem
+  // treatment_id. Nunca nome/concentração/substância/laboratório nem o texto digitado (R-042).
+  MEDICINE_SEARCH_OPENED: 'medicine_search_opened',                     // entry_point: 'medicine_form'
+  MEDICINE_SEARCH_RESULT_SELECTED: 'medicine_search_result_selected',   // result_rank, query_length, item_kind, presentation_count
+  MEDICINE_PRESENTATION_SELECTED: 'medicine_presentation_selected',     // outcome: single|picked|not_listed|back, dose_ambiguous
+  MEDICINE_SEARCH_DISMISSED: 'medicine_search_dismissed',               // had_query, step: search|presentation
+  MEDICINE_INDEX_LOADED: 'medicine_index_loaded',                       // source: disk|network, duration_ms, status, row_count
+
   // Doses
   DOSE_LOGGED: 'dose_logged',                  // medicine_id (UUID opaco) + action opcional — nunca nome/PII clínico
   DOSE_LOGGED_BULK: 'dose_logged_bulk',         // count: número de doses registradas em batch

@@ -8,6 +8,9 @@ import {
   resolveEan,
   searchCmedByName,
   findRowsByProductName,
+  rowsForAnvisaItem,
+  groupByConcentration,
+  countConcentrationChoices,
   groupForPicker,
 } from '../cmedIndex'
 import type { CmedIndex } from '../cmedIndex'
@@ -180,5 +183,105 @@ describe('groupForPicker', () => {
 
   it('lista vazia ⇒ []', () => {
     expect(groupForPicker(index, [])).toEqual([])
+  })
+})
+
+describe('rowsForAnvisaItem (C-C1 · manifest 1.1.12)', () => {
+  const index = decodeFixture()
+  it('marca (com laboratório) ⇒ linhas do produto', () => {
+    expect(rowsForAnvisaItem(index, { name: 'Divalproato de Sódio', laboratory: 'Eurofarma' })).toEqual([9, 10])
+  })
+
+  it('marca casa todos os laboratórios do produto, não só o do item', () => {
+    const raw = structuredClone(fixture)
+    raw.cols.l[10] = 0
+    const result = decodeCmedIndex(raw)
+    if (result.ok === false) throw new Error('não decodificou')
+    expect(rowsForAnvisaItem(result.index, { name: 'Divalproato de Sódio', laboratory: 'Eurofarma' })).toEqual([9, 10])
+  })
+
+  it('genérico (sem laboratório) ⇒ linhas de genérico pela substância, com acento/caixa diferentes', () => {
+    expect(rowsForAnvisaItem(index, { name: 'BISSULFATO DE CLOPIDOGREL', activeIngredient: 'Bissulfato de Clopidogrel', laboratory: null })).toEqual([11, 12, 14])
+  })
+
+  it('substância sem genérico ⇒ todas as linhas dela (opção A)', () => {
+    expect(rowsForAnvisaItem(index, { name: 'Tisagenlecleucel', activeIngredient: 'Tisagenlecleucel', laboratory: null })).toEqual([4])
+  })
+
+  it('genérico com linha de marca na mesma substância ⇒ só as de genérico', () => {
+    const raw = structuredClone(fixture)
+    raw.cols.s[9] = raw.cols.s[11]
+    const result = decodeCmedIndex(raw)
+    if (result.ok === false) throw new Error('não decodificou')
+    expect(rowsForAnvisaItem(result.index, { name: 'Bissulfato de Clopidogrel', laboratory: null })).toEqual([11, 12, 14])
+  })
+
+  it('base antiga (genérico com nome de produto) cai no nome do produto', () => {
+    expect(rowsForAnvisaItem(index, { name: 'Clopidogrel', activeIngredient: 'Clopidogrel', laboratory: null })).toEqual([11, 12])
+  })
+
+  it('item nulo, sem nome ou sem linha ⇒ []', () => {
+    expect(rowsForAnvisaItem(index, null)).toEqual([])
+    expect(rowsForAnvisaItem(index, { name: '', laboratory: null })).toEqual([])
+    expect(rowsForAnvisaItem(index, { name: 'Inexistente', laboratory: 'EMS' })).toEqual([])
+    expect(rowsForAnvisaItem(index, { name: 'Inexistente', activeIngredient: null, laboratory: null })).toEqual([])
+  })
+})
+
+describe('groupByConcentration (C5.1 R-4 · só concentração)', () => {
+  const index = decodeFixture()
+
+  it('quantidades diferentes na mesma concentração viram uma escolha só', () => {
+    const groups = groupByConcentration(index, [9, 10])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].rowIdx).toBe(9)
+    expect(groups[0].laboratories).toEqual([])
+    expect(countConcentrationChoices(groups)).toBe(1)
+  })
+
+  it('concentrações distintas viram escolhas distintas, da menor dose para a maior (C-C8)', () => {
+    const raw = structuredClone(fixture)
+    raw.cols.ds[10] = '250 mg'
+    raw.cols.d[10] = 250
+    const result = decodeCmedIndex(raw)
+    if (result.ok === false) throw new Error('não decodificou')
+    const groups = groupByConcentration(result.index, [9, 10])
+    expect(groups.map((g) => g.dose)).toEqual([250, 500])
+    expect(countConcentrationChoices(groups)).toBe(2)
+  })
+
+  it('dose ausente vai para o fim; forma ordena antes da dose (C-C8)', () => {
+    const raw = structuredClone(fixture)
+    ;(raw.cols.d as (number | null)[])[10] = null
+    ;(raw.cols.ds as (string | null)[])[10] = null
+    const result = decodeCmedIndex(raw)
+    if (result.ok === false) throw new Error('não decodificou')
+    const groups = groupByConcentration(result.index, [10, 9])
+    expect(groups.map((g) => g.rowIdx)).toEqual([9, 10])
+  })
+
+  it('marca com 2 fabricantes na concentração pede o laboratório, mesmo em quantidades diferentes', () => {
+    const raw = structuredClone(fixture)
+    raw.cols.l[10] = 0
+    const result = decodeCmedIndex(raw)
+    if (result.ok === false) throw new Error('não decodificou')
+    const groups = groupByConcentration(result.index, [9, 10])
+    expect(groups).toHaveLength(1)
+    const names = groups[0].laboratories.map((l) => l.laboratory)
+    expect(groups[0].laboratories.map((l) => l.rowIdx).sort((a, b) => a - b)).toEqual([9, 10])
+    expect(names).toEqual([...names].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'))) // C-C8
+    expect(countConcentrationChoices(groups)).toBe(2)
+  })
+
+  it('genérico de vários laboratórios nunca pede laboratório (D11)', () => {
+    const groups = groupByConcentration(index, [11, 12])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].laboratories).toEqual([])
+  })
+
+  it('lista vazia ou índice inexistente ⇒ []', () => {
+    expect(groupByConcentration(index, [])).toEqual([])
+    expect(groupByConcentration(index, [9999])).toEqual([])
+    expect(countConcentrationChoices([])).toBe(0)
   })
 })

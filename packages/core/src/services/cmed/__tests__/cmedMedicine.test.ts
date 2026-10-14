@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import fixture from './fixtures/cmed-fixture.json'
 import { decodeCmedIndex, findRowsByProductName } from '../cmedIndex'
 import type { CmedIndex, CmedRow } from '../cmedIndex'
-import { medicineDraftFromRow } from '../cmedMedicine'
+import { medicineDraftFromRow, strengthChoicesFromDs } from '../cmedMedicine'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -48,6 +48,21 @@ describe('medicineDraftFromRow', () => {
     expect(draft.doseAmbiguous).toBe(true)
     expect(draft.strengthLabel).toBe('5 mg + 10 mg')
     expect(draft.anvisa_registration).toBe('100890321')
+    expect(draft.strengthChoices).toEqual([{ dose: 5, unit: 'mg' }, { dose: 10, unit: 'mg' }])
+  })
+
+  it('C-C10: escolhas da força — 3 e 4 números, repetidos, unidades diferentes, decimais, irreconhecíveis', () => {
+    expect(strengthChoicesFromDs('5 mg + 100 mg + 100 mg')).toEqual([{ dose: 5, unit: 'mg' }, { dose: 100, unit: 'mg' }])
+    expect(strengthChoicesFromDs('125 mg + 50 mg + 300 mg + 30 mg')).toHaveLength(4)
+    expect(strengthChoicesFromDs('5000 mcg + 100 mg + 100 mg')).toEqual([{ dose: 5000, unit: 'mcg' }, { dose: 100, unit: 'mg' }])
+    expect(strengthChoicesFromDs('6 mg + 0.015 mg')).toEqual([{ dose: 6, unit: 'mg' }, { dose: 0.015, unit: 'mg' }])
+    expect(strengthChoicesFromDs('500 mg/')).toEqual([])
+    expect(strengthChoicesFromDs('20 % + 0.5 % + 5 %')).toEqual([])
+    expect(strengthChoicesFromDs(null)).toEqual([])
+  })
+
+  it('C-C10: sem ambiguidade não há escolhas', () => {
+    expect(medicineDraftFromRow(rowByName('Clopidogrel')).strengthChoices).toEqual([])
   })
 
   it('D11: genérico sem registro nem laboratório persistido; exibe o laboratório', () => {

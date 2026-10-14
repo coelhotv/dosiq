@@ -5,6 +5,7 @@
 //   D6  `amb` ⇒ dose em branco, mesmo se o arquivo trouxer `d` (defesa em profundidade, INV-2)
 //   D9  força completa para exibição (`strengthLabel`), nunca o escalar truncado
 //   D11 genérico: sem registro e sem laboratório no cadastro; laboratório só para exibir
+//   C-C10 `amb` ⇒ os valores distintos da força viram escolhas de 1 toque (dose + unidade de cada)
 
 import { DOSAGE_UNITS, PRESENTATIONS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
 import { formatStrength } from '../../utils/doseUnit'
@@ -26,12 +27,36 @@ export interface CmedMedicineDraft {
   displayLaboratory: string | null
   /** Quantidade da caixa (`X <n>`); em líquido é volume, não contagem. */
   boxQuantity: number | null
-  /** Ordem de dose indecidível: a dose fica em branco e a UI pede para ler a caixa. */
+  /** Ordem de dose indecidível: a dose fica em branco e a UI pergunta qual concentração usar. */
   doseAmbiguous: boolean
+  /** Só com `doseAmbiguous`: valores distintos da força, na ordem da caixa (C-C10). */
+  strengthChoices: CmedStrengthChoice[]
   isGeneric: boolean
 }
 
+export interface CmedStrengthChoice {
+  dose: number
+  unit: string
+}
+
 const UNIT_SET = new Set<string>(DOSAGE_UNITS)
+
+/** Partes da força com número e unidade do cadastro; repetidas e não reconhecidas ficam de fora. */
+export function strengthChoicesFromDs(ds: string | null): CmedStrengthChoice[] {
+  if (!ds) return []
+  const seen = new Set<string>()
+  const choices: CmedStrengthChoice[] = []
+  for (const part of ds.split('+')) {
+    const match = /^(\d+(?:\.\d+)?) ([^\s]+)$/.exec(part.trim())
+    if (!match || !UNIT_SET.has(match[2])) continue
+    const dose = Number(match[1])
+    const key = `${dose}|${match[2]}`
+    if (!Number.isFinite(dose) || seen.has(key)) continue
+    seen.add(key)
+    choices.push({ dose, unit: match[2] })
+  }
+  return choices
+}
 const PRESENTATION_SET = new Set<string>(PRESENTATIONS)
 
 export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
@@ -52,6 +77,7 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
     displayLaboratory: row.l,
     boxQuantity: row.q,
     doseAmbiguous: row.amb,
+    strengthChoices: row.amb ? strengthChoicesFromDs(row.ds) : [],
     isGeneric,
   }
 }

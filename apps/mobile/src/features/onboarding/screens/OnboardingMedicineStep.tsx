@@ -15,6 +15,7 @@ import {
   DOSAGE_UNIT_LABELS,
   normalizeRegulatoryCategory,
   isLiquidDosageUnit,
+  PRESENTATIONS,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
@@ -38,6 +39,15 @@ const DEFAULT_INITIAL = { type: 'medicamento', dosage_unit: 'mg' }
 // classe terapêutica, princípio ativo) é preenchido pelo auto-fill da ANVISA e não tem
 // onde "destacar" um erro.
 const VISIBLE_FIELDS = ['name', 'dosage_per_pill', 'dosage_unit']
+
+const PRESENTATION_SET = new Set<string>(PRESENTATIONS)
+
+// `forms` da base ANVISA (manifest ≥ 1.1.11): só uma forma válida conta; cache antigo não tem.
+function singleForm(forms: unknown): string | null {
+  if (!Array.isArray(forms)) return null
+  const valid = [...new Set(forms.filter((f) => typeof f === 'string' && PRESENTATION_SET.has(f)))]
+  return valid.length === 1 ? (valid[0] as string) : null
+}
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
 const isLiquidUnit = isLiquidDosageUnit
@@ -79,6 +89,9 @@ export default function OnboardingMedicineStep() {
         // nenhum campo destacado. Mesma correção já aplicada no cadastro (F1) e na web.
         regulatory_category:
           normalizeRegulatoryCategory(item.regulatoryCategory) ?? form.values.regulatory_category,
+        // 066 Slice C (T023b): forma única do produto preenche a apresentação (escondida aqui,
+        // aparece depois no cadastro). Várias formas: não há dropdown para filtrar — nada muda.
+        ...(singleForm(item.forms) ? { presentation: singleForm(item.forms) } : {}),
       })
     },
     [form],
@@ -196,6 +209,8 @@ export default function OnboardingMedicineStep() {
               />
             </View>
           </View>
+          {/* 066 C (PO, smoke E1): a busca daqui ainda não traz a concentração (vem na Slice E). */}
+          <Text style={styles.doseHint}>Copie o número escrito na embalagem ou na receita.</Text>
 
           {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
             <View style={styles.warningBox}>
@@ -222,6 +237,12 @@ const ONBOARDING_WARNING_BORDER = '#fef3c7'
 const ONBOARDING_WARNING_TEXT = '#b45309'
 
 const styles = StyleSheet.create({
+  doseHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text.secondary,
+    marginTop: -spacing[2],
+  },
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,

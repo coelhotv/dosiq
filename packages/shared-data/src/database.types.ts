@@ -760,6 +760,7 @@ export type Database = {
       medicines: {
         Row: {
           active_ingredient: string | null
+          anvisa_registration: string | null
           archived_at: string | null
           concentration_volume_ml: number | null
           created_at: string | null
@@ -779,6 +780,7 @@ export type Database = {
         }
         Insert: {
           active_ingredient?: string | null
+          anvisa_registration?: string | null
           archived_at?: string | null
           concentration_volume_ml?: number | null
           created_at?: string | null
@@ -798,6 +800,7 @@ export type Database = {
         }
         Update: {
           active_ingredient?: string | null
+          anvisa_registration?: string | null
           archived_at?: string | null
           concentration_volume_ml?: number | null
           created_at?: string | null

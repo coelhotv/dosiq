@@ -194,6 +194,39 @@ export function findRowsByProductName(index: CmedIndex, name: string | null | un
   return out
 }
 
+/** Item do passo 1 (base ANVISA) — só os campos que decidem as caixas do passo 2. */
+export interface AnvisaItemRef {
+  name?: string | null
+  activeIngredient?: string | null
+  laboratory?: string | null
+}
+
+function rowsBySubstance(index: CmedIndex, substance: string | null | undefined): number[] {
+  const key = normalizeText(substance).trim()
+  if (!key) return []
+  const out: number[] = []
+  for (let i = 0; i < index.n; i += 1) if (index.substanceKeys[i] === key) out.push(i)
+  return out
+}
+
+/**
+ * Passo 2 da 2C: as caixas do item tocado no passo 1 (manifest ≥ 1.1.12, C-C1 do analysis-C).
+ * - Com laboratório = produto de marca ⇒ linhas do produto, de TODOS os laboratórios (marca
+ *   vendida por mais de um fabricante mostra o laboratório como 2º nível no `groupForPicker`).
+ * - Sem laboratório = grupo por substância ⇒ só as linhas de genérico da substância; substância
+ *   que não tem genérico (biológico, alto custo, programa do SUS) ⇒ todas as linhas dela (PO,
+ *   2026-10-13, opção A). Base antiga (≤ 1.1.11, nome de produto) cai no nome do produto.
+ * Vazio ⇒ o chamador preenche como hoje (fallback defensivo).
+ */
+export function rowsForAnvisaItem(index: CmedIndex, item: AnvisaItemRef | null | undefined): number[] {
+  if (!item) return []
+  if (item.laboratory) return findRowsByProductName(index, item.name)
+  let rows = rowsBySubstance(index, item.activeIngredient || item.name)
+  if (rows.length === 0) rows = findRowsByProductName(index, item.name)
+  const generics = rows.filter((idx) => index.rows[idx]?.k === 'generico')
+  return generics.length > 0 ? generics : rows
+}
+
 export interface PickerLab {
   laboratory: string | null
   rowIdxs: number[]
@@ -252,4 +285,74 @@ export function groupForPicker(index: CmedIndex, rowIdxs: number[]): PickerStren
     }
   }
   return [...strengths.values()]
+}
+
+export interface PickerLabChoice {
+  laboratory: string | null
+  rowIdx: number
+}
+
+export interface PickerConcentration {
+  strength: string | null
+  dose: number | null
+  unit: string | null
+  form: string | null
+  /** Linha representativa (1ª da concentração) — usada quando não há escolha de laboratório. */
+  rowIdx: number
+  /** 2+ fabricantes de marca na mesma concentração ⇒ o registro muda, a pessoa escolhe. Senão []. */
+  laboratories: PickerLabChoice[]
+}
+
+/**
+ * Passo 2 da 2C revisto no smoke (DESIGN_DECISOES C5.1 R-4, PO 2026-10-13): só a concentração
+ * (+ forma). A quantidade não muda o cadastro — registro é do produto, não da embalagem — e volta
+ * no estoque (D2). Laboratório só para marca com 2+ fabricantes na concentração, em qualquer
+ * quantidade (genérico nunca: D11).
+ */
+export function groupByConcentration(index: CmedIndex, rowIdxs: number[]): PickerConcentration[] {
+  const groups = new Map<string, PickerConcentration>()
+  const labs = new Map<string, Map<string, PickerLabChoice>>()
+  for (const idx of rowIdxs) {
+    const row = index.rows[idx]
+    if (!row) continue
+    const key = JSON.stringify([row.ds, row.d, row.u, row.f])
+    if (!groups.has(key)) {
+      groups.set(key, { strength: row.ds, dose: row.d, unit: row.u, form: row.f, rowIdx: idx, laboratories: [] })
+      labs.set(key, new Map())
+    }
+    if (row.k === 'generico') continue
+    const labMap = labs.get(key) as Map<string, PickerLabChoice>
+    const labKey = String(row.l)
+    if (!labMap.has(labKey)) labMap.set(labKey, { laboratory: row.l, rowIdx: idx })
+  }
+  for (const [key, group] of groups) {
+    const choices = [...(labs.get(key) as Map<string, PickerLabChoice>).values()]
+    if (choices.length >= 2) group.laboratories = choices.sort((a, b) => compareText(a.laboratory, b.laboratory))
+  }
+  // Ordem de leitura (C-C8): forma → dose crescente → texto da concentração; ausentes por último.
+  return [...groups.values()].sort(
+    (a, b) =>
+      compareText(a.form, b.form) ||
+      compareNumber(a.dose, b.dose) ||
+      compareText(a.strength, b.strength),
+  )
+}
+
+function compareText(a: string | null, b: string | null): number {
+  if (a === b) return 0
+  if (a === null) return 1
+  if (b === null) return -1
+  return a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' })
+}
+
+function compareNumber(a: number | null, b: number | null): number {
+  if (a === b) return 0
+  if (a === null) return 1
+  if (b === null) return -1
+  return a - b
+}
+
+/** Quantas escolhas o passo 2 oferece (1 ⇒ pula o passo). */
+export function countConcentrationChoices(groups: PickerConcentration[]): number {
+  return groups.reduce((sum, g) => sum + (g.laboratories.length >= 2 ? g.laboratories.length : 1), 0)
 }
