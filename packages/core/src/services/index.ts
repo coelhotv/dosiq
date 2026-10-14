@@ -143,7 +143,10 @@ export {
   resolveEan,
   searchCmedByName,
   findRowsByProductName,
+  rowsForAnvisaItem,
   groupForPicker,
+  groupByConcentration,
+  countConcentrationChoices,
 } from './cmed/cmedIndex'
 export type {
   CmedRow,
@@ -154,9 +157,12 @@ export type {
   PickerStrength,
   PickerQuantity,
   PickerLab,
+  AnvisaItemRef,
+  PickerConcentration,
+  PickerLabChoice,
 } from './cmed/cmedIndex'
-export { medicineDraftFromRow } from './cmed/cmedMedicine'
-export type { CmedMedicineDraft } from './cmed/cmedMedicine'
+export { medicineDraftFromRow, strengthChoicesFromDs } from './cmed/cmedMedicine'
+export type { CmedMedicineDraft, CmedStrengthChoice } from './cmed/cmedMedicine'
 export { findMedicineCandidates } from './cmed/medicineCandidates'
 export type {
   CandidateMedicineLike,

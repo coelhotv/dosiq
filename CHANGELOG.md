@@ -7,6 +7,38 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A busca pela lista oficial da ANVISA pergunta a concentração e preenche dose, unidade e forma (spec 066, fatia C)
+
+- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.22` → `0.33.27` só para build intermediário — `0.33.23` a `0.33.26` foram builds de
+  smoke; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade nova). O topo do cadastro de
+  medicamento virou um campo de busca pela "Lista oficial da ANVISA", separado do preenchimento à mão.
+  Depois de tocar o nome, quando o remédio é vendido em mais de uma concentração, o app pergunta "Qual
+  embalagem você tem?" e lista as concentrações com a forma (por exemplo, "500 mg + 125 mg ·
+  comprimido"). Quando o mesmo remédio de marca é fabricado por mais de um laboratório, o app pergunta
+  também o laboratório. Com uma concentração só, o preenchimento é direto. Ao escolher, dose, unidade,
+  forma, laboratório (só de remédio de marca) e o registro ANVISA são preenchidos, e o topo mostra
+  "Preenchido pela lista da ANVISA", com "Trocar". Em remédio composto, a concentração completa aparece
+  abaixo do campo ("Na embalagem: …"). Quando a lista oficial não diz qual número é de qual componente, o
+  app pergunta "Qual concentração você quer usar no cadastro?" com um botão por valor (2 a 4); um toque
+  preenche concentração e unidade. Salvar sem escolher mostra o erro no campo. Quando a unidade da lista
+  não é reconhecida (por exemplo "500 mg/"), concentração e unidade ficam vazias, com a da embalagem como
+  referência. No passo do laboratório, a pergunta é "Qual laboratório está escrito na sua embalagem?". A
+  seta no topo e o voltar do Android voltam para a busca. As concentrações aparecem agrupadas pela forma, da menor dose para
+  a maior, e os laboratórios em ordem alfabética. Na 1ª vez, a lista de embalagens é baixada só depois de tocar um nome,
+  com aviso na tela, e a digitação da busca não espera por ela; depois disso, fica na memória enquanto o
+  app está aberto, e as próximas buscas abrem as concentrações na hora. Sem internet, ou se a lista não carregar,
+  a busca preenche como antes. Nos resultados, o remédio sem laboratório mostra a categoria
+  ("Genérico", "Específico"…). A forma do remédio também é sugerida: vendido em uma forma só, ela vem
+  preenchida; em várias, a lista de formas mostra só essas, com "Ver todas" no fim. A forma escolhida à
+  mão não é trocada. No primeiro remédio do onboarding, a forma única também é preenchida, e uma dica embaixo da
+  concentração pede para copiar o número da embalagem ou da receita.
+- **Mobile** (`Added`, `patch`; mesmo build). Eventos de uso da busca (abertura, posição do resultado
+  escolhido, resultado do passo da concentração, fechamento e tempo de carga da lista), sem nome de
+  remédio nem o texto digitado (`docs/standards/TRACKING_PLAN.md` §5.3).
+- **Backend/Infra** (`Added`, `patch` — sem arquivo de versão). Medicamentos ganham a coluna
+  `anvisa_registration` (registro ANVISA de 9 dígitos da caixa de marca; vazio em genérico e no cadastro
+  manual), já aplicada no banco.
+
 ### O aviso de "iPhone sem Live Activity" diz o motivo e para de repetir para aparelho abandonado (spec 083)
 
 - **Backend/Infra** (`Changed`, `patch` — sem arquivo de versão; deploy na Vercel no merge). Quando a

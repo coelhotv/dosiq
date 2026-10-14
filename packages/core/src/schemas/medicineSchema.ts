@@ -241,6 +241,17 @@ const medicineObject = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  // 066 (D7/D11): REGISTRO[:9] da caixa escolhida no passo 2 da busca. NULL em genérico e no
+  // cadastro manual. Espelha o CHECK medicines_anvisa_registration_check; '' ⇒ null (R-270).
+  anvisa_registration: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z
+      .string()
+      .regex(/^[0-9]{9}$/, 'O registro ANVISA tem 9 dígitos')
+      .nullable()
+      .optional()
+  ),
 })
 
 // Densidade (units_per_ml) é OPCIONAL no medicamento (022 Fase C — revisão UX):
