@@ -62,7 +62,9 @@ PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 # devolveria o erro no FIM do build, depois do prebuild + pod install.
 if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   echo "🔍 Verificando Distribution Certificate no keychain..."
-  CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "Antonio Coelho" | head -1)
+  # Filtra pelo Team ID, não pelo nome: desde a migração p/ conta organization (spec 054, 2026-10),
+  # cert novo sai com o nome da empresa — o antigo ("Antonio Coelho") segue válido até 05/2027.
+  CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "(LU8V56S7QF)" | head -1)
 
   if [ -z "$CERT" ]; then
     echo ""
