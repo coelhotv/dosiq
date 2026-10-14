@@ -148,7 +148,7 @@ Sempre **reload** após cada comando.
 
 ### 3. Mobile — `apps/mobile/src/shared/utils/devTimeTravel.ts` (+ init em `AppRoot.tsx` + botões no DevHub)
 
-Igual ao web, mas offset em `AsyncStorage` e controles via Dev Hub (sem console). Gated `__DEV__`.
+Igual ao web, mas offset em `AsyncStorage` e controles via Dev Hub (sem console). Gated `DEV_TOOLS_ENABLED` (`features/_dev/devTools.ts`).
 
 ```js
 /* eslint-disable no-restricted-syntax -- dev-only */
@@ -238,14 +238,14 @@ Vencimento: `dia_local(titration_steps.started_at) + duration_days`, avaliado pe
 
 ### Pelo Dev Hub (recomendado)
 
-Seção **"Spec 029 F5 — Evolução do tratamento"** (`_dev/devTitrationTriggers.ts`):
+Seção **"Tratamento"** (`_dev/sections/TreatmentSection.tsx` → `_dev/devTitrationTriggers.ts`; botões 🔴 = gravam na escada real):
 
 | Botão | O que faz |
 |---|---|
-| 📊 Vencer HOJE (dia 0) | `started_at = hoje − duration_days` + próxima etapa `pending_confirmation` → card com os 2 botões |
-| 📊 Dia 3 | idem, −3 dias a mais → linha neutra + frase de contexto |
+| 📊 Troca vence HOJE | `started_at = hoje − duration_days` + próxima etapa `pending_confirmation` → card com os 2 botões |
+| 📊 Pendente há 3 dias | idem, −3 dias a mais → linha neutra + frase de contexto |
 | 📊 Vencida há 12 dias | idem, −12 → banner âmbar + `[Ajustar duração]` |
-| 🔔 Push LOCAL com as 2 ações | notificação local com a MESMA categoria/ações do push real |
+| 🔔 Notificação local com as 2 ações | notificação local com a MESMA categoria/ações do push real |
 | ↩️ Resetar escada | vigente volta a começar hoje; próxima volta a `upcoming` |
 
 Reabra a aba **Hoje** após cada botão (`useFocusEffect` refaz o fetch).

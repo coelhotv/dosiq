@@ -1,6 +1,6 @@
 // doseActivitySurfaceService.js — superfície de estado contínuo Android (Spec 039 / F2)
 //
-// Promove o spike (devDoseActivitySpike) a produção. Renderiza UMA dose como ongoing
+// Promove o spike da 039 F0 (removido do DevHub em 2026-10, spec 054) a produção. Renderiza UMA dose como ongoing
 // notification "companheira" (canal DEFAULT, SEM som — SC-005), consumindo o núcleo
 // `selectActiveDoseActivity` (CON-029). A máquina de estados vive no core; aqui só APRESENTA.
 //

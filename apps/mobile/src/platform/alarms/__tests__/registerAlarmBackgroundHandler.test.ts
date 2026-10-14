@@ -12,7 +12,6 @@ jest.mock('../../doseActivity/doseActivityScheduler', () => ({
 }))
 const mockBeacon = jest.fn().mockResolvedValue(undefined)
 jest.mock('../../audit/criticalAuditBeacon', () => ({ beaconAlarmDelivered: (...a) => mockBeacon(...a) }))
-jest.mock('../../../features/_dev/devDoseActivityBgSpike', () => ({ onSpikeDelivered: jest.fn() }))
 
 import notifee, { EventType } from '@notifee/react-native'
 import { registerAlarmBackgroundHandler } from '../registerAlarmBackgroundHandler'

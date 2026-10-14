@@ -33,7 +33,8 @@
       "channel": "device",
       "distribution": "internal",
       "env": {
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_DEV_TOOLS": "1"
       },
       "android": {
         "buildType": "apk"
