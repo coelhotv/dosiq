@@ -47,7 +47,8 @@ export function strengthChoicesFromDs(ds: string | null): CmedStrengthChoice[] {
   const seen = new Set<string>()
   const choices: CmedStrengthChoice[] = []
   for (const part of ds.split('+')) {
-    const match = /^(\d+(?:\.\d+)?) ([^\s]+)$/.exec(part.trim())
+    // O pipeline entrega ponto decimal; a vírgula é defesa contra regressão dele (RC6 #886).
+    const match = /^(\d+(?:\.\d+)?) ([^\s]+)$/.exec(part.trim().replace(/^(\d+),(\d)/, '$1.$2'))
     if (!match || !UNIT_SET.has(match[2])) continue
     const dose = Number(match[1])
     const key = `${dose}|${match[2]}`

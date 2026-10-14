@@ -56,6 +56,7 @@ describe('medicineDraftFromRow', () => {
     expect(strengthChoicesFromDs('125 mg + 50 mg + 300 mg + 30 mg')).toHaveLength(4)
     expect(strengthChoicesFromDs('5000 mcg + 100 mg + 100 mg')).toEqual([{ dose: 5000, unit: 'mcg' }, { dose: 100, unit: 'mg' }])
     expect(strengthChoicesFromDs('6 mg + 0.015 mg')).toEqual([{ dose: 6, unit: 'mg' }, { dose: 0.015, unit: 'mg' }])
+    expect(strengthChoicesFromDs('12,5 mg + 50 mg')).toEqual([{ dose: 12.5, unit: 'mg' }, { dose: 50, unit: 'mg' }])
     expect(strengthChoicesFromDs('500 mg/')).toEqual([])
     expect(strengthChoicesFromDs('20 % + 0.5 % + 5 %')).toEqual([])
     expect(strengthChoicesFromDs(null)).toEqual([])
