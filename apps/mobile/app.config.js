@@ -153,11 +153,11 @@ module.exports = {
         // (Registrar/Adiar) escreve o pedido de ação aqui; o RN lê e registra via CON-026
         // (PO-SEC-2: revalidar sessão VIVA, nunca usar userId cacheado). Mesmo id no target.
         'com.apple.security.application-groups': ['group.com.coelhotv.dosiq'],
-        // Spec 010: Critical Alerts — fura mudo físico iOS para doses inegociáveis.
-        // AGUARDANDO APROVAÇÃO APPLE — não descomentar antes da aprovação ser concedida.
-        // Quando aprovado: descomentar a linha abaixo + restaurar no Dosiq.entitlements.
-        // R-259: declarar aqui após aprovação; EAS credentials sincroniza com Apple Developer portal.
-        // 'com.apple.developer.usernotifications.critical-alerts': true,
+        // Spec 054 F0 (ADR-086): Critical Alerts — managed capability aprovada pela Apple e marcada
+        // no App ID. Fonte única (ios/ é gerado no prebuild). Declarar aqui é o que faz o EAS MANTER a
+        // capability no portal; sem a linha, o sync a desativa. A flag `critical` só é emitida com a
+        // autorização do SO concedida (ADR-086 §3) — este entitlement sozinho não muda o alarme.
+        'com.apple.developer.usernotifications.critical-alerts': true,
       },
     },
     android: {
