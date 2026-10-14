@@ -99,8 +99,7 @@ Regra do topo de `analyticsEvents.ts`: **nunca usar string literal fora do catá
 vivas hoje, a migrar para `EVENTS`:
 
 `titration_transition_confirmed`, `titration_transition_postponed`, `cold_start`,
-`consent_health_declined`, `dev_smoke_event` (este último é de DevHub — pode permanecer literal se
-marcado como não-produção).
+`consent_health_declined`. (`dev_smoke_event` saiu do código com a limpeza do DevHub em 2026-10-14.)
 
 ---
 
@@ -462,7 +461,7 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | `consent_blocked_attempt` | ✅ | `gate_mode`: `blocked_revoked`\|`prompt_blocking` | o app entrou na trava de consentimento |
 | `account_deleted` | ✅ | `result`: `success`\|`error` | exclusão de conta — mede a tentativa, não só o êxito |
 | ~~`consent_health_declined`~~ | ⛔ mobile · 🔤 web | `{}` | **aposentado no mobile** (065 PR D, #842): media só marcar→desmarcar, sem origem. Web legado ainda emite |
-| `dev_smoke_event` | 🔤 | `source`, `platform` | **não-produção** (DevHub); excluir de dashboards |
+| `dev_smoke_event` | 🔤 | `source`, `platform` | **removido 2026-10-14** (botão do DevHub saiu); histórico não-produção, excluir de dashboards |
 
 > **Chave de payload ≠ super property.** `app_env`, `channel`, `is_internal`, `mode`, `runtime_version`,
 > `treatment_count_bucket` e `update_id` são registradas em todo evento; repetir a chave no payload **sobrescreve** o valor

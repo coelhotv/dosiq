@@ -155,10 +155,19 @@ Assistente integrado (IA) exibido em modal de ecrã inteiro. Utilizado para tira
 | Chatbot | `ChatScreen.tsx` | `ChatEntryButton.tsx` |
 
 ### 12. _dev
-Domínio exclusivo para ambientes de desenvolvimento (`__DEV__`). Contém laboratórios de UI e telas de diagnóstico para testar primitivas visuais antes da adoção.
+Ferramentas de desenvolvimento e smoke. Ligadas por `DEV_TOOLS_ENABLED` (`_dev/devTools.ts`): debug (`__DEV__`) **ou** build interno `device` (`EXPO_PUBLIC_DEV_TOOLS=1` no `eas.json`). O profile `production` não define a variável, e a rota usa condição literal + `require` para o Metro cortar o DevHub do bundle da loja (R-314).
+
 | Domínio | Telas Principais | Componentes |
 |---|---|---|
-| _dev | `DevHubScreen.tsx`, `StockPrimitivesDemoScreen.tsx` | N/A |
+| _dev | `DevHubScreen.tsx` | `DevBadge`, `DevSection`/`DevButton`/`DevNote`, `sections/*` |
+
+#### DevHub — convenção
+
+- **Uma seção por domínio** em `_dev/sections/` (hoje: Alarmes, Tratamento, Sessão, Layout), nunca por número de spec; a spec de origem vai na `note` da seção.
+- Botão que grava em dados reais da conta logada declara `writesData` → marca 🔴.
+- **Gatilho de spike tem prazo:** entra com a spec e sai no C5 dela (seção, arquivo de gatilho, rota e qualquer `require` fora de `_dev/`). Código de produção não importa nada de `_dev/`, exceto o `DevBadge`.
+- Erros de gatilho vão para `Alert` com o motivo, nunca para uma promise solta (o botão pareceria inerte).
+- ⚠️ `EXPO_PUBLIC_DEV_TOOLS` vive **só** no `env` do profile `device`. Nunca em `.env`/shell: `eas update` (OTA) lê o env local, não o do profile — um OTA para `production` publicado com a variável setada levaria o DevHub à loja.
 
 ## Platform — Os 9 Módulos Nativos
 

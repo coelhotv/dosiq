@@ -87,10 +87,8 @@ export const ROUTES = {
   // Chat IA (spec 015 onda 2) — tela full-screen via stack
   CHAT: 'Chat',
 
-  // Dev-only (apenas __DEV__)
+  // Ferramentas de dev (DEV_TOOLS_ENABLED — features/_dev/devTools.ts)
   DEV_HUB: 'DevHub',
-  STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
-  DOSE_PRIMITIVES_DEMO: 'DosePrimitivesDemo',
   // Spec 055 PR 1.4 (edge-to-edge) — telas sem tab bar p/ validar FormActions/safe-area
   // sem depender de conta em consent-locked ou onboarding novo.
   DEV_FORM_NO_TABBAR: 'DevFormNoTabBar',

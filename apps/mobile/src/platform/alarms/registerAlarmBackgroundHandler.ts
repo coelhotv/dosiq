@@ -24,7 +24,7 @@ async function onActionOrDismiss(event) {
 
 // Entrega de notificação (boundary da superfície 039 F2 trigger-driven): __surface → agenda o
 // próximo boundary (encadeamento headless); __surfaceEnd → encerra no missed. Os dois registram a
-// transição no rastro (spec 084) DENTRO do scheduler, depois de encadear. DEV: encadeia o spike.
+// transição no rastro (spec 084) DENTRO do scheduler, depois de encadear.
 async function onDelivered(data) {
   try {
     if (data?.__surface === 'true') {
@@ -45,14 +45,6 @@ async function onDelivered(data) {
     }
   } catch (err) {
     if (__DEV__) console.warn('[alarm-bg] surface advance falhou', err?.message)
-  }
-  if (__DEV__) {
-    try {
-      const { onSpikeDelivered } = require('../../features/_dev/devDoseActivityBgSpike')
-      await onSpikeDelivered(data)
-    } catch (err) {
-      if (__DEV__) console.warn('[alarm-bg] spike chain falhou', err?.message)
-    }
   }
 }
 
