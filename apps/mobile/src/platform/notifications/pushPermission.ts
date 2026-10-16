@@ -25,7 +25,7 @@ import { ANDROID_PUSH_CHANNEL } from '@dosiq/core'
 // DESLIGADOS — o `granted` do expo é só `authorizationStatus == Authorized`
 // (EXUserFacingNotificationsPermissionsRequester.m:38). Push "ligado" exige o alerta habilitado.
 // `allowsAlert: null` (não informado) não rebaixa. Já decidido ⇒ não dá para repedir (só Ajustes).
-function _effective(perm) {
+function _effective(perm: Notifications.NotificationPermissionsStatus | null | undefined) {
   const alertOff = Platform.OS === 'ios' && perm?.ios?.allowsAlert === false
   if (perm?.status === 'granted' && alertOff) return { status: 'denied', canAskAgain: false, granted: false }
   return { status: perm?.status, canAskAgain: perm?.canAskAgain, granted: perm?.status === 'granted' }
@@ -83,7 +83,7 @@ export async function ensurePushPermission() {
 // sem diálogo — e só aí (resposta instantânea) cabe abrir os Ajustes.
 const INSTANT_DENIAL_MS = 400
 
-export async function requestPushOrOpenSettings({ supabase }) {
+export async function requestPushOrOpenSettings({ supabase }: { supabase: unknown }): Promise<boolean> {
   if (Platform.OS !== 'android') {
     const res = await enablePushAtIntent({ supabase })
     if (!res.granted && res.blocked) Linking.openSettings()

@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, Text, Pressable, Modal, StyleSheet } from 'react-native'
+import { View, Text, Pressable, Modal, StyleSheet, Platform, StatusBar } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { BellRing } = LucideIcons as any
@@ -43,7 +44,9 @@ export default function CriticalAlertPrimerSheet({
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <View style={styles.sheet} accessibilityViewIsModal>
+        {/* R-233: espaçador da status bar no Android (statusBarTranslucent) + SafeArea embaixo. */}
+        {Platform.OS === 'android' ? <View style={{ height: StatusBar.currentHeight ?? 0 }} /> : null}
+        <SafeAreaView edges={['bottom']} style={styles.sheet} accessibilityViewIsModal>
           <View style={styles.grabber} />
           <View style={styles.icon}>
             <BellRing size={24} color={colors.brand.primary} strokeWidth={2} />
@@ -76,7 +79,7 @@ export default function CriticalAlertPrimerSheet({
           >
             <Text style={styles.dismissText}>{isAndroid ? 'Fechar' : 'Agora não'}</Text>
           </Pressable>
-        </View>
+        </SafeAreaView>
       </View>
     </Modal>
   )

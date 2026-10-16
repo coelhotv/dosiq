@@ -18,8 +18,8 @@ import { enablePushAtIntent, getPushChannelState, requestPushOrOpenSettings } fr
 
 const RN = require('react-native')
 const ORIGINAL_OS = RN.Platform.OS
-const get = Notifications.getPermissionsAsync as jest.Mock
-const req = Notifications.requestPermissionsAsync as jest.Mock
+const get = jest.mocked(Notifications.getPermissionsAsync) as jest.Mock
+const req = jest.mocked(Notifications.requestPermissionsAsync) as jest.Mock
 
 beforeEach(() => {
   RN.Platform.OS = 'ios'
