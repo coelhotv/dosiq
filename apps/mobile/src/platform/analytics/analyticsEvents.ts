@@ -47,6 +47,9 @@ export const EVENTS = {
   // Notificações
   NOTIFICATION_PERMISSION_GRANTED: 'notification_permission_granted',
   NOTIFICATION_PERMISSION_DENIED: 'notification_permission_denied',
+  // 054: resposta ao diálogo de Alertas Críticos do iOS (só quando ele de fato apareceu).
+  CRITICAL_ALERT_PERMISSION_GRANTED: 'critical_alert_permission_granted', // surface
+  CRITICAL_ALERT_PERMISSION_DENIED: 'critical_alert_permission_denied',   // surface
   NOTIFICATION_PREFERENCE_CHANGED: 'notification_preference_changed', // new_preference
   PUSH_NOTIFICATION_TAPPED: 'push_notification_tapped',               // kind: kind do servidor, verbatim (enum fechado)
   // 065 AD-8: o lembrete é UM só para a pessoa, qualquer que seja o canal. `source` é a origem do

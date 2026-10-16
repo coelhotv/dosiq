@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
-import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 // ⚠️ Namespace + cast NÃO é desleixo — é contorno de resolução de tipos quebrada, e trocar por
 // import nomeado QUEBRA o gate cross-program (verificado em 2026-07-20):
 //   `lucide-react-native` está hoisted em /node_modules, mas `react-native-svg` só existe em
@@ -38,8 +38,9 @@ import NextDoseField from '@treatments/components/NextDoseField'
 import PlanSelectField from '@treatments/components/PlanSelectField'
 import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { colors, spacing } from '@shared/styles/tokens'
-import { enablePushAtIntent } from '@platform/notifications/pushPermission'
-import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import CriticalAlarmCard from '@treatments/components/CriticalAlarmCard'
+import CriticalAlertPrimerSheet from '@treatments/components/CriticalAlertPrimerSheet'
+import { useCriticalAlarmToggle } from '@treatments/hooks/useCriticalAlarmToggle'
 import {
   needsFullScreenIntentAccess,
   openFullScreenIntentSettings,
@@ -245,41 +246,6 @@ function DoseSection({
       helperText={helperText}
       required
     />
-  )
-}
-
-function GuideModal({ visible, guideMsg, onClose }) {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <View style={styles.backdrop}>
-        <View style={styles.dialog}>
-          <Text style={styles.dialogTitle}>Falta um passo no seu celular</Text>
-          <Text style={styles.dialogBody}>{guideMsg}</Text>
-          <TouchableOpacity
-            style={[styles.dialogBtn, styles.dialogBtnPrimary]}
-            onPress={() => openFullScreenIntentSettings()}
-            accessibilityRole="button"
-            accessibilityLabel="Abrir configurações"
-          >
-            <Text style={styles.dialogBtnPrimaryText}>Abrir configurações</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.dialogBtn}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Fechar aviso"
-          >
-            <Text style={styles.dialogBtnText}>Fechar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
   )
 }
 
@@ -538,33 +504,6 @@ function TitrationSection({
   )
 }
 
-function CriticalAlarmSection({
-  criticalAlarm,
-  onToggle,
-}: {
-  criticalAlarm: boolean
-  onToggle: (value: boolean) => void
-}) {
-  return (
-    <Section title="Alertas Críticos">
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleText}>
-          <Text style={styles.toggleHint}>
-            O alarme tocará mesmo no silencioso. Use para doses que não podem ser esquecidas.
-          </Text>
-        </View>
-        <Switch
-          value={criticalAlarm}
-          onValueChange={onToggle}
-          trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
-          thumbColor={criticalAlarm ? colors.bg.card : colors.text?.secondary}
-          accessibilityLabel="Alerta crítico"
-        />
-      </View>
-    </Section>
-  )
-}
-
 export default function ProtocolFormBody({
   form,
   medicine,
@@ -597,32 +536,15 @@ export default function ProtocolFormBody({
     doseDisplay,
   } = useProtocolFormDerived(form, medicine)
 
-  const handleCriticalAlarmToggle = useCallback(async (next) => {
-    if (next) {
-      // R-239: checar permissão no ponto de intenção
-      const { granted, blocked } = await enablePushAtIntent({ supabase })
-      if (!granted) {
-        if (blocked) {
-          Alert.alert(
-            'Permissão necessária',
-            'Para ativar o alarme crítico, permita notificações nas Configurações do sistema.',
-            [
-              { text: 'Agora não', style: 'cancel' },
-              { text: 'Abrir Configurações', onPress: () => Linking.openSettings() },
-            ]
-          )
-        }
-        return
-      }
-
-      // Checar se precisa de acesso especial de alarme em tela cheia (Android 14+ / Xiaomi)
-      if (needsFullScreenIntentAccess()) {
-        setGuideMsg(isXiaomiDevice() ? XIAOMI_MSG : GENERIC_MSG)
-        setGuideVisible(true)
-      }
-    }
-    form.handleChange('critical_alarm', next)
-  }, [form])
+  const setCritical = useCallback((value: boolean) => form.handleChange('critical_alarm', value), [form])
+  const showFullScreenGuide = useCallback(() => {
+    // Checar se precisa de acesso especial de alarme em tela cheia (Android 14+ / Xiaomi)
+    if (!needsFullScreenIntentAccess()) return
+    setGuideMsg(isXiaomiDevice() ? XIAOMI_MSG : GENERIC_MSG)
+    setGuideVisible(true)
+  }, [])
+  // 054 FR-008b: fluxo do toggle por plataforma/estado de permissão vive no hook.
+  const criticalToggle = useCriticalAlarmToggle({ setCritical, onEnabledAndroid: showFullScreenGuide })
   const showWeekdays = frequencyRequiresWeekdays(form.values.frequency)
 
   return (
@@ -670,6 +592,18 @@ export default function ProtocolFormBody({
         onStartDateChange={onStartDateChange}
       />
 
+      <CriticalAlarmCard
+        criticalAlarm={!!form.values.critical_alarm}
+        onToggle={criticalToggle.onToggle}
+        onRequestPermission={criticalToggle.requestCritical}
+      />
+      <CriticalAlertPrimerSheet
+        visible={criticalToggle.primerVisible}
+        pushDenied={criticalToggle.pushDenied}
+        onContinue={criticalToggle.onPrimerContinue}
+        onDismiss={criticalToggle.onPrimerDismiss}
+      />
+
       {onOpenTitration ? (
         <TitrationSection
           onOpenTitration={onOpenTitration}
@@ -678,11 +612,6 @@ export default function ProtocolFormBody({
           isEditMode={isEditMode}
         />
       ) : null}
-
-      <CriticalAlarmSection
-        criticalAlarm={!!form.values.critical_alarm}
-        onToggle={handleCriticalAlarmToggle}
-      />
 
       <PrescriptionSection
         startDateAsDate={startDateAsDate}
@@ -718,10 +647,14 @@ export default function ProtocolFormBody({
         />
       </Section>
 
-      <GuideModal
+      {/* 054 (emenda FR-008): o guia de tela cheia do Android é a variante do mesmo sheet. */}
+      <CriticalAlertPrimerSheet
+        variant="android"
         visible={guideVisible}
-        guideMsg={guideMsg}
-        onClose={() => setGuideVisible(false)}
+        androidMessage={guideMsg}
+        pushDenied={false}
+        onContinue={() => openFullScreenIntentSettings()}
+        onDismiss={() => setGuideVisible(false)}
       />
     </>
   )
@@ -787,12 +720,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[3],
   },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing[3],
-  },
   // Card com duas metades (topo = chamada, base = progresso da escada). O peso visual é
   // deliberado: ao lado do seletor de horários — alto e denso — a versão de uma linha só
   // desaparecia num scan da tela, e ninguém descobria a titulação (smoke do PO, 2026-07-20).
@@ -834,59 +761,4 @@ const styles = StyleSheet.create({
   evoTitle: { fontSize: 15, fontWeight: '600', color: colors.text.primary },
   evoHint: { fontSize: 12, color: colors.text.muted },
   evoFootnote: { fontSize: 12, color: colors.text.muted, paddingHorizontal: spacing[1], lineHeight: 17 },
-  toggleText: {
-    flex: 1,
-    gap: spacing[1],
-  },
-  toggleLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text?.primary,
-  },
-  toggleHint: {
-    fontSize: 13,
-    color: colors.text?.secondary,
-    lineHeight: 18,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.bg.overlay,
-    justifyContent: 'center',
-    paddingHorizontal: spacing[5],
-  },
-  dialog: {
-    backgroundColor: colors.bg.card,
-    borderRadius: 12,
-    padding: spacing[5],
-    gap: spacing[3],
-  },
-  dialogTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  dialogBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.text.secondary,
-  },
-  dialogBtn: {
-    minHeight: 48,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dialogBtnPrimary: {
-    backgroundColor: colors.brand.primary,
-  },
-  dialogBtnPrimaryText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.bg.card,
-  },
-  dialogBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
 })

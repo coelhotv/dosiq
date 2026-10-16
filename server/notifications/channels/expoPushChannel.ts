@@ -92,12 +92,8 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
     sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
     // Furo de Focus/DND no iOS (doses essenciais e switch da evolução vão 'time-sensitive').
     interruptionLevel: timeSensitive ? 'time-sensitive' : 'active',
-    // --- v1 (configuração com objeto que exige permissão especial de Critical Alerts no iOS):
-    // sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
-    // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
-    //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
-    //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
-    //     interruptionLevel: 'critical',
+    // Push remoto NUNCA é crítico (spec 054 / ADR-086): Critical Alerts vale só para o alarme local
+    // iOS de dose crítica (`alarmService`), travado em `criticalEmitters.contract.test.ts`.
     // Android: o som é do CANAL, e só vale canal que o app cria — canal inexistente joga o push no
     // fallback do FCM ("Miscellaneous", AP-251). O crítico só vai para `app_version` que cria o
     // canal; senão, o default (062 F3-B). O `sound` acima segue valendo no iOS, que ignora `channelId`.

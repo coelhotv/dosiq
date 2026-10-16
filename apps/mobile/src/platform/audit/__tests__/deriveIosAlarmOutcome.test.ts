@@ -124,3 +124,31 @@ describe('deriveIosAlarmOutcome', () => {
     expect(result[0].doseInstanceId).toBe('d1')
   })
 })
+
+// Spec 054 C-11 / FR-005: o crítico autorizado toca com o push negado (spike S6).
+describe('deriveIosAlarmOutcome — Critical Alerts (054)', () => {
+  const crit = [{ doseInstanceId: 'd1', isCritical: true, nagAttempt: 0, doseStatus: 'pending' }]
+
+  it('push negado + crítico autorizado ⇒ alarm_fired (não suppressed), mode critical', () => {
+    const [evt] = deriveIosAlarmOutcome({ alarms: crit, permissionGranted: false, userId: 'u1', criticalAuthorized: true })
+    expect(evt.event).toBe('alarm_fired')
+    expect(evt.detail).toEqual({ captured_at_foreground: true, mode: 'critical' })
+  })
+
+  it('push negado + crítico NÃO autorizado ⇒ alarm_suppressed, mode normal', () => {
+    const [evt] = deriveIosAlarmOutcome({ alarms: crit, permissionGranted: false, userId: 'u1', criticalAuthorized: false })
+    expect(evt.event).toBe('alarm_suppressed')
+    expect(evt.detail.mode).toBe('normal')
+  })
+
+  it('push ok + crítico não autorizado ⇒ alarm_fired, mode normal', () => {
+    const [evt] = deriveIosAlarmOutcome({ alarms: crit, permissionGranted: true, userId: 'u1', criticalAuthorized: false })
+    expect(evt.event).toBe('alarm_fired')
+    expect(evt.detail.mode).toBe('normal')
+  })
+
+  it('caller sem criticalAuthorized ⇒ detail sem mode (compatível)', () => {
+    const [evt] = deriveIosAlarmOutcome({ alarms: crit, permissionGranted: true, userId: 'u1' })
+    expect(evt.detail).toEqual({ captured_at_foreground: true })
+  })
+})

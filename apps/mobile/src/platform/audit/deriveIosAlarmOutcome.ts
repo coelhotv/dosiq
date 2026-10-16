@@ -8,15 +8,21 @@ const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
  * @param {object} params
  * @param {Array}  params.alarms - [{ doseInstanceId, isCritical:boolean, nagAttempt:number, doseStatus:string }]
  * @param {boolean} params.permissionGranted - notificações permitidas no iOS
+ * @param {boolean} [params.criticalAuthorized] - spec 054: Critical Alerts autorizado. O crítico toca
+ *   mesmo com o push negado (spike S6) — então conta como entregue (C-11) e vira `detail.mode`.
  * @param {string} params.userId - dono das doses (sessão viva no foreground)
  * @returns {Array} payloads { userId, doseInstanceId, event, platform:'ios', actor:'system', detail }
  */
-export function deriveIosAlarmOutcome({ alarms, permissionGranted, userId }) {
+export function deriveIosAlarmOutcome({ alarms, permissionGranted, userId, criticalAuthorized = undefined }: { alarms: any; permissionGranted: boolean; userId: string; criticalAuthorized?: boolean }) {
   if (!userId || !Array.isArray(alarms) || alarms.length === 0) {
     return []
   }
 
   const payloads = []
+  // C-11: todo alarme aqui é crítico (filtro abaixo) — autorizado ⇒ entregue mesmo com push negado.
+  const delivered = permissionGranted !== false || criticalAuthorized === true
+  // FR-005 (C-5): modo efetivo no desfecho derivado; ausente quando o caller não informou.
+  const modeDetail = typeof criticalAuthorized === 'boolean' ? { mode: criticalAuthorized ? 'critical' : 'normal' } : {}
 
   for (const alarm of alarms) {
     const { doseInstanceId, isCritical, nagAttempt, doseStatus } = alarm || {}
@@ -32,15 +38,15 @@ export function deriveIosAlarmOutcome({ alarms, permissionGranted, userId }) {
     // então na wiring de hoje este ramo não dispara (o suppressed iOS fica coberto pelo follow-up que
     // compara doses críticas AGENDADAS × exibidas). A função permanece pura/genérica: se um caller
     // passar um alarme agendado-mas-não-exibido com permissionGranted:false, o suppressed é correto.
-    if (permissionGranted === false) {
+    if (!delivered) {
       event = 'alarm_suppressed'
-      detail = { captured_at_foreground: true, reason: 'permission_denied' }
+      detail = { captured_at_foreground: true, reason: 'permission_denied', ...modeDetail }
     } else if (nagAttempt > 0) {
       event = 'nag_fired'
-      detail = { captured_at_foreground: true }
+      detail = { captured_at_foreground: true, ...modeDetail }
     } else {
       event = 'alarm_fired'
-      detail = { captured_at_foreground: true }
+      detail = { captured_at_foreground: true, ...modeDetail }
     }
 
     payloads.push({

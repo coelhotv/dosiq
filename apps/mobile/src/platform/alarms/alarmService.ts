@@ -28,6 +28,7 @@ import notifee, {
   AndroidCategory,
   TriggerType,
   AuthorizationStatus,
+  IOSNotificationSetting,
 } from '@notifee/react-native'
 import { Platform, Linking } from 'react-native'
 import * as Device from 'expo-device'
@@ -36,7 +37,7 @@ import { colors } from '@shared/styles/tokens'
 import { debugLog } from '@shared/utils/debugLog'
 import { emitDoseChanged } from './doseChangedBus'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { EVENTS } from '@platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 // Canal Android é IMUTÁVEL após criado — bumpar o id força recriação com o som
 // correto (alarm_dose). v1 ficou no som padrão; v2 nasceu padrão em devices cujo
@@ -53,6 +54,9 @@ export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v3'
 // Antecessor do `-v3` (USAGE_NOTIFICATION, criado pelo notifee). Segue sendo o canal de FALLBACK
 // quando o expo falha (E-2): recriá-lo com a config de sempre é no-op no device que já o tem.
 export const LEGACY_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v2'
+// 054 C-26 (PO): nomes que a pessoa lê em Ajustes do Android — vocabulário do card "Alarme crítico".
+const CRITICAL_ALARM_CHANNEL_NAME = 'Alarme de doses críticas'
+const CRITICAL_ALARM_CHANNEL_DESCRIPTION = 'Alarme que toca alto na hora das doses que não podem ser esquecidas'
 // Lista FECHADA (nunca prefixo/regex — PO-16): canais de alarme de versões anteriores. Usada pelo
 // predicado `isAlarmNotification` (alarme agendado pela versão antiga ou no fallback).
 export const LEGACY_ALARM_CHANNEL_IDS: readonly string[] = Object.freeze([
@@ -66,12 +70,16 @@ export const LEGACY_ALARM_CHANNEL_IDS: readonly string[] = Object.freeze([
 export const LEGACY_SWEEP_CHANNEL_IDS: readonly string[] = Object.freeze([...LEGACY_ALARM_CHANNEL_IDS, 'dose-activity-v1'])
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
-// iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
-// Promover a 'critical' (fura mute físico/silencioso total) SÓ após a Apple aprovar
-// o entitlement com.apple.developer.usernotifications.critical-alerts (formulário
-// em avaliação). Ao promover: trocar aqui + add `critical:true` no bloco ios do
-// buildNotification + declarar o entitlement no app.config/ios entitlements.
+// iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido — é o modo
+// NORMAL do alarme. Spec 054 (ADR-086): dose crítica com Critical Alerts autorizado sobe para
+// 'critical' (fura o silencioso). Sem autorização o iOS DESCARTA a notificação crítica inteira
+// (spike S1', MOBILE_NOTIFICATIONS.md §Critical Alerts) — por isso a flag só sai autorizada.
 const IOS_INTERRUPTION_LEVEL = 'timeSensitive' as const
+// ADR-086 §2: volume fixo do alarme crítico (0..1).
+export const CRITICAL_VOLUME = 0.8
+// Memo do status crítico dentro de um sync (N agendamentos ⇒ 1 leitura). Curto de propósito:
+// revogação em Ajustes precisa aparecer no próximo foreground (C-9).
+const CRITICAL_STATUS_TTL_MS = 5000
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
@@ -97,6 +105,18 @@ export const ALARM_ACTION = Object.freeze({
 })
 
 let criticalChannelEnsured = false
+
+/**
+ * 054 C-23: notificações COMUNS utilizáveis (lado notifee). No iOS, Alertas Críticos permitidos deixam
+ * o `authorizationStatus` AUTHORIZED mesmo com o alerta desligado em Ajustes — status sozinho mente.
+ */
+export function isPushUsable(settings): boolean {
+  const status = settings?.authorizationStatus
+  const authorized = status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL
+  if (!authorized) return false
+  return !(Platform.OS === 'ios' && settings?.ios?.alert === IOSNotificationSetting.DISABLED)
+}
+let criticalStatusMemo: { at: number; value: boolean } | null = null
 let legacyChannelsMigrated = false
 
 /**
@@ -114,6 +134,169 @@ export async function requestAlarmPermission() {
     )
   } catch {
     return false
+  }
+}
+
+/**
+ * Spec 054 (FR-003): Critical Alerts autorizado neste aparelho? Lido AO VIVO do SO — funciona no
+ * handler headless (spike S3), então nag/soneca com o app fechado não dependem de cache (C-4).
+ * Fail-open para o modo normal: Android, erro ou `ios` ausente ⇒ false.
+ */
+export async function getCriticalAlertStatus(): Promise<boolean> {
+  return (await getCriticalAlertSetting()) === 'authorized'
+}
+
+export type CriticalAlertSetting = 'authorized' | 'denied' | 'undetermined' | 'unsupported'
+
+/**
+ * Estado de Critical Alerts em 3 vias, para a UX decidir se pede (FR-008b). Medido no device
+ * (spike 0/S4): antes de pedir o SO devolve -1 (`NOT_SUPPORTED` no enum do notifee) — aqui
+ * `undetermined`; negado = DISABLED. Android ou erro ⇒ `unsupported` (nunca pede).
+ */
+export async function getCriticalAlertSetting(): Promise<CriticalAlertSetting> {
+  if (Platform.OS !== 'ios') return 'unsupported'
+  try {
+    const settings = await notifee.getNotificationSettings()
+    const value = settings?.ios?.criticalAlert
+    if (value === IOSNotificationSetting.ENABLED) return 'authorized'
+    if (value === IOSNotificationSetting.DISABLED) return 'denied'
+    if (value === IOSNotificationSetting.NOT_SUPPORTED) return 'undetermined'
+    return 'unsupported'
+  } catch {
+    return 'unsupported'
+  }
+}
+
+/**
+ * Estado do alarme crítico NESTE aparelho, por gravidade (spec 054 FR-009, emenda 2026-10-14):
+ *   - `active`   — toca como prometido (iOS: Critical Alerts autorizado; Android: notificações + canal ok).
+ *   - `degraded` — iOS: toca como alarme comum e pode ficar mudo no silencioso (PO-3). `fix` diz se dá
+ *                  para pedir (`request`, nunca perguntado) ou só em Ajustes (`settings`).
+ *   - `blocked`  — NÃO toca: notificações negadas (e, no iOS, sem crítico — S6) ou canal Android em NONE.
+ *   - `unknown`  — leitura falhou: a UI não afirma nada.
+ * Tela cheia do Android 14+ fica fora (sem API no notifee — fase seguinte, módulo nativo).
+ */
+export type CriticalAlarmDeviceStatus =
+  | { kind: 'active' }
+  | { kind: 'degraded'; fix: 'request' | 'settings'; reason?: 'channel_silenced' | 'channel_no_popup' }
+  | { kind: 'blocked'; reason: 'push' | 'channel'; canRequest?: true }
+  | { kind: 'unknown' }
+
+/**
+ * C-33: push nunca decidido (instalação nova) ⇒ o diálogo do SO ainda pode aparecer — mandar a
+ * pessoa aos Ajustes seria vários toques por algo que 1 "Permitir" resolve. Lido do expo
+ * (`canAskAgain`): o notifee no Android devolve DENIED também para "ainda não perguntado".
+ */
+async function _blockedPush(): Promise<CriticalAlarmDeviceStatus> {
+  // Android: o `canAskAgain` do expo erra depois de um diálogo dispensado (ver pushPermission
+  // `requestPushOrOpenSettings`) ⇒ sempre oferecer o pedido; o próprio pedido cai nos Ajustes se o SO
+  // não mostrar diálogo.
+  if (Platform.OS === 'android') return { kind: 'blocked', reason: 'push', canRequest: true }
+  try {
+    const perm = await Notifications.getPermissionsAsync()
+    if (perm?.status !== 'granted' && perm?.canAskAgain === true) {
+      return { kind: 'blocked', reason: 'push', canRequest: true }
+    }
+  } catch {
+    // leitura falhou: cai no caminho de Ajustes, que sempre funciona
+  }
+  return { kind: 'blocked', reason: 'push' }
+}
+
+/** Android: push e canal REAL do alarme (C-25/C-32). Extraído por complexidade ciclomática. */
+async function _androidAlarmStatus(pushOk: boolean): Promise<CriticalAlarmDeviceStatus> {
+  if (!pushOk) return _blockedPush()
+  // C-25: lê o canal REAL do alarme — `-v3` e, só se ele não existir, o `-v2` de fallback. Não usa
+  // `resolveAlarmChannelId()`: o sinalizador é por processo e, antes do 1º agendamento, apontaria o
+  // `-v2` que a 062 apaga ⇒ "ativo" sem ter olhado canal nenhum.
+  // Canal ainda não criado (null) = será criado no próximo agendamento com HIGH ⇒ não é bloqueio.
+  const channel = (await notifee.getChannel(ALARM_CRITICAL_CHANNEL_ID)) ?? (await notifee.getChannel(LEGACY_CRITICAL_CHANNEL_ID))
+  const importance = channel?.importance
+  if (importance === AndroidImportance.NONE) return { kind: 'blocked', reason: 'channel' }
+  // "Silencioso" no Android = MIN/LOW: chega sem som e sem tela cheia.
+  if (importance === AndroidImportance.MIN || importance === AndroidImportance.LOW) {
+    return { kind: 'degraded', fix: 'settings', reason: 'channel_silenced' }
+  }
+  // C-32: DEFAULT = "Exibir na tela" desligado — toca, mas sem banner e sem tela cheia (smoke 4.1:
+  // som sem âncora visual). Nasce HIGH; só cai para DEFAULT por ajuste da pessoa.
+  if (importance === AndroidImportance.DEFAULT) {
+    return { kind: 'degraded', fix: 'settings', reason: 'channel_no_popup' }
+  }
+  return { kind: 'active' }
+}
+
+export async function getCriticalAlarmDeviceStatus(): Promise<CriticalAlarmDeviceStatus> {
+  try {
+    const settings = await notifee.getNotificationSettings()
+    const pushOk = isPushUsable(settings)
+    if (Platform.OS === 'ios') {
+      const critical = settings?.ios?.criticalAlert
+      if (critical === IOSNotificationSetting.ENABLED) return { kind: 'active' }
+      // C-33: nada decidido ainda (instalação nova) ⇒ o sheet pede push e crítico juntos (S5).
+      if (critical === IOSNotificationSetting.NOT_SUPPORTED && settings?.authorizationStatus === AuthorizationStatus.NOT_DETERMINED) {
+        return { kind: 'degraded', fix: 'request' }
+      }
+      if (!pushOk) return _blockedPush()
+      return { kind: 'degraded', fix: critical === IOSNotificationSetting.NOT_SUPPORTED ? 'request' : 'settings' }
+    }
+    return _androidAlarmStatus(pushOk)
+  } catch {
+    return { kind: 'unknown' }
+  }
+}
+
+/** Descarta o memo — chamar depois de pedir permissão ou ao detectar mudança no foreground. */
+export function invalidateCriticalAlertStatus() {
+  criticalStatusMemo = null
+}
+
+/**
+ * Status para UM agendamento: só consulta o SO para dose crítica no iOS. @private
+ */
+async function _criticalAuthorizedFor(isCritical) {
+  if (isCritical !== true || Platform.OS !== 'ios') return false
+  const now = Date.now()
+  if (criticalStatusMemo && now - criticalStatusMemo.at < CRITICAL_STATUS_TTL_MS) return criticalStatusMemo.value
+  const value = await getCriticalAlertStatus()
+  criticalStatusMemo = { at: now, value }
+  return value
+}
+
+/**
+ * Spec 054 (FR-008b): pede Critical Alerts. Um pedido só cobre os 3 estados do push: com push
+ * NOT_DETERMINED o iOS mostra 2 diálogos (push, depois crítico — S5); com push já decidido, só o
+ * do crítico (S4). Negado ⇒ false, sem throw e sem re-prompt (o iOS não pergunta de novo).
+ * @returns {Promise<boolean>} Critical Alerts autorizado
+ */
+export async function requestCriticalAlertPermission(): Promise<boolean> {
+  if (Platform.OS !== 'ios') return false
+  try {
+    const before = await notifee.getNotificationSettings().catch(() => null)
+    const settings = await notifee.requestPermission({ alert: true, sound: true, badge: true, criticalAlert: true })
+    invalidateCriticalAlertStatus()
+    const granted = settings?.ios?.criticalAlert === IOSNotificationSetting.ENABLED
+    _logPermissionDecisions(before, settings, granted)
+    return granted
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 065 US5 / 054: só emite o que foi DECISÃO nesta chamada. Com push NOT_DETERMINED o mesmo pedido
+ * mostra o diálogo do push antes do crítico (S5) — e o `ensurePushPermission` que roda depois já o
+ * encontra decidido e não emite. Sem isto a instalação nova pelo sheet some da métrica de cobertura.
+ * Fail-silent (CON-021). @private
+ */
+function _logPermissionDecisions(before, after, criticalGranted) {
+  if (!before) return
+  if (before.authorizationStatus === AuthorizationStatus.NOT_DETERMINED) {
+    const pushGranted = isPushUsable(after)
+    logEvent(pushGranted ? EVENTS.NOTIFICATION_PERMISSION_GRANTED : EVENTS.NOTIFICATION_PERMISSION_DENIED, { surface: SURFACES.MOBILE })
+  }
+  // -1 (`NOT_SUPPORTED` no enum) = ainda não perguntado (C-16): só então o diálogo apareceu.
+  if (before.ios?.criticalAlert === IOSNotificationSetting.NOT_SUPPORTED) {
+    logEvent(criticalGranted ? EVENTS.CRITICAL_ALERT_PERMISSION_GRANTED : EVENTS.CRITICAL_ALERT_PERMISSION_DENIED, { surface: SURFACES.MOBILE })
   }
 }
 
@@ -199,8 +382,10 @@ export async function ensureAlarmCriticalChannel() {
   if (Platform.OS !== 'android') return false
   if (criticalChannelEnsured) return true
   try {
+    // 054 C-26: nome/descrição são mutáveis (recriar o mesmo id atualiza); som/importância não.
     await Notifications.setNotificationChannelAsync(ALARM_CRITICAL_CHANNEL_ID, {
-      name: 'Alarmes críticos de dose',
+      name: CRITICAL_ALARM_CHANNEL_NAME,
+      description: CRITICAL_ALARM_CHANNEL_DESCRIPTION,
       importance: Notifications.AndroidImportance.HIGH,
       sound: SOUND_IOS, // expo resolve res/raw pelo nome com extensão (padrão ensurePushChannel)
       enableVibrate: true,
@@ -225,7 +410,8 @@ export async function ensureAlarmCriticalChannel() {
 async function ensureLegacyCriticalChannel() {
   await notifee.createChannel({
     id: LEGACY_CRITICAL_CHANNEL_ID,
-    name: 'Alarmes críticos de dose',
+    name: CRITICAL_ALARM_CHANNEL_NAME,
+    description: CRITICAL_ALARM_CHANNEL_DESCRIPTION,
     importance: AndroidImportance.HIGH,
     sound: SOUND_ANDROID,
     vibration: true,
@@ -363,7 +549,9 @@ function getAlarmCopy({ medicineName, data }) {
 
 // Monta o objeto de notificação compartilhado por agendamento e nag.
 // isCritical: só o iOS diferencia. Android = canal único resolvido (062 D-2); deve rodar após ensureAlarmSetup.
-function buildNotification({ doseInstanceId, medicineName, data, notificationId }: { doseInstanceId: string, medicineName?: string, data?: Record<string, unknown>, notificationId: string, isCritical?: boolean }) {
+// Spec 054: `critical` exige dose crítica E autorização (C-1) — sem ela o iOS descartaria tudo.
+function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false, criticalAuthorized = false }: { doseInstanceId: string, medicineName?: string, data?: Record<string, unknown>, notificationId: string, isCritical?: boolean, criticalAuthorized?: boolean }) {
+  const critical = isCritical === true && criticalAuthorized === true
   const { title, body } = getAlarmCopy({ medicineName, data })
   const sanitizedData: Record<string, string> = {}
   if (data) {
@@ -405,12 +593,8 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId 
     },
     ios: {
       sound: SOUND_IOS,
-      // Temporariamente forçando timeSensitive para critical_alarm enquanto o entitlement
-      // com.apple.developer.usernotifications.critical-alerts está em aprovação pela Apple.
-      // Com 'critical', se o entitlement não estiver presente no profile de provisionamento,
-      // o iOS rejeita a notificação inteira silenciosamente.
-      interruptionLevel: IOS_INTERRUPTION_LEVEL,
-      // critical: true, // Desativado até obter o entitlement
+      interruptionLevel: critical ? ('critical' as const) : IOS_INTERRUPTION_LEVEL,
+      ...(critical ? { critical: true, criticalVolume: CRITICAL_VOLUME } : {}),
       categoryId: ALARM_CHANNEL_ID, // ações registradas em ensureAlarmCategories (T015)
       // iOS suprime som/banner de notif quando o app está em foreground por padrão.
       // Declarar pra o alarme tocar/aparecer mesmo com o app aberto (paridade Android).
@@ -470,6 +654,7 @@ export async function scheduleAlarm({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
+    criticalAuthorized: await _criticalAuthorizedFor(isCritical),
     // C-25: re-arme da soneca pelo resync mantém a contagem (senão o teto MAX_SNOOZE_ATTEMPTS zera).
     data: { ...data, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, isCritical, nagAttempt: '0', snoozeAttempt: (data as any)?.snoozeAttempt ?? '0' },
   })
@@ -539,6 +724,7 @@ export async function scheduleNag({
     medicineName,
     notificationId: `${doseInstanceId}:nag:${next}`,
     isCritical,
+    criticalAuthorized: await _criticalAuthorizedFor(isCritical),
     data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: String(next) },
   })
 
@@ -708,6 +894,7 @@ export async function scheduleSnooze({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
+    criticalAuthorized: await _criticalAuthorizedFor(isCritical),
     data: alarmData,
   })
 
@@ -818,4 +1005,9 @@ export const alarmService = {
   scheduleNag,
   scheduleSnooze,
   cancelAll,
+  getCriticalAlertStatus,
+  getCriticalAlertSetting,
+  getCriticalAlarmDeviceStatus,
+  requestCriticalAlertPermission,
+  invalidateCriticalAlertStatus,
 }

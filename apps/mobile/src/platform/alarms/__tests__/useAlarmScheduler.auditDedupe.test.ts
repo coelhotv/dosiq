@@ -24,6 +24,7 @@ jest.mock('../alarmService', () => ({
     cancelAll: jest.fn().mockResolvedValue(undefined),
     scheduleAlarm: jest.fn().mockResolvedValue(undefined),
     deleteLegacyChannels: jest.fn().mockResolvedValue(undefined),
+    migrateLegacyAlarmChannels: jest.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -94,5 +95,79 @@ describe('syncAlarms — dedupe do alarm_scheduled só persiste emits aceitos (0
     await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
 
     expect(persisted()).toEqual([])
+  })
+})
+
+// Spec 054 FR-005 (C-5 opção B): modo efetivo na 1ª emissão; dedupe intacto.
+describe('syncAlarms — detail.mode do alarm_scheduled (054)', () => {
+  const RN = require('react-native')
+  const ORIGINAL_OS = RN.Platform.OS
+  const { alarmService } = require('../alarmService')
+
+  afterEach(() => {
+    RN.Platform.OS = ORIGINAL_OS
+    delete alarmService.getCriticalAlertStatus
+  })
+
+  it('iOS autorizado ⇒ detail.mode critical', async () => {
+    RN.Platform.OS = 'ios'
+    alarmService.getCriticalAlertStatus = jest.fn().mockResolvedValue(true)
+    mockItems = [item('inst-1')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(mockEmit.mock.calls[0][0].detail).toEqual({ mode: 'critical' })
+  })
+
+  it('🔴 leitura do modo LANÇA ⇒ prova do 082 sai mesmo assim, sem detail', async () => {
+    RN.Platform.OS = 'ios'
+    alarmService.getCriticalAlertStatus = jest.fn().mockRejectedValue(new Error('x'))
+    mockItems = [item('inst-1')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(emittedIds()).toEqual(['inst-1'])
+    expect(mockEmit.mock.calls[0][0].detail).toBeUndefined()
+  })
+
+  it('Android ⇒ sem detail e sem consultar o status', async () => {
+    RN.Platform.OS = 'android'
+    alarmService.getCriticalAlertStatus = jest.fn()
+    mockItems = [item('inst-1')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(mockEmit.mock.calls[0][0].detail).toBeUndefined()
+    expect(alarmService.getCriticalAlertStatus).not.toHaveBeenCalled()
+  })
+})
+
+// 054 C-34: alarme que o aparelho sabe que não será entregue não vira prova do 082.
+describe('syncAlarms — sem prova quando o alarme não será entregue (054 C-34)', () => {
+  const { alarmService } = require('../alarmService')
+  afterEach(() => { delete alarmService.getCriticalAlarmDeviceStatus })
+
+  it('🔴 canal/notificações bloqueados ⇒ NÃO emite alarm_scheduled e não mexe no dedupe', async () => {
+    mockStore.set(SCHEDULED_AUDIT_KEY, JSON.stringify(['inst-1']))
+    alarmService.getCriticalAlarmDeviceStatus = jest.fn().mockResolvedValue({ kind: 'blocked', reason: 'channel' })
+    mockItems = [item('inst-1'), item('inst-2')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(mockEmit).not.toHaveBeenCalled()
+    expect(persisted()).toEqual(['inst-1'])
+    expect(alarmService.migrateLegacyAlarmChannels).toHaveBeenCalled()
+  })
+
+  it('degradado (toca, mas sem som/tela) ⇒ emite: o alarme chega', async () => {
+    alarmService.getCriticalAlarmDeviceStatus = jest.fn().mockResolvedValue({ kind: 'degraded', fix: 'settings', reason: 'channel_silenced' })
+    mockItems = [item('inst-1')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(emittedIds()).toEqual(['inst-1'])
+  })
+
+  it('🔴 leitura do status LANÇA ⇒ emite como antes (fail-open)', async () => {
+    alarmService.getCriticalAlarmDeviceStatus = jest.fn().mockRejectedValue(new Error('x'))
+    mockItems = [item('inst-1')]
+    mockEmit.mockResolvedValue({ ok: true })
+    await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
+    expect(emittedIds()).toEqual(['inst-1'])
   })
 })

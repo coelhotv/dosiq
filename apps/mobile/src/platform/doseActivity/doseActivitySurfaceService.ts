@@ -77,8 +77,9 @@ export async function ensureSurfaceChannel() {
   if (channelEnsured) return
   await notifee.createChannel({
     id: DOSE_ACTIVITY_CHANNEL_ID,
-    name: 'Dose crítica – acompanhamento',
-    description: 'Aviso fixo que acompanha sua dose com contagem e botões de Registrar/Adiar.',
+    // 054 C-26 (PO): "sem som" na descrição evita que a pessoa o desligue achando que é barulho.
+    name: 'Acompanhamento de doses críticas',
+    description: 'Aviso fixo e sem som com o tempo até a dose e os botões Registrar e Adiar',
     importance: AndroidImportance.HIGH, // HIGH: visível no status bar em MIUI/HyperOS (DEFAULT era silenciado)
     sound: undefined,
     vibration: false,

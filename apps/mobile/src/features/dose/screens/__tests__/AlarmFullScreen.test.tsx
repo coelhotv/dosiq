@@ -45,6 +45,12 @@ jest.mock('lucide-react-native', () => ({
   PillBottle: 'PillBottle',
 }))
 
+// 054 C-21: âncora local da soneca (spec 101). Default vazio ⇒ comportamento anterior.
+let mockAnchors: Record<string, number> = {}
+jest.mock('@platform/alarms/snoozeAnchorStore', () => ({
+  getSnoozeAnchors: () => Promise.resolve(mockAnchors),
+}))
+
 import AlarmFullScreen from '../AlarmFullScreen'
 import { emitDoseChanged } from '@platform/alarms/doseChangedBus'
 
@@ -67,6 +73,7 @@ const SINGLE = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockAnchors = {}
   mockIn.mockResolvedValue({ data: [{ id: 'inst-1', status: 'pending' }], error: null })
 })
 
@@ -215,5 +222,35 @@ describe('AlarmFullScreen — transparência clínica (US3/FR-006/007)', () => {
     expect(expectedQty).toMatch(/UI/)
     expect(expectedQty).not.toMatch(/un\./)
     expect(getByText(`Dose: ${expectedQty}`)).toBeTruthy()
+  })
+})
+
+// 054 C-21: soneca pela NOTIFICAÇÃO com a tela cheia aberta por baixo.
+describe('AlarmFullScreen — soneca feita fora da tela (054 C-21)', () => {
+  it('🔴 âncora de soneca no futuro ⇒ fecha SEM cancelar (a soneca armou o mesmo id)', async () => {
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalledTimes(1))
+    mockAnchors = { 'inst-1': Date.now() + 5 * 60 * 1000 }
+    emitDoseChanged()
+    await waitFor(() => expect(nav.goBack).toHaveBeenCalledTimes(1))
+    expect(mockCancelAlarm).not.toHaveBeenCalled()
+  })
+
+  it('🔴 alarme DA soneca disparou (âncora ~agora) ⇒ a tela que ele abriu NÃO fecha sozinha', async () => {
+    mockAnchors = { 'inst-1': Date.now() + 5 * 1000 }
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: SINGLE }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalled())
+    expect(nav.goBack).not.toHaveBeenCalled()
+  })
+
+  it('grupo: só fecha se TODAS as doses têm soneca futura', async () => {
+    mockAnchors = { a: Date.now() + 5 * 60 * 1000 }
+    mockIn.mockResolvedValue({ data: [{ id: 'a', status: 'pending' }, { id: 'b', status: 'pending' }], error: null })
+    const nav = makeNav()
+    render(<AlarmFullScreen navigation={nav} route={{ params: { ...SINGLE, isGrouped: 'true', doseInstanceId: '123', doseInstanceIds: 'a,b', groupedDoses: '[]' } }} />)
+    await waitFor(() => expect(mockIn).toHaveBeenCalled())
+    expect(nav.goBack).not.toHaveBeenCalled()
   })
 })
