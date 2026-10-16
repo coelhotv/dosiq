@@ -29,6 +29,9 @@ import {
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
+import CriticalAlarmCard from '@treatments/components/CriticalAlarmCard'
+import CriticalAlertPrimerSheet from '@treatments/components/CriticalAlertPrimerSheet'
+import { useCriticalAlarmToggle } from '@treatments/hooks/useCriticalAlarmToggle'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
 import { useProtocol } from '@treatments/hooks/useProtocols'
@@ -553,27 +556,29 @@ function DosageFrequencySection({ protocol, medicine, frequencyLabel, dailyIntak
   )
 }
 
+// 054 FR-009 (emenda 2026-10-14): o detalhe mostra o MESMO card do form, só leitura, com a faixa de
+// estado do aparelho — "agendado" no banco não diz se o alarme toca neste celular.
 function CriticalAlarmSection({ protocol }) {
+  const criticalToggle = useCriticalAlarmToggle({ setCritical: NOOP })
   return (
-    <SectionCard title="ALERTAS CRÍTICOS">
-      <View style={styles.criticalAlarmRow}>
-        <View style={styles.criticalAlarmText}>
-          <Text style={styles.detailLabel}>Alarme {protocol.critical_alarm ? 'agendado' : 'desligado'}</Text>
-          <Text style={styles.criticalAlarmHint}>
-            {protocol.critical_alarm
-              ? 'Toca mesmo no silencioso.'
-              : 'Use para as doses que não podem ser esquecidas.'}
-          </Text>
-        </View>
-        <View style={[styles.criticalAlarmBadge, protocol.critical_alarm && styles.criticalAlarmBadgeOn]}>
-          <Text style={[styles.criticalAlarmBadgeText, protocol.critical_alarm && styles.criticalAlarmBadgeTextOn]}>
-            {protocol.critical_alarm ? 'Ligado' : 'Desligado'}
-          </Text>
-        </View>
-      </View>
-    </SectionCard>
+    <>
+      <CriticalAlarmCard
+        readOnly
+        criticalAlarm={!!protocol.critical_alarm}
+        onRequestPermission={criticalToggle.requestCritical}
+        style={styles.criticalAlarmCard}
+      />
+      <CriticalAlertPrimerSheet
+        visible={criticalToggle.primerVisible}
+        pushDenied={criticalToggle.pushDenied}
+        onContinue={criticalToggle.onPrimerContinue}
+        onDismiss={criticalToggle.onPrimerDismiss}
+      />
+    </>
   )
 }
+
+const NOOP = () => {}
 
 function DetailRow({ label, value, valueMuted = false }) {
   return (
@@ -585,6 +590,8 @@ function DetailRow({ label, value, valueMuted = false }) {
 }
 
 const styles = StyleSheet.create({
+  // Alinha com os SectionCard do detalhe (marginHorizontal 16 + marginBottom 4).
+  criticalAlarmCard: { marginHorizontal: 16, marginBottom: spacing[4] },
   scroll: {
     paddingHorizontal: spacing[4],
     paddingBottom: spacing[10],
@@ -785,38 +792,6 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     paddingVertical: spacing[2],
     lineHeight: 18,
-  },
-  criticalAlarmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing[2],
-    gap: spacing[3],
-  },
-  criticalAlarmText: {
-    flex: 1,
-    gap: 2,
-  },
-  criticalAlarmHint: {
-    fontSize: 12,
-    color: colors.text.muted,
-    lineHeight: 18,
-  },
-  criticalAlarmBadge: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
-    borderRadius: 999,
-    backgroundColor: colors.neutral[100],
-  },
-  criticalAlarmBadgeOn: {
-    backgroundColor: (colors.status as any)?.warningSoft ?? colors.neutral[100],
-  },
-  criticalAlarmBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  criticalAlarmBadgeTextOn: {
-    color: colors.status?.warning ?? colors.text.primary,
   },
   deleteBtn: {
     flexDirection: 'row',

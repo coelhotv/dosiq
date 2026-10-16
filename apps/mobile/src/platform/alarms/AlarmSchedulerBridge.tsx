@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState, Platform } from 'react-native'
-import notifee, { EventType, AuthorizationStatus } from '@notifee/react-native'
+import notifee, { EventType, IOSNotificationSetting } from '@notifee/react-native'
 import {
   getTodayLocal,
   getRawNow,
@@ -31,7 +31,7 @@ import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { emitReminderOpened, localReminderSource } from '@platform/analytics/reminderEvents'
 import { onAlarmResync } from './alarmResyncBus'
-import { cancelAlarm } from './alarmService'
+import { cancelAlarm, invalidateCriticalAlertStatus, isPushUsable } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
 import {
   isAlarmNotification,
@@ -98,10 +98,11 @@ async function flushCriticalAudit(userId, consentSuppressed = false) {
         .filter((a) => a.doseInstanceId)
       if (alarms.length) {
         const settings = await notifee.getNotificationSettings()
-        const status = settings?.authorizationStatus
-        const permissionGranted =
-          status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL
-        const derived = deriveIosAlarmOutcome({ alarms, permissionGranted, userId })
+        // 054 C-23: status AUTHORIZED com alerta desligado (só crítico) não é push utilizável.
+        const permissionGranted = isPushUsable(settings)
+        // 054 C-11: o crítico autorizado toca mesmo com o push negado (S6) — não é `alarm_suppressed`.
+        const criticalAuthorized = settings?.ios?.criticalAlert === IOSNotificationSetting.ENABLED
+        const derived = deriveIosAlarmOutcome({ alarms, permissionGranted, userId, criticalAuthorized })
         // Dedupe: só enfileira desfechos ainda não vistos (evita duplicata a cada foreground).
         const fresh = await filterUnseenDerived(derived)
         for (const evt of fresh) await auditQueue.enqueue(evt)
@@ -354,6 +355,9 @@ export default function AlarmSchedulerBridge() {
     promoteActiveAlarm()
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
+      // 054 T006 (C-9): o usuário pode ter mudado Critical Alerts em Ajustes. O `load()` abaixo já
+      // re-sincroniza tudo; descartar o memo garante que o sync releia o SO (sem resync extra/loop).
+      invalidateCriticalAlertStatus()
       load()
       flushCriticalAudit(userId, consentSuppressed) // 042 Slice B: deriva iOS + drena fila offline no foreground
       promoteActiveAlarm()

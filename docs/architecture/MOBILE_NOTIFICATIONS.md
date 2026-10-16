@@ -260,8 +260,26 @@ terminam em `alarmService.scheduleSnooze`: +5 min a partir de `max(agora, horár
 tentativa), âncora gravada local e no banco (`snoozed_until`), superfície/LA saem de cena até a volta.
 Matriz completa por entrada, plataforma e estado do app: [DOSE_ACTIONS.md](./DOSE_ACTIONS.md).
 
-No iOS, sem o entitlement de Critical Alert, o alarme local toca **uma vez** e respeita o silencioso
-(P-9) — paridade com o Android é a spec 054.
+No iOS, sem autorização de Critical Alert, o alarme local toca **uma vez** e respeita o silencioso
+(P-9) — paridade com o Android é a spec 054 (contratos abaixo).
+
+### Critical Alerts (iOS) — contratos de plataforma verificados
+
+Medidos em iPhone (build `device` 0.33.28, entitlement no profile — spec 054 F1, T004a, 2026-10-14).
+Política de uso: ADR-086. Fonte para qualquer desenho que dependa destes comportamentos.
+
+| # | Situação | Comportamento medido | Consequência no código |
+|---|---|---|---|
+| S1' | `critical: true` com entitlement, autorização `criticalAlert` **NOT_DETERMINED** | iOS **descarta a notificação inteira** — nem banner, nem som | a flag só sai com a autorização lida no agendamento (ADR-086 §3) |
+| S1'' | idem, autorização **AUTHORIZED** | toca alto no silencioso + Foco | — |
+| S2 | trigger **já agendado** com `critical: true`, autorização revogada em Ajustes antes do disparo | **rebaixado, não descartado** (C-30, smoke 3.11/3.11b/3.11c 2026-10-15): chega como sensível ao tempo ("RELEVANTE"), mudo; sem Foco vira banner, com Foco fica só na Central. O "descartado" do spike original (setup não registrado) foi o Foco escondendo | reagendar no retorno ao foreground; janela até lá declarada (ADR-086 §3, emenda 2026-10-14) |
+| S3 | `getNotificationSettings()` no handler headless (ação com app fechado) | responde, com `ios.criticalAlert` preenchido | nag/soneca headless leem a autorização na hora; não dependem de cache de módulo |
+| S4 | `requestPermission({ criticalAlert: true })` com push já autorizado | **um** prompt, só do alerta crítico | sheet in-app antes do prompt (R-233) |
+| S5 | instalação do zero, tudo NOT_DETERMINED, pedido único `alert+sound+badge+criticalAlert` | **dois diálogos em sequência**: 1º push, 2º alerta crítico; aceitos → tudo AUTHORIZED | sheet explicativo ANTES dos dois diálogos (T007) |
+| S6 | push **negado** + pedido crítico aceito (`authorizationStatus/alert/sound: DENIED`, `criticalAlert: AUTHORIZED`) | o diálogo crítico aparece mesmo assim; o alarme crítico local **é entregue e toca alto** | `criticalAlert` é independente do push: "entregue" no iOS = `alert` OU (`isCritical` E `criticalAlert`) autorizado |
+| S7 (smoke 054, 2026-10-14) | só crítico autorizado (alerta DESLIGADO) · alarme crítico entregue · "Tomei"/soneca no app ⇒ `cancelNotification(id)` (`removeDeliveredNotificationsWithIdentifiers`) | a notificação **continua na Central**; o banco confirma a ação na instância certa. Com o alerta LIGADO, o mesmo "Tomei" a remove | sem alerta autorizado o app não limpa a própria Central — limite do iOS, sem contorno por API. Também: nesse estado o `authorizationStatus` é AUTHORIZED com `alert` DISABLED — push efetivo exige `alert` (C-23) |
+
+`ios.timeSensitive` não é exposto pelo `getNotificationSettings()` do notifee (vem ausente).
 
 ### Gerenciamento de Estado dos Alarmes
 

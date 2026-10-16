@@ -31,7 +31,9 @@ async function ensureDefaultChannel() {
   if (defaultEnsured) return
   try {
     await Notifications.setNotificationChannelAsync(PUSH_CHANNEL_ID, {
-      name: 'Lembretes e avisos',
+      // 054 C-26 (PO): nome e descrição lidos em Ajustes do Android.
+      name: 'Notificações de doses comuns e relatórios',
+      description: 'Avisos e notificações padrão do dosiq',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'push_chime.wav', // res/raw/push_chime.wav (bundlado via plugin sounds)
       vibrationPattern: [0, 250, 250, 250],
@@ -46,7 +48,8 @@ async function ensureCriticalChannel() {
   if (criticalEnsured) return
   try {
     await Notifications.setNotificationChannelAsync(ANDROID_PUSH_CHANNEL.CRITICAL, {
-      name: 'Avisos de dose essencial',
+      name: 'Notificações de doses críticas',
+      description: 'Notificação extra pela internet para doses críticas, caso o alarme não toque',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'alarm_dose.wav', // mesmo som do alarme local (alarmService, canal -v3)
       enableVibrate: true,

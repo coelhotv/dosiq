@@ -11,6 +11,7 @@ import {
   Modal,
   FlatList,
   AppState,
+  Platform,
 } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
@@ -18,12 +19,14 @@ const { Bell, Smartphone, Send, Globe, ChevronRight, Check, AlertTriangle } = Lu
 import { useFocusEffect } from '@react-navigation/native'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { useProfile } from '@profile/hooks/useProfile'
-import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { getPushPermissionStatus, getPushChannelState, enablePushAtIntent, requestPushOrOpenSettings } from '@platform/notifications/pushPermission'
 import { registerPushToken } from '@platform/notifications/registerPushToken'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { updateNotificationSettings } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
-import AlarmToggleSection from '@profile/components/AlarmToggleSection'
+import CriticalAlarmCard from '@treatments/components/CriticalAlarmCard'
+import CriticalAlertPrimerSheet from '@treatments/components/CriticalAlertPrimerSheet'
+import { useCriticalAlarmToggle } from '@treatments/hooks/useCriticalAlarmToggle'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { parseLocalDate } from '@dosiq/core'
@@ -168,14 +171,17 @@ function TimePicker({ value, onChange, label }) {
 function NotificationChannelsSection({
   mobilePushEnabled,
   hasPermission,
+  channelState,
   webPushEnabled,
   isTelegramConnected,
   onMobilePushToggle,
   onTelegramPress,
 }) {
+  // 054 C-31: canal do push comum desligado no Android = bloqueado, mesmo com a permissão geral.
+  const channelBlocked = hasPermission && channelState === 'blocked'
   return (
     <View style={styles.card}>
-      {!hasPermission ? (
+      {!hasPermission || channelBlocked ? (
         // Bloqueado no SO: linha em destaque âmbar, tocável → abre Configurações
         // (via onMobilePushToggle → Alert/openSettings). Chip "Ativar" deixa a
         // ação óbvia para a dona Maria.
@@ -184,13 +190,19 @@ function NotificationChannelsSection({
           onPress={() => onMobilePushToggle(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Notificações no celular bloqueadas. Toque para ativar nas Configurações."
+          accessibilityLabel={channelBlocked
+            ? 'Notificações de doses comuns desligadas. Toque para ativar nas Configurações.'
+            : 'Notificações no celular bloqueadas. Toque para ativar nas Configurações.'}
         >
           <View style={styles.rowLeft}>
             <AlertTriangle size={20} color={colors.status.warning} strokeWidth={2} />
             <View style={styles.flexShrink}>
               <Text style={styles.rowLabel}>Celular</Text>
-              <Text style={styles.rowHintWarning}>Bloqueado — toque para ativar nas Configurações</Text>
+              <Text style={styles.rowHintWarning}>
+                {channelBlocked
+                  ? 'Doses comuns desligadas em Ajustes — toque para ativar'
+                  : 'Bloqueado — toque para ativar nas Configurações'}
+              </Text>
             </View>
           </View>
           <View style={styles.activateChip}>
@@ -201,7 +213,12 @@ function NotificationChannelsSection({
         <View style={styles.channelRow}>
           <View style={styles.rowLeft}>
             <Smartphone size={20} color={colors.brand.primary} strokeWidth={2} />
-            <Text style={styles.rowLabel}>Celular</Text>
+            <View style={styles.flexShrink}>
+              <Text style={styles.rowLabel}>Celular</Text>
+              {channelState === 'silenced' ? (
+                <Text style={styles.rowHint}>Chegam sem som. Ative o som em Ajustes.</Text>
+              ) : null}
+            </View>
           </View>
           <Switch
             value={mobilePushEnabled}
@@ -285,7 +302,7 @@ function NotificationModeSection({ notificationMode, onModeSelect }) {
 
 // Render principal da tela de preferências (pós-carregamento)
 function NotificationPreferencesContent({
-  navigation, mobilePushEnabled, hasPermission, webPushEnabled, isTelegramConnected,
+  navigation, mobilePushEnabled, hasPermission, channelState, webPushEnabled, isTelegramConnected,
   showChannelWarning, notificationMode, digestTime, quietHoursEnabled, quietHoursStart, quietHoursEnd,
   handleMobilePushToggle, handleTelegramPress, handleModeSelect,
   handleQuietHoursToggle, setDigestTime, setQuietHoursStart, setQuietHoursEnd, persist,
@@ -318,7 +335,7 @@ function NotificationPreferencesContent({
 
         <Text style={styles.sectionLabel}>CANAIS DE AVISO</Text>
         <NotificationChannelsSection
-          mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission}
+          mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission} channelState={channelState}
           webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
           onMobilePushToggle={handleMobilePushToggle} onTelegramPress={handleTelegramPress}
         />
@@ -329,8 +346,9 @@ function NotificationPreferencesContent({
           </Text>
         )}
 
-        {/* Alarme nativo persistente (Spec 001) — toggle auto-contido, default OFF. */}
-        <AlarmToggleSection />
+        {/* 054 C-24: estado GLOBAL do alarme crítico neste aparelho — mesmo card/faixa do tratamento. */}
+        <Text style={styles.sectionLabel}>ALARME CRÍTICO</Text>
+        <GlobalCriticalAlarmCard />
 
         <Text style={styles.sectionLabel}>MODO DE ENVIO</Text>
         <NotificationModeSection
@@ -362,6 +380,23 @@ function NotificationPreferencesContent({
         <View style={{ height: spacing[8] }} />
       </ScrollView>
     </ScreenContainer>
+  )
+}
+
+// 054 C-24: card global (sem toggle — o alarme crítico liga por tratamento) + sheet do pedido.
+const NOOP = () => {}
+function GlobalCriticalAlarmCard() {
+  const criticalToggle = useCriticalAlarmToggle({ setCritical: NOOP })
+  return (
+    <>
+      <CriticalAlarmCard scope="global" criticalAlarm onRequestPermission={criticalToggle.requestCritical} />
+      <CriticalAlertPrimerSheet
+        visible={criticalToggle.primerVisible}
+        pushDenied={criticalToggle.pushDenied}
+        onContinue={criticalToggle.onPrimerContinue}
+        onDismiss={criticalToggle.onPrimerDismiss}
+      />
+    </>
   )
 }
 
@@ -415,6 +450,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00')
   const [digestTime, setDigestTime] = useState('07:00')
   const [hasPermission, setHasPermission] = useState(false)
+  const [channelState, setChannelState] = useState('ok')
   // Ref de permissão (R-010: declarado junto aos states, antes de effects/handlers).
   // null = ainda não sabido; usado p/ agir só na transição negado→concedido.
   const wasGrantedRef = useRef(null)
@@ -441,7 +477,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
     })
   }, [settings])
 
-  const hasAnyChannel = (mobilePushEnabled && hasPermission) || isTelegramConnected || webPushEnabled
+  const hasAnyChannel = (mobilePushEnabled && hasPermission && channelState !== 'blocked') || isTelegramConnected || webPushEnabled
   const showChannelWarning = !hasAnyChannel
 
   // Salvar no banco (debounce manual: chama após cada alteração)
@@ -473,6 +509,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       // Leitura PURA do status — NUNCA dispara o prompt do SO.
       const { granted } = await getPushPermissionStatus()
       setHasPermission(granted)
+      setChannelState(await getPushChannelState())
       // Transição real negado→concedido (ex.: voltou das Configs do SO autorizando):
       // registra o device E liga o canal — autorizar é intenção clara de receber push.
       // userId explícito evita getUser() redundante (já temos user do useAuth).
@@ -505,7 +542,16 @@ export default function NotificationPreferencesScreen({ navigation }) {
   }, [checkPermission])
 
   async function handleMobilePushToggle(val) {
-    if (val && !hasPermission) {
+    // C-31: canal desligado só volta pelos Ajustes do Android (o app não reativa canal).
+    if (val && hasPermission && channelState === 'blocked') {
+      Linking.openSettings()
+      return
+    }
+    if (val && !hasPermission && Platform.OS === 'android') {
+      // 054 C-33: no Android sempre pede (o canAskAgain do expo erra); sem diálogo ⇒ Ajustes.
+      if (!(await requestPushOrOpenSettings({ supabase }))) return
+      setHasPermission(true)
+    } else if (val && !hasPermission) {
       // Ponto de intenção: pede permissão e registra o token se concedido.
       const { granted, blocked } = await enablePushAtIntent({ supabase })
       if (!granted) {
@@ -544,7 +590,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
   return (
     <NotificationPreferencesContent
       navigation={navigation}
-      mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission}
+      mobilePushEnabled={mobilePushEnabled} hasPermission={hasPermission} channelState={channelState}
       webPushEnabled={webPushEnabled} isTelegramConnected={isTelegramConnected}
       showChannelWarning={showChannelWarning} notificationMode={notificationMode}
       digestTime={digestTime} quietHoursEnabled={quietHoursEnabled}
@@ -663,8 +709,9 @@ const styles = StyleSheet.create({
   },
   channelRowBlocked: {
     // Banda âmbar preenchendo todo o row (full-width); conteúdo segue no padding
-    // padrão do channelRow, alinhado com Telegram/Web.
-    backgroundColor: colors.supplement[50],
+    // padrão do channelRow, alinhado com Telegram/Web. 054: mesmo fundo de alerta da faixa do
+    // card do alarme crítico (status.warningLight) — supplement[50] é a cor de suplemento, não de alerta.
+    backgroundColor: colors.status.warningLight,
   },
   activateChip: {
     backgroundColor: colors.status.warning,

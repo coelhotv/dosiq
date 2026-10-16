@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 import { AlarmSection } from '@features/_dev/sections/AlarmSection'
+import { NotificationPermissionsSection } from '@features/_dev/sections/NotificationPermissionsSection'
 import { TreatmentSection } from '@features/_dev/sections/TreatmentSection'
 import { SessionSection } from '@features/_dev/sections/SessionSection'
 import { LayoutSection } from '@features/_dev/sections/LayoutSection'
@@ -38,6 +39,7 @@ export default function DevHubScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.legend}>🔴 = grava em dados reais da conta logada</Text>
         <AlarmSection />
+        <NotificationPermissionsSection />
         <TreatmentSection />
         <SessionSection />
         <LayoutSection />

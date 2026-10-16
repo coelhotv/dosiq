@@ -20,14 +20,17 @@ const notifee = {
   getTriggerNotificationIds: jest.fn(() => Promise.resolve(null)),
   deleteChannel: jest.fn(() => Promise.resolve()),
   getChannel: jest.fn(() => Promise.resolve(null)),
+  // Spec 054: sem `ios` ⇒ Critical Alerts não autorizado (modo normal) por default.
+  getNotificationSettings: jest.fn(() => Promise.resolve({ authorizationStatus: 1 })),
 }
 
-const AndroidImportance = { HIGH: 4, DEFAULT: 3, LOW: 2 }
+const AndroidImportance = { HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1, NONE: 0 }
 const AndroidVisibility = { PUBLIC: 1, PRIVATE: 0, SECRET: -1 }
 const AndroidCategory = { ALARM: 'alarm' }
 const TriggerType = { TIMESTAMP: 0, INTERVAL: 1 }
 const EventType = { DISMISSED: 0, PRESS: 1, ACTION_PRESS: 2, DELIVERED: 3 }
 const AuthorizationStatus = { NOT_DETERMINED: -1, DENIED: 0, AUTHORIZED: 1, PROVISIONAL: 2 }
+const IOSNotificationSetting = { NOT_SUPPORTED: -1, DISABLED: 0, ENABLED: 1 }
 
 module.exports = {
   __esModule: true,
@@ -38,4 +41,5 @@ module.exports = {
   TriggerType,
   EventType,
   AuthorizationStatus,
+  IOSNotificationSetting,
 }

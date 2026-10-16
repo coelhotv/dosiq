@@ -165,7 +165,7 @@ Ferramentas de desenvolvimento e smoke. Ligadas por `DEV_TOOLS_ENABLED` (`_dev/d
 
 - **Uma seção por domínio** em `_dev/sections/` (hoje: Alarmes, Tratamento, Sessão, Layout), nunca por número de spec; a spec de origem vai na `note` da seção.
 - Botão que grava em dados reais da conta logada declara `writesData` → marca 🔴.
-- **Gatilho de spike tem prazo:** entra com a spec e sai no C5 dela (seção, arquivo de gatilho, rota e qualquer `require` fora de `_dev/`). Código de produção não importa nada de `_dev/`, exceto o `DevBadge`.
+- **Gatilho de spike tem prazo:** entra com a spec e sai no C5 dela (seção, arquivo de gatilho, rota e qualquer `require` fora de `_dev/`). Código de produção não importa nada de `_dev/`, exceto o `DevBadge` e, durante um spike ativo, um gancho marcado ⏳ com a condição LITERAL `__DEV__ || process.env.EXPO_PUBLIC_DEV_TOOLS === '1'` (o Metro corta o `require` da loja) — que sai junto com o spike.
 - Erros de gatilho vão para `Alert` com o motivo, nunca para uma promise solta (o botão pareceria inerte).
 - ⚠️ `EXPO_PUBLIC_DEV_TOOLS` vive **só** no `env` do profile `device`. Nunca em `.env`/shell: `eas update` (OTA) lê o env local, não o do profile — um OTA para `production` publicado com a variável setada levaria o DevHub à loja.
 

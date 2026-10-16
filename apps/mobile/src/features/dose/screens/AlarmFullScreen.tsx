@@ -18,6 +18,9 @@ import { registerTaken, registerSkip } from '@platform/alarms/quickDoseRegistrat
 import { SURFACES, REMINDER_SOURCES } from '@platform/analytics/analyticsEvents'
 import { scheduleSnooze, cancelAlarm } from '@platform/alarms/alarmService'
 import { onDoseChanged } from '@platform/alarms/doseChangedBus'
+import { getSnoozeAnchors } from '@platform/alarms/snoozeAnchorStore'
+
+const SNOOZE_CLOSE_MARGIN_MS = 60 * 1000
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
 
@@ -38,6 +41,21 @@ function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClo
         ? (doseInstanceIds ? String(doseInstanceIds).split(',').filter(Boolean) : [])
         : (doseInstanceId ? [doseInstanceId] : [])
       if (ids.length === 0) return
+      // 054 C-21: soneca feita FORA desta tela (botão da notificação, Live Activity) mantém a dose
+      // `pending` — a leitura do banco abaixo nunca fecharia. A âncora LOCAL da soneca (spec 101) diz
+      // que ela foi aceita: offline, sem rede. NÃO cancela nada aqui — a soneca acabou de armar o
+      // próximo disparo com o MESMO id. Folga de 1 min: quando o alarme da soneca dispara, a âncora
+      // é ~agora, e a tela aberta por ele não pode se fechar sozinha.
+      try {
+        const anchors = await getSnoozeAnchors()
+        const now = Date.now()
+        if (ids.every((id) => (anchors[id] ?? 0) > now + SNOOZE_CLOSE_MARGIN_MS)) {
+          if (!cancelled) onClose()
+          return
+        }
+      } catch {
+        /* âncora ilegível → segue para o banco */
+      }
       try {
         const { data: rows, error } = await supabase
           .from('dose_instances')

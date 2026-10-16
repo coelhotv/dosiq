@@ -50,7 +50,7 @@ describe('ensurePushChannel — canal comum (caracterização)', () => {
   it('cria o dosiq-default-v1 com push_chime e HIGH', async () => {
     await loadFresh().ensurePushChannel()
     expect(configOf(ANDROID_PUSH_CHANNEL.DEFAULT)).toMatchObject({
-      name: 'Lembretes e avisos',
+      name: 'Notificações de doses comuns e relatórios',
       importance: 6,
       sound: 'push_chime.wav',
     })
@@ -72,7 +72,7 @@ describe('ensurePushChannel — canal crítico (F3-B, D-10)', () => {
   it('cria o dosiq-critical-v1 espelhando o canal do alarme (alarm_dose, HIGH, USAGE_ALARM)', async () => {
     await loadFresh().ensurePushChannel()
     expect(configOf(ANDROID_PUSH_CHANNEL.CRITICAL)).toMatchObject({
-      name: 'Avisos de dose essencial',
+      name: 'Notificações de doses críticas',
       importance: 6,
       sound: 'alarm_dose.wav',
       enableVibrate: true,

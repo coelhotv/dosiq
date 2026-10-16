@@ -40,7 +40,47 @@ const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose n
 // só se a dose voltar a ser agendada, o que é um scheduling genuinamente novo).
 const SCHEDULED_AUDIT_KEY = '@dosiq/audit/alarm_scheduled_ids'
 
-async function emitScheduledDedupe(criticalIds, userId) {
+// 054 FR-005: modo efetivo do alarme crítico NESTE aparelho. Só o iOS tem modo crítico (Android ⇒
+// null, detail como antes). Leitura isolada e fail-open: jamais pode impedir a prova do 082.
+async function _scheduledMode(count): Promise<'critical' | 'normal' | null> {
+  if (Platform.OS !== 'ios' || count === 0) return null
+  try {
+    return (await alarmService.getCriticalAlertStatus()) ? 'critical' : 'normal'
+  } catch {
+    return null
+  }
+}
+
+// 054 C-34: o `alarm_scheduled` é a PROVA que faz o servidor suprimir o push crítico (082 Slice C).
+// Se o aparelho já sabe que o alarme não será entregue (notificações bloqueadas ou canal do alarme
+// desligado no Android), emitir a prova cala os dois avisos — medido no smoke: canal desligado +
+// prova ⇒ "suprimida_alarme" e nada chegou. Sem prova, o servidor manda o push. Fail-open: leitura
+// indisponível ou com erro ⇒ emite como antes (jamais travar a prova por falha de leitura).
+// Limite: prova JÁ emitida não é retirada ao bloquear depois — fica para o 082 Slice D.
+async function _alarmUndeliverable(): Promise<boolean> {
+  try {
+    const read = alarmService.getCriticalAlarmDeviceStatus
+    if (typeof read !== 'function') return false
+    return (await read())?.kind === 'blocked'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * `alarm_scheduled` do sync (spec 042), fail-open TOTAL. C-34: alarme que não vai chegar não vira
+ * prova; o dedupe fica intocado e a prova sai no primeiro sync depois do desbloqueio.
+ */
+async function _emitScheduledAudit(items, userId) {
+  try {
+    if (items.length > 0 && (await _alarmUndeliverable())) return
+    await emitScheduledDedupe(items.map((it) => it.instanceId), userId, await _scheduledMode(items.length))
+  } catch (err) {
+    if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
+  }
+}
+
+async function emitScheduledDedupe(criticalIds, userId, mode: 'critical' | 'normal' | null = null) {
   if (!userId || criticalIds.length === 0) {
     // Sem doses críticas agendadas: zera o set (próxima dose re-emite).
     try {
@@ -70,6 +110,8 @@ async function emitScheduledDedupe(criticalIds, userId) {
           event: 'alarm_scheduled',
           platform: Platform.OS,
           actor: 'system',
+          // 054 FR-005 (C-5): modo efetivo na 1ª emissão (o dedupe por id segue intacto — prova 082).
+          ...(mode ? { detail: { mode } } : {}),
         })
         .catch(() => ({ ok: false })),
     ),
@@ -250,11 +292,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
   // Auditoria (spec 042): emite `alarm_scheduled` uma vez por ocorrência crítica agendada.
   // `items` já está filtrado a critical+pending → usamos os instanceIds reais (não o id
   // sintético do grupo). Fail-open TOTAL: auditoria jamais pode quebrar o agendamento.
-  try {
-    await emitScheduledDedupe(items.map((it) => it.instanceId), userId)
-  } catch (err) {
-    if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
-  }
+  await _emitScheduledAudit(items, userId)
   // 062 D-3: apaga os canais Android legados. SÓ aqui — depois de cancelAll + re-agendamento no canal
   // vigente, nenhum trigger da versão antiga sobrou (RC3 E-1; soneca/nag headless não passam por aqui).
   // Fail-open total: limpeza de canal jamais pode quebrar o agendamento.

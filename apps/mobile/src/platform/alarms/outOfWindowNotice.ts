@@ -143,7 +143,7 @@ async function enqueueAnomaly({
  * versionado (R-261), então um literal aqui envelheceria no próximo bump e a notificação iria pra um
  * canal inexistente. Criar canal novo é
  * proibido: canal Android é imutável após criado (R-261) e um canal novo importaria a dívida de
- * ícone/marca do AP-251. O `dosiq-default-v1` ("Lembretes e avisos") seria o nome mais natural, mas
+ * ícone/marca do AP-251. O `dosiq-default-v1` ("Notificações de doses comuns e relatórios") seria o nome mais natural, mas
  * tem `push_chime.wav` — e um som novo no meio da noite por causa de um alarme que JÁ tocou errado
  * seria castigo, não informação.
  *

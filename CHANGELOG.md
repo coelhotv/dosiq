@@ -7,6 +7,39 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O alarme de dose crítica toca alto mesmo no silencioso e no Foco do iPhone (spec 054, fase F1)
+
+- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.27` → `0.33.38` como build intermediário — `0.33.28` a `0.33.37` foram builds de smoke; entra no pacote de loja
+  `0.34.0`; canal: **build de loja**, R-314 — funcionalidade nova). No iPhone, o alarme de tratamento marcado como
+  crítico usa os Alertas Críticos da Apple: toca alto (volume fixo) mesmo com o aparelho no silencioso ou em Foco, no
+  horário, na repetição e na soneca. Ao ligar o alarme crítico, o app explica antes o que vai pedir e então mostra o pedido
+  do iPhone. Quem já negou as notificações também pode ligar: o alarme crítico deste aparelho toca mesmo assim.
+  Sem a permissão, o alarme continua tocando como antes. O alarme crítico virou um card com ícone logo depois dos
+  Horários, no cadastro e na edição do tratamento, e o mesmo card aparece no detalhe do tratamento. Uma faixa embaixo
+  do card diz o que acontece neste aparelho: "Ativo"; "Fica mudo no silencioso e no Foco" quando o alarme crítico não está
+  permitido (com atalho para permitir ou para os Ajustes); ou "O alarme não vai tocar" quando as notificações estão
+  desligadas — numa instalação nova, em que as notificações ainda não foram perguntadas, o toque na faixa (e o "Ativar" das Preferências,
+  no Android) mostra o pedido do próprio celular em vez de mandar para os Ajustes; só vai aos Ajustes quando o celular
+  já não deixa perguntar. O fundo âmbar do aviso de notificações bloqueadas nas Preferências passou a ser o mesmo do card. Quando o
+  alarme não tem como chegar (notificações bloqueadas ou canal do alarme desligado), o app deixa de avisar o servidor que
+  o alarme está armado, e o lembrete crítico pela internet volta a ser enviado. No Android a faixa também aparece, a partir das notificações e do canal do alarme.
+  Em Preferências de notificação, o mesmo card (sem o botão de ligar, que fica em cada tratamento) mostra o estado do
+  alarme crítico no aparelho; quando as notificações estão desligadas, ele aponta para o "Ativar" da própria tela. O
+  aviso antigo "Configure em tratamentos" saiu. Adiar pela notificação com o alarme em tela cheia aberto agora fecha
+  a tela cheia. No Android, a faixa também avisa quando o canal do alarme está em "Silencioso" ou com "Exibir na tela" desligado (toca, mas não aparece), e os canais de
+  notificação em Ajustes ganharam nomes e descrições mais claros ("Alarme de doses críticas", "Notificações de doses
+  críticas", "Notificações de doses comuns e relatórios", "Acompanhamento de doses críticas"). Com o alarme crítico permitido e as notificações desligadas, a tela de Preferências não mostra mais as
+  notificações do celular como ligadas. No Android, "Celular" nas Preferências também aparece bloqueado quando só o canal "Notificações de doses comuns e relatórios" está desligado em Ajustes (antes dizia ligado e nada chegava), e avisa quando esse canal está em Silencioso. Lembretes enviados
+  pelo servidor não mudam. No Android, o aviso do passo extra de tela cheia (Android 14+ e Xiaomi) passa a aparecer na
+  mesma tela de baixo para cima, com "Abrir configurações" e "Fechar"; a permissão pedida não muda.
+- **Mobile** (`Fixed`, `patch`; mesmo build). A trilha de auditoria deixa de registrar como "suprimido" o alarme
+  crítico que tocou com as notificações do app negadas, e passa a registrar o modo (crítico ou normal) em que o alarme
+  foi agendado e entregue.
+- **Mobile** (`Added`, `patch`; mesmo build). Eventos de uso `critical_alert_permission_granted` e
+  `critical_alert_permission_denied` quando o iPhone mostra o pedido de Alertas Críticos; quando o mesmo pedido mostra
+  também o das notificações (instalação nova), `notification_permission_granted`/`denied` passam a ser registrados
+  (`docs/standards/TRACKING_PLAN.md`).
+
 ### A busca pela lista oficial da ANVISA pergunta a concentração e preenche dose, unidade e forma (spec 066, fatia C)
 
 - **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.22` → `0.33.27` só para build intermediário — `0.33.23` a `0.33.26` foram builds de
