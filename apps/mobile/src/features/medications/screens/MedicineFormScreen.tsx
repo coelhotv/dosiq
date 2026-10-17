@@ -3,14 +3,14 @@
 // Recebe `medicine` em route.params para modo edição. Sem param = modo criação.
 // ANVISA bottom sheet preenche campos automaticamente via setValues.
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { ScrollView, View, Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
-const { ChevronLeft } = LucideIcons as any
+const { ChevronLeft, ScanBarcode, ChevronRight } = LucideIcons as any
 import {
   medicineCreateSchema,
   MEDICINE_TYPES,
@@ -35,6 +35,10 @@ import FormActions from '@shared/components/form/FormActions'
 import { useMedicineMutation } from '@medications/hooks/useMedicineMutation'
 import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { MedicineAnvisaSheet } from '@medications/components/MedicineAnvisaSheet'
+import { MedicineCandidatesSheet } from '@medications/scan/MedicineCandidatesSheet'
+import { ROUTES } from '@navigation/routes'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 const TYPE_OPTIONS = MEDICINE_TYPES.map((value) => ({
@@ -101,6 +105,69 @@ function valuesFromDraft(base, draft, current) {
   }
 }
 
+// O que a caixa (busca 2C ou código de barras) muda no form além dos valores: guarda da dose
+// ambígua (INV-2), escolhas de 1 toque (C-C10) e a força de referência "Na embalagem" (D9).
+function draftExtras(draft) {
+  // Referência "Na embalagem": composto, ou força que o app não converte (C-C10, B8 "500 mg/").
+  const showStrength = !!draft.strengthLabel && (draft.strengthLabel.includes('+') || draft.dosage_per_pill === null)
+  return {
+    doseCheckRequired: draft.doseAmbiguous,
+    strengthChoices: draft.strengthChoices,
+    strengthLabel: showStrength ? draft.strengthLabel : null,
+  }
+}
+
+// 066 D1: origem do cadastro para o `medicine_added` (TRACKING_PLAN §5.3).
+function createSource(scanInfo, anvisaFilledLabel) {
+  if (scanInfo) return 'scan'
+  return anvisaFilledLabel ? 'anvisa_search' : 'manual'
+}
+
+// PO-11: só se a pessoa corrigiu a dose da caixa — nunca o valor.
+function scanDoseEdited(values, scanInfo) {
+  return (
+    String(values.dosage_per_pill ?? '') !== String(scanInfo.dosage_per_pill ?? '') ||
+    (values.dosage_unit ?? null) !== (scanInfo.dosage_unit ?? null)
+  )
+}
+
+// Nova leitura = novo objeto em `scanDraft` (popTo com merge); a mesma não se reaplica a cada render.
+function isNewScan(isEditing, scanDraft, appliedScanDraft) {
+  return !isEditing && !!scanDraft && scanDraft !== appliedScanDraft
+}
+
+function formTitle(isEditing, scanInfo) {
+  if (isEditing) return 'Editar Medicamento'
+  return scanInfo ? 'Confira antes de salvar' : 'Novo Medicamento'
+}
+
+// FR-017 / D11: o laboratório do genérico é da caixa, não do remédio — exibido, não guardado.
+function ScanGenericNote({ scanInfo }) {
+  if (!scanInfo?.isGeneric || !scanInfo.displayLaboratory) return null
+  return (
+    <View style={styles.genericBox}>
+      <Text style={styles.genericTitle}>Caixa desta vez: {scanInfo.displayLaboratory}</Text>
+      <Text style={styles.genericText}>
+        É genérico: de qualquer laboratório, é o mesmo remédio. Por isso o laboratório não fica guardado.
+      </Text>
+    </View>
+  )
+}
+
+// 066 D1: base do form a partir só da caixa lida (sem item da base ANVISA). O rascunho prevalece
+// em `valuesFromDraft`; aqui só o que ele não traz.
+function baseFromScan(draft, current) {
+  return {
+    ...current,
+    name: draft.name,
+    active_ingredient: draft.active_ingredient,
+    therapeutic_class: draft.therapeutic_class,
+    regulatory_category: draft.regulatory_category,
+    laboratory: draft.laboratory ?? '',
+    anvisa_registration: draft.anvisa_registration,
+  }
+}
+
 // eslint-disable-next-line max-lines-per-function
 export default function MedicineFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
@@ -119,6 +186,14 @@ export default function MedicineFormScreen() {
   const [doseChoiceError, setDoseChoiceError] = useState(false)
   // C5.3: o que veio da busca (card vira selo de origem + "Trocar") e a origem do medicine_added.
   const [anvisaFilledLabel, setAnvisaFilledLabel] = useState<string | null>(null)
+  // 066 D1 (RC3 A): o form é a confirmação do código de barras. `scanInfo` = caixa lida aplicada;
+  // `candidatesDecided` = a pergunta "É este que você já tem?" já foi respondida (ou não tinha candidato).
+  const [scanInfo, setScanInfo] = useState<any>(null)
+  const [appliedScanDraft, setAppliedScanDraft] = useState<any>(null)
+  const [candidatesDecided, setCandidatesDecided] = useState(false)
+  // C-D1-3: posição da seção "Identificação" para a volta "manual" do scanner.
+  const scrollRef = useRef<ScrollView>(null)
+  const identificationY = useRef(0)
   const medicine = route.params?.medicine ?? null
   const isEditing = !!medicine
 
@@ -163,8 +238,73 @@ export default function MedicineFormScreen() {
   const form = useFormState(medicineCreateSchema, { initialValues })
   const { create, update, isLoading } = useMedicineMutation()
 
+  // 066 D1: rascunho devolvido pelo scanner (popTo com `scanDraft`). Aplicado durante o render, uma
+  // vez por leitura (nova leitura = novo objeto). Todo campo segue editável (INV-6); nada é gravado aqui.
+  const scanDraft = route.params?.scanDraft ?? null
+  if (isNewScan(isEditing, scanDraft, appliedScanDraft)) {
+    setAppliedScanDraft(scanDraft)
+    form.setValues(valuesFromDraft(baseFromScan(scanDraft, form.values), scanDraft, form.values))
+    const extras = draftExtras(scanDraft)
+    setDoseCheckRequired(extras.doseCheckRequired)
+    setStrengthChoices(extras.strengthChoices)
+    setStrengthLabel(extras.strengthLabel)
+    setDoseChoiceError(false)
+    setItemForms([])
+    setShowAllForms(false)
+    setPresentationTouched(false)
+    setAnvisaFilledLabel([scanDraft.name, scanDraft.strengthLabel].filter(Boolean).join(' '))
+    setScanInfo(scanDraft)
+    setCandidatesDecided(false)
+  }
+
+  // Effects
+  // "Escanear caixa" da lista abre o form já com o scanner por cima; o form fica embaixo como o
+  // caminho manual e a confirmação (RC3 A).
+  const startScan = !!route.params?.startScan
+  useEffect(() => {
+    if (!startScan) return
+    navigation.setParams({ startScan: undefined })
+    navigation.navigate(ROUTES.MEDICINE_SCAN, { entryPoint: route.params?.scanEntryPoint ?? 'medicines_list' })
+  }, [startScan, navigation, route.params?.scanEntryPoint])
+
+  // C-D1-3: desistiu da caixa ("Digitar manualmente"/"Cadastrar digitando") ⇒ pula o card e vai ao form.
+  const manualEntry = route.params?.manualEntry
+  useEffect(() => {
+    if (!manualEntry) return
+    scrollRef.current?.scrollTo({ y: identificationY.current, animated: true })
+  }, [manualEntry])
+
   // Handlers
   const openSheet = useCallback(() => setSheetOpen(true), [])
+  const handleIdentificationLayout = useCallback((e) => {
+    identificationY.current = e.nativeEvent.layout.y
+  }, [])
+  const openScanner = useCallback(
+    () => navigation.navigate(ROUTES.MEDICINE_SCAN, { entryPoint: 'medicine_form' }),
+    [navigation]
+  )
+
+  // C-D1-2: o "Trocar" abre o sheet, que também oferece o código de barras.
+  const openScannerFromSheet = useCallback(() => {
+    setSheetOpen(false)
+    openScanner()
+  }, [openScanner])
+
+  // D-4 "Sim, é este": nada é criado, com estoque ligado ou não (PO 2026-10-16); volta a quem abriu.
+  const handleUseExisting = useCallback(
+    (existing) => {
+      setCandidatesDecided(true)
+      logEvent(EVENTS.SCAN_CONFIRMED, { surface: SURFACES.MOBILE, used_existing: true, dose_edited: false })
+      Alert.alert('Você já tem este remédio', `Vamos usar "${existing?.name ?? 'o remédio escolhido'}". Nada novo foi criado.`, [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ])
+    },
+    [navigation]
+  )
+  const handleCreateNew = useCallback(() => setCandidatesDecided(true), [])
+  const handleNoCandidates = useCallback(() => setCandidatesDecided(true), [])
+  // ✕ no sheet: sai do cadastro sem gravar nada (INV-1).
+  const handleCandidatesClose = useCallback(() => navigation.goBack(), [navigation])
   const closeSheet = useCallback(() => setSheetOpen(false), [])
 
   // 066 Slice C: o sheet devolve { anvisaItem, cmedDraft? }. Com caixa escolhida no passo 2, o
@@ -195,14 +335,15 @@ export default function MedicineFormScreen() {
       )
       setItemForms(draft ? [] : forms)
       setShowAllForms(false)
+      // Trocar pela busca descarta a caixa lida antes (o form deixa de ser "lido pelo código").
+      setScanInfo(null)
       if (draft) {
         form.setValues(valuesFromDraft(base, draft, form.values))
-        setDoseCheckRequired(draft.doseAmbiguous)
-        setStrengthChoices(draft.strengthChoices)
+        const extras = draftExtras(draft)
+        setDoseCheckRequired(extras.doseCheckRequired)
+        setStrengthChoices(extras.strengthChoices)
         setDoseChoiceError(false)
-        // Referência "Na embalagem": composto, ou força que o app não converte (C-C10, B8 "500 mg/").
-        const showStrength = !!draft.strengthLabel && (draft.strengthLabel.includes('+') || draft.dosage_per_pill === null)
-        setStrengthLabel(showStrength ? draft.strengthLabel : null)
+        setStrengthLabel(extras.strengthLabel)
         setPresentationTouched(false)
       } else {
         const presentation = forms.length === 1 && !presentationTouched ? forms[0] : undefined
@@ -287,6 +428,11 @@ export default function MedicineFormScreen() {
       Alert.alert('Verifique o formulário', 'Escolha a concentração do remédio.')
       return
     }
+    // FM-7: a pergunta "É este que você já tem?" ainda não teve resposta (lista chegando).
+    if (scanInfo && !candidatesDecided) {
+      Alert.alert('Um momento', 'Estamos conferindo se você já tem este remédio.')
+      return
+    }
     if (!form.validate()) {
       // Anti-silent-no-op (smoke iOS 022): nunca falhar sem feedback. Mostra 1º erro.
       // form.errors fica stale neste tick (setErrors async); reparse p/ msg precisa.
@@ -316,9 +462,16 @@ export default function MedicineFormScreen() {
     if (isEditing) {
       await update(medicine.id, payload, { goBack: true })
     } else {
-      await create(payload, { goBack: true, source: anvisaFilledLabel ? 'anvisa_search' : 'manual' })
+      if (scanInfo) {
+        logEvent(EVENTS.SCAN_CONFIRMED, {
+          surface: SURFACES.MOBILE,
+          used_existing: false,
+          dose_edited: scanDoseEdited(form.values, scanInfo),
+        })
+      }
+      await create(payload, { goBack: true, source: createSource(scanInfo, anvisaFilledLabel) })
     }
-  }, [form, isEditing, medicine, create, update, anvisaFilledLabel, doseCheckRequired])
+  }, [form, isEditing, medicine, create, update, anvisaFilledLabel, doseCheckRequired, scanInfo, candidatesDecided])
 
   const handleStrengthChoice = useCallback(
     (choice: CmedStrengthChoice) => {
@@ -344,7 +497,7 @@ export default function MedicineFormScreen() {
           <ChevronLeft size={24} color={colors.text.primary} />
         </Pressable>
         <Text style={styles.title}>
-          {isEditing ? 'Editar Medicamento' : 'Novo Medicamento'}
+          {formTitle(isEditing, scanInfo)}
         </Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -354,25 +507,41 @@ export default function MedicineFormScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView
+        ref={scrollRef}
         style={styles.flex}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {!isEditing && <AnvisaBanner onPress={openSheet} filledLabel={anvisaFilledLabel} />}
+        {!isEditing && (
+          <AnvisaBanner onPress={openSheet} filledLabel={anvisaFilledLabel} filledSource={scanInfo ? 'scan' : 'search'}>
+            <Pressable
+              style={({ pressed }) => [styles.scanButton, pressed && styles.scanButtonPressed]}
+              onPress={openScanner}
+              accessibilityRole="button"
+              accessibilityLabel="Ler o código de barras"
+            >
+              <ScanBarcode size={20} color={colors.primary[700]} strokeWidth={2.5} />
+              <Text style={styles.scanButtonText}>Ler o código de barras</Text>
+              <ChevronRight size={18} color={colors.primary[700]} />
+            </Pressable>
+          </AnvisaBanner>
+        )}
 
-        <FormSection title="Identificação">
-          <FormInput
-            name="name"
-            label="Nome"
-            required
-            {...formProps(form, 'name')}
-          />
-          <FormInput
-            name="active_ingredient"
-            label="Princípio Ativo"
-            {...formProps(form, 'active_ingredient')}
-          />
-        </FormSection>
+        <View onLayout={handleIdentificationLayout}>
+          <FormSection title="Identificação">
+            <FormInput
+              name="name"
+              label="Nome"
+              required
+              {...formProps(form, 'name')}
+            />
+            <FormInput
+              name="active_ingredient"
+              label="Princípio Ativo"
+              {...formProps(form, 'active_ingredient')}
+            />
+          </FormSection>
+        </View>
 
         <FormSection title="Dosagem">
           <View style={styles.row}>
@@ -486,6 +655,7 @@ export default function MedicineFormScreen() {
             label="Laboratório"
             {...formProps(form, 'laboratory')}
           />
+          <ScanGenericNote scanInfo={scanInfo} />
         </FormSection>
       </ScrollView>
 
@@ -502,7 +672,17 @@ export default function MedicineFormScreen() {
         open={sheetOpen}
         onClose={closeSheet}
         onSelect={handleAnvisaSelect}
+        onScan={openScannerFromSheet}
       />
+      {scanInfo && !candidatesDecided ? (
+        <MedicineCandidatesSheet
+          draft={scanInfo}
+          onUseExisting={handleUseExisting}
+          onCreateNew={handleCreateNew}
+          onNoCandidates={handleNoCandidates}
+          onClose={handleCandidatesClose}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }
@@ -614,6 +794,45 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.primary[700],
+  },
+  // 066 D1 (C5.3): 2º botão do card da ANVISA, mesmo peso da busca.
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    minHeight: 48,
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.neutral[100],
+  },
+  scanButtonPressed: {
+    backgroundColor: colors.primary[50],
+    borderColor: colors.primary[200],
+  },
+  scanButtonText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary[700],
+  },
+  genericBox: {
+    marginTop: spacing[2],
+    padding: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.neutral[100],
+    gap: spacing[1],
+  },
+  genericTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  genericText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text.secondary,
   },
   strengthText: {
     fontSize: 13,

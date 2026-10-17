@@ -25,6 +25,7 @@
     "expo": "^54.0.0",
     "expo-application": "~7.0.8",
     "expo-build-properties": "~1.0.10",
+    "expo-camera": "~17.0.10",
     "expo-dev-client": "~6.0.21",
     "expo-device": "~8.0.10",
     "expo-file-system": "~19.0.23",

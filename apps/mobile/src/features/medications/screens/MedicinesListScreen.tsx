@@ -14,7 +14,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
-const { Search, X, Plus, ChevronLeft, Pill } = LucideIcons as any
+const { Search, X, Plus, ChevronLeft, Pill, ScanBarcode } = LucideIcons as any
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
@@ -130,6 +130,12 @@ export default function MedicinesListScreen() {
     navigation.navigate(ROUTES.MEDICINE_CREATE)
   }, [navigation])
 
+  // 066 D1 (3C): caixa na mão → abre o cadastro já com o scanner; o form é a confirmação (RC3 A).
+  const handleScanPress = useCallback(() => {
+    lightTap()
+    navigation.navigate(ROUTES.MEDICINE_CREATE, { startScan: true })
+  }, [navigation])
+
   const renderItem = useCallback(
     ({ item }) => (
       <MedicineCard
@@ -219,6 +225,15 @@ export default function MedicinesListScreen() {
       )}
 
       <Pressable
+        onPress={handleScanPress}
+        style={({ pressed }) => [styles.scanFab, pressed && styles.fabPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Escanear caixa"
+      >
+        <ScanBarcode size={20} color={colors.primary[700]} />
+        <Text style={styles.scanFabText}>Escanear caixa</Text>
+      </Pressable>
+      <Pressable
         onPress={handleFabPress}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         accessibilityRole="button"
@@ -229,6 +244,11 @@ export default function MedicinesListScreen() {
     </ScreenContainer>
   )
 }
+
+// Botão "Escanear caixa" empilhado acima do FAB de 56 px (066 D1).
+const FAB_SIZE = 56
+const SCAN_FAB_HEIGHT = 44
+const SCAN_FAB_BOTTOM = spacing[6] + FAB_SIZE + spacing[3]
 
 const styles = StyleSheet.create({
   header: {
@@ -289,7 +309,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing[5],
-    paddingBottom: spacing[12],
+    // 066 D1 (RC5): o último card rola para cima dos dois botões flutuantes (+ e "Escanear caixa").
+    paddingBottom: SCAN_FAB_BOTTOM + SCAN_FAB_HEIGHT + spacing[4],
   },
   emptyInline: {
     paddingHorizontal: spacing[5],
@@ -315,5 +336,25 @@ const styles = StyleSheet.create({
   },
   fabPressed: {
     opacity: 0.9,
+  },
+  scanFab: {
+    position: 'absolute',
+    bottom: SCAN_FAB_BOTTOM,
+    right: spacing[5],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    minHeight: SCAN_FAB_HEIGHT,
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.bg.card,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+    ...shadows.sm,
+  },
+  scanFabText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary[700],
   },
 })

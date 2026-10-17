@@ -197,3 +197,21 @@ describe('MedicineAnvisaSheet — busca 2C (066 Slice C)', () => {
     expect(payload).not.toMatch(/abcd|Divalproato|Eurofarma|Clopidogrel/)
   })
 })
+
+describe('código de barras no sheet (066 D1 · C-D1-2: "Trocar" oferece os dois caminhos)', () => {
+  it('com onScan, mostra "Ler o código de barras" antes de digitar e chama o scanner', () => {
+    const onScan = jest.fn()
+    const { getByLabelText, queryByLabelText } = render(
+      <MedicineAnvisaSheet open onClose={jest.fn()} onSelect={jest.fn()} onScan={onScan} />,
+    )
+    fireEvent.press(getByLabelText('Ler o código de barras'))
+    expect(onScan).toHaveBeenCalledTimes(1)
+    fireEvent.changeText(getByLabelText('Buscar medicamento'), 'losartana')
+    expect(queryByLabelText('Ler o código de barras')).toBeNull()
+  })
+
+  it('sem onScan, o sheet fica como antes', () => {
+    const { queryByLabelText } = render(<MedicineAnvisaSheet open onClose={jest.fn()} onSelect={jest.fn()} />)
+    expect(queryByLabelText('Ler o código de barras')).toBeNull()
+  })
+})

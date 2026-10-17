@@ -61,6 +61,7 @@ export const ROUTES = {
   MEDICINE_CREATE: 'MedicineCreate',
   MEDICINE_EDIT: 'MedicineEdit',
   MEDICINE_DETAIL: 'MedicineDetail',
+  MEDICINE_SCAN: 'MedicineScan',           // 066 D1: leitor do código de barras; devolve o rascunho ao MEDICINE_CREATE
 
   // Sub-rotas de Estoque (Fase 3)
   STOCK_MAIN: 'StockMain',                 // renomeada de STOCK pra hub

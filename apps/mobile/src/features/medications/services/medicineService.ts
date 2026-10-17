@@ -60,7 +60,7 @@ function compact(props) {
 export const medicineService = {
   ...repo,
 
-  // 066 Slice C: `source` (anvisa_search|manual) só no form de cadastro; ausente = não medido.
+  // 066 Slice C/D1: `source` (anvisa_search|scan|manual) só no form de cadastro; ausente = não medido.
   async create(medicine, { surface = null, source = null } = {}) {
     const row = await repo.create(medicine)
     await logEvent(EVENTS.MEDICINE_ADDED, compact({ surface, source, medicine_id: row?.id }))

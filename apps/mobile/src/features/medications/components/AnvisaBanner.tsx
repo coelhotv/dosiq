@@ -22,9 +22,11 @@ interface AnvisaBannerProps {
   filledLabel?: string | null
   /** Ações extras no mesmo card (D1: botão do código de barras). */
   children?: ReactNode
+  /** 066 D1: de onde veio o preenchido — o selo diz a origem (busca na lista × código de barras). */
+  filledSource?: 'search' | 'scan'
 }
 
-export function AnvisaBanner({ onPress, filledLabel = null, children = null }: AnvisaBannerProps) {
+export function AnvisaBanner({ onPress, filledLabel = null, children = null, filledSource = 'search' }: AnvisaBannerProps) {
   const handlePress = () => {
     lightTap()
     onPress?.()
@@ -36,11 +38,16 @@ export function AnvisaBanner({ onPress, filledLabel = null, children = null }: A
         <View style={styles.filledText}>
           <View style={styles.seal}>
             <ShieldCheck size={14} color={colors.primary[700]} strokeWidth={2.5} />
-            <Text style={styles.sealText}>Preenchido pela lista da ANVISA</Text>
+            <Text style={styles.sealText}>
+              {filledSource === 'scan' ? 'Lido pelo código de barras' : 'Preenchido pela lista da ANVISA'}
+            </Text>
           </View>
           <Text style={styles.filledLabel} numberOfLines={2}>
             {filledLabel}
           </Text>
+          {filledSource === 'scan' ? (
+            <Text style={styles.support}>Toque em qualquer campo para corrigir.</Text>
+          ) : null}
         </View>
         <Pressable onPress={handlePress} hitSlop={8} accessibilityRole="button" accessibilityLabel="Trocar remédio">
           <Text style={styles.change}>Trocar</Text>

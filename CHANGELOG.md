@@ -7,6 +7,32 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Cadastrar o remédio pelo código de barras da caixa (spec 066, slice D1)
+
+- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.38` → `0.33.43` como build intermediário — `0.33.39` a `0.33.42` foram builds de smoke; entra no pacote de loja
+  `0.34.0`; canal: **build de loja**, R-314 — dependência nativa nova, a câmera, e funcionalidade nova). No cadastro de
+  remédio, o card da lista oficial da ANVISA ganhou o botão "Ler o código de barras", e a lista de remédios ganhou
+  "Escanear caixa". A câmera lê o código da caixa e o próprio formulário de cadastro abre preenchido com nome, princípio
+  ativo, concentração, unidade e apresentação, com o aviso "Lido pelo código de barras" e o título "Confira antes de
+  salvar". O que vem da caixa é só sugestão: todo campo continua editável e nada é salvo antes de tocar em "Criar
+  medicamento". Remédio com mais de uma substância e ordem de dose incerta chega com a dose em branco e pede a escolha;
+  a força completa aparece como referência ("Na embalagem: 500 mg + 125 mg"). Em genérico, o laboratório da caixa aparece
+  ("Caixa desta vez: EMS") mas não é guardado. Quando a caixa lembra um remédio já cadastrado, o app pergunta "É este
+  que você já tem?": "Sim, é este" não cria nada, "Não, cadastrar como novo" segue o cadastro — assim o mesmo genérico
+  comprado de outro laboratório não vira um segundo cadastro. Se o código aponta para mais de uma concentração, o app
+  pergunta qual é a da embalagem antes de preencher. O cadastro por código de barras não cria compra: o estoque continua
+  no seu próprio fluxo. No Android, com a câmera em "Perguntar sempre", o app mostra o pedido do sistema em vez de dizer que a câmera está
+  bloqueada; "bloqueada" só aparece quando o sistema de fato não pergunta mais, e ao voltar dos Ajustes a tela relê a
+  permissão. No iPhone, que encerra o app quando a câmera é liberada nos Ajustes, a próxima abertura (em até 5 minutos)
+  volta direto ao cadastro com o leitor, a menos que o app tenha sido aberto por um alarme ou notificação. Sem permissão de câmera, sem internet na primeira vez, com código ilegível em 20 s, com caixa fora
+  da lista ou com a lista numa versão que o app não conhece, a tela diz o motivo e oferece o cadastro digitado; "Tentar de
+  novo" baixa a lista outra vez e "Abrir a loja" leva à atualização. Quem escolhe digitar volta ao formulário já na parte
+  de "Identificação". O "Trocar" de um cadastro já preenchido oferece de novo os dois caminhos: busca e código de barras.
+  A imagem da câmera não é salva nem enviada, e o app não pede microfone (no Android, a permissão de áudio que a biblioteca da câmera
+  declara é removida do pacote). Os eventos novos de analytics (`scan_opened`,
+  `scan_permission`, `scan_result`, `scan_confirmed`) não levam o código, o nome, a substância nem o laboratório.
+  Store-note: relevante (funcionalidade nova visível) — entra no texto do pacote `0.34.0`.
+
 ### O alarme de dose crítica toca alto mesmo no silencioso e no Foco do iPhone (spec 054, fase F1)
 
 - **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.27` → `0.33.38` como build intermediário — `0.33.28` a `0.33.37` foram builds de smoke; entra no pacote de loja
