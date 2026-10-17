@@ -12,7 +12,7 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 // default só vale para os casos em que errar barato é melhor que errar caro.
 const UPDATE_CHANNEL = process.env.EAS_BUILD_PROFILE || 'development'
 
-const APP_VERSION = '0.33.38' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.33.43' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -169,6 +169,10 @@ module.exports = {
         backgroundColor: '#F0FDFB',
       },
       edgeToEdgeEnabled: true,
+      // 066 D1 (R-308, achado na inspeção do APK 0.33.40): o manifest da BIBLIOTECA expo-camera declara
+      // RECORD_AUDIO e o merge herda; `recordAudioAndroid: false` só evita a cópia do plugin. A câmera
+      // só lê código de barras (FR-025) — bloqueio explícito (tools:node="remove").
+      blockedPermissions: ['android.permission.RECORD_AUDIO'],
       // UL-S1: App Links Android
       intentFilters: [
         {
@@ -191,6 +195,14 @@ module.exports = {
       }],
       // PostHog precisa do locale do device (peer dep de posthog-react-native).
       'expo-localization',
+      // 066 D1: leitura do código de barras da caixa. Sem microfone (a câmera nunca grava nem
+      // fotografa — FR-025); R-308: conferir no APK que RECORD_AUDIO não entrou.
+      ['expo-camera', {
+        cameraPermission:
+          'O dosiq usa a câmera só para ler o código de barras da caixa do remédio. A imagem não é salva.',
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      }],
       // 062 F2: ícone/cor padrão do push = marca dosiq. TEM que vir ANTES de 'expo-notifications':
       // mods rodam em ordem inversa e o expo, sem icon/color, apaga estes meta-data (ver o plugin).
       './withNotificationIconDefaults.js',

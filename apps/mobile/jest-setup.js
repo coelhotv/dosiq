@@ -21,6 +21,43 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }))
 
+// 066 D1 (RC3 E-5): câmera controlável pelo teste. `__cameraMock.permission` define o que o hook
+// devolve; `__cameraMock.lastProps.onBarcodeScanned({ data })` simula uma leitura.
+jest.mock('expo-camera', () => {
+  const React = require('react')
+  const { View } = require('react-native')
+  const state = {
+    permission: { granted: true, canAskAgain: true, status: 'granted' },
+    requestResult: null,
+    // ms que o pedido leva para responder (C-D1-5: Android sem diálogo responde na hora)
+    requestDelayMs: 0,
+    lastProps: null,
+  }
+  function CameraView(props) {
+    state.lastProps = props
+    return React.createElement(View, { testID: 'camera-view' })
+  }
+  return {
+    CameraView,
+    // Como o hook do Expo: a permissão vive em estado de React e o pedido a atualiza (re-render).
+    useCameraPermissions: () => {
+      const [permission, setPermission] = React.useState(state.permission)
+      const request = async () => {
+        if (state.requestDelayMs) await new Promise((r) => setTimeout(r, state.requestDelayMs))
+        if (state.requestResult) state.permission = state.requestResult
+        setPermission(state.permission)
+        return state.permission
+      }
+      const get = async () => {
+        setPermission(state.permission)
+        return state.permission
+      }
+      return [permission, request, get]
+    },
+    __cameraMock: state,
+  }
+})
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
   setItem: jest.fn(() => Promise.resolve()),

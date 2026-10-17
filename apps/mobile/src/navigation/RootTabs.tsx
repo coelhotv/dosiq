@@ -15,6 +15,7 @@ import StockStack from './StockStack'
 import ProfileStack from './ProfileStack'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { colors } from '../shared/styles/tokens'
+import { useScanResume } from '@medications/scan/useScanResume'
 
 // TODO(040-strict): createBottomTabNavigator<any>() — sem ParamList tipada, overload exige `id`
 const Tab = createBottomTabNavigator<any>()
@@ -33,6 +34,8 @@ export default function RootTabs() {
   // Spec 044 F3: enquanto `ready === false` não sabemos se a Estoque deve existir —
   // não renderizar as tabs evita o piscar da aba pro usuário dose-only (AP-277).
   const { enabled: stockEnabled, ready: stockReady } = useStockTracking()
+  // 066 D1 (C-D1-6): iPhone encerrado pelos Ajustes ao liberar a câmera volta ao scan.
+  useScanResume(stockReady)
 
   if (!stockReady) {
     return (

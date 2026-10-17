@@ -13,6 +13,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Search, X } from 'lucide-react-native'
+// TODO(040-strict): estes dois batem em TS2305 como named import (ver TreatmentsScreen.tsx)
+import * as LucideIcons from 'lucide-react-native'
+
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import { useCmedIndex } from '@shared/hooks/useCmedIndex'
@@ -34,6 +37,8 @@ import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
+const { ScanBarcode, ChevronRight } = LucideIcons as any
+
 // Bottom sheet modal de busca na base ANVISA. Reutilizável em formulários
 // de criação/edição de medicamentos. Overlay leve com altura máxima 85%.
 //
@@ -43,6 +48,8 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 // sem embalagem: preenche como hoje (INV-3).
 // O índice só carrega DEPOIS do 1º toque num nome (C-C5: carregar ao abrir o sheet travava a
 // digitação no LG K8) e sai da memória ao fechar o sheet (FR-023).
+// 066 D1 (C-D1-2, smoke iOS 2026-10-17): `onScan` põe o código de barras no próprio sheet — o "Trocar"
+// de um cadastro já preenchido oferece os dois caminhos, não só a busca.
 // onSelect recebe { anvisaItem, cmedDraft? }. Eventos: TRACKING_PLAN §5.3 (sem nome/texto, R-042).
 
 export interface AnvisaSheetSelection {
@@ -71,7 +78,7 @@ function itemCaption(item: any): string | null {
   return category ? ((REGULATORY_CATEGORY_LABELS as Record<string, string>)[category] ?? category) : null
 }
 
-export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
+export function MedicineAnvisaSheet({ open, onClose, onSelect, onScan = null }) {
   // States (R-010 — States → Memos → Effects → Handlers)
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<any>(null)
@@ -292,6 +299,19 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
             ) : null}
           </View>
 
+          {onScan && !trimmed ? (
+            <Pressable
+              style={({ pressed }) => [styles.scanRow, pressed && styles.scanRowPressed]}
+              onPress={onScan}
+              accessibilityRole="button"
+              accessibilityLabel="Ler o código de barras"
+            >
+              <ScanBarcode size={20} color={colors.primary[700]} strokeWidth={2.5} />
+              <Text style={styles.scanRowText}>Ler o código de barras</Text>
+              <ChevronRight size={18} color={colors.primary[700]} />
+            </Pressable>
+          ) : null}
+
           <Text style={styles.hint}>{hint}</Text>
 
           <FlatList
@@ -311,6 +331,28 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
 }
 
 const styles = StyleSheet.create({
+  scanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    minHeight: 48,
+    marginTop: spacing[3],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.neutral[100],
+  },
+  scanRowPressed: {
+    backgroundColor: colors.primary[50],
+    borderColor: colors.primary[200],
+  },
+  scanRowText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary[700],
+  },
   root: {
     flex: 1,
     justifyContent: 'flex-end',

@@ -22,6 +22,7 @@ import { View, Text, Image, Pressable, StyleSheet, Linking, Platform } from 'rea
 import { isAllowedStoreUrl, GATE_MESSAGE_MAX_LENGTH } from '@dosiq/core'
 import { useVersionGate } from './useVersionGate'
 import { useAlarmScreenActive } from './useAlarmScreenActive'
+import { STORE_FALLBACK_URLS } from './storeUrls'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 // Mesmo lockup usado no AlarmFullScreen (branding no topo, reconhecimento imediato) — versão
@@ -35,16 +36,6 @@ const DEFAULT_MESSAGE = 'É necessária uma atualização do app para continuar 
 // da linha do gate (2º vetor do S-8 + saída removível pela config que bloqueia).
 const DOSIQ_WEB_URL = 'https://dosiq.app'
 
-/**
- * Lojas por plataforma — fallback COMPILADO quando `store_url` remoto está ausente ou fora da
- * allowlist (S-8). Prefixos batem `STORE_URL_ALLOWLIST` (`@dosiq/core`).
- * ⚠️ Android é o link direto e funcional (`androidPackage` — app.config.js). iOS aponta para a
- * busca até o app publicar e o PO preencher o Apple App ID real aqui.
- */
-const STORE_FALLBACK_URLS = {
-  ios: 'https://apps.apple.com/br/app/dosiq-inteligencia-em-doses/id6762740948',
-  android: 'https://play.google.com/store/apps/details?id=com.coelhotv.dosiq',
-} as const
 
 export function VersionGateOverlay() {
   const decision = useVersionGate()

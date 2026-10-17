@@ -14,6 +14,7 @@ import TitrationFormScreen from '../features/treatments/screens/TitrationFormScr
 import MedicinesListScreen from '../features/medications/screens/MedicinesListScreen'
 import MedicineDetailScreen from '../features/medications/screens/MedicineDetailScreen'
 import MedicineFormScreen from '../features/medications/screens/MedicineFormScreen'
+import BarcodeScannerScreen from '../features/medications/scan/BarcodeScannerScreen'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
 const Stack = createStackNavigator<any>()
@@ -29,6 +30,8 @@ export default function TreatmentsStack() {
       <Stack.Screen name={ROUTES.MEDICINE_DETAIL} component={MedicineDetailScreen} />
       <Stack.Screen name={ROUTES.MEDICINE_CREATE} component={MedicineFormScreen} />
       <Stack.Screen name={ROUTES.MEDICINE_EDIT} component={MedicineFormScreen} />
+      {/* 066 D1: abre por cima do MEDICINE_CREATE e volta a ele com `scanDraft` (popTo). */}
+      <Stack.Screen name={ROUTES.MEDICINE_SCAN} component={BarcodeScannerScreen} />
     </Stack.Navigator>
   )
 }

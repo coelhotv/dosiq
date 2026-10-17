@@ -248,15 +248,23 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `medicine_added` | ✅ mobile | medicamento cadastrado (form ou onboarding) | `surface`, `medicine_id` (**UUID, nunca nome**), `source?: anvisa_search\|manual` (066 — só no form de cadastro; ausente no onboarding = não medido) | passou pela fricção de setup? (passo do funil, **não** ativação) · a busca ANVISA encurta o cadastro? |
+| `medicine_added` | ✅ mobile | medicamento cadastrado (form ou onboarding) | `surface`, `medicine_id` (**UUID, nunca nome**), `source?: anvisa_search\|scan\|manual` (066 — só no form de cadastro; `scan` = confirmado depois da leitura do código de barras, D1; ausente no onboarding = não medido) | passou pela fricção de setup? (passo do funil, **não** ativação) · a busca ANVISA encurta o cadastro? |
 | `medicine_search_opened` | 🆕 mobile (066 C) | sheet da busca ANVISA abre | `surface`, `entry_point: medicine_form` | quantos cadastros começam pela busca (vs. à mão)? |
 | `medicine_search_result_selected` | 🆕 mobile (066 C) | toque num nome do passo 1 | `surface`, `result_rank` (1-based), `query_length`, `item_kind: brand\|substance` | a busca acha na 1ª posição? |
 | `medicine_presentation_selected` | 🆕 mobile (066 C) | passo 2 (concentração) termina ou é pulado | `surface`, `outcome: single\|picked\|not_listed\|back\|unavailable`, `presentation_count`, `dose_ambiguous` | o passo 2 resolve ou é abandonado? quão frequente é a dose ambígua? |
 | `medicine_search_dismissed` | 🆕 mobile (066 C) | sheet fecha sem escolher | `surface`, `had_query`, `step: search\|presentation` | onde a busca falha? |
 | `medicine_index_loaded` | 🆕 mobile (066 C) | índice CMED pronto ou falhou | `surface`, `source: disk\|network`, `duration_ms`, `status: ready\|offline\|failed\|version`, `row_count` | o índice carrega rápido em aparelho de entrada? (PO-8 da 066 em release e no campo) |
+| `scan_opened` | 🆕 mobile (066 D1) | abriu o leitor do código de barras | `surface`, `entry_point: medicine_form\|medicines_list` | quantos tentam o atalho da caixa, e por qual entrada? (limiar P-2 da onda 1) |
+| `scan_permission` | 🆕 mobile (066 D1) | respondeu ao pedido da câmera | `surface`, `result: granted\|denied\|blocked` | a pré-permissão convence? quantos ficam sem câmera? |
+| `scan_result` | 🆕 mobile (066 D1) | o leitor chegou a um desfecho | `surface`, `result: found\|multiple\|not_found\|illegible\|offline\|version\|index_failed` | qual fração das caixas a CMED resolve? (taxa de leitura e de não encontrado) |
+| `scan_confirmed` | 🆕 mobile (066 D1) | a caixa lida virou decisão: salvou ou usou um remédio já cadastrado | `surface`, `dose_edited: bool`, `used_existing: bool` | a pessoa precisou corrigir a dose da caixa? o "É este que você já tem?" evita duplicado? |
 
 > **Busca ANVISA (066 Slice C):** setup, sem `treatment_id` (§5.0). 🔴 Nunca o texto digitado (só
 > `query_length`), nome, concentração, substância nem laboratório (§6) — guard no teste do sheet.
+>
+> **Código de barras (066 D1, `scan_*`):** 🔴 nunca o EAN, nem "anonimizado" — 13 dígitos identificam o
+> remédio, e remédio é dado de saúde. Nunca nome, substância, laboratório nem o valor da dose
+> (`dose_edited` diz só que mudou). Guard: testes do `BarcodeScannerScreen` e do form em modo lido.
 | `medicine_edited` | ✅ mobile | medicamento editado (inclui a densidade `units_per_ml` gravada pelo form de tratamento) | `surface`, `medicine_id` | manutenção do cadastro |
 | `medicine_deleted` | ✅ mobile | medicamento removido | `surface`, `medicine_id` | limpeza de cadastro (≠ fim de tratamento) |
 
