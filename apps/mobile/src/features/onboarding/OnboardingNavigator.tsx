@@ -39,6 +39,8 @@ function emitOnce(ref, skippedRef) {
 export default function OnboardingNavigator({ onComplete }) {
   // Medicamento criado no passo 1, consumido pelo passo 2.
   const [medicine, setMedicine] = useState(null)
+  // 066 E: como o remédio chegou ao "Confira" (`scan`|`anvisa_search`|`manual`) — vai no `medicine_added`.
+  const [medicineSource, setMedicineSource] = useState(null)
   // Tratamento em configuração no passo 3.
   const [treatment, setTreatment] = useState(null)
   // 065 C2 (G-4): `complete` sai UMA vez. Na opção 2 do passo de estoque `markCompleted` roda antes
@@ -82,8 +84,8 @@ export default function OnboardingNavigator({ onComplete }) {
   }, [])
 
   const value = useMemo(
-    () => ({ medicine, setMedicine, treatment, setTreatment, finish, skip, markCompleted }),
-    [medicine, treatment, finish, skip, markCompleted],
+    () => ({ medicine, setMedicine, medicineSource, setMedicineSource, treatment, setTreatment, finish, skip, markCompleted }),
+    [medicine, medicineSource, treatment, finish, skip, markCompleted],
   )
 
   // Entrou no wizard. Reabrir o app no meio conta nova tentativa (declarado, analysis-prC G-8).

@@ -8,7 +8,7 @@
 // serviram) é o fallback de digitar. A escolha do caminho mora em `OnboardingMedicineChoiceStep`.
 // Nada é gravado aqui: o remédio só vai para o contexto do wizard; quem grava é o passo de estoque (INV-1).
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
@@ -28,8 +28,10 @@ import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
 import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
-import { valuesFromDraft, draftExtras, baseFromScan } from '@medications/utils/medicineDraftValues'
+import { valuesFromDraft, draftExtras, baseFromScan, scanDoseEdited } from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -95,7 +97,7 @@ export default function OnboardingMedicineStep() {
   // States (R-010)
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
-  const { medicine, setMedicine, skip } = useOnboarding()
+  const { medicine, setMedicine, setMedicineSource, skip } = useOnboarding()
   const { show } = useToast()
   // 066 E: o que veio da caixa (busca 2C ou código de barras) — mesmo estado do cadastro completo.
   const [filledLabel, setFilledLabel] = useState<string | null>(null)
@@ -106,6 +108,8 @@ export default function OnboardingMedicineStep() {
   const [doseChoiceError, setDoseChoiceError] = useState(false)
   const [appliedScanDraft, setAppliedScanDraft] = useState<any>(null)
   const [appliedSelection, setAppliedSelection] = useState<any>(null)
+  // `scan_confirmed` sai 1× por caixa lida: voltar do tratamento e continuar de novo não recontaria.
+  const confirmedScanRef = useRef<any>(null)
 
   const form = useFormState(medicineCreateSchema, { initialValues: medicine || DEFAULT_INITIAL })
 
@@ -213,9 +217,21 @@ export default function OnboardingMedicineStep() {
       )
       return
     }
+    // 066 E (TRACKING_PLAN §5.3): de onde veio o remédio, para o `medicine_added` do passo de estoque.
+    const source = filledLabel ? (filledSource === 'scan' ? 'scan' : 'anvisa_search') : 'manual'
+    // A caixa lida virou decisão ao "Continuar" (D1: no form é o "Criar"); nada é gravado aqui (INV-1).
+    if (source === 'scan' && appliedScanDraft && confirmedScanRef.current !== appliedScanDraft) {
+      confirmedScanRef.current = appliedScanDraft
+      logEvent(EVENTS.SCAN_CONFIRMED, {
+        surface: SURFACES.MOBILE,
+        used_existing: false,
+        dose_edited: scanDoseEdited(form.values, appliedScanDraft),
+      })
+    }
     setMedicine(form.values)
+    setMedicineSource(source)
     ;(navigation.navigate as any)(ROUTES.ONBOARDING_TREATMENT)
-  }, [form, show, setMedicine, navigation, doseCheckRequired])
+  }, [form, show, setMedicine, setMedicineSource, navigation, doseCheckRequired, filledLabel, filledSource, appliedScanDraft])
 
   const hasDose = String(form.values.dosage_per_pill ?? '').trim() !== ''
   const askStrength = doseCheckRequired && !hasDose

@@ -35,6 +35,14 @@ export function draftExtras(draft) {
   }
 }
 
+// PO-11: só se a pessoa corrigiu a dose da caixa — nunca o valor (`scan_confirmed.dose_edited`).
+export function scanDoseEdited(values, scanInfo) {
+  return (
+    String(values.dosage_per_pill ?? '') !== String(scanInfo.dosage_per_pill ?? '') ||
+    (values.dosage_unit ?? null) !== (scanInfo.dosage_unit ?? null)
+  )
+}
+
 // 066 D1: base do form a partir só da caixa lida (sem item da base ANVISA). O rascunho prevalece
 // em `valuesFromDraft`; aqui só o que ele não traz.
 export function baseFromScan(draft, current) {

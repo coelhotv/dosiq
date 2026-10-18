@@ -104,7 +104,14 @@ function flow(over: Record<string, unknown> = {}) {
 }
 
 function withCtx(node) {
-  const ctx = { medicine: null, setMedicine: jest.fn(), skip: jest.fn(), treatment: null, setTreatment: jest.fn() }
+  const ctx = {
+    medicine: null,
+    setMedicine: jest.fn(),
+    setMedicineSource: jest.fn(),
+    skip: jest.fn(),
+    treatment: null,
+    setTreatment: jest.fn(),
+  }
   return { ui: <OnboardingContext.Provider value={ctx as any}>{node}</OnboardingContext.Provider>, ctx }
 }
 
@@ -256,5 +263,45 @@ describe('"Confira" em branco (fallback de caixa/busca que não serviram)', () =
     expect(queryByText('Lido pelo código de barras')).toBeNull()
     expect(getByText(PALLIATIVE)).toBeTruthy()
     expect(getByText('Pular')).toBeTruthy()
+  })
+})
+
+describe('telemetria do 1º remédio (TRACKING_PLAN §5.3)', () => {
+  it('caixa: "Continuar" emite scan_confirmed 1× e marca source scan', () => {
+    const { getByText, getByDisplayValue, ctx } = renderStep({ scanDraft: draft() })
+    fireEvent.changeText(getByDisplayValue('50'), '25')
+    fireEvent.press(getByText('Continuar'))
+    fireEvent.press(getByText('Continuar'))
+    const confirmed = mockLogEvent.mock.calls.filter(([n]) => n === 'scan_confirmed')
+    expect(confirmed).toEqual([['scan_confirmed', { surface: 'mobile', used_existing: false, dose_edited: true }]])
+    expect(ctx.setMedicineSource).toHaveBeenLastCalledWith('scan')
+  })
+
+  it('busca: source anvisa_search, sem scan_confirmed', () => {
+    const { getByText, ctx } = renderStep({
+      searchSelection: { anvisaItem: { name: 'Losartana Potássica', regulatoryCategory: 'Similar' }, cmedDraft: draft() },
+    })
+    fireEvent.press(getByText('Continuar'))
+    expect(ctx.setMedicineSource).toHaveBeenCalledWith('anvisa_search')
+    expect(mockLogEvent.mock.calls.map(([n]) => n)).not.toContain('scan_confirmed')
+  })
+
+  it('em branco: source manual', () => {
+    const { getByText, getByLabelText, ctx } = renderStep({ manualEntry: 1 })
+    fireEvent.changeText(getByLabelText('Nome do remédio'), 'Remédio X')
+    fireEvent.changeText(getByLabelText('Concentração'), '10')
+    fireEvent.press(getByText('Continuar'))
+    expect(ctx.setMedicineSource).toHaveBeenCalledWith('manual')
+  })
+
+  it('"Não achei" emite medicine_search_dismissed com exit manual', () => {
+    const r = render(withCtx(<OnboardingMedicineSearchStep />).ui)
+    fireEvent.press(r.getByLabelText('Não achei. Digitar à mão'))
+    expect(mockLogEvent).toHaveBeenCalledWith('medicine_search_dismissed', {
+      surface: 'mobile',
+      had_query: true,
+      step: 'search',
+      exit: 'manual',
+    })
   })
 })

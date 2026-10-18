@@ -36,7 +36,7 @@ import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { MedicineAnvisaSheet } from '@medications/components/MedicineAnvisaSheet'
 import { MedicineCandidatesSheet } from '@medications/scan/MedicineCandidatesSheet'
 import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
-import { valuesFromDraft, draftExtras, baseFromScan } from '@medications/utils/medicineDraftValues'
+import { valuesFromDraft, draftExtras, baseFromScan, scanDoseEdited } from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -90,14 +90,6 @@ function formProps(form, name) {
 function createSource(scanInfo, anvisaFilledLabel) {
   if (scanInfo) return 'scan'
   return anvisaFilledLabel ? 'anvisa_search' : 'manual'
-}
-
-// PO-11: só se a pessoa corrigiu a dose da caixa — nunca o valor.
-function scanDoseEdited(values, scanInfo) {
-  return (
-    String(values.dosage_per_pill ?? '') !== String(scanInfo.dosage_per_pill ?? '') ||
-    (values.dosage_unit ?? null) !== (scanInfo.dosage_unit ?? null)
-  )
 }
 
 // Nova leitura = novo objeto em `scanDraft` (popTo com merge); a mesma não se reaplica a cada render.

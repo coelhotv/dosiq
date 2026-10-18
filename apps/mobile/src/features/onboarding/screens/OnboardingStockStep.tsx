@@ -47,7 +47,7 @@ const OPTIONS = [
 
 export default function OnboardingStockStep() {
   const navigation = useNavigation<any>()
-  const { medicine, treatment, finish, skip, markCompleted } = useOnboarding()
+  const { medicine, medicineSource, treatment, finish, skip, markCompleted } = useOnboarding()
   const { refresh: refreshStockTracking } = useStockTracking()
   const { show } = useToast()
 
@@ -80,7 +80,8 @@ export default function OnboardingStockStep() {
 
       let medicineId = createdMedicineId
       if (!medicineId) {
-        const createdMedicine = await medicineService.create(medicine, { surface: SURFACES.MOBILE })
+        // 066 E: `source` diz se o 1º remédio veio da caixa, da busca ou digitado (TRACKING_PLAN §5.3).
+        const createdMedicine = await medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource })
         medicineId = createdMedicine.id
         setCreatedMedicineId(medicineId)
       }
@@ -135,6 +136,7 @@ export default function OnboardingStockStep() {
   }, [
     selected,
     medicine,
+    medicineSource,
     treatment,
     finish,
     markCompleted,

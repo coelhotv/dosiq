@@ -68,17 +68,29 @@ export default function OnboardingMedicineSearchStep() {
           flow.handleBack()
           return
         }
-        logEvent(EVENTS.MEDICINE_SEARCH_DISMISSED, { surface: SURFACES.MOBILE, had_query: trimmed.length > 0, step: 'search' })
+        logEvent(EVENTS.MEDICINE_SEARCH_DISMISSED, {
+          surface: SURFACES.MOBILE,
+          had_query: trimmed.length > 0,
+          step: 'search',
+          exit: 'back',
+        })
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [navigation, presentationStep, trimmed],
   )
 
   // Handlers
+  // "Não achei" é a busca falhando — sai como desistência com `exit: 'manual'` (≠ voltou à escolha).
   const handleManual = useCallback(() => {
+    logEvent(EVENTS.MEDICINE_SEARCH_DISMISSED, {
+      surface: SURFACES.MOBILE,
+      had_query: trimmed.length > 0,
+      step: 'search',
+      exit: 'manual',
+    })
     leavingWithResult.current = true
     navigation.popTo(ROUTES.ONBOARDING_MEDICINE_FORM, { manualEntry: Date.now() }, { merge: true })
-  }, [navigation])
+  }, [navigation, trimmed])
 
   const renderItem = useCallback(
     ({ item, index }) => <MedicineSearchResultItem item={item} onPress={() => flow.handleSelect(item, index)} />,
