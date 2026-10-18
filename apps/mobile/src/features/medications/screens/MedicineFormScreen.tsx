@@ -24,7 +24,6 @@ import {
   normalizeRegulatoryCategory,
   cleanFloat,
   isLiquidDosageUnit,
-  formatStrength,
   type CmedStrengthChoice,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
@@ -36,6 +35,8 @@ import { useMedicineMutation } from '@medications/hooks/useMedicineMutation'
 import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { MedicineAnvisaSheet } from '@medications/components/MedicineAnvisaSheet'
 import { MedicineCandidatesSheet } from '@medications/scan/MedicineCandidatesSheet'
+import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
+import { valuesFromDraft, draftExtras, baseFromScan } from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -85,38 +86,6 @@ function formProps(form, name) {
   }
 }
 
-// 066 Slice C: valores do form a partir da embalagem escolhida no passo 2 (o rascunho prevalece).
-function valuesFromDraft(base, draft, current) {
-  const presentation = draft.presentation
-  return {
-    ...base,
-    name: draft.name || base.name,
-    active_ingredient: draft.active_ingredient ?? base.active_ingredient,
-    therapeutic_class: draft.therapeutic_class ?? base.therapeutic_class,
-    regulatory_category: draft.regulatory_category ?? base.regulatory_category,
-    laboratory: draft.laboratory ?? '',
-    anvisa_registration: draft.anvisa_registration,
-    // INV-2: dose ambígua nunca é preenchida.
-    dosage_per_pill: draft.dosage_per_pill !== null ? String(draft.dosage_per_pill) : '',
-    // C-C10 (B8 "500 mg/"): unidade que o app não reconhece fica vazia — o "mg" padrão seria um chute.
-    dosage_unit: draft.dosage_unit ?? (draft.strengthLabel ? '' : current.dosage_unit),
-    presentation,
-    shelf_life_days: presentation === 'injetavel' && !current.shelf_life_days ? '28' : current.shelf_life_days,
-  }
-}
-
-// O que a caixa (busca 2C ou código de barras) muda no form além dos valores: guarda da dose
-// ambígua (INV-2), escolhas de 1 toque (C-C10) e a força de referência "Na embalagem" (D9).
-function draftExtras(draft) {
-  // Referência "Na embalagem": composto, ou força que o app não converte (C-C10, B8 "500 mg/").
-  const showStrength = !!draft.strengthLabel && (draft.strengthLabel.includes('+') || draft.dosage_per_pill === null)
-  return {
-    doseCheckRequired: draft.doseAmbiguous,
-    strengthChoices: draft.strengthChoices,
-    strengthLabel: showStrength ? draft.strengthLabel : null,
-  }
-}
-
 // 066 D1: origem do cadastro para o `medicine_added` (TRACKING_PLAN §5.3).
 function createSource(scanInfo, anvisaFilledLabel) {
   if (scanInfo) return 'scan'
@@ -152,20 +121,6 @@ function ScanGenericNote({ scanInfo }) {
       </Text>
     </View>
   )
-}
-
-// 066 D1: base do form a partir só da caixa lida (sem item da base ANVISA). O rascunho prevalece
-// em `valuesFromDraft`; aqui só o que ele não traz.
-function baseFromScan(draft, current) {
-  return {
-    ...current,
-    name: draft.name,
-    active_ingredient: draft.active_ingredient,
-    therapeutic_class: draft.therapeutic_class,
-    regulatory_category: draft.regulatory_category,
-    laboratory: draft.laboratory ?? '',
-    anvisa_registration: draft.anvisa_registration,
-  }
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -567,33 +522,12 @@ export default function MedicineFormScreen() {
               />
             </View>
           </View>
-          {askStrength ? (
-            <View style={styles.choiceBox}>
-              <Text style={styles.choiceTitle}>Este remédio junta mais de uma substância</Text>
-              {strengthLabel ? <Text style={styles.choiceText}>Na embalagem: {strengthLabel}</Text> : null}
-              <Text style={styles.choiceText}>
-                Qual concentração você quer usar no cadastro? Na dúvida, escolha a que aparece primeiro na embalagem ou na receita.
-              </Text>
-              <View style={styles.choiceRow}>
-                {strengthChoices.map((choice) => {
-                  const label = formatStrength(`${choice.dose} ${choice.unit}`) ?? `${choice.dose} ${choice.unit}`
-                  return (
-                    <Pressable
-                      key={`${choice.dose}|${choice.unit}`}
-                      style={({ pressed }) => [styles.choiceChip, pressed && styles.choiceChipPressed]}
-                      onPress={() => handleStrengthChoice(choice)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Usar ${label}`}
-                    >
-                      <Text style={styles.choiceChipText}>{label}</Text>
-                    </Pressable>
-                  )
-                })}
-              </View>
-            </View>
-          ) : strengthLabel ? (
-            <Text style={styles.strengthText}>Na embalagem: {strengthLabel}</Text>
-          ) : null}
+          <StrengthChoiceCard
+            askStrength={askStrength}
+            strengthLabel={strengthLabel}
+            strengthChoices={strengthChoices}
+            onChoose={handleStrengthChoice}
+          />
           {/* FR-031 (ADR-066): denominador do rótulo. Default 1 mL; muda só p/ Mounjaro etc. */}
           {isLiquidUnit(form.values.dosage_unit as string | undefined) && (
             <FormInput
@@ -755,46 +689,6 @@ const styles = StyleSheet.create({
     color: FORM_WARNING_TEXT,
     lineHeight: 18,
   },
-  choiceBox: {
-    padding: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bg.card,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    marginTop: spacing[2],
-    gap: spacing[2],
-  },
-  choiceTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  choiceText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 18,
-  },
-  choiceRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  choiceChip: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: spacing[4],
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: colors.primary[500],
-  },
-  choiceChipPressed: {
-    backgroundColor: colors.primary[50],
-  },
-  choiceChipText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.primary[700],
-  },
   // 066 D1 (C5.3): 2º botão do card da ANVISA, mesmo peso da busca.
   scanButton: {
     flexDirection: 'row',
@@ -833,10 +727,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: colors.text.secondary,
-  },
-  strengthText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    marginTop: spacing[2],
   },
 })

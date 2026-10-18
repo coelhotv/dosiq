@@ -51,7 +51,9 @@ export const ROUTES = {
   // Onboarding guiado (Fase 4 — S4.2)
   ONBOARDING: 'Onboarding',
   ONBOARDING_WELCOME: 'OnboardingWelcome',
-  ONBOARDING_MEDICINE: 'OnboardingMedicine',
+  ONBOARDING_MEDICINE: 'OnboardingMedicine',              // 066 E: escolha (caixa | busca)
+  ONBOARDING_MEDICINE_SEARCH: 'OnboardingMedicineSearch', // 066 E: busca 2C em tela cheia
+  ONBOARDING_MEDICINE_FORM: 'OnboardingMedicineForm',     // 066 E: "Confira" (preenchido) ou fallback em branco
   ONBOARDING_TREATMENT: 'OnboardingTreatment',
   ONBOARDING_STOCK: 'OnboardingStock',
   ONBOARDING_STOCK_INITIAL_BALANCE: 'OnboardingStockInitialBalance', // F4b/T017

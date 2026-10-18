@@ -32,9 +32,13 @@ jest.mock('../screens/OnboardingWelcomeStep', () => ({
   },
 }))
 jest.mock('../screens/OnboardingMedicineStep', () => ({ __esModule: true, default: () => null }))
+jest.mock('../screens/OnboardingMedicineChoiceStep', () => ({ __esModule: true, default: () => null }))
+jest.mock('../screens/OnboardingMedicineSearchStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingTreatmentStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingStockStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingStockInitialBalanceStep', () => ({ __esModule: true, default: () => null }))
+// 066 Slice E (T051): o leitor da caixa também é tela do wizard.
+jest.mock('@medications/scan/BarcodeScannerScreen', () => ({ __esModule: true, default: () => null }))
 
 import OnboardingNavigator from '../OnboardingNavigator'
 

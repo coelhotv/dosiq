@@ -162,7 +162,8 @@ function ChoosingStep({ local, onPick, onSkip, onBack }) {
   )
 }
 
-// Para onde a leitura volta (D2): o cadastro (default, D1) ou o registro de compra (`returnTo`).
+// Para onde a leitura volta (D2): o cadastro (default, D1), o registro de compra ou, 066 E, o form do
+// onboarding (`returnTo`).
 // ✕ só fecha. A saída "manual" volta ao cadastro já rolado até "Identificação" (smoke C-D1-3); na
 // compra é só voltar, com o form como a pessoa deixou; na aba Estoque (FR-030) abre o seletor do FAB. O rascunho volta com o EAN lido (`scanEan`),
 // guardado em ref porque o passo 2 (escolha da concentração) devolve o mesmo código.
@@ -175,6 +176,8 @@ function useScanReturn(navigation, route) {
   const purchase = returnTo === ROUTES.PURCHASE_FORM || returnTo === ROUTES.STOCK_MAIN
   const scannedEanRef = useRef<string | null>(null)
   const close = useCallback(() => navigation.goBack(), [navigation])
+  // 066 E: fora da compra, a saída manual vai ao form que pediu a caixa (no onboarding, o "Confira"
+  // em branco — fallback de scan que não funcionou), mesmo sem ele estar na pilha (popTo empilha).
   const goManual = useCallback(
     () =>
       // Na compra o form ignora `manualEntry` (volta como estava); na aba Estoque ele abre o seletor do FAB.

@@ -18,10 +18,13 @@ import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { OnboardingContext } from './OnboardingContext'
 import OnboardingWelcomeStep from './screens/OnboardingWelcomeStep'
+import OnboardingMedicineChoiceStep from './screens/OnboardingMedicineChoiceStep'
+import OnboardingMedicineSearchStep from './screens/OnboardingMedicineSearchStep'
 import OnboardingMedicineStep from './screens/OnboardingMedicineStep'
 import OnboardingTreatmentStep from './screens/OnboardingTreatmentStep'
 import OnboardingStockStep from './screens/OnboardingStockStep'
 import OnboardingStockInitialBalanceStep from './screens/OnboardingStockInitialBalanceStep'
+import BarcodeScannerScreen from '@medications/scan/BarcodeScannerScreen'
 
 // TODO(040-strict): Stack.Navigator não tipado p/ rotas dinâmicas (nível B)
 const Stack: any = createStackNavigator()
@@ -92,7 +95,11 @@ export default function OnboardingNavigator({ onComplete }) {
     <OnboardingContext.Provider value={value}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name={ROUTES.ONBOARDING_WELCOME} component={OnboardingWelcomeStep} />
-        <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE} component={OnboardingMedicineStep} />
+        {/* 066 Slice E: "Seu primeiro remédio" = escolha (caixa | busca) → busca 2C → "Confira" (o form,
+            também fallback em branco). Só o passo de estoque grava. */}
+        <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE} component={OnboardingMedicineChoiceStep} />
+        <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE_SEARCH} component={OnboardingMedicineSearchStep} />
+        <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE_FORM} component={OnboardingMedicineStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_TREATMENT} component={OnboardingTreatmentStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_STOCK} component={OnboardingStockStep} />
         {/* F4b/T017 — só navegada quando a opção 2 ("também avisar quando acabando") é
@@ -101,6 +108,9 @@ export default function OnboardingNavigator({ onComplete }) {
           name={ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE}
           component={OnboardingStockInitialBalanceStep}
         />
+        {/* 066 Slice E (T051): o leitor da caixa no MESMO stack do wizard (sem 2º NavigationContainer,
+            AP-176). Devolve o rascunho ao "Confira" (`returnTo`); nada é gravado antes do passo 3. */}
+        <Stack.Screen name={ROUTES.MEDICINE_SCAN} component={BarcodeScannerScreen} />
       </Stack.Navigator>
     </OnboardingContext.Provider>
   )
