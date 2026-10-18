@@ -7,7 +7,7 @@
 // Sem terceiro estado: a opção 1 (dose-only) vem PRÉ-MARCADA e "Continuar" está SEMPRE ativo —
 // nunca existe "sem seleção". Copy §9 do SPEC_044_DOSE-ONLY_DECISOES (copiada, não reescrita).
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -23,6 +23,7 @@ import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { withTimeout } from '@shared/utils/withTimeout'
 import { ROUTES } from '@navigation/routes'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
@@ -45,6 +46,29 @@ const OPTIONS = [
   },
 ]
 
+// 066 E (C-4, smoke 2026-10-18): o "Continuar" chegou a girar para sempre sem nenhuma requisição sair
+// do aparelho. Cada escrita tem prazo; estourado, a pessoa vê o motivo e pode tentar de novo.
+export const WRITE_TIMEOUT_MS = 20_000
+const TIMEOUT_MESSAGE = 'A conexão está demorando. Verifique a internet e toque em Continuar de novo.'
+
+function timed<T>(promise: Promise<T>): Promise<T> {
+  return withTimeout(promise, WRITE_TIMEOUT_MS, TIMEOUT_MESSAGE)
+}
+
+// Reaproveita a escrita ainda em voo: o prazo não cancela a requisição, e ela pode gravar depois.
+// Sem isto, tentar de novo após o timeout criaria um 2º remédio/tratamento (classe do AP-283).
+// Falhou de verdade ⇒ esquece, e a próxima tentativa começa outra.
+function inFlight<T>(ref: { current: Promise<T> | null }, start: () => Promise<T>): Promise<T> {
+  if (!ref.current) {
+    const pending = start()
+    ref.current = pending
+    pending.catch(() => {
+      if (ref.current === pending) ref.current = null
+    })
+  }
+  return ref.current
+}
+
 export default function OnboardingStockStep() {
   const navigation = useNavigation<any>()
   const { medicine, medicineSource, treatment, finish, skip, markCompleted } = useOnboarding()
@@ -61,6 +85,8 @@ export default function OnboardingStockStep() {
   // e retoma de onde parou.
   const [createdMedicineId, setCreatedMedicineId] = useState<string | null>(null)
   const [protocolCreated, setProtocolCreated] = useState(false)
+  const pendingMedicine = useRef<Promise<any> | null>(null)
+  const pendingProtocol = useRef<Promise<any> | null>(null)
 
   const headerProps = useMemo(
     () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: () => skip(3) }),
@@ -81,24 +107,32 @@ export default function OnboardingStockStep() {
       let medicineId = createdMedicineId
       if (!medicineId) {
         // 066 E: `source` diz se o 1º remédio veio da caixa, da busca ou digitado (TRACKING_PLAN §5.3).
-        const createdMedicine = await medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource })
+        const createdMedicine = await timed(
+          inFlight(pendingMedicine, () =>
+            medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource }),
+          ),
+        )
         medicineId = createdMedicine.id
         setCreatedMedicineId(medicineId)
       }
 
       const { _remind, ...protocolData } = treatment
       if (!protocolCreated) {
-        await protocolService.create(
-          { ...protocolData, medicine_id: medicineId },
-          { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING }
+        await timed(
+          inFlight(pendingProtocol, () =>
+            protocolService.create(
+              { ...protocolData, medicine_id: medicineId },
+              { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING }
+            ),
+          ),
         )
         setProtocolCreated(true)
       }
 
-      await chooseStockModeInOnboarding(option.tracking)
+      await timed(chooseStockModeInOnboarding(option.tracking))
       // O provider lê a preferência UMA vez (no login) — sem este refresh, o app abre com o
       // valor lido ANTES desta escolha e a aba Estoque aparece para quem escolheu dose-only.
-      await refreshStockTracking()
+      await timed(refreshStockTracking())
 
       // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete no passo 3.
       // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO → segue o
@@ -120,13 +154,13 @@ export default function OnboardingStockStep() {
       // idempotência abaixo (`createdMedicineId`/`protocolCreated`) são estado de componente,
       // perdidos no restart → medicamento e tratamento duplicados (classe do AP-283).
       if (option.tracking) {
-        await markCompleted()
+        await timed(markCompleted())
         setSubmitting(false)
         navigation.navigate(ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE)
         return
       }
 
-      await finish()
+      await timed(finish())
     } catch (err) {
       // Não avança em silêncio: deixa o usuário tentar de novo em vez de cair num app que não
       // é o que ele escolheu — ou pior, sem o tratamento que ele acabou de configurar.

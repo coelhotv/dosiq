@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { successHaptic, errorHaptic } from '@shared/utils/haptics'
+import { withTimeout } from '@shared/utils/withTimeout'
 
 // Hook para mutations C/U/D (create/update/delete) com:
 // - guard contra double-submit
@@ -17,18 +18,6 @@ import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 //   const handleSubmit = () => mutate(() => medicineService.create(values))
 
 const DEFAULT_TIMEOUT_MS = 15_000
-
-// Promise que rejeita após N ms (Hermes-safe; sem AbortController em fn arbitrária)
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout>
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(
-      () => reject(new Error(`Timeout: operação excedeu ${ms / 1000}s`)),
-      ms,
-    )
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
-}
 
 interface UseMutationOptions<TResult> {
   onSuccess?: (result: TResult) => void

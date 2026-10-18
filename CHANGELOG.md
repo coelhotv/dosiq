@@ -9,7 +9,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Primeiro remédio pela caixa no onboarding (spec 066, slice E)
 
-- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.44` → `0.33.47` como build intermediário — `0.33.45` e `0.33.46` foram builds de
+- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.44` → `0.33.48` como build intermediário — `0.33.45` a `0.33.47` foram builds de
   smoke; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade nova). O passo "Seu primeiro
   remédio" de quem está criando a conta virou três telas. Na primeira, a pessoa escolhe: "Ler o código de barras" (ação
   principal) ou "Buscar pelo nome". A busca abre em tela cheia, com a lista aparecendo enquanto se digita, e é a mesma do
@@ -18,7 +18,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   preenchidos e todos editáveis. Se a caixa não for lida ou o remédio não estiver na lista ("Não achei. Digitar à mão"),
   a mesma tela abre em branco para digitar. Nada é salvo nesse passo: o remédio continua sendo gravado só no fim do
   onboarding, junto do tratamento, e o "Pular" segue em todas as telas. No cadastro completo, a busca e o leitor não
-  mudam.
+  mudam. Se a conexão travar ao concluir, o app avisa em até 20 segundos e deixa tentar de novo, sem
+  duplicar o remédio, em vez de ficar carregando.
   Store-note: relevante — entra no texto do pacote `0.34.0` junto do cadastro pela caixa.
 
 ### Ler a caixa ao registrar a compra (spec 066, slice D2)
