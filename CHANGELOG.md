@@ -9,7 +9,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Primeiro remédio pela caixa no onboarding (spec 066, slice E)
 
-- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.44` → `0.33.46` como build intermediário — `0.33.45` foi build de
+- **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.44` → `0.33.47` como build intermediário — `0.33.45` e `0.33.46` foram builds de
   smoke; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade nova). O passo "Seu primeiro
   remédio" de quem está criando a conta virou três telas. Na primeira, a pessoa escolhe: "Ler o código de barras" (ação
   principal) ou "Buscar pelo nome". A busca abre em tela cheia, com a lista aparecendo enquanto se digita, e é a mesma do

@@ -129,10 +129,11 @@ const styles = StyleSheet.create({
     gap: spacing[4],
     padding: spacing[5],
     borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary[600],
+    // Verde Dosiq do CTA principal (o mesmo do PrimaryButton); `primary[600]` é azul.
+    backgroundColor: colors.brand.primary,
   },
   primaryCardPressed: {
-    backgroundColor: colors.primary[700],
+    backgroundColor: colors.brand.forest,
   },
   secondaryCard: {
     flexDirection: 'row',

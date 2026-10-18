@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
     borderRadius: borderRadius.lg,
     borderWidth: 1.5,
-    borderColor: colors.primary[600],
+    borderColor: colors.brand.primary,
     backgroundColor: colors.bg.card,
     marginTop: spacing[2],
   },
