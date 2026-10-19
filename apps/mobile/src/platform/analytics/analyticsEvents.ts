@@ -33,18 +33,18 @@ export const EVENTS = {
 
   // Busca na base ANVISA + passo 2 da CMED (spec 066 Slice C · TRACKING_PLAN §5.3). Setup, sem
   // treatment_id. Nunca nome/concentração/substância/laboratório nem o texto digitado (R-042).
-  MEDICINE_SEARCH_OPENED: 'medicine_search_opened',                     // entry_point: 'medicine_form'
+  MEDICINE_SEARCH_OPENED: 'medicine_search_opened',                     // entry_point: 'medicine_form' | 'onboarding' (066 E)
   MEDICINE_SEARCH_RESULT_SELECTED: 'medicine_search_result_selected',   // result_rank, query_length, item_kind, presentation_count
   MEDICINE_PRESENTATION_SELECTED: 'medicine_presentation_selected',     // outcome: single|picked|not_listed|back, dose_ambiguous
-  MEDICINE_SEARCH_DISMISSED: 'medicine_search_dismissed',               // had_query, step: search|presentation
+  MEDICINE_SEARCH_DISMISSED: 'medicine_search_dismissed',               // had_query, step: search|presentation, exit?: back|manual (066 E, só onboarding)
   MEDICINE_INDEX_LOADED: 'medicine_index_loaded',                       // source: disk|network, duration_ms, status, row_count
 
   // Leitura do código de barras (spec 066 D1 · PO-11 · TRACKING_PLAN §5.4). Mede o limiar P-2 da onda 1.
   // NUNCA o EAN (identifica o remédio = dado de saúde), nome, substância nem laboratório (FR-025).
-  SCAN_OPENED: 'scan_opened',                 // entry_point: medicine_form|medicines_list|purchase_form|stock_list (066 D2)
+  SCAN_OPENED: 'scan_opened',                 // entry_point: medicine_form|medicines_list|purchase_form|stock_list (066 D2)|onboarding (066 E)
   SCAN_PERMISSION: 'scan_permission',         // result: granted|denied|blocked
   SCAN_RESULT: 'scan_result',                 // result: found|multiple|not_found|illegible|offline|version|index_failed
-  SCAN_CONFIRMED: 'scan_confirmed',           // dose_edited: bool, used_existing: bool
+  SCAN_CONFIRMED: 'scan_confirmed',           // dose_edited: bool, used_existing: bool (066 E: também no Continuar do onboarding)
 
   // Doses
   DOSE_LOGGED: 'dose_logged',                  // medicine_id (UUID opaco) + action opcional — nunca nome/PII clínico

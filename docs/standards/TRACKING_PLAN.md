@@ -15,7 +15,7 @@ tags:
   - privacy
   - tracking-plan
 created_at: "2026-08-08"
-updated_at: "2026-10-13"
+updated_at: "2026-10-18"
 epic: "analytics-instrumentation"
 ---
 
@@ -248,19 +248,25 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `medicine_added` | ✅ mobile | medicamento cadastrado (form ou onboarding) | `surface`, `medicine_id` (**UUID, nunca nome**), `source?: anvisa_search\|scan\|manual` (066 — só no form de cadastro; `scan` = confirmado depois da leitura do código de barras, D1; ausente no onboarding = não medido) | passou pela fricção de setup? (passo do funil, **não** ativação) · a busca ANVISA encurta o cadastro? |
-| `medicine_search_opened` | 🆕 mobile (066 C) | sheet da busca ANVISA abre | `surface`, `entry_point: medicine_form` | quantos cadastros começam pela busca (vs. à mão)? |
+| `medicine_added` | ✅ mobile | medicamento cadastrado (form ou onboarding) | `surface`, `medicine_id` (**UUID, nunca nome**), `source?: anvisa_search\|scan\|manual` (066 — form de cadastro e, desde a Slice E, onboarding: como o 1º remédio chegou ao "Confira"; `scan` = confirmado depois da leitura do código de barras, D1; ausente = não medido, ex. builds anteriores à E) | passou pela fricção de setup? (passo do funil, **não** ativação) · a busca ANVISA encurta o cadastro? |
+| `medicine_search_opened` | 🆕 mobile (066 C) | busca ANVISA abre: sheet do cadastro ou tela de busca do onboarding (066 E) | `surface`, `entry_point: medicine_form\|onboarding` | quantos cadastros começam pela busca (vs. à mão)? no onboarding, quantos escolhem a busca em vez da caixa? |
 | `medicine_search_result_selected` | 🆕 mobile (066 C) | toque num nome do passo 1 | `surface`, `result_rank` (1-based), `query_length`, `item_kind: brand\|substance` | a busca acha na 1ª posição? |
 | `medicine_presentation_selected` | 🆕 mobile (066 C) | passo 2 (concentração) termina ou é pulado | `surface`, `outcome: single\|picked\|not_listed\|back\|unavailable`, `presentation_count`, `dose_ambiguous` | o passo 2 resolve ou é abandonado? quão frequente é a dose ambígua? |
-| `medicine_search_dismissed` | 🆕 mobile (066 C) | sheet fecha sem escolher | `surface`, `had_query`, `step: search\|presentation` | onde a busca falha? |
+| `medicine_search_dismissed` | 🆕 mobile (066 C) | busca fecha sem escolher (sheet; no onboarding, voltar ou "Não achei. Digitar à mão") | `surface`, `had_query`, `step: search\|presentation`, `exit?: back\|manual` (066 E, só onboarding — `manual` = o remédio não estava na lista; ausente no sheet) | onde a busca falha? quantos não acham o remédio e digitam? |
 | `medicine_index_loaded` | 🆕 mobile (066 C) | índice CMED pronto ou falhou | `surface`, `source: disk\|network`, `duration_ms`, `status: ready\|offline\|failed\|version`, `row_count` | o índice carrega rápido em aparelho de entrada? (PO-8 da 066 em release e no campo) |
-| `scan_opened` | 🆕 mobile (066 D1) | abriu o leitor do código de barras | `surface`, `entry_point: medicine_form\|medicines_list` | quantos tentam o atalho da caixa, e por qual entrada? (limiar P-2 da onda 1) |
+| `scan_opened` | 🆕 mobile (066 D1) | abriu o leitor do código de barras | `surface`, `entry_point: medicine_form\|medicines_list\|purchase_form\|onboarding` (`purchase_form` 066 D2; `onboarding` 066 E) | quantos tentam o atalho da caixa, e por qual entrada? (limiar P-2 da onda 1) |
 | `scan_permission` | 🆕 mobile (066 D1) | respondeu ao pedido da câmera | `surface`, `result: granted\|denied\|blocked` | a pré-permissão convence? quantos ficam sem câmera? |
 | `scan_result` | 🆕 mobile (066 D1) | o leitor chegou a um desfecho | `surface`, `result: found\|multiple\|not_found\|illegible\|offline\|version\|index_failed` | qual fração das caixas a CMED resolve? (taxa de leitura e de não encontrado) |
-| `scan_confirmed` | 🆕 mobile (066 D1) | a caixa lida virou decisão: salvou ou usou um remédio já cadastrado | `surface`, `dose_edited: bool`, `used_existing: bool` | a pessoa precisou corrigir a dose da caixa? o "É este que você já tem?" evita duplicado? |
+| `scan_confirmed` | 🆕 mobile (066 D1) | a caixa lida virou decisão: salvou ou usou um remédio já cadastrado; no onboarding (066 E), "Continuar" no "Confira" — 1× por caixa lida, `used_existing` sempre `false` (conta nova não tem candidato) | `surface`, `dose_edited: bool`, `used_existing: bool` | a pessoa precisou corrigir a dose da caixa? o "É este que você já tem?" evita duplicado? |
 
 > **Busca ANVISA (066 Slice C):** setup, sem `treatment_id` (§5.0). 🔴 Nunca o texto digitado (só
 > `query_length`), nome, concentração, substância nem laboratório (§6) — guard no teste do sheet.
+>
+> **Onboarding (066 E):** o funil do 1º remédio é `scan_opened{entry_point:onboarding}` →
+> `scan_result` → `scan_confirmed` | `medicine_search_opened{entry_point:onboarding}` →
+> `medicine_search_dismissed{exit:manual}` · `medicine_added{source}` sai no passo de estoque, que é
+> quem grava. `scan_permission`/`scan_result`/`medicine_presentation_selected` não carregam ponto de
+> toque: separar onboarding × cadastro é pela sequência da sessão. `ONBOARDING_*` intocados (PO-12).
 >
 > **Código de barras (066 D1, `scan_*`):** 🔴 nunca o EAN, nem "anonimizado" — 13 dígitos identificam o
 > remédio, e remédio é dado de saúde. Nunca nome, substância, laboratório nem o valor da dose

@@ -15,6 +15,8 @@ const mockCmedCalls: any[] = []
 const mockCmed = { current: { status: 'ready', index: null as any, lookup: null } }
 
 jest.mock('@shared/hooks/useMedicineDatabase', () => ({
+  // O mínimo real vem do módulo: sem ele o mock apagaria a regra (066 E, C-8).
+  MIN_SEARCH_CHARS: jest.requireActual('@shared/hooks/useMedicineDatabase').MIN_SEARCH_CHARS,
   useMedicineDatabase: () => ({ search: mockSearch, isReady: true }),
 }))
 jest.mock('@shared/hooks/useCmedIndex', () => ({
@@ -213,5 +215,19 @@ describe('código de barras no sheet (066 D1 · C-D1-2: "Trocar" oferece os dois
   it('sem onScan, o sheet fica como antes', () => {
     const { queryByLabelText } = render(<MedicineAnvisaSheet open onClose={jest.fn()} onSelect={jest.fn()} />)
     expect(queryByLabelText('Ler o código de barras')).toBeNull()
+  })
+})
+
+describe('mínimo de letras da busca (066 E, C-8)', () => {
+  it('2 letras: mostra o aviso de 3 letras e nem chama a busca — nunca "Nenhum resultado"', () => {
+    mockSearch.mockReturnValue([])
+    const { getByLabelText, getByText, queryByText } = render(
+      <MedicineAnvisaSheet open onClose={jest.fn()} onSelect={jest.fn()} />,
+    )
+    mockSearch.mockClear()
+    fireEvent.changeText(getByLabelText('Buscar medicamento'), 'ni')
+    expect(getByText('Digite ao menos 3 letras')).toBeTruthy()
+    expect(queryByText('Nenhum resultado')).toBeNull()
+    expect(mockSearch).not.toHaveBeenCalled()
   })
 })

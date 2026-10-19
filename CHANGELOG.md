@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Primeiro remédio pela caixa no onboarding (spec 066, slice E)
+
+- **Mobile** (`Added`, `patch`; entra no pacote de loja `0.34.0` — os builds intermediários de smoke não são citados aqui,
+  porque correram em paralelo com a D2 e repetem números; o `APP_VERSION` final sai no merge; canal: **build de loja**,
+  R-314 — funcionalidade nova). O passo "Seu primeiro
+  remédio" de quem está criando a conta virou três telas. Na primeira, a pessoa escolhe: "Ler o código de barras" (ação
+  principal) ou "Buscar pelo nome". A busca abre em tela cheia, com a lista aparecendo enquanto se digita, e é a mesma do
+  cadastro completo: escolhida a embalagem, a concentração também vem, e o remédio com mais de uma substância pergunta a
+  concentração com botões. Os dois caminhos terminam em "Confira o seu remédio", com nome, concentração e unidade
+  preenchidos e todos editáveis. Se a caixa não for lida ou o remédio não estiver na lista ("Não achei. Digitar à mão"),
+  a mesma tela abre em branco para digitar. Nada é salvo nesse passo: o remédio continua sendo gravado só no fim do
+  onboarding, junto do tratamento, e o "Pular" segue em todas as telas. O selo "Lista oficial da ANVISA" fica em destaque
+  no rodapé. No tratamento, remédio líquido já nasce com a unidade certa da dose, tirada da própria caixa — gotas no
+  colírio e na dipirona, UI na insulina, mg nas canetas como o Mounjaro, mL no xarope — sem nenhuma pergunta a mais;
+  antes vinha vazia e o app mostrava "1 mL" até a pessoa editar. A busca por nome, aqui e no cadastro completo, passa a
+  pedir 3 letras antes de procurar: com 2 ela dizia "Nenhum resultado" mesmo para remédios que existem. Se a conexão
+  travar ao concluir, o app avisa em até 20 segundos e deixa tentar de novo, sem
+  duplicar o remédio, em vez de ficar carregando.
+  Store-note: relevante — entra no texto do pacote `0.34.0` junto do cadastro pela caixa.
+
 ### Ler a caixa ao registrar a compra (spec 066, slice D2)
 
 - **Mobile** (`Added`, `patch`; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade

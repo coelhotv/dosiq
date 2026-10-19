@@ -23,6 +23,7 @@ import {
   applyCadenceChoice,
   MONTHLY_CHOICE,
   MONTHLY_INTERVAL_DAYS,
+  INTAKE_UNIT_LABELS,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -111,7 +112,7 @@ function OnboardingReminderCard({ remind, setRemind }) {
 export default function OnboardingTreatmentStep() {
   // States (R-010)
   const navigation = useNavigation()
-  const { medicine, treatment, setTreatment, skip } = useOnboarding()
+  const { medicine, medicineIntakeUnit, treatment, setTreatment, skip } = useOnboarding()
   const { show } = useToast()
   // Preserva a escolha do lembrete quando o usuário volta do passo 4 (o wizard só grava no fim).
   const [remind, setRemind] = useState(treatment?._remind ?? true)
@@ -130,18 +131,25 @@ export default function OnboardingTreatmentStep() {
         ...treatment,
         medicine_id: medicine?.id ?? FAKE_UUID,
         name,
+        // O remédio pode ter mudado no "Confira": a unidade da tomada segue o remédio atual.
+        intake_unit: medicineIntakeUnit ?? null,
+        _medicineIsLiquid: !!medicineIntakeUnit,
       }
     }
     return {
       medicine_id: medicine?.id ?? FAKE_UUID,
       name: medicine?.name ?? 'Meu tratamento',
       dosage_per_intake: '1',
+      // 066 E (C-7): líquido nasce com a unidade da caixa (gotas/mL/UI/mg) — sem perguntar. NULL em
+      // líquido o app lê como mL ("1 mL" no colírio). O flag liga o refine do schema que exige a unidade.
+      intake_unit: medicineIntakeUnit ?? null,
+      _medicineIsLiquid: !!medicineIntakeUnit,
       frequency: FREQ_DAILY,
       weekdays: [],
       time_schedule: ['08:00'],
       start_date: getTodayLocal(),
     }
-  }, [treatment, medicine])
+  }, [treatment, medicine, medicineIntakeUnit])
 
   const form = useFormState(protocolCreateSchema, {
     initialValues,
@@ -290,7 +298,7 @@ export default function OnboardingTreatmentStep() {
           {/* Quantidade por dose */}
           <FormInput
             name="dosage_per_intake"
-            label="Quantidade por dose (unidade)"
+            label={`Quantidade por dose (${medicineIntakeUnit ? (INTAKE_UNIT_LABELS[medicineIntakeUnit] ?? medicineIntakeUnit) : 'unidade'})`}
             keyboardType="decimal-pad"
             value={String(form.values.dosage_per_intake ?? '')}
             error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : undefined}

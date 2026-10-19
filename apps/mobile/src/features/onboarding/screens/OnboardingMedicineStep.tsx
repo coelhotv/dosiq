@@ -1,14 +1,17 @@
 // OnboardingMedicineStep — passo 1 do wizard: primeiro remédio (Fase 4 S4.2).
 // REUSA o fluxo da Fase 1: medicineService.create + ANVISA sheet + Form Kit
 // (PO-8 — orquestra, não recria). Mock: mock-onboarding-passo2.
+//
+// 066 Slice E (US7, PO-12): esta é a tela 3 de 3 do passo, o "Confira". Recebe a caixa lida
+// (`scanDraft`, do leitor — RC3 A) ou a escolha da busca 2C (`searchSelection`, da tela de busca) e
+// mostra nome/dose/unidade para conferir; aberta em branco (`manualEntry`, ou caixa/busca que não
+// serviram) é o fallback de digitar. A escolha do caminho mora em `OnboardingMedicineChoiceStep`.
+// Nada é gravado aqui: o remédio só vai para o contexto do wizard; quem grava é o passo de estoque (INV-1).
 
-import { useCallback, useMemo } from 'react'
-import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
-// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
-import * as LucideIcons from 'lucide-react-native'
-const { Info } = LucideIcons as any
+import { useNavigation, useRoute } from '@react-navigation/native'
 import {
   medicineCreateSchema,
   DOSAGE_UNITS,
@@ -16,17 +19,23 @@ import {
   normalizeRegulatoryCategory,
   isLiquidDosageUnit,
   PRESENTATIONS,
+  type CmedStrengthChoice,
+  defaultIntakeUnitFor,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
-import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
-import FormAutocomplete from '@shared/components/form/FormAutocomplete'
 import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
+import { AnvisaBanner } from '@medications/components/AnvisaBanner'
+import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
+import { valuesFromDraft, draftExtras, baseFromScan, scanDoseEdited } from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import OnboardingBrandmark from '@features/onboarding/components/OnboardingBrandmark'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
@@ -52,6 +61,31 @@ function singleForm(forms: unknown): string | null {
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
 const isLiquidUnit = isLiquidDosageUnit
 
+// Nova leitura/escolha = novo objeto no param (popTo com merge); a mesma não se reaplica a cada render.
+function isNewParam(value, applied) {
+  return !!value && value !== applied
+}
+
+// Item da base ANVISA → campos do form (mesmo mapeamento do cadastro F1). Genérico não guarda
+// laboratório (D11); o registro só vem com a caixa escolhida (C-C4).
+function baseFromAnvisaItem(item, current) {
+  const isGeneric = (item.regulatoryCategory ?? '').toLowerCase().startsWith('gener')
+  return {
+    ...current,
+    name: item.name ?? current.name,
+    active_ingredient: item.activeIngredient ?? current.active_ingredient,
+    therapeutic_class: item.therapeuticClass ?? current.therapeutic_class,
+    // A base ANVISA traz a categoria crua ('Biologico', 'Gases Medicinais') e o enum é
+    // acentuado — sem normalizar, o safeParse falha em `regulatory_category`, um campo
+    // que NÃO existe nesta tela: o usuário via "Verifique os campos destacados" sem
+    // nenhum campo destacado. Mesma correção já aplicada no cadastro (F1) e na web.
+    regulatory_category:
+      normalizeRegulatoryCategory(item.regulatoryCategory) ?? current.regulatory_category,
+    laboratory: isGeneric ? '' : (item.laboratory ?? current.laboratory ?? ''),
+    anvisa_registration: null,
+  }
+}
+
 function formProps(form, name) {
   return {
     value: form.values[name],
@@ -63,43 +97,89 @@ function formProps(form, name) {
 
 export default function OnboardingMedicineStep() {
   // States (R-010)
-  const navigation = useNavigation()
-  const { medicine, setMedicine, skip } = useOnboarding()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { medicine, setMedicine, setMedicineSource, setMedicineIntakeUnit, skip } = useOnboarding()
   const { show } = useToast()
-  const { search } = useMedicineDatabase()
+  // 066 E: o que veio da caixa (busca 2C ou código de barras) — mesmo estado do cadastro completo.
+  const [filledLabel, setFilledLabel] = useState<string | null>(null)
+  const [filledSource, setFilledSource] = useState<'search' | 'scan'>('search')
+  const [doseCheckRequired, setDoseCheckRequired] = useState(false)
+  const [strengthLabel, setStrengthLabel] = useState<string | null>(null)
+  const [strengthChoices, setStrengthChoices] = useState<CmedStrengthChoice[]>([])
+  const [doseChoiceError, setDoseChoiceError] = useState(false)
+  const [appliedScanDraft, setAppliedScanDraft] = useState<any>(null)
+  const [appliedSelection, setAppliedSelection] = useState<any>(null)
+  // 066 E (C-7): unidade da tomada que a caixa indica, e para qual concentração ela vale.
+  const [draftIntake, setDraftIntake] = useState<{ unit: string | null; dosageUnit: string | null } | null>(null)
+  // `scan_confirmed` sai 1× por caixa lida: voltar do tratamento e continuar de novo não recontaria.
+  const confirmedScanRef = useRef<any>(null)
 
   const form = useFormState(medicineCreateSchema, { initialValues: medicine || DEFAULT_INITIAL })
 
-  // Memos (R-010)
-  // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
-  // pós-login do wizard).
-  const headerProps = useMemo(() => ({ step: 1, totalSteps: 4, onSkip: () => skip(1) }), [skip])
+  // Aplica a caixa no form + guarda do composto (INV-2), escolhas de 1 toque e "Na embalagem".
+  const applyDraft = (values, draft, source: 'search' | 'scan') => {
+    form.setValues(values)
+    const extras = draftExtras(draft)
+    setDoseCheckRequired(extras.doseCheckRequired)
+    setStrengthChoices(extras.strengthChoices)
+    setStrengthLabel(extras.strengthLabel)
+    setDoseChoiceError(false)
+    setFilledLabel([draft.name, draft.strengthLabel].filter(Boolean).join(' '))
+    setFilledSource(source)
+    setDraftIntake({ unit: draft.intake_unit ?? null, dosageUnit: draft.dosage_unit ?? null })
+  }
 
-  // Handlers
-  // Auto-fill ao escolher uma sugestão ANVISA (mesmo mapeamento do cadastro F1).
-  const handleAnvisaSelect = useCallback(
-    (item) => {
-      form.setValues({
-        name: item.name ?? form.values.name,
-        active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
-        therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
-        // A base ANVISA traz a categoria crua ('Biologico', 'Gases Medicinais') e o enum é
-        // acentuado — sem normalizar, o safeParse falha em `regulatory_category`, um campo
-        // que NÃO existe nesta tela: o usuário via "Verifique os campos destacados" sem
-        // nenhum campo destacado. Mesma correção já aplicada no cadastro (F1) e na web.
-        regulatory_category:
-          normalizeRegulatoryCategory(item.regulatoryCategory) ?? form.values.regulatory_category,
-        // 066 Slice C (T023b): forma única do produto preenche a apresentação (escondida aqui,
-        // aparece depois no cadastro). Várias formas: não há dropdown para filtrar — nada muda.
-        ...(singleForm(item.forms) ? { presentation: singleForm(item.forms) } : {}),
-      })
-    },
-    [form],
+  // US7 cen. 5: a busca devolve { anvisaItem, cmedDraft? }. Com caixa escolhida no passo 2, o rascunho
+  // da CMED prevalece (dose/unidade/forma/registro). Sem caixa (offline, sem embalagem): como antes —
+  // nome + forma única (Slice C, T023b).
+  const applySelection = ({ anvisaItem: item, cmedDraft: draft }) => {
+    const base = baseFromAnvisaItem(item, form.values)
+    if (draft) {
+      applyDraft(valuesFromDraft(base, draft, form.values), draft, 'search')
+      return
+    }
+    const presentation = singleForm(item.forms)
+    form.setValues(presentation ? { ...base, presentation } : base)
+    setDoseCheckRequired(false)
+    setStrengthChoices([])
+    setStrengthLabel(null)
+    setDoseChoiceError(false)
+    setFilledLabel(item.name ?? null)
+    setFilledSource('search')
+    setDraftIntake(null)
+  }
+
+  // Aplicados durante o render, uma vez por objeto. 066 E (T050): `scanDraft` vem do leitor; `scanEan`
+  // também volta e é ignorado aqui (não segue p/ o estoque — Non-Goal). `searchSelection` vem da busca.
+  const scanDraft = route.params?.scanDraft ?? null
+  if (isNewParam(scanDraft, appliedScanDraft)) {
+    setAppliedScanDraft(scanDraft)
+    applyDraft(valuesFromDraft(baseFromScan(scanDraft, form.values), scanDraft, form.values), scanDraft, 'scan')
+  }
+  const searchSelection = route.params?.searchSelection ?? null
+  if (isNewParam(searchSelection, appliedSelection)) {
+    setAppliedSelection(searchSelection)
+    applySelection(searchSelection)
+  }
+
+  // Memos (R-010)
+  // Voltar = escolher outro caminho (caixa ou busca).
+  const headerProps = useMemo(
+    () => ({ step: 1, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: () => skip(1) }),
+    [navigation, skip],
   )
 
-  const anvisaSubtitle = useCallback(
-    (item) => [item.laboratory, item.activeIngredient].filter(Boolean).join(' · '),
-    [],
+  // Handlers
+  // "Trocar" no selo de origem: volta à escolha do caminho.
+  const handleChange = useCallback(() => navigation.popTo(ROUTES.ONBOARDING_MEDICINE), [navigation])
+
+  const handleStrengthChoice = useCallback(
+    (choice: CmedStrengthChoice) => {
+      form.setValues({ ...form.values, dosage_per_pill: String(choice.dose), dosage_unit: choice.unit })
+      setDoseChoiceError(false)
+    },
+    [form],
   )
 
   const handleDoseChange = useCallback(
@@ -123,6 +203,12 @@ export default function OnboardingMedicineStep() {
   )
 
   const handleContinue = useCallback(() => {
+    // INV-2 (C-C2): composto ambíguo exige a escolha — o Zod aceita dose vazia.
+    if (doseCheckRequired && String(form.values.dosage_per_pill ?? '').trim() === '') {
+      setDoseChoiceError(true)
+      show('Escolha a concentração do remédio.', { variant: 'error' })
+      return
+    }
     if (!form.validate()) {
       // "Verifique os campos destacados" só ajuda se houver campo destacado. Erro em campo
       // que esta tela não renderiza (ex: regulatory_category vinda da ANVISA) deixava o
@@ -137,9 +223,29 @@ export default function OnboardingMedicineStep() {
       )
       return
     }
+    // 066 E (TRACKING_PLAN §5.3): de onde veio o remédio, para o `medicine_added` do passo de estoque.
+    const source = filledLabel ? (filledSource === 'scan' ? 'scan' : 'anvisa_search') : 'manual'
+    // A caixa lida virou decisão ao "Continuar" (D1: no form é o "Criar"); nada é gravado aqui (INV-1).
+    if (source === 'scan' && appliedScanDraft && confirmedScanRef.current !== appliedScanDraft) {
+      confirmedScanRef.current = appliedScanDraft
+      logEvent(EVENTS.SCAN_CONFIRMED, {
+        surface: SURFACES.MOBILE,
+        used_existing: false,
+        dose_edited: scanDoseEdited(form.values, appliedScanDraft),
+      })
+    }
     setMedicine(form.values)
+    setMedicineSource(source)
+    // C-7: a unidade da caixa só vale se a concentração ainda é a da caixa; senão, o padrão do form completo.
+    const dosageUnit = form.values.dosage_unit as string | undefined
+    setMedicineIntakeUnit(
+      draftIntake?.unit && draftIntake.dosageUnit === dosageUnit ? draftIntake.unit : defaultIntakeUnitFor(dosageUnit),
+    )
     ;(navigation.navigate as any)(ROUTES.ONBOARDING_TREATMENT)
-  }, [form, show, setMedicine, navigation])
+  }, [form, show, setMedicine, setMedicineSource, setMedicineIntakeUnit, navigation, doseCheckRequired, filledLabel, filledSource, appliedScanDraft, draftIntake])
+
+  const hasDose = String(form.values.dosage_per_pill ?? '').trim() !== ''
+  const askStrength = doseCheckRequired && !hasDose
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -150,42 +256,26 @@ export default function OnboardingMedicineStep() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.brandmark}>
-            <Image
-              source={require('../../../../assets/icon.png')}
-              style={styles.brandIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.brandText}>dosiq</Text>
-          </View>
+          <OnboardingBrandmark />
 
-          <Text style={styles.title}>Seu primeiro remédio</Text>
+          <Text style={styles.title}>{filledLabel ? 'Confira o seu remédio' : 'Seu primeiro remédio'}</Text>
           <Text style={styles.subtitle}>
-            Comece pelo remédio que você mais lembra. Pode mudar depois.
+            {filledLabel
+              ? 'Veja se nome e concentração batem com a caixa. Pode corrigir qualquer campo.'
+              : 'Comece pelo remédio que você mais lembra. Pode mudar depois.'}
           </Text>
 
-          <FormAutocomplete
+          {filledLabel ? (
+            <AnvisaBanner onPress={handleChange} filledLabel={filledLabel} filledSource={filledSource} />
+          ) : null}
+
+          <FormInput
             name="name"
             label="Nome do remédio"
             required
             placeholder="Digite o nome do remédio"
-            value={form.values.name}
-            error={form.touched.name ? form.errors.name : undefined}
-            onChange={form.handleChange}
-            onBlur={form.handleBlur}
-            search={search}
-            getItemSubtitle={anvisaSubtitle}
-            onSelect={handleAnvisaSelect}
-            disabled={false}
+            {...formProps(form, 'name')}
           />
-
-          {/* Dica ANVISA (mock-onboarding-passo2) */}
-          <View style={styles.anvisaHint}>
-            <Info size={18} color={colors.primary[700]} strokeWidth={2} />
-            <Text style={styles.anvisaHintText}>
-              Não sabe o nome certo? Digite o que está na caixa — a gente sugere o nome oficial pela base da Anvisa.
-            </Text>
-          </View>
 
           <View style={styles.row}>
             <View style={styles.rowDose}>
@@ -195,6 +285,7 @@ export default function OnboardingMedicineStep() {
                 required
                 keyboardType="decimal-pad"
                 {...formProps(form, 'dosage_per_pill')}
+                {...(doseChoiceError && askStrength ? { error: 'Escolha a concentração abaixo' } : null)}
                 onChange={handleDoseChange}
               />
             </View>
@@ -209,8 +300,16 @@ export default function OnboardingMedicineStep() {
               />
             </View>
           </View>
-          {/* 066 C (PO, smoke E1): a busca daqui ainda não traz a concentração (vem na Slice E). */}
-          <Text style={styles.doseHint}>Copie o número escrito na embalagem ou na receita.</Text>
+          <StrengthChoiceCard
+            askStrength={askStrength}
+            strengthLabel={strengthLabel}
+            strengthChoices={strengthChoices}
+            onChoose={handleStrengthChoice}
+          />
+          {/* 066 C (paliativo) → E (C6.6): só quando a dose não veio da caixa (manual, offline, sem embalagem). */}
+          {!(filledLabel && hasDose) && !askStrength && (
+            <Text style={styles.doseHint}>Copie o número escrito na embalagem ou na receita.</Text>
+          )}
 
           {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
             <View style={styles.warningBox}>
@@ -279,38 +378,6 @@ const styles = StyleSheet.create({
   },
   rowUnit: {
     flex: 1,
-  },
-  anvisaHint: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing[2],
-    padding: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary[50],
-  },
-  anvisaHintText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.primary[700],
-    lineHeight: 18,
-  },
-  brandmark: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[2],
-    alignSelf: 'center',
-  },
-  brandIcon: {
-    width: 28,
-    height: 28,
-  },
-  brandText: {
-    fontSize: 20,
-    fontFamily: typography.fontFamily.brand,
-    color: colors.text.brand,
-    marginLeft: spacing[1],
-    fontWeight: '700',
   },
   warningBox: {
     padding: spacing[3],
