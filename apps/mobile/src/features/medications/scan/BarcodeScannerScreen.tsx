@@ -176,8 +176,8 @@ function useScanReturn(navigation, route) {
   const purchase = returnTo === ROUTES.PURCHASE_FORM || returnTo === ROUTES.STOCK_MAIN
   const scannedEanRef = useRef<string | null>(null)
   const close = useCallback(() => navigation.goBack(), [navigation])
-  // 066 E: fora da compra, a saída manual vai ao form que pediu a caixa (no onboarding, o "Confira"
-  // em branco — fallback de scan que não funcionou), mesmo sem ele estar na pilha (popTo empilha).
+  // 066 E: no onboarding, a saída manual abre o "Confira" em branco — fallback de scan que não
+  // funcionou —, mesmo sem ele estar na pilha (popTo empilha).
   const goManual = useCallback(
     () =>
       // Na compra o form ignora `manualEntry` (volta como estava); na aba Estoque ele abre o seletor do FAB.
