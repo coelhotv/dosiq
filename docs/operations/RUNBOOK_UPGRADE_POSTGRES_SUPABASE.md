@@ -18,16 +18,16 @@
 Rodar no SQL editor (só leitura). Mostra quantas doses pendentes caem em cada hora (horário de Brasília) nos próximos 7 dias:
 
 ```sql
-select extract(hour from scheduled_at at time zone 'America/Sao_Paulo') as hora_brt,
+select extract(hour from scheduled_for at time zone 'America/Sao_Paulo') as hora_brt,
        count(*) as doses
 from dose_instances
 where status = 'pending'
-  and scheduled_at between now() and now() + interval '7 days'
+  and scheduled_for between now() and now() + interval '7 days'
 group by 1
 order by 2 asc;
 ```
 
-> R-295: conferir `dose_instances.scheduled_at` no `information_schema` antes de rodar, se este runbook ficar velho.
+> R-295: conferir `dose_instances.scheduled_for` no `information_schema` antes de rodar, se este runbook ficar velho.
 
 Escolher a hora com menos doses (normalmente madrugada) e um dia em que o PO esteja disponível para o smoke logo depois.
 
