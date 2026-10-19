@@ -168,6 +168,14 @@ echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
 # Tudo vai para o log (o diretório temporário do EAS é apagado ao fim, então ele é a única
 # evidência de uma falha); o terminal mostra só as fases, avisos e erros. DOSIQ_BUILD_VERBOSE=1
 # mostra tudo. pipefail + `|| true` mantêm a regra acima.
+if [ "$PROFILE" = "production" ] && [ "${DOSIQ_BUILD_VERBOSE:-0}" != "1" ]; then
+  # production é INTERATIVO: o EAS pede o Apple Team ID / senhas e a escolha dos provisioning
+  # profiles (Dosiq + DoseActivity). `--non-interactive` aborta no 1º prompt ("Distribution
+  # Certificate is not validated for non-interactive builds" → ✖ Apple Team ID) e o filtro de saída
+  # esconde prompts sem quebra de linha. Saída inteira, sem --non-interactive; o log segue gravado.
+  export DOSIQ_BUILD_VERBOSE=1
+  echo "ℹ️  production: modo interativo — responda aos prompts do EAS (Team ID, login Apple, provisioning profiles)."
+fi
 BUILD_LOG="$(build_log_path "$TARGET_DIR" build-ios "$PROFILE" "$APP_VERSION")"
 echo "📝 Log do build: $BUILD_LOG"
 # shellcheck disable=SC2046  # flag vazia no modo verbose: precisa sumir, não virar argumento ""
