@@ -203,6 +203,23 @@ describe('caixa de outro remédio (PO-10)', () => {
     expect(getByDisplayValue('21')).toBeTruthy()
   })
 
+  // C-16 (smoke 2026-10-18): genérico cadastrado, caixa da marca com a mesma composição.
+  it('outra marca, mesma composição: pergunta com o texto da troca de marca (C-16)', async () => {
+    const { getByText, queryByDisplayValue, getByDisplayValue } = await renderAndScan(scanDraft({ name: 'Clavulin', isGeneric: false, displayLaboratory: 'GSK' }))
+    expect(getByText('Mesmo princípio ativo, outra marca')).toBeTruthy()
+    expect(getByText(/A caixa lida é de Clavulin 500 mg \+ 125 mg, e esta compra é de Amoxicilina \+ Clavulanato\./)).toBeTruthy()
+    expect(queryByDisplayValue('GSK')).toBeNull()
+    fireEvent.press(getByText('Usar dados da caixa'))
+    expect(getByDisplayValue('GSK')).toBeTruthy()
+  })
+
+  it('marca cadastrada (laboratório travado) e caixa de outra marca: avisa que o laboratório fica (C-16)', async () => {
+    const marca = { ...TRAVADO, name: 'Clavulin', regulatory_category: 'Novo', laboratory: 'GSK' }
+    const { getByText } = await renderAndScan(scanDraft(), marca)
+    expect(getByText('Mesmo princípio ativo, outra marca')).toBeTruthy()
+    expect(getByText('O laboratório desta compra fica como o da marca cadastrada.')).toBeTruthy()
+  })
+
   it('similar: "Não usar" deixa tudo intacto', async () => {
     const antigo = { ...TRAVADO, presentation: null, dosage_per_pill: null, dosage_unit: null }
     const { getByText, queryByText, queryByDisplayValue } = await renderAndScan(scanDraft(), antigo)

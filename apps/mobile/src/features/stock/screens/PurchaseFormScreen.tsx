@@ -32,7 +32,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, Package, ScanBarcode } = LucideIcons as any
-import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS, formatDose } from '@dosiq/core'
+import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS, formatDose, brandDiffers } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
@@ -251,7 +251,9 @@ function usePurchaseScanResult({ isEdit, scanDraft, scanEan, scanConfirmed, medi
     const classified = classifyPurchaseScan(scanDraft, medicine)
     const match = classified === 'similar' && scanConfirmed ? 'identico' : classified
     const fill = purchaseScanFill(scanDraft, scanEan, { labLocked, liquidInputs: useLiquidInputs })
-    setPending(match === 'similar' ? { fill, readName } : null)
+    // C-16: troca de marca (mesma composição) pergunta com texto próprio; com laboratório travado, avisa.
+    const brand = match === 'similar' && brandDiffers(scanDraft, medicine)
+    setPending(match === 'similar' ? { fill, readName, brand, labLocked } : null)
     setOther(match === 'outro' ? { draft: scanDraft, ean: scanEan, readName } : null)
     // Caixa nova do mesmo remédio: o que a anterior preencheu sai; só a idêntica preenche já. Outro
     // remédio não mexe em nada (C-14).
@@ -680,10 +682,17 @@ export default function PurchaseFormScreen() {
             )}
             {state.pendingScan ? (
               <View style={styles.scanConfirm} accessibilityRole="alert">
-                <Text style={styles.scanConfirmTitle}>Parece o mesmo remédio</Text>
-                <Text style={styles.scanNotice}>
-                  A caixa lida é de {state.pendingScan.readName}. Usar os dados dela nesta compra?
+                <Text style={styles.scanConfirmTitle}>
+                  {state.pendingScan.brand ? 'Mesmo princípio ativo, outra marca' : 'Parece o mesmo remédio'}
                 </Text>
+                <Text style={styles.scanNotice}>
+                  {state.pendingScan.brand
+                    ? `A caixa lida é de ${state.pendingScan.readName}, e esta compra é de ${state.medicineName}. Usar os dados da caixa nesta compra?`
+                    : `A caixa lida é de ${state.pendingScan.readName}. Usar os dados dela nesta compra?`}
+                </Text>
+                {state.pendingScan.brand && state.pendingScan.labLocked ? (
+                  <Text style={styles.scanNotice}>O laboratório desta compra fica como o da marca cadastrada.</Text>
+                ) : null}
                 <View style={styles.row}>
                   <Pressable onPress={state.dismissPendingScan} style={[styles.scanButton, styles.rowHalf]} accessibilityRole="button">
                     <Text style={styles.scanButtonText}>Não usar</Text>

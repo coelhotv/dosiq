@@ -102,8 +102,12 @@ describe('resolveStockScan', () => {
     expect(r.kind).toBe('choose')
     expect(r.candidates.map((c: any) => c.medicine.id)).toEqual(['m1', 'm4'])
   })
-  it('só similar ⇒ pergunta (não abre direto)', () => {
-    expect(resolveStockScan(draft(), [antigo])).toEqual({ kind: 'choose', candidates: [{ medicine: antigo, match: 'similar' }] })
+  it('um similar só ⇒ abre a compra nele (a compra pergunta, C-16)', () => {
+    expect(resolveStockScan(draft(), [antigo])).toEqual({ kind: 'one', medicine: antigo })
+  })
+  it('dois similares ⇒ a pessoa escolhe', () => {
+    const antigo2 = { ...antigo, id: 'm5' }
+    expect((resolveStockScan(draft(), [antigo, antigo2]) as any).kind).toBe('choose')
   })
   it('nenhum ⇒ não cadastrado; lista vazia ou nula idem', () => {
     expect(resolveStockScan(draft(), [losartana])).toEqual({ kind: 'none' })

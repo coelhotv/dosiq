@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { classifySameMedicine, findMedicineCandidates } from '../medicineCandidates'
+import { brandDiffers, classifySameMedicine, findMedicineCandidates } from '../medicineCandidates'
 import type { CandidateDraftLike, CandidateMedicineLike } from '../medicineCandidates'
 
 afterEach(() => {
@@ -133,6 +133,22 @@ describe('classifySameMedicine', () => {
     const draft = { ...clopidogrelEms, name: 'Iscover' }
     const med = { ...cadastroClopidogrel, name: 'Plagrel', active_ingredient: 'Clopidogrel', presentation: null }
     expect(classifySameMedicine(draft, med)).toBe('outro')
+  })
+  // C-16 (smoke 2026-10-18): genérico cadastrado, caixa da marca (Amato × Topiramato) — mesma composição,
+  // outra marca: pergunta antes; o inverso também (o laboratório travado da marca não é o da caixa).
+  it('marca × genérico com mesma composição ⇒ similar (C-16)', () => {
+    const topiramato = { name: 'Topiramato', active_ingredient: 'Topiramato', dosage_per_pill: 25, dosage_unit: 'mg', presentation: 'comprimido', anvisa_registration: null }
+    const amato = { ...topiramato, name: 'Amato', anvisa_registration: '100000001' }
+    expect(classifySameMedicine(amato, topiramato)).toBe('similar')
+    expect(classifySameMedicine(topiramato, amato)).toBe('similar')
+  })
+  it('mesmo registro ANVISA com nome editado continua identico (C-16)', () => {
+    const draft = { ...clopidogrelEms, name: 'Plavix', anvisa_registration: '123' }
+    expect(classifySameMedicine(draft, { ...cadastroClopidogrel, name: 'Meu remédio', anvisa_registration: '123' })).toBe('identico')
+  })
+  it('brandDiffers: só nome × nome, sal ignorado', () => {
+    expect(brandDiffers({ ...clopidogrelEms, name: 'Amato' }, { name: 'Topiramato', active_ingredient: 'Amato' })).toBe(true)
+    expect(brandDiffers({ ...clopidogrelEms, name: 'Losartana Potássica' }, { name: 'Losartana' })).toBe(false)
   })
   it('remédio nulo ⇒ outro', () => {
     expect(classifySameMedicine(clopidogrelEms, null)).toBe('outro')

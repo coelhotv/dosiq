@@ -20,7 +20,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   frasco-ampola, ampola ou seringa preenchida). Tudo
   segue editável: quem comprou duas caixas ou já tomou alguns comprimidos corrige antes de registrar. Se a caixa parece
   ser o mesmo remédio mas o cadastro antigo não bate em tudo (sem dose, sem forma), o app pergunta antes de usar os dados
-  dela. Ler outra caixa do mesmo remédio troca os dados pelos da nova (o que a pessoa editou fica). Caixa de outro remédio,
+  dela. Caixa de outra marca com a mesma composição (o genérico cadastrado e a caixa do remédio de marca, ou o
+  contrário) também pergunta: "Mesmo princípio ativo, outra marca". Ler outra caixa do mesmo remédio troca os dados pelos da nova (o que a pessoa editou fica). Caixa de outro remédio,
   ou do mesmo em outra força, não mexe na compra e abre um aviso "Esta caixa é de outro remédio", com duas saídas:
   registrar a compra da caixa lida (o app acha o remédio na lista, pergunta qual se houver mais de um, ou oferece
   cadastrar) ou continuar na compra como estava. O remédio da compra só muda se a pessoa escolher. No leitor, o botão

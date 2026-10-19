@@ -137,8 +137,18 @@ function nameLike(draft: CandidateDraftLike, medicine: CandidateMedicineLike): b
 }
 
 /**
+ * Os NOMES (só nome × nome) não têm termo em comum: a caixa é de outra marca — marca × genérico
+ * (Amato × Topiramato) ou duas marcas. Genérico de outro laboratório tem o nome da substância dos dois
+ * lados e não conta. C-16 (PO 2026-10-18).
+ */
+export function brandDiffers(draft: CandidateDraftLike, medicine: CandidateMedicineLike): boolean {
+  return !overlaps(tokens(draft.name), tokens(medicine.name))
+}
+
+/**
  * A caixa lida na compra é o remédio travado? (spec 066 D2 · FR-027, PO 2026-10-17)
- *   identico — o mesmo critério de `findMedicineCandidates` (inclusive genérico de outro laboratório)
+ *   identico — o mesmo critério de `findMedicineCandidates` (inclusive genérico de outro laboratório),
+ *              exceto troca de marca por composição (C-16): vira similar — a pessoa confirma
  *   similar  — mesmas substâncias e nome parecido, mas o cadastro diverge da CMED canônica na forma, na
  *              dose vazia ou no registro (cadastro antigo); ou cadastro SEM princípio ativo com nome
  *              parecido e dose/unidade iguais; a UI pergunta antes de preencher
@@ -150,7 +160,11 @@ export function classifySameMedicine(
   medicine: CandidateMedicineLike | null | undefined
 ): SameMedicineMatch {
   if (!medicine) return 'outro'
-  if (findMedicineCandidates(draft, [medicine]).some((c) => c.match === 'identico')) return 'identico'
+  if (findMedicineCandidates(draft, [medicine]).some((c) => c.match === 'identico')) {
+    const sameRegistration =
+      !!draft.anvisa_registration && draft.anvisa_registration === medicine.anvisa_registration
+    return sameRegistration || !brandDiffers(draft, medicine) ? 'identico' : 'similar'
+  }
 
   const substances = tokens(medicine.active_ingredient)
   // Cadastro feito à mão sem princípio ativo (9% da base, medido 2026-10-18): o nome faz o papel da

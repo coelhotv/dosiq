@@ -122,7 +122,7 @@ export type StockScanResolution<T> =
 
 /**
  * "Ler a caixa" na aba Estoque (FR-030): qual remédio da conta é esta caixa? Um idêntico só ⇒ abre a
- * compra nele; vários idênticos, ou nenhum idêntico e algum similar ⇒ a pessoa escolhe (o app nunca
+ * compra nele; nenhum idêntico e um similar só ⇒ abre a compra, que pergunta (C-16); vários ⇒ a pessoa escolhe (o app nunca
  * escolhe entre candidatos); nada ⇒ ainda não está cadastrado. Idênticos vêm antes dos similares.
  */
 export function resolveStockScan<T extends CandidateMedicineLike>(
@@ -137,6 +137,8 @@ export function resolveStockScan<T extends CandidateMedicineLike>(
     else if (match === 'similar') similares.push(medicine)
   }
   if (identicos.length === 1) return { kind: 'one', medicine: identicos[0] }
+  // Um só candidato, similar (ex.: outra marca, C-16): abre a compra e o cartão dela pergunta.
+  if (identicos.length === 0 && similares.length === 1) return { kind: 'one', medicine: similares[0] }
   if (identicos.length + similares.length === 0) return { kind: 'none' }
   return {
     kind: 'choose',

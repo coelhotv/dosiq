@@ -165,7 +165,7 @@ export { medicineDraftFromRow, strengthChoicesFromDs } from './cmed/cmedMedicine
 export { packageFromText, presentationFromRow } from './cmed/cmedPackage'
 export type { CmedPackage, InjectionContainer } from './cmed/cmedPackage'
 export type { CmedMedicineDraft, CmedStrengthChoice } from './cmed/cmedMedicine'
-export { classifySameMedicine, findMedicineCandidates } from './cmed/medicineCandidates'
+export { brandDiffers, classifySameMedicine, findMedicineCandidates } from './cmed/medicineCandidates'
 export type {
   CandidateMedicineLike,
   CandidateDraftLike,

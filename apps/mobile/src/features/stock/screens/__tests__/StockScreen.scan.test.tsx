@@ -96,12 +96,11 @@ describe('"Ler a caixa" na aba Estoque (PO-13)', () => {
     expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.objectContaining({ medicineId: 'm4', scanConfirmed: true, scanEan: EAN }))
   })
 
-  it('só similar: também pergunta (não abre direto)', async () => {
-    const { getByText } = renderWithScan([AMOX_ANTIGO])
+  // C-16: um similar só abre a compra SEM scanConfirmed — o cartão da compra pergunta antes de preencher.
+  it('um similar só: abre a compra sem confirmação (a compra pergunta)', async () => {
+    renderWithScan([AMOX_ANTIGO])
     await act(async () => {})
-    expect(getByText('Qual destes?')).toBeTruthy()
-    expect(getByText('parecido')).toBeTruthy()
-    expect(mockNav.navigate).not.toHaveBeenCalled()
+    expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.not.objectContaining({ scanConfirmed: true }))
   })
 
   it('nenhum: "Cadastrar com os dados da caixa" abre o cadastro preenchido', async () => {
@@ -152,18 +151,20 @@ describe('"Ler a caixa" na aba Estoque (PO-13)', () => {
   it('"Qual destes?" mostra o laboratório da marca, não o do genérico, e nunca a categoria', async () => {
     const marca = { ...AMOX, id: 'm5', name: 'Clavulin', laboratory: 'GSK', regulatory_category: 'Novo' }
     const generico = { ...AMOX, id: 'm6', laboratory: 'EMS', regulatory_category: 'Genérico' }
-    const { getByText, queryByText } = renderWithScan([marca, generico])
+    // Dois genéricos idênticos ⇒ "Qual destes?"; a marca (outra marca, C-16) entra como parecido.
+    const { getByText, queryByText } = renderWithScan([marca, generico, { ...generico, id: 'm8' }])
     await act(async () => {})
     expect(getByText('GSK')).toBeTruthy()
     expect(queryByText('EMS')).toBeNull()
     expect(queryByText(/Novo|Genérico/)).toBeNull()
   })
 
-  it('cadastro à mão sem princípio ativo, mesma dose: pergunta em vez de oferecer cadastro duplicado', async () => {
+  it('cadastro à mão sem princípio ativo, mesma dose: abre a compra dele (que pergunta) em vez de oferecer cadastro duplicado', async () => {
     const manual = { ...AMOX, id: 'm7', name: 'Amoxicilina', active_ingredient: null }
-    const { getByText, queryByText } = renderWithScan([manual])
+    const { queryByText } = renderWithScan([manual])
     await act(async () => {})
-    expect(getByText('Qual destes?')).toBeTruthy()
     expect(queryByText('Este remédio ainda não está cadastrado')).toBeNull()
+    expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.objectContaining({ medicineId: 'm7' }))
+    expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.not.objectContaining({ scanConfirmed: true }))
   })
 })
