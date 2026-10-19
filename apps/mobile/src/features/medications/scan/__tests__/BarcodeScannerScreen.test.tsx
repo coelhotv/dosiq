@@ -294,3 +294,121 @@ describe('retomar depois dos Ajustes (C-D1-6)', () => {
     settings.mockRestore()
   })
 })
+
+// 066 D2: aberto pelo registro de compra, devolve à compra com o EAN; "digitar" só volta; sem marca de retomada.
+describe('aberto pela compra (returnTo)', () => {
+  const FROM_PURCHASE = { params: { entryPoint: 'purchase_form', returnTo: 'PurchaseForm' } }
+  const AsyncStorage = require('@react-native-async-storage/async-storage')
+  const { Linking, Platform } = require('react-native')
+  const originalOS = Platform.OS
+
+  afterEach(() => {
+    mockRoute.current = { params: { entryPoint: 'medicine_form' } }
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => originalOS })
+  })
+
+  it('EAN conhecido volta à compra com o rascunho e o código lido', () => {
+    mockRoute.current = FROM_PURCHASE as any
+    render(<BarcodeScannerScreen />)
+    scan('7896004778402')
+    const [route, params, options] = mockNav.popTo.mock.calls[0]
+    expect(route).toBe('PurchaseForm')
+    expect(options).toEqual({ merge: true })
+    expect(params.scanEan).toBe('7896004778402')
+    expect(params.scanDraft).toMatchObject({ boxQuantity: 21 })
+  })
+
+  it('aberto pela aba Estoque: volta a ela com o rascunho (FR-030)', () => {
+    mockRoute.current = { params: { entryPoint: 'stock_list', returnTo: 'StockMain' } } as any
+    render(<BarcodeScannerScreen />)
+    scan('7896004778402')
+    const [route, params] = mockNav.popTo.mock.calls[0]
+    expect(route).toBe('StockMain')
+    expect(params.scanEan).toBe('7896004778402')
+  })
+
+  it('o cadastro também recebe o código (ignorado lá)', () => {
+    render(<BarcodeScannerScreen />)
+    scan('7896004778402')
+    expect(mockNav.popTo.mock.calls[0][1].scanEan).toBe('7896004778402')
+  })
+
+  it('"Preencher digitando" na compra volta à compra, sem pedir rolagem do cadastro', () => {
+    mockRoute.current = FROM_PURCHASE as any
+    const { getByText } = render(<BarcodeScannerScreen />)
+    scan('7891234567895')
+    expect(getByText(/Dá para preencher digitando/)).toBeTruthy()
+    fireEvent.press(getByText('Preencher digitando'))
+    // A compra ignora `manualEntry` (fica como estava); nada de rolagem do cadastro.
+    expect(mockNav.popTo).toHaveBeenCalledWith('PurchaseForm', { manualEntry: expect.any(Number) }, { merge: true })
+  })
+
+  it('iPhone bloqueado, aberto pela compra: abre os Ajustes sem marca (a retomada leva ao cadastro)', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => 'ios' })
+    const settings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined)
+    mockRoute.current = FROM_PURCHASE as any
+    camera.permission = { granted: false, canAskAgain: false, status: 'denied' }
+    const { getByText } = render(<BarcodeScannerScreen />)
+    await act(async () => {
+      fireEvent.press(getByText('Abrir Ajustes do celular'))
+    })
+    expect(settings).toHaveBeenCalled()
+    expect(AsyncStorage.setItem).not.toHaveBeenCalledWith('@dosiq/scan-resume', expect.anything())
+    settings.mockRestore()
+  })
+
+  it('ilegível aberto pela compra: a saída manual também diz "Preencher digitando" (smoke 4.3)', () => {
+    jest.useFakeTimers()
+    mockRoute.current = { params: { entryPoint: 'purchase_form', returnTo: 'PurchaseForm' } } as any
+    const { getByText, queryByText } = render(<BarcodeScannerScreen />)
+    act(() => {
+      jest.advanceTimersByTime(20_000)
+    })
+    expect(getByText('Preencher digitando')).toBeTruthy()
+    expect(queryByText('Digitar manualmente')).toBeNull()
+  })
+
+  it('destino que não é compra (ex.: onboarding) mantém "Digitar manualmente"', () => {
+    mockRoute.current = { params: { entryPoint: 'onboarding', returnTo: 'Onboarding' } } as any
+    const { getByText, queryByText } = render(<BarcodeScannerScreen />)
+    expect(getByText('Digitar manualmente')).toBeTruthy()
+    expect(queryByText('Preencher digitando')).toBeNull()
+  })
+})
+
+// C-15 (smoke 2026-10-18, LG): câmera que não foca de perto. "Aproximar" liga o zoom; tocar no visor
+// dispara uma passada de foco e volta ao contínuo; sem leitura em 6 s, a dica sugere aproximar.
+describe('ajuda de foco (C-15)', () => {
+  it('"Aproximar" liga e desliga o zoom', () => {
+    const { getByLabelText } = render(<BarcodeScannerScreen />)
+    expect(camera.lastProps.zoom).toBe(0)
+    fireEvent.press(getByLabelText('Aproximar'))
+    expect(camera.lastProps.zoom).toBeGreaterThan(0)
+    fireEvent.press(getByLabelText('Aproximar'))
+    expect(camera.lastProps.zoom).toBe(0)
+  })
+
+  it('tocar no visor pede um foco e volta ao contínuo', () => {
+    jest.useFakeTimers()
+    const { getByLabelText } = render(<BarcodeScannerScreen />)
+    expect(camera.lastProps.autofocus).toBe('off')
+    fireEvent.press(getByLabelText('Focar de novo'))
+    expect(camera.lastProps.autofocus).toBe('on')
+    act(() => {
+      jest.advanceTimersByTime(1_300)
+    })
+    expect(camera.lastProps.autofocus).toBe('off')
+  })
+
+  it('sem leitura em 6 s, sugere afastar e aproximar; com zoom ligado a dica some', () => {
+    jest.useFakeTimers()
+    const { getByText, queryByText, getByLabelText } = render(<BarcodeScannerScreen />)
+    expect(queryByText(/Afaste um pouco a caixa/)).toBeNull()
+    act(() => {
+      jest.advanceTimersByTime(6_000)
+    })
+    expect(getByText('Não está lendo? Afaste um pouco a caixa e toque em Aproximar.')).toBeTruthy()
+    fireEvent.press(getByLabelText('Aproximar'))
+    expect(queryByText(/Afaste um pouco a caixa/)).toBeNull()
+  })
+})

@@ -50,7 +50,8 @@
       "mcp__graftroom__graftroom_learn",
       "mcp__graftroom__graftroom_stats",
       "mcp__supabase__execute_sql",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(adb shell *)"
     ],
     "additionalDirectories": [
       "/tmp",

@@ -106,4 +106,19 @@ describe('medicineDraftFromRow', () => {
     expect(draft.strengthLabel).toBe('75 mg')
     expect(draft.regulatory_category).toBe('Outros')
   })
+
+  // 066 D2 (C-10/C-11): embalagem lida do texto e forma contida, sobre a linha da fixture.
+  it('injetável: volume, unidades e embalagem vêm do texto, não do q truncado', () => {
+    const row = { ...rowByName('Clopidogrel'), f: 'injetavel', u: 'mg/ml', q: 1,
+      a: '1,34 MG/ML SOL INJ CT X 1 CAR VD TRANS X 1,5 ML + 1 SIST APLIC PLAS' }
+    expect(medicineDraftFromRow(row)).toMatchObject({ presentation: 'injetavel', boxQuantity: 1, boxVolumeMl: 1.5, boxUnits: 1, boxContainer: 'caneta' })
+  })
+  it('oral marcado injetável no índice vira líquido, sem embalagem de injetável', () => {
+    const row = { ...rowByName('Clopidogrel'), f: 'injetavel', u: 'mg/ml', q: 150,
+      a: '1 MG/ML SUS OR CT FR PLAS PET AMB X 150 ML + SER DOS' }
+    expect(medicineDraftFromRow(row)).toMatchObject({ presentation: 'liquido', boxVolumeMl: 150, boxUnits: 1, boxContainer: null })
+  })
+  it('sólido: sem volume, unidades nem embalagem', () => {
+    expect(medicineDraftFromRow(rowByName('Clopidogrel'))).toMatchObject({ boxVolumeMl: null, boxUnits: null, boxContainer: null })
+  })
 })

@@ -6,6 +6,8 @@
 //   medicineName: string        (nome exibido na row superior read-only)
 //   purchaseId?: string         (apenas mode='edit')
 //   purchase?: object           (apenas mode='edit' — preenche form)
+//   scanDraft?/scanEan?         (066 D2 — devolvidos pelo leitor de código de barras, só mode='create')
+//   scanConfirmed?              (066 D2 FR-030 — remédio escolhido no "Qual destes?" da aba Estoque)
 //
 // R-010: States → Memos → Effects → Handlers
 // AP-167: decimal PT-BR — estados intermediários ("0,", ".", "") preservados como
@@ -29,7 +31,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
-const { ChevronLeft, Package } = LucideIcons as any
+const { ChevronLeft, Package, ScanBarcode } = LucideIcons as any
 import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS, formatDose } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -39,6 +41,9 @@ import FormSection from '@shared/components/form/FormSection'
 import FormActions from '@shared/components/form/FormActions'
 import { useStockMutation } from '@stock/hooks/useStockMutation'
 import { medicineService } from '@medications/services/medicineService'
+import { ROUTES } from '@navigation/routes'
+import { OtherMedicineSheet } from '@stock/components/OtherMedicineSheet'
+import { classifyPurchaseScan, filledNotice, nextScanFields, purchaseScanFill } from '@stock/scan/purchaseScan'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
 
 // Regra de laboratório por categoria regulatória ANVISA:
@@ -126,6 +131,7 @@ function getInitialValues(isEdit, purchase, todayIso) {
     pharmacy: '',
     laboratory: '',
     notes: '',
+    ean: '',
   }
 }
 
@@ -210,6 +216,7 @@ async function submitPurchasePayload({
         laboratory: payload.laboratory,
         notes: payload.notes,
         injectionContainer: isInjectable ? injectionContainer || null : null,
+        ean: payload.ean,
       },
       { goBack: true },
     )
@@ -217,6 +224,62 @@ async function submitPurchasePayload({
   }
 
   await createPurchase(payload, { goBack: true })
+}
+
+// 066 D2 · FR-027: a caixa lida é comparada ao remédio travado, que nunca muda. Idêntica preenche,
+// similar (cadastro antigo diverge da CMED) pergunta antes, outro remédio não preenche nada. O que
+// entra é sugestão editável (INV-6). Aplicado no render, como o `scanDraft` do cadastro (D1): a
+// mesma leitura não se reaplica (popTo com merge troca o objeto a cada leitura).
+// `scanConfirmed`: a pessoa já escolheu este remédio no "Qual destes?" da aba Estoque (FR-030) — o similar
+// não pergunta de novo.
+// C-14 (smoke 2026-10-18): caixa de OUTRO remédio não mexe no form (a leitura pode ter sido engano) e abre
+// o sheet "Esta caixa é de outro remédio" — continuar nesta compra ou registrar a compra da caixa lida.
+function usePurchaseScanResult({ isEdit, scanDraft, scanEan, scanConfirmed, medicine, labLocked, useLiquidInputs, apply }) {
+  const [applied, setApplied] = useState(null)
+  // O que a última leitura preencheu (C-12: a próxima desfaz antes de aplicar).
+  const [record, setRecord] = useState(null)
+  // Resultado mostrado acima do form: preenchido (confira).
+  const [notice, setNotice] = useState(null)
+  // Caixa "similar" esperando a pessoa decidir: { fill, readName }.
+  const [pending, setPending] = useState(null)
+  // Caixa de outro remédio esperando a pessoa decidir: { draft, ean, readName }.
+  const [other, setOther] = useState(null)
+
+  if (!isEdit && scanDraft && scanDraft !== applied && medicine) {
+    setApplied(scanDraft)
+    const readName = [scanDraft.name, scanDraft.strengthLabel].filter(Boolean).join(' ')
+    const classified = classifyPurchaseScan(scanDraft, medicine)
+    const match = classified === 'similar' && scanConfirmed ? 'identico' : classified
+    const fill = purchaseScanFill(scanDraft, scanEan, { labLocked, liquidInputs: useLiquidInputs })
+    setPending(match === 'similar' ? { fill, readName } : null)
+    setOther(match === 'outro' ? { draft: scanDraft, ean: scanEan, readName } : null)
+    // Caixa nova do mesmo remédio: o que a anterior preencheu sai; só a idêntica preenche já. Outro
+    // remédio não mexe em nada (C-14).
+    if (match !== 'outro') setRecord(apply(match === 'identico' ? fill : null, record))
+    if (match === 'identico') {
+      setNotice({ kind: 'filled', text: filledNotice(fill) })
+    } else {
+      setNotice(null)
+    }
+  }
+
+  const confirm = useCallback(() => {
+    if (!pending) return
+    setRecord(apply(pending.fill, null))
+    setNotice({ kind: 'filled', text: filledNotice(pending.fill) })
+    setPending(null)
+  }, [pending, apply])
+  const dismiss = useCallback(() => setPending(null), [])
+  const keep = useCallback(() => setOther(null), [])
+  const clear = useCallback(() => {
+    setNotice(null)
+    setPending(null)
+    setOther(null)
+  }, [])
+  return useMemo(
+    () => ({ notice, pending, other, confirm, dismiss, keep, clear }),
+    [notice, pending, other, confirm, dismiss, keep, clear]
+  )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -238,6 +301,9 @@ function usePurchaseForm(route, navigation) {
     medicineName,
     purchaseId,
     purchase,
+    scanDraft = null,
+    scanEan = null,
+    scanConfirmed = false,
   } = route.params ?? {}
 
   const isEdit = mode === 'edit'
@@ -252,7 +318,6 @@ function usePurchaseForm(route, navigation) {
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, createLiquidPurchase, updatePurchase, isLoading } = useStockMutation()
   const { handleChange } = form
-
   const purchaseDateObj = useMemo(() => typeof form.values.purchase_date === 'string' && form.values.purchase_date ? parseLocalDate(form.values.purchase_date) : null, [form.values.purchase_date])
   const expirationDateObj = useMemo(() => typeof form.values.expiration_date === 'string' && form.values.expiration_date ? parseLocalDate(form.values.expiration_date) : null, [form.values.expiration_date])
 
@@ -260,6 +325,28 @@ function usePurchaseForm(route, navigation) {
     () => getQuantityHelperText(isEdit, form.values.quantity, medicine),
     [isEdit, form.values.quantity, medicine]
   )
+
+  // Campos do form + os de remédio `/ml` (frascos, volume e embalagem vivem fora do form). Desfaz a
+  // leitura anterior e aplica a nova (C-12); devolve o registro desta para a próxima.
+  const { setValues } = form
+  const scanCurrent = {
+    quantity: String(form.values.quantity ?? ''),
+    laboratory: String(form.values.laboratory ?? ''),
+    ean: String(form.values.ean ?? ''),
+    bottles: numBottles,
+    volume: volumePerBottle,
+    container: injectionContainer,
+  }
+  const applyScanFill = (fill, previous) => {
+    const { changes, record } = nextScanFields(scanCurrent, fill, previous)
+    const { bottles, volume, container, ...formChanges } = changes
+    if (Object.keys(formChanges).length > 0) setValues(formChanges)
+    if (bottles !== undefined) setNumBottles(bottles)
+    if (volume !== undefined) setVolumePerBottle(volume)
+    if (container !== undefined) setInjectionContainer(container)
+    return record
+  }
+  const scan = usePurchaseScanResult({ isEdit, scanDraft, scanEan, scanConfirmed, medicine, labLocked, useLiquidInputs, apply: applyScanFill })
 
   useEffect(() => {
     if (!medicineId) return
@@ -310,6 +397,8 @@ function usePurchaseForm(route, navigation) {
       laboratory: form.values.laboratory || null,
       notes: form.values.notes || null,
       injection_container: isInjectable ? injectionContainer || null : null,
+      // 066 D2: só a compra nova grava o EAN (a edição não o toca — createPurchaseRepository).
+      ean: isEdit ? undefined : form.values.ean || null,
     }
 
     await submitPurchasePayload({
@@ -330,6 +419,19 @@ function usePurchaseForm(route, navigation) {
   }, [form, isEdit, medicineId, purchaseId, createPurchase, createLiquidPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice, isInjectable, injectionContainer])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
+  const openScanner = useCallback(() => {
+    scan.clear()
+    navigation.navigate(ROUTES.MEDICINE_SCAN, { entryPoint: 'purchase_form', returnTo: ROUTES.PURCHASE_FORM })
+  }, [navigation, scan])
+  // C-14: a aba Estoque resolve a caixa lida (um remédio ⇒ compra; vários ⇒ "Qual destes?"; nenhum ⇒
+  // cadastro). Esta compra é descartada — nada foi gravado (INV-1).
+  const switchToScanned = useCallback(() => {
+    const other = scan.other
+    if (!other) return
+    scan.clear()
+    navigation.popTo(ROUTES.STOCK_MAIN, { scanDraft: other.draft, scanEan: other.ean }, { merge: true })
+  }, [navigation, scan])
+  const handleEanChange = useCallback((_name, raw) => form.handleChange('ean', String(raw ?? '').replace(/\D/g, '')), [form])
 
   const screenTitle = isEdit ? 'Editar compra' : 'Registrar compra'
   const ctaLabel = isEdit ? 'Salvar alterações' : 'Registrar compra'
@@ -364,6 +466,15 @@ function usePurchaseForm(route, navigation) {
     handleExpirationDateChange,
     handleSubmit,
     goBack,
+    openScanner,
+    handleEanChange,
+    scanNotice: scan.notice,
+    pendingScan: scan.pending,
+    confirmPendingScan: scan.confirm,
+    dismissPendingScan: scan.dismiss,
+    otherScan: scan.other,
+    keepCurrentMedicine: scan.keep,
+    switchToScanned,
     screenTitle,
     ctaLabel,
   }
@@ -485,6 +596,18 @@ function renderDetailsSection(state) {
         disabled={state.labLocked}
         {...formProps(state.form, 'laboratory')}
       />
+      {state.isEdit ? null : (
+        <FormInput
+          name="ean"
+          label="Código de barras"
+          placeholder="13 números"
+          helperText="Opcional — preenchido ao ler a caixa"
+          keyboardType="number-pad"
+          maxLength={13}
+          {...formProps(state.form, 'ean')}
+          onChange={state.handleEanChange}
+        />
+      )}
       <FormInput
         name="notes"
         label="Observações"
@@ -543,7 +666,53 @@ export default function PurchaseFormScreen() {
                 <Text style={styles.medicineLocked}>Medicamento selecionado</Text>
               </View>
             </View>
+            {state.isEdit ? null : (
+              <Pressable
+                onPress={state.openScanner}
+                style={styles.scanButton}
+                accessibilityRole="button"
+                accessibilityLabel="Ler a caixa"
+                accessibilityHint="Lê o código de barras para sugerir quantidade, laboratório e código"
+              >
+                <ScanBarcode size={20} color={colors.primary[700]} />
+                <Text style={styles.scanButtonText}>Ler a caixa</Text>
+              </Pressable>
+            )}
+            {state.pendingScan ? (
+              <View style={styles.scanConfirm} accessibilityRole="alert">
+                <Text style={styles.scanConfirmTitle}>Parece o mesmo remédio</Text>
+                <Text style={styles.scanNotice}>
+                  A caixa lida é de {state.pendingScan.readName}. Usar os dados dela nesta compra?
+                </Text>
+                <View style={styles.row}>
+                  <Pressable onPress={state.dismissPendingScan} style={[styles.scanButton, styles.rowHalf]} accessibilityRole="button">
+                    <Text style={styles.scanButtonText}>Não usar</Text>
+                  </Pressable>
+                  <Pressable onPress={state.confirmPendingScan} style={[styles.scanButton, styles.rowHalf, styles.scanButtonPrimary]} accessibilityRole="button">
+                    <Text style={[styles.scanButtonText, styles.scanButtonPrimaryText]}>Usar dados da caixa</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+            {state.scanNotice ? (
+              <Text
+                style={styles.scanNotice}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
+                {state.scanNotice.text}
+              </Text>
+            ) : null}
           </FormSection>
+
+          {state.otherScan ? (
+            <OtherMedicineSheet
+              readName={state.otherScan.readName}
+              currentName={state.medicineName}
+              onSwitch={state.switchToScanned}
+              onKeep={state.keepCurrentMedicine}
+            />
+          ) : null}
 
           {/* Quantidade e preço */}
           {state.useLiquidInputs ? renderLiquidInputs(state) : renderStandardInputs(state)}
@@ -692,6 +861,49 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: colors.text.muted,
     marginTop: 2,
+  },
+  // 066 D2: "Ler a caixa" (alvo de toque ≥ 48)
+  scanButton: {
+    marginTop: spacing[3],
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    borderWidth: 1.5,
+    borderColor: colors.primary[700],
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing[4],
+  },
+  scanButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary[700],
+  },
+  scanNotice: {
+    marginTop: spacing[3],
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.text.primary,
+  },
+  scanConfirm: {
+    marginTop: spacing[3],
+    padding: spacing[4],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bg.card,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  scanConfirmTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  scanButtonPrimary: {
+    backgroundColor: colors.primary[700],
+  },
+  scanButtonPrimaryText: {
+    color: colors.text.inverse,
   },
   // Linha de dois campos lado a lado
   row: {

@@ -7,6 +7,36 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Ler a caixa ao registrar a compra (spec 066, slice D2)
+
+- **Mobile** (`Added`, `patch`; entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade
+  nova; o `APP_VERSION` final sai no merge). A aba Estoque ganhou "Ler a
+  caixa", acima do botão de nova compra: a compra começa pela caixa. Se ela é de um remédio da lista, a compra abre já
+  nele e preenchida; se combina com mais de um, o app pergunta "Qual destes?"; se o remédio ainda não está cadastrado, o
+  app oferece cadastrar com os dados da caixa (o cadastro não cria compra) ou cancelar. O registro de compra também ganhou o botão "Ler a caixa". Lida
+  a caixa do mesmo remédio — inclusive genérico de outro laboratório —, o app sugere a quantidade da caixa (só em
+  comprimido e cápsula), o laboratório e o código de barras. Em remédio por mL (xarope, colírio, caneta de insulina ou
+  de Ozempic/Mounjaro), sugere o número de frascos, o volume de cada um e, no injetável, como vem embalado (caneta, refil,
+  frasco-ampola, ampola ou seringa preenchida). Tudo
+  segue editável: quem comprou duas caixas ou já tomou alguns comprimidos corrige antes de registrar. Se a caixa parece
+  ser o mesmo remédio mas o cadastro antigo não bate em tudo (sem dose, sem forma), o app pergunta antes de usar os dados
+  dela. Ler outra caixa do mesmo remédio troca os dados pelos da nova (o que a pessoa editou fica). Caixa de outro remédio,
+  ou do mesmo em outra força, não mexe na compra e abre um aviso "Esta caixa é de outro remédio", com duas saídas:
+  registrar a compra da caixa lida (o app acha o remédio na lista, pergunta qual se houver mais de um, ou oferece
+  cadastrar) ou continuar na compra como estava. O remédio da compra só muda se a pessoa escolher. No leitor, o botão
+  "Aproximar" liga o zoom, para câmera que não foca de perto: a pessoa afasta a caixa e o código continua grande. Tocar na
+  imagem pede um novo foco. Sem leitura em alguns segundos, o leitor sugere usar o Aproximar. Laboratório de marca registrada continua travado. Pelo leitor aberto na compra, a saída manual diz
+  "Preencher digitando" (em todas as telas do leitor) e volta à compra; aberto pela aba Estoque, ela abre a escolha do remédio. O cadastro do remédio continua sem criar compra.
+  Store-note: relevante — entra no texto do pacote `0.34.0` junto do cadastro pela caixa.
+- **Mobile** (`Fixed`). Xarope, suspensão ou gotas que vêm com seringa dosadora deixaram de ser cadastrados pelo código
+  de barras como "injetável" (a lista oficial os marca assim; o app agora lê a via no texto da embalagem).
+- **Shared/Core** (`no-user-impact` na web). `stockSchema` ganha `ean` opcional (13 dígitos, vazio vira nulo) e o
+  repositório de compra passa `p_ean` na criação (também em cada frasco de líquido); a edição de compra não toca o código,
+  para a web não apagá-lo. Novo `classifySameMedicine` no matcher de candidatos (idêntico · similar · outro).
+- **Backend** (`no-user-impact`). `purchases.ean` (nulo, CHECK de 13 dígitos) e `create_purchase_with_stock` com
+  `p_ean text DEFAULT NULL` no fim — chamadas sem o parâmetro (web, bot, versões instaladas) seguem iguais
+  (`docs/migrations/20261017_purchases_ean.sql`).
+
 ### Cadastrar o remédio pelo código de barras da caixa (spec 066, slice D1)
 
 - **Mobile** (`Added`, `patch`; `APP_VERSION` `0.33.38` → `0.33.43` como build intermediário — `0.33.39` a `0.33.42` foram builds de smoke; entra no pacote de loja

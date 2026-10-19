@@ -75,6 +75,8 @@ describe('stockService', () => {
         p_notes: payload.notes,
         // 012 B4 (ADR-068): container por lote — null quando não informado.
         p_injection_container: null,
+        // 066 D2: compra sem leitura da caixa — EAN nulo explícito.
+        p_ean: null,
       })
       expect(result).toEqual(rpcResult)
     })

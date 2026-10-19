@@ -7,9 +7,10 @@
 //   D11 genérico: sem registro e sem laboratório no cadastro; laboratório só para exibir
 //   C-C10 `amb` ⇒ os valores distintos da força viram escolhas de 1 toque (dose + unidade de cada)
 
-import { DOSAGE_UNITS, PRESENTATIONS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
+import { DOSAGE_UNITS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
 import { formatStrength } from '../../utils/doseUnit'
 import type { CmedRow } from './cmedIndex'
+import { packageFromText, presentationFromRow, type InjectionContainer } from './cmedPackage'
 
 export interface CmedMedicineDraft {
   name: string
@@ -27,6 +28,12 @@ export interface CmedMedicineDraft {
   displayLaboratory: string | null
   /** Quantidade da caixa (`X <n>`); em líquido é volume, não contagem. */
   boxQuantity: number | null
+  /** 066 D2: remédio `/ml` (líquido/injetável) — volume de UMA unidade em mL, lido do texto (C-10). */
+  boxVolumeMl: number | null
+  /** 066 D2: quantas unidades (frascos, canetas, ampolas…) vêm na caixa. */
+  boxUnits: number | null
+  /** 066 D2: só injetável — embalagem no vocabulário da compra (caneta, refil, ampola…). */
+  boxContainer: InjectionContainer | null
   /** Ordem de dose indecidível: a dose fica em branco e a UI pergunta qual concentração usar. */
   doseAmbiguous: boolean
   /** Só com `doseAmbiguous`: valores distintos da força, na ordem da caixa (C-C10). */
@@ -58,18 +65,20 @@ export function strengthChoicesFromDs(ds: string | null): CmedStrengthChoice[] {
   }
   return choices
 }
-const PRESENTATION_SET = new Set<string>(PRESENTATIONS)
 
 export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
   const isGeneric = row.k === 'generico'
   const unit = row.u !== null && UNIT_SET.has(row.u) ? row.u : null
   const dose = row.amb || unit === null ? null : row.d
+  const presentation = presentationFromRow(row.f, row.a)
+  const pack = packageFromText(row.a, presentation)
   return {
     name: row.p,
     active_ingredient: row.s,
     dosage_per_pill: dose,
     dosage_unit: unit,
-    presentation: row.f !== null && PRESENTATION_SET.has(row.f) ? row.f : 'outro',
+    // C-11: o pipeline marca líquido oral com seringa dosadora como `injetavel`; o texto separa a via.
+    presentation,
     laboratory: isGeneric ? null : row.l,
     anvisa_registration: !isGeneric && /^[0-9]{9}$/.test(row.r) ? row.r : null,
     regulatory_category: normalizeRegulatoryCategory(row.k),
@@ -77,6 +86,9 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
     strengthLabel: formatStrength(row.ds, dose, unit),
     displayLaboratory: row.l,
     boxQuantity: row.q,
+    boxVolumeMl: pack.volumeMl,
+    boxUnits: pack.units,
+    boxContainer: pack.container,
     doseAmbiguous: row.amb,
     strengthChoices: row.amb ? strengthChoicesFromDs(row.ds) : [],
     isGeneric,

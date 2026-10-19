@@ -12,6 +12,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 import * as LucideIcons from 'lucide-react-native'
 import PrimaryButton from '@shared/components/ui/PrimaryButton'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
+import { manualLabel, scanCopy } from './scanCopy'
 
 const { Camera, Lock, Check, Info, Settings, Download, TriangleAlert, Package, SquarePen, X } = LucideIcons as any
 
@@ -98,10 +99,11 @@ interface FullStateScreenProps {
   onAction: () => void
   onManual: () => void
   onClose: () => void
+  purchase?: boolean
 }
 
 /** Tela cheia antes do visor (artboards `f1-perm`, `x-neg`, `x-blk`, `x-off`, `x-ver`). */
-export function FullStateScreen({ screen, onAction, onManual, onClose }: FullStateScreenProps) {
+export function FullStateScreen({ screen, onAction, onManual, onClose, purchase = false }: FullStateScreenProps) {
   const isPermission = screen === 'pre_permission'
   const copy = isPermission ? null : FULL_COPY[screen]
   const Icon = copy ? copy.icon : Camera
@@ -123,21 +125,21 @@ export function FullStateScreen({ screen, onAction, onManual, onClose }: FullSta
           <View style={styles.bullets}>
             <Bullet icon={Lock} text="A imagem não é salva nem enviada. Só os números do código são usados." />
             <Bullet icon={Check} text="Nada é salvo sem você conferir antes." />
-            <Bullet icon={Info} text="Prefere digitar? O cadastro manual continua aqui embaixo." />
+            <Bullet icon={Info} text={scanCopy('Prefere digitar? O cadastro manual continua aqui embaixo.', purchase)} />
           </View>
         ) : (
-          <Text style={styles.heroBody}>{copy?.body}</Text>
+          <Text style={styles.heroBody}>{scanCopy(copy?.body, purchase)}</Text>
         )}
       </View>
       <View style={styles.footer}>
         {isPermission ? (
           <>
             <PrimaryButton label="Permitir câmera" onPress={onAction} style={styles.block} />
-            <ManualLink onPress={onManual} />
+            <ManualLink onPress={onManual} label={manualLabel(purchase)} />
           </>
         ) : (
           <>
-            <PrimaryButton label="Cadastrar digitando" onPress={onManual} style={styles.block} />
+            <PrimaryButton label={scanCopy('Cadastrar digitando', purchase)} onPress={onManual} style={styles.block} />
             <NeutralButton label={copy?.action} onPress={onAction} icon={copy?.actionIcon} />
           </>
         )}
@@ -150,10 +152,11 @@ interface VisorSheetProps {
   screen: VisorSheetState
   onRetry: () => void
   onManual: () => void
+  purchase?: boolean
 }
 
 /** Sheet sobre o visor (artboards `x-ill`, `x-nf`, `x-idx`). */
-export function VisorSheet({ screen, onRetry, onManual }: VisorSheetProps) {
+export function VisorSheet({ screen, onRetry, onManual, purchase = false }: VisorSheetProps) {
   if (screen === 'not_found') {
     return (
       <View style={styles.sheet}>
@@ -164,10 +167,12 @@ export function VisorSheet({ screen, onRetry, onManual }: VisorSheetProps) {
           Esta caixa não está na lista
         </Text>
         <Text style={styles.sheetBody}>
-          Acontece com remédio manipulado, hospitalar, importado ou amostra grátis. Dá para cadastrar digitando — leva um
-          minuto.
+          {scanCopy(
+            'Acontece com remédio manipulado, hospitalar, importado ou amostra grátis. Dá para cadastrar digitando — leva um minuto.',
+            purchase,
+          )}
         </Text>
-        <PrimaryButton label="Cadastrar digitando" onPress={onManual} style={styles.block} />
+        <PrimaryButton label={scanCopy('Cadastrar digitando', purchase)} onPress={onManual} style={styles.block} />
         <NeutralButton label="Ler outra caixa" onPress={onRetry} />
       </View>
     )
@@ -184,11 +189,11 @@ export function VisorSheet({ screen, onRetry, onManual }: VisorSheetProps) {
       </Text>
       <Text style={styles.sheetBody}>
         {illegible
-          ? 'Luz fraca ou caixa amassada atrapalham. Tente com a lanterna, ou cadastre digitando.'
+          ? scanCopy('Luz fraca ou caixa amassada atrapalham. Tente com a lanterna, ou cadastre digitando.', purchase)
           : 'A lista de caixas não terminou de baixar. Confira a internet e tente de novo — ou siga digitando.'}
       </Text>
       <PrimaryButton label="Tentar de novo" onPress={onRetry} style={styles.block} />
-      <ManualLink onPress={onManual} />
+      <ManualLink onPress={onManual} label={manualLabel(purchase)} />
     </View>
   )
 }

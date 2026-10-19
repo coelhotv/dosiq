@@ -80,6 +80,15 @@ export const stockSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  // 066 D2: código de barras (EAN-13) da caixa lida na compra. Espelha o CHECK
+  // purchases_ean_check `^[0-9]{13}$` (R-271); vazio vira NULL antes do regex.
+  ean: z
+    .preprocess(
+      (val) => (typeof val === 'string' && val.trim() === '' ? null : typeof val === 'string' ? val.trim() : val),
+      z.string().regex(/^[0-9]{13}$/, 'Código de barras deve ter 13 dígitos').nullable().optional(),
+    )
+    .transform((val) => val || null),
 })
 
 /**

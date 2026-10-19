@@ -1,4 +1,7 @@
-// BarcodeScannerScreen — lê o EAN-13 da caixa e devolve o RASCUNHO ao cadastro (spec 066 D1).
+// BarcodeScannerScreen — lê o EAN-13 da caixa e devolve o RASCUNHO a quem abriu (spec 066 D1/D2).
+//
+// D2: também abre pelo registro de compra (`returnTo: PURCHASE_FORM`); o rascunho volta com o EAN lido
+// (`scanEan`), que o cadastro ignora e a compra grava.
 //
 // RC3 (abordagem A, PO 2026-10-16): esta tela não grava nada e não tem confirmação própria. Ela
 // resolve o código enquanto o índice está em memória e volta ao `MedicineFormScreen` com o rascunho
@@ -22,6 +25,8 @@ import { colors, spacing } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 import { STORE_FALLBACK_URLS } from '@platform/versionGate/storeUrls'
 import { clearScanResume, markScanResume } from './scanResume'
+import { manualLabel } from './scanCopy'
+import { useCameraAssist } from './useCameraAssist'
 import { FullStateScreen, ManualLink, VisorSheet, type FullScreenState } from './ScanStatePanel'
 import {
   ILLEGIBLE_TIMEOUT_MS,
@@ -37,7 +42,7 @@ import {
   type ScanScreen,
 } from './scanFlow'
 
-const { X, Sun } = LucideIcons as any
+const { X, Sun, ZoomIn } = LucideIcons as any
 
 const FULL_SCREENS = new Set<ScanScreen>(['pre_permission', 'denied', 'blocked', 'offline', 'version'])
 
@@ -58,7 +63,12 @@ function toPermission(raw: { granted: boolean; canAskAgain: boolean; status: str
 // Visor da câmera (artboard `f1-scan`). Sem `cameraOn` (fora de foco, app em background) o CameraView
 // nem monta (E-3). `preparing`: o índice ainda carrega — faixa dentro do quadro, "só na 1ª vez".
 // `sheet`: estados que cobrem o visor (ilegível, não encontrado, falha do índice).
-function ScannerVisor({ cameraOn, preparing, torch, onTorch, onBarcode, onClose, onManual, sheet }) {
+// C-15: tocar no visor pede novo foco; "Aproximar" liga o zoom (câmera que não foca de perto).
+function ScannerVisor({ cameraOn, preparing, torch, onTorch, onBarcode, onClose, onManual, sheet, purchase }) {
+  const assist = useCameraAssist(cameraOn && !sheet)
+  const hint = assist.tip
+    ? 'Não está lendo? Afaste um pouco a caixa e toque em Aproximar.'
+    : 'Aponte para o código de barras: as listras com números.'
   return (
     <View style={styles.visor}>
       {cameraOn ? (
@@ -66,28 +76,45 @@ function ScannerVisor({ cameraOn, preparing, torch, onTorch, onBarcode, onClose,
           style={StyleSheet.absoluteFill}
           facing="back"
           enableTorch={torch}
+          zoom={assist.zoom}
+          autofocus={assist.focusMode}
           barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
           onBarcodeScanned={onBarcode}
         />
+      ) : null}
+      {cameraOn ? (
+        <Pressable style={StyleSheet.absoluteFill} onPress={assist.refocus} accessibilityRole="button" accessibilityLabel="Focar de novo" />
       ) : null}
       <View style={styles.visorTop}>
         <Pressable onPress={onClose} style={styles.roundButton} accessibilityRole="button" accessibilityLabel="Fechar">
           <X size={22} color={colors.text.inverse} />
         </Pressable>
         {cameraOn ? (
-          <Pressable
-            onPress={onTorch}
-            style={[styles.roundButton, styles.torchButton, torch && styles.torchOn]}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: torch }}
-            accessibilityLabel="Lanterna"
-          >
-            <Sun size={20} color={colors.text.inverse} />
-            <Text style={styles.torchText}>Lanterna</Text>
-          </Pressable>
+          <View style={styles.visorActions}>
+            <Pressable
+              onPress={assist.toggleZoom}
+              style={[styles.roundButton, styles.torchButton, assist.zoomed && styles.torchOn]}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: assist.zoomed }}
+              accessibilityLabel="Aproximar"
+            >
+              <ZoomIn size={20} color={colors.text.inverse} />
+              <Text style={styles.torchText}>Aproximar</Text>
+            </Pressable>
+            <Pressable
+              onPress={onTorch}
+              style={[styles.roundButton, styles.torchButton, torch && styles.torchOn]}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: torch }}
+              accessibilityLabel="Lanterna"
+            >
+              <Sun size={20} color={colors.text.inverse} />
+              <Text style={styles.torchText}>Lanterna</Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
-      <View style={styles.frame} pointerEvents="none">
+      <View style={[styles.frame, assist.focusing && styles.frameFocusing]} pointerEvents="none">
         {preparing ? (
           <View style={styles.prepBox} accessibilityRole="progressbar" accessibilityLabel="Preparando a leitura">
             <View style={styles.prepTrack}>
@@ -99,12 +126,12 @@ function ScannerVisor({ cameraOn, preparing, torch, onTorch, onBarcode, onClose,
       </View>
       {sheet ? null : (
         <Text style={styles.hintText} accessibilityRole="text">
-          {preparing ? 'Preparando a leitura (só na 1ª vez). Pode ir digitando.' : 'Aponte para o código de barras: as listras com números.'}
+          {preparing ? 'Preparando a leitura (só na 1ª vez). Pode ir digitando.' : hint}
         </Text>
       )}
       {sheet ?? (
         <View style={styles.visorBottom}>
-          <ManualLink onPress={onManual} dark />
+          <ManualLink onPress={onManual} dark label={manualLabel(purchase)} />
         </View>
       )}
     </View>
@@ -135,6 +162,33 @@ function ChoosingStep({ local, onPick, onSkip, onBack }) {
   )
 }
 
+// Para onde a leitura volta (D2): o cadastro (default, D1) ou o registro de compra (`returnTo`).
+// ✕ só fecha. A saída "manual" volta ao cadastro já rolado até "Identificação" (smoke C-D1-3); na
+// compra é só voltar, com o form como a pessoa deixou; na aba Estoque (FR-030) abre o seletor do FAB. O rascunho volta com o EAN lido (`scanEan`),
+// guardado em ref porque o passo 2 (escolha da concentração) devolve o mesmo código.
+function useScanReturn(navigation, route) {
+  const entryPoint = route.params?.entryPoint ?? 'medicine_form'
+  const returnTo = route.params?.returnTo ?? ROUTES.MEDICINE_CREATE
+  const fromMedicineForm = returnTo === ROUTES.MEDICINE_CREATE
+  // Texto de compra ("Preencher digitando") só nos destinos de compra, por nome: outra origem (ex.:
+  // onboarding, Slice E) não herda o texto por "não ser o cadastro".
+  const purchase = returnTo === ROUTES.PURCHASE_FORM || returnTo === ROUTES.STOCK_MAIN
+  const scannedEanRef = useRef<string | null>(null)
+  const close = useCallback(() => navigation.goBack(), [navigation])
+  const goManual = useCallback(
+    () =>
+      // Na compra o form ignora `manualEntry` (volta como estava); na aba Estoque ele abre o seletor do FAB.
+      navigation.popTo(returnTo, { manualEntry: Date.now() }, { merge: true }),
+    [navigation, returnTo],
+  )
+  // Volta ao form que abriu o scanner, com o rascunho; ele é a confirmação (RC3 A).
+  const returnDraft = useCallback(
+    (draft) => navigation.popTo(returnTo, { scanDraft: draft, scanEan: scannedEanRef.current }, { merge: true }),
+    [navigation, returnTo],
+  )
+  return { entryPoint, fromMedicineForm, purchase, scannedEanRef, close, goManual, returnDraft }
+}
+
 export default function BarcodeScannerScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
   const navigation = useNavigation<any>()
@@ -155,7 +209,7 @@ export default function BarcodeScannerScreen() {
   // E-4: o callback dispara por quadro; só a 1ª leitura válida conta.
   const lockedRef = useRef(false)
   const reportedRef = useRef<string | null>(null)
-  const entryPoint = route.params?.entryPoint ?? 'medicine_form'
+  const { entryPoint, fromMedicineForm, purchase, scannedEanRef, close, goManual, returnDraft } = useScanReturn(navigation, route)
 
   const raw = toPermission(rawPermission)
   const permission = effectivePermission(isAndroid, raw, probe)
@@ -215,27 +269,13 @@ export default function BarcodeScannerScreen() {
   }, [screen])
 
   // Handlers
-  // ✕ só fecha. A saída "manual" volta ao form já rolado até "Identificação" (smoke C-D1-3): quem
-  // desistiu da caixa não precisa rever o card de busca/scan que acabou de não servir.
-  const close = useCallback(() => navigation.goBack(), [navigation])
-  const goManual = useCallback(
-    () => navigation.popTo(ROUTES.MEDICINE_CREATE, { manualEntry: Date.now() }, { merge: true }),
-    [navigation],
-  )
-
-  const returnDraft = useCallback(
-    (draft) => {
-      // Volta ao form que abriu o scanner, com o rascunho; ele é a confirmação (RC3 A).
-      navigation.popTo(ROUTES.MEDICINE_CREATE, { scanDraft: draft }, { merge: true })
-    },
-    [navigation],
-  )
-
   const handleBarcode = useCallback(
     ({ data }: { data: string }) => {
       if (lockedRef.current || !cmed.index || !cmed.lookup) return
       lockedRef.current = true
-      const resolution = resolveScannedEan(cmed.index, cmed.lookup, String(data ?? '').trim())
+      const ean = String(data ?? '').trim()
+      scannedEanRef.current = ean
+      const resolution = resolveScannedEan(cmed.index, cmed.lookup, ean)
       const result = resolution.kind === 'choose' ? 'multiple' : resolution.kind
       logEvent(EVENTS.SCAN_RESULT, { surface: SURFACES.MOBILE, result })
       selectionTap()
@@ -243,7 +283,7 @@ export default function BarcodeScannerScreen() {
       else if (resolution.kind === 'choose') dispatch({ type: 'choose', title: resolution.title, options: resolution.options })
       else dispatch({ type: 'not_found' })
     },
-    [cmed.index, cmed.lookup, returnDraft],
+    [cmed.index, cmed.lookup, returnDraft, scannedEanRef],
   )
 
   const handlePick = useCallback(
@@ -279,12 +319,13 @@ export default function BarcodeScannerScreen() {
     }
     if (screen === 'blocked') {
       // C-D1-6: o iOS encerra o app ao mudar a permissão; a marca faz a próxima abertura voltar aqui.
-      if (!isAndroid) await markScanResume(entryPoint)
+      // A retomada sempre abre o cadastro (useScanResume): a compra não marca.
+      if (!isAndroid && fromMedicineForm) await markScanResume(entryPoint)
       await Linking.openSettings()
       return
     }
     await askCamera()
-  }, [askCamera, screen, retryIndex, isAndroid, entryPoint])
+  }, [askCamera, screen, retryIndex, isAndroid, entryPoint, fromMedicineForm])
 
   if (FULL_SCREENS.has(screen)) {
     return (
@@ -294,6 +335,7 @@ export default function BarcodeScannerScreen() {
           onAction={handleFullAction}
           onManual={goManual}
           onClose={close}
+          purchase={purchase}
         />
       </SafeAreaView>
     )
@@ -305,7 +347,12 @@ export default function BarcodeScannerScreen() {
 
   const sheet =
     screen === 'illegible' || screen === 'not_found' || screen === 'index_failed' ? (
-      <VisorSheet screen={screen} onRetry={screen === 'index_failed' ? retryIndex : retry} onManual={goManual} />
+      <VisorSheet
+        screen={screen}
+        onRetry={screen === 'index_failed' ? retryIndex : retry}
+        onManual={goManual}
+        purchase={purchase}
+      />
     ) : null
 
   return (
@@ -319,6 +366,7 @@ export default function BarcodeScannerScreen() {
         onClose={close}
         onManual={goManual}
         sheet={sheet}
+        purchase={purchase}
       />
     </SafeAreaView>
   )
@@ -354,6 +402,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  visorActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
+  },
   roundButton: {
     width: 48,
     height: 48,
@@ -375,6 +427,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.text.inverse,
+  },
+  frameFocusing: {
+    borderColor: colors.status.warningBright,
   },
   frame: {
     width: '80%',

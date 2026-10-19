@@ -53,6 +53,7 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
     laboratory?: string | null
     notes?: string | null
     injectionContainer?: string | null
+    ean?: string | null
   }): Promise<any[]>
   updatePurchase(id: string, input: Record<string, unknown>): Promise<any>
 } {
@@ -165,6 +166,8 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
         p_laboratory: p.laboratory ?? null,
         p_notes: p.notes ?? null,
         p_injection_container: p.injection_container ?? null,
+        // 066 D2: só a criação grava o EAN; a edição (updatePurchase) não o toca.
+        p_ean: p.ean ?? null,
       }
       const { data, error } = await client.rpc('create_purchase_with_stock', rpcArgs as never)
 
@@ -191,6 +194,7 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
       laboratory?: string | null
       notes?: string | null
       injectionContainer?: string | null
+      ean?: string | null
     }) {
       const {
         medicineId,
@@ -203,6 +207,7 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
         laboratory = null,
         notes = null,
         injectionContainer = null,
+        ean = null,
       } = input || {}
 
       // Guards de input degenerado (R-270): evitam loop vazio e divisão por zero.
@@ -242,6 +247,7 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
           laboratory,
           notes,
           injection_container: injectionContainer,
+          ean,
         })
         results.push(data)
       }

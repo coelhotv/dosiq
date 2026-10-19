@@ -41,7 +41,7 @@ export const EVENTS = {
 
   // Leitura do código de barras (spec 066 D1 · PO-11 · TRACKING_PLAN §5.4). Mede o limiar P-2 da onda 1.
   // NUNCA o EAN (identifica o remédio = dado de saúde), nome, substância nem laboratório (FR-025).
-  SCAN_OPENED: 'scan_opened',                 // entry_point: medicine_form|medicines_list
+  SCAN_OPENED: 'scan_opened',                 // entry_point: medicine_form|medicines_list|purchase_form|stock_list (066 D2)
   SCAN_PERMISSION: 'scan_permission',         // result: granted|denied|blocked
   SCAN_RESULT: 'scan_result',                 // result: found|multiple|not_found|illegible|offline|version|index_failed
   SCAN_CONFIRMED: 'scan_confirmed',           // dose_edited: bool, used_existing: bool

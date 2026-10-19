@@ -109,3 +109,53 @@ export function findMedicineCandidates<T extends CandidateMedicineLike>(
   }
   return [...identicos, ...proximos]
 }
+
+export type SameMedicineMatch = 'identico' | 'similar' | 'outro'
+
+// Dose e unidade conhecidas dos dois lados e iguais (o cadastro sem substância exige as duas).
+function sameKnownDose(draft: CandidateDraftLike, medicine: CandidateMedicineLike): boolean {
+  if (draft.dosage_per_pill === null || !draft.dosage_unit) return false
+  return toNumber(medicine.dosage_per_pill) === draft.dosage_per_pill && medicine.dosage_unit === draft.dosage_unit
+}
+
+// Dose ou unidade conhecidas dos dois lados e diferentes: é outra força, logo outro remédio.
+function conflictingDose(draft: CandidateDraftLike, medicine: CandidateMedicineLike): boolean {
+  const dose = toNumber(medicine.dosage_per_pill)
+  if (draft.dosage_per_pill !== null && dose !== null && draft.dosage_per_pill !== dose) return true
+  return !!draft.dosage_unit && !!medicine.dosage_unit && draft.dosage_unit !== medicine.dosage_unit
+}
+
+// Nome parecido: o nome de um lado tem termo do nome ou da substância do outro (genérico costuma
+// ser cadastrado pelo nome da substância; a marca lida tem o nome comercial).
+function nameLike(draft: CandidateDraftLike, medicine: CandidateMedicineLike): boolean {
+  const draftName = tokens(draft.name)
+  const name = tokens(medicine.name)
+  return (
+    overlaps(draftName, new Set([...name, ...tokens(medicine.active_ingredient)])) ||
+    overlaps(name, new Set([...draftName, ...tokens(draft.active_ingredient)]))
+  )
+}
+
+/**
+ * A caixa lida na compra é o remédio travado? (spec 066 D2 · FR-027, PO 2026-10-17)
+ *   identico — o mesmo critério de `findMedicineCandidates` (inclusive genérico de outro laboratório)
+ *   similar  — mesmas substâncias e nome parecido, mas o cadastro diverge da CMED canônica na forma, na
+ *              dose vazia ou no registro (cadastro antigo); ou cadastro SEM princípio ativo com nome
+ *              parecido e dose/unidade iguais; a UI pergunta antes de preencher
+ *   outro    — substâncias diferentes, dose/unidade conhecidas dos dois lados e diferentes, ou sem base
+ * Como o resto do matcher, não decide nada sozinho: quem confirma o `similar` é a pessoa.
+ */
+export function classifySameMedicine(
+  draft: CandidateDraftLike,
+  medicine: CandidateMedicineLike | null | undefined
+): SameMedicineMatch {
+  if (!medicine) return 'outro'
+  if (findMedicineCandidates(draft, [medicine]).some((c) => c.match === 'identico')) return 'identico'
+
+  const substances = tokens(medicine.active_ingredient)
+  // Cadastro feito à mão sem princípio ativo (9% da base, medido 2026-10-18): o nome faz o papel da
+  // substância, mas só com dose e unidade conhecidas e iguais — o nome sozinho não basta.
+  if (substances.size === 0) return sameKnownDose(draft, medicine) && nameLike(draft, medicine) ? 'similar' : 'outro'
+  if (!sameSet(tokens(draft.active_ingredient), substances) || conflictingDose(draft, medicine)) return 'outro'
+  return nameLike(draft, medicine) ? 'similar' : 'outro'
+}

@@ -12,6 +12,7 @@ import StockDetailScreen from '../features/stock/screens/StockDetailScreen'
 import PurchaseFormScreen from '../features/stock/screens/PurchaseFormScreen'
 import PurchaseHistoryScreen from '../features/stock/screens/PurchaseHistoryScreen'
 import StockAdjustmentScreen from '../features/stock/screens/StockAdjustmentScreen'
+import BarcodeScannerScreen from '../features/medications/scan/BarcodeScannerScreen'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
 const Stack = createStackNavigator<any>()
@@ -24,6 +25,8 @@ export default function StockStack() {
       <Stack.Screen name={ROUTES.PURCHASE_FORM} component={PurchaseFormScreen} />
       <Stack.Screen name={ROUTES.PURCHASE_HISTORY} component={PurchaseHistoryScreen} />
       <Stack.Screen name={ROUTES.STOCK_ADJUSTMENT} component={StockAdjustmentScreen} />
+      {/* 066 D2: "Ler a caixa" da compra; volta ao PURCHASE_FORM com `scanDraft`/`scanEan` (popTo). */}
+      <Stack.Screen name={ROUTES.MEDICINE_SCAN} component={BarcodeScannerScreen} />
     </Stack.Navigator>
   )
 }

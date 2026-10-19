@@ -181,6 +181,36 @@ describe('createPurchaseRepository — parity', () => {
     })
   })
 
+  // ── 066 D2: EAN da caixa lida ──
+  describe('createPurchase — ean (066 D2)', () => {
+    it('passa p_ean quando informado', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createPurchase({ ...VALID_INPUT, ean: '7896004703398' })
+      const call = client._rpcCalls.find(([n]: [string]) => n === 'create_purchase_with_stock')
+      expect(call[1].p_ean).toBe('7896004703398')
+    })
+    it('p_ean = null quando ausente ou vazio (cliente sem scan)', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createPurchase(VALID_INPUT)
+      await repo.createPurchase({ ...VALID_INPUT, ean: '  ' })
+      const calls = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
+      expect(calls.map(([, a]: [string, any]) => a.p_ean)).toEqual([null, null])
+    })
+    it('EAN fora do CHECK (12 dígitos / letras) → Erro de validação, sem RPC', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await expect(repo.createPurchase({ ...VALID_INPUT, ean: '789600470339' })).rejects.toThrow(/Erro de validação/)
+      await expect(repo.createPurchase({ ...VALID_INPUT, ean: '78960047033AB' })).rejects.toThrow(/Erro de validação/)
+      expect(client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')).toHaveLength(0)
+    })
+    it('updatePurchase não grava ean (a edição da web não o apaga)', async () => {
+      client = makeClient({ data: { id: 'p-1' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.updatePurchase('p-1', { ...VALID_INPUT, ean: '7896004703398' })
+      const updateCall = client._builder._calls.find(([m]: [string]) => m === 'update')
+      expect(updateCall[1][0]).not.toHaveProperty('ean')
+    })
+  })
+
   // ── updatePurchase ──
   describe('updatePurchase', () => {
     beforeEach(() => {
@@ -257,6 +287,14 @@ describe('createPurchaseRepository — parity', () => {
       const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(rpcs).toHaveLength(1)
       expect(rpcs[0][1].p_unit_price).toBeCloseTo(0.5, 4)
+    })
+
+    it('repassa o ean a cada frasco (066 D2)', async () => {
+      client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createLiquidPurchase({ ...LIQ, numBottles: 2, totalPrice: 20, ean: '7896004703398' })
+      const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
+      expect(rpcs.map(([, a]: [string, any]) => a.p_ean)).toEqual(['7896004703398', '7896004703398'])
     })
 
     it('numBottles ≤ 0 ou não-inteiro → rejeita (sem loop/div0)', async () => {
