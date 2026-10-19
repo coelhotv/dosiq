@@ -122,7 +122,11 @@ function getFilteredSections(data, filter, active, inactive) {
 // `scanDraft`. Um idêntico abre a compra (effect); vários ou nenhum viram o sheet. A saída "digitar"
 // do leitor (`manualEntry`) segue o caminho do FAB.
 function useStockScan(route, navigation, setSheetVisible) {
-  const { data: medicines } = useMedicines()
+  // C-17 (smoke Android): a aba fica montada; sem recarregar, remédio cadastrado depois não era achado.
+  // Toda leitura que chega (botão daqui ou "Registrar compra de…" da compra, C-14) recarrega a lista do
+  // banco e só então resolve.
+  const { data: medicines, refresh: refreshMedicines } = useMedicines()
+  const [freshFor, setFreshFor] = useState(null)
   // Leitura já tratada (popTo com merge troca o objeto a cada leitura) e o resultado dela.
   const [applied, setApplied] = useState(null)
   const [current, setCurrent] = useState(null)
@@ -130,7 +134,17 @@ function useStockScan(route, navigation, setSheetVisible) {
   const openedRef = useRef(null)
 
   const scanDraft = route.params?.scanDraft ?? null
-  if (scanDraft && scanDraft !== applied && medicines) {
+  useEffect(() => {
+    if (!scanDraft) return
+    let cancelled = false
+    Promise.resolve(refreshMedicines()).finally(() => {
+      if (!cancelled) setFreshFor(scanDraft)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [scanDraft, refreshMedicines])
+  if (scanDraft && scanDraft !== applied && freshFor === scanDraft && medicines) {
     setApplied(scanDraft)
     setCurrent({ draft: scanDraft, ean: route.params?.scanEan ?? null, resolution: resolveStockScan(scanDraft, medicines) })
   }

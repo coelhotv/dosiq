@@ -8,7 +8,8 @@ import StockScreen from '../StockScreen'
 
 const mockNav = { navigate: jest.fn(), goBack: jest.fn(), setParams: jest.fn() }
 const mockRoute: { current: any } = { current: { params: {} } }
-const mockMedicines: { current: any } = { current: { data: [], loading: false } }
+const mockRefresh = jest.fn(() => Promise.resolve())
+const mockMedicines: { current: any } = { current: { data: [], loading: false, refresh: mockRefresh } }
 const mockCrossTab = jest.fn()
 const mockPurchaseSheet = jest.fn()
 
@@ -51,7 +52,7 @@ const LOSARTANA = { ...AMOX, id: 'm3', name: 'Losartana', active_ingredient: 'Lo
 const EAN = '7896004703398'
 
 function renderWithScan(medicines: any[], draft = scanDraft()) {
-  mockMedicines.current = { data: medicines, loading: false }
+  mockMedicines.current = { data: medicines, loading: false, refresh: mockRefresh }
   mockRoute.current = { params: { scanDraft: draft, scanEan: EAN } }
   return render(<StockScreen />)
 }
@@ -60,7 +61,7 @@ const lastSheetProps = () => mockPurchaseSheet.mock.calls.at(-1)?.[0]
 
 beforeEach(() => {
   mockRoute.current = { params: {} }
-  mockMedicines.current = { data: [], loading: false }
+  mockMedicines.current = { data: [], loading: false, refresh: mockRefresh }
 })
 
 afterEach(() => {
@@ -97,6 +98,18 @@ describe('"Ler a caixa" na aba Estoque (PO-13)', () => {
   })
 
   // C-16: um similar só abre a compra SEM scanConfirmed — o cartão da compra pergunta antes de preencher.
+  // C-17 (smoke Android): remédio cadastrado com a aba já montada não estava na lista velha.
+  it('recarrega a lista do banco antes de resolver a leitura (C-17)', async () => {
+    mockRefresh.mockImplementationOnce(async () => {
+      mockMedicines.current = { data: [AMOX], loading: false, refresh: mockRefresh }
+    })
+    const { queryByText } = renderWithScan([])
+    await act(async () => {})
+    expect(mockRefresh).toHaveBeenCalledTimes(1)
+    expect(queryByText('Este remédio ainda não está cadastrado')).toBeNull()
+    expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.objectContaining({ medicineId: AMOX.id }))
+  })
+
   it('um similar só: abre a compra sem confirmação (a compra pergunta)', async () => {
     renderWithScan([AMOX_ANTIGO])
     await act(async () => {})
@@ -122,12 +135,12 @@ describe('"Ler a caixa" na aba Estoque (PO-13)', () => {
   })
 
   it('lista de remédios ainda carregando: espera, não conclui "não cadastrado"', async () => {
-    mockMedicines.current = { data: null, loading: true }
+    mockMedicines.current = { data: null, loading: true, refresh: mockRefresh }
     mockRoute.current = { params: { scanDraft: scanDraft(), scanEan: EAN } }
     const { queryByText, rerender } = render(<StockScreen />)
     await act(async () => {})
     expect(queryByText('Este remédio ainda não está cadastrado')).toBeNull()
-    mockMedicines.current = { data: [AMOX], loading: false }
+    mockMedicines.current = { data: [AMOX], loading: false, refresh: mockRefresh }
     rerender(<StockScreen />)
     await act(async () => {})
     expect(mockNav.navigate).toHaveBeenCalledWith('PurchaseForm', expect.objectContaining({ medicineId: 'm1' }))
