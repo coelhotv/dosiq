@@ -33,6 +33,18 @@ Escolher a hora com menos doses (normalmente madrugada) e um dia em que o PO est
 
 ## 3. Backup antes (obrigatório)
 
+**Pré-requisito — `pg_dump` local (macOS).** O pacote `libpq` traz só os clientes (`pg_dump`, `psql`, `pg_restore`), sem servidor:
+
+```bash
+brew install libpq
+# keg-only: não entra no PATH sozinho (zsh → ~/.zprofile · bash → ~/.bash_profile)
+echo 'export PATH="/opt/homebrew/opt/libpq/bin:$PATH"' >> ~/.bash_profile
+source ~/.bash_profile
+pg_dump --version   # precisa ser ≥ 17 (2026-10-19: 18.6 no Mac Mini)
+```
+
+Se vier < 17: `brew install postgresql@17` e usar `/opt/homebrew/opt/postgresql@17/bin` no PATH.
+
 String de conexão: painel → Connect → **Session pooler** (porta 5432), com a senha do banco.
 
 ```bash
