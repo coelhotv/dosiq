@@ -11,6 +11,7 @@ import { DOSAGE_UNITS, normalizeRegulatoryCategory } from '../../schemas/medicin
 import { formatStrength } from '../../utils/doseUnit'
 import type { CmedRow } from './cmedIndex'
 import { packageFromText, presentationFromRow, type InjectionContainer } from './cmedPackage'
+import { intakeUnitFromPresentation } from './cmedIntakeUnit'
 
 export interface CmedMedicineDraft {
   name: string
@@ -39,6 +40,8 @@ export interface CmedMedicineDraft {
   /** Só com `doseAmbiguous`: valores distintos da força, na ordem da caixa (C-C10). */
   strengthChoices: CmedStrengthChoice[]
   isGeneric: boolean
+  /** 066 E (C-7): unidade da tomada deduzida do texto da caixa (gotas/ml/UI/mg); null em não líquido. */
+  intake_unit: string | null
 }
 
 export interface CmedStrengthChoice {
@@ -92,5 +95,6 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
     doseAmbiguous: row.amb,
     strengthChoices: row.amb ? strengthChoicesFromDs(row.ds) : [],
     isGeneric,
+    intake_unit: intakeUnitFromPresentation(row.a, unit, presentation),
   }
 }

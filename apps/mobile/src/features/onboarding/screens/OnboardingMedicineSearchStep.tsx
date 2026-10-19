@@ -14,14 +14,16 @@ import * as LucideIcons from 'lucide-react-native'
 import { CmedPresentationStep } from '@medications/components/CmedPresentationStep'
 import { MedicineSearchResultItem } from '@medications/components/MedicineSearchResultItem'
 import { useMedicineSearchFlow } from '@medications/hooks/useMedicineSearchFlow'
+import { MIN_SEARCH_CHARS } from '@shared/hooks/useMedicineDatabase'
 import { ROUTES } from '@navigation/routes'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import OnboardingAnvisaSeal from '@features/onboarding/components/OnboardingAnvisaSeal'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
-const { Search, X, Pencil, ShieldCheck } = LucideIcons as any
+const { Search, X, Pencil } = LucideIcons as any
 
 export default function OnboardingMedicineSearchStep() {
   // States (R-010)
@@ -145,7 +147,7 @@ export default function OnboardingMedicineSearchStep() {
               ) : null}
             </View>
 
-            {trimmed.length < 2 ? <Text style={styles.hint}>{hint}</Text> : null}
+            {trimmed.length < MIN_SEARCH_CHARS ? <Text style={styles.hint}>{hint}</Text> : null}
 
             <FlatList
               data={results}
@@ -154,17 +156,14 @@ export default function OnboardingMedicineSearchStep() {
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               contentContainerStyle={styles.listContent}
-              ListEmptyComponent={trimmed.length >= 2 ? <Text style={styles.hint}>{hint}</Text> : null}
+              ListEmptyComponent={trimmed.length >= MIN_SEARCH_CHARS ? <Text style={styles.hint}>{hint}</Text> : null}
               ListFooterComponent={manualRow}
             />
           </View>
         )}
       </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
-        <ShieldCheck size={18} color={colors.primary[700]} strokeWidth={2} />
-        <Text style={styles.footerText}>Resultados da lista oficial da ANVISA.</Text>
-      </View>
+      <OnboardingAnvisaSeal compact />
     </SafeAreaView>
   )
 }
@@ -240,17 +239,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.primary[700],
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[3],
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[3],
-  },
-  footerText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text.secondary,
   },
 })

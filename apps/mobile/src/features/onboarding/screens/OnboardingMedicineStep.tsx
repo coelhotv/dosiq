@@ -9,7 +9,7 @@
 // Nada é gravado aqui: o remédio só vai para o contexto do wizard; quem grava é o passo de estoque (INV-1).
 
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import {
@@ -20,6 +20,7 @@ import {
   isLiquidDosageUnit,
   PRESENTATIONS,
   type CmedStrengthChoice,
+  defaultIntakeUnitFor,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -34,6 +35,7 @@ import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import OnboardingBrandmark from '@features/onboarding/components/OnboardingBrandmark'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
@@ -97,7 +99,7 @@ export default function OnboardingMedicineStep() {
   // States (R-010)
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
-  const { medicine, setMedicine, setMedicineSource, skip } = useOnboarding()
+  const { medicine, setMedicine, setMedicineSource, setMedicineIntakeUnit, skip } = useOnboarding()
   const { show } = useToast()
   // 066 E: o que veio da caixa (busca 2C ou código de barras) — mesmo estado do cadastro completo.
   const [filledLabel, setFilledLabel] = useState<string | null>(null)
@@ -108,6 +110,8 @@ export default function OnboardingMedicineStep() {
   const [doseChoiceError, setDoseChoiceError] = useState(false)
   const [appliedScanDraft, setAppliedScanDraft] = useState<any>(null)
   const [appliedSelection, setAppliedSelection] = useState<any>(null)
+  // 066 E (C-7): unidade da tomada que a caixa indica, e para qual concentração ela vale.
+  const [draftIntake, setDraftIntake] = useState<{ unit: string | null; dosageUnit: string | null } | null>(null)
   // `scan_confirmed` sai 1× por caixa lida: voltar do tratamento e continuar de novo não recontaria.
   const confirmedScanRef = useRef<any>(null)
 
@@ -123,6 +127,7 @@ export default function OnboardingMedicineStep() {
     setDoseChoiceError(false)
     setFilledLabel([draft.name, draft.strengthLabel].filter(Boolean).join(' '))
     setFilledSource(source)
+    setDraftIntake({ unit: draft.intake_unit ?? null, dosageUnit: draft.dosage_unit ?? null })
   }
 
   // US7 cen. 5: a busca devolve { anvisaItem, cmedDraft? }. Com caixa escolhida no passo 2, o rascunho
@@ -142,6 +147,7 @@ export default function OnboardingMedicineStep() {
     setDoseChoiceError(false)
     setFilledLabel(item.name ?? null)
     setFilledSource('search')
+    setDraftIntake(null)
   }
 
   // Aplicados durante o render, uma vez por objeto. 066 E (T050): `scanDraft` vem do leitor; `scanEan`
@@ -230,8 +236,13 @@ export default function OnboardingMedicineStep() {
     }
     setMedicine(form.values)
     setMedicineSource(source)
+    // C-7: a unidade da caixa só vale se a concentração ainda é a da caixa; senão, o padrão do form completo.
+    const dosageUnit = form.values.dosage_unit as string | undefined
+    setMedicineIntakeUnit(
+      draftIntake?.unit && draftIntake.dosageUnit === dosageUnit ? draftIntake.unit : defaultIntakeUnitFor(dosageUnit),
+    )
     ;(navigation.navigate as any)(ROUTES.ONBOARDING_TREATMENT)
-  }, [form, show, setMedicine, setMedicineSource, navigation, doseCheckRequired, filledLabel, filledSource, appliedScanDraft])
+  }, [form, show, setMedicine, setMedicineSource, setMedicineIntakeUnit, navigation, doseCheckRequired, filledLabel, filledSource, appliedScanDraft, draftIntake])
 
   const hasDose = String(form.values.dosage_per_pill ?? '').trim() !== ''
   const askStrength = doseCheckRequired && !hasDose
@@ -245,14 +256,7 @@ export default function OnboardingMedicineStep() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.brandmark}>
-            <Image
-              source={require('../../../../assets/icon.png')}
-              style={styles.brandIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.brandText}>dosiq</Text>
-          </View>
+          <OnboardingBrandmark />
 
           <Text style={styles.title}>{filledLabel ? 'Confira o seu remédio' : 'Seu primeiro remédio'}</Text>
           <Text style={styles.subtitle}>
@@ -374,24 +378,6 @@ const styles = StyleSheet.create({
   },
   rowUnit: {
     flex: 1,
-  },
-  brandmark: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[2],
-    alignSelf: 'center',
-  },
-  brandIcon: {
-    width: 28,
-    height: 28,
-  },
-  brandText: {
-    fontSize: 20,
-    fontFamily: typography.fontFamily.brand,
-    color: colors.text.brand,
-    marginLeft: spacing[1],
-    fontWeight: '700',
   },
   warningBox: {
     padding: spacing[3],

@@ -15,9 +15,11 @@ import { ROUTES } from '@navigation/routes'
 import { ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import OnboardingAnvisaSeal from '@features/onboarding/components/OnboardingAnvisaSeal'
+import OnboardingBrandmark from '@features/onboarding/components/OnboardingBrandmark'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
-const { ScanBarcode, Search, ChevronRight, ShieldCheck } = LucideIcons as any
+const { ScanBarcode, Search, ChevronRight } = LucideIcons as any
 
 // Círculo do ícone sobre o card verde: branco translúcido (sem token equivalente).
 const ON_PRIMARY_TINT = 'rgba(255,255,255,0.18)'
@@ -48,6 +50,7 @@ export default function OnboardingMedicineChoiceStep() {
       <OnboardingHeader {...(headerProps as any)} />
 
       <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+        <OnboardingBrandmark />
         <Text style={styles.title}>Qual remédio você toma?</Text>
         <Text style={styles.subtitle}>Comece por um só. Os outros você adiciona depois. Tem a caixa por perto?</Text>
 
@@ -87,10 +90,7 @@ export default function OnboardingMedicineChoiceStep() {
         </Pressable>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <ShieldCheck size={20} color={colors.primary[700]} strokeWidth={2} />
-        <Text style={styles.footerText}>Usamos a lista oficial da ANVISA. Você pode corrigir qualquer dado depois.</Text>
-      </View>
+      <OnboardingAnvisaSeal />
     </SafeAreaView>
   )
 }
@@ -188,18 +188,5 @@ const styles = StyleSheet.create({
   },
   textInverse: {
     color: colors.text.inverse,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[3],
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[4],
-  },
-  footerText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.text.secondary,
   },
 })

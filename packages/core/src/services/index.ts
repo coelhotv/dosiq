@@ -164,6 +164,7 @@ export type {
 export { medicineDraftFromRow, strengthChoicesFromDs } from './cmed/cmedMedicine'
 export { packageFromText, presentationFromRow } from './cmed/cmedPackage'
 export type { CmedPackage, InjectionContainer } from './cmed/cmedPackage'
+export { defaultIntakeUnitFor, intakeUnitFromPresentation } from './cmed/cmedIntakeUnit'
 export type { CmedMedicineDraft, CmedStrengthChoice } from './cmed/cmedMedicine'
 export { brandDiffers, classifySameMedicine, findMedicineCandidates } from './cmed/medicineCandidates'
 export type {

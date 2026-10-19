@@ -108,6 +108,7 @@ function withCtx(node) {
     medicine: null,
     setMedicine: jest.fn(),
     setMedicineSource: jest.fn(),
+    setMedicineIntakeUnit: jest.fn(),
     skip: jest.fn(),
     treatment: null,
     setTreatment: jest.fn(),
@@ -303,5 +304,29 @@ describe('telemetria do 1º remédio (TRACKING_PLAN §5.3)', () => {
       step: 'search',
       exit: 'manual',
     })
+  })
+})
+
+describe('unidade da tomada levada ao Tratamento (066 E, C-7)', () => {
+  it('caixa de colírio: a unidade da caixa (gotas) vai para o wizard', () => {
+    const { getByText, ctx } = renderStep({
+      scanDraft: draft({ dosage_per_pill: 3, dosage_unit: 'mg/ml', presentation: 'liquido', intake_unit: 'gotas' }),
+    })
+    fireEvent.press(getByText('Continuar'))
+    expect(ctx.setMedicineIntakeUnit).toHaveBeenCalledWith('gotas')
+  })
+
+  it('GLP-1 injetável: a unidade da caixa (mg) vai para o wizard', () => {
+    const { getByText, ctx } = renderStep({
+      scanDraft: draft({ dosage_per_pill: 3, dosage_unit: 'mg/ml', presentation: 'liquido', intake_unit: 'mg' }),
+    })
+    fireEvent.press(getByText('Continuar'))
+    expect(ctx.setMedicineIntakeUnit).toHaveBeenLastCalledWith('mg')
+  })
+
+  it('comprimido: sem unidade (null)', () => {
+    const { getByText, ctx } = renderStep({ scanDraft: draft({ intake_unit: null }) })
+    fireEvent.press(getByText('Continuar'))
+    expect(ctx.setMedicineIntakeUnit).toHaveBeenCalledWith(null)
   })
 })

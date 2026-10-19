@@ -9,9 +9,11 @@ import { render, fireEvent } from '@testing-library/react-native'
 
 const mockSetTreatment = jest.fn()
 let mockTreatment = null
+let mockIntakeUnit = null
 jest.mock('../OnboardingContext', () => ({
   useOnboarding: () => ({
     medicine: { id: 'm-1', name: 'Amoxicilina' },
+    medicineIntakeUnit: mockIntakeUnit,
     treatment: mockTreatment,
     setTreatment: (...args) => mockSetTreatment(...args),
     skip: jest.fn(),
@@ -44,6 +46,7 @@ afterEach(() => {
   jest.clearAllMocks()
   jest.clearAllTimers()
   mockTreatment = null
+  mockIntakeUnit = null
   mockGate = { available: true, settled: true }
 })
 
@@ -120,5 +123,39 @@ describe('OnboardingTreatmentStep — Mensal (086 FR-022 / PO-4b)', () => {
     }
     const { getByTestId } = render(<OnboardingTreatmentStep />)
     expect(getByTestId('frequency-segment-mensal_30').props.accessibilityState.checked).toBe(true)
+  })
+})
+
+describe('OnboardingTreatmentStep — unidade da tomada do líquido (066 E, C-7)', () => {
+  it('líquido: nasce com a unidade da caixa, sem perguntar, e o rótulo diz qual é', () => {
+    mockIntakeUnit = 'gotas'
+    const { getByText } = render(<OnboardingTreatmentStep />)
+    expect(getByText('Quantidade por dose (gotas)')).toBeTruthy()
+    const calls = mockSetTreatment.mock.calls
+    expect(calls[calls.length - 1][0]).toMatchObject({ intake_unit: 'gotas' })
+  })
+
+  it('GLP-1: a dose é em mg', () => {
+    mockIntakeUnit = 'mg'
+    const { getByText } = render(<OnboardingTreatmentStep />)
+    expect(getByText('Quantidade por dose (mg)')).toBeTruthy()
+  })
+
+  it('comprimido: segue sem unidade (NULL), como antes', () => {
+    const { getByText } = render(<OnboardingTreatmentStep />)
+    expect(getByText('Quantidade por dose (unidade)')).toBeTruthy()
+    const calls = mockSetTreatment.mock.calls
+    expect(calls[calls.length - 1][0].intake_unit ?? null).toBeNull()
+  })
+
+  it('voltou ao passo depois de trocar o remédio: a unidade segue o remédio atual', () => {
+    mockIntakeUnit = 'UI'
+    mockTreatment = {
+      medicine_id: 'm-1', name: 'Amoxicilina', dosage_per_intake: 1, frequency: 'diário', weekdays: [],
+      time_schedule: ['08:00'], start_date: '2026-09-29', intake_unit: 'gotas',
+    }
+    render(<OnboardingTreatmentStep />)
+    const calls = mockSetTreatment.mock.calls
+    expect(calls[calls.length - 1][0]).toMatchObject({ intake_unit: 'UI' })
   })
 })

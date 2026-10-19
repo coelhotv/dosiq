@@ -18,8 +18,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   concentração com botões. Os dois caminhos terminam em "Confira o seu remédio", com nome, concentração e unidade
   preenchidos e todos editáveis. Se a caixa não for lida ou o remédio não estiver na lista ("Não achei. Digitar à mão"),
   a mesma tela abre em branco para digitar. Nada é salvo nesse passo: o remédio continua sendo gravado só no fim do
-  onboarding, junto do tratamento, e o "Pular" segue em todas as telas. No cadastro completo, a busca e o leitor não
-  mudam. Se a conexão travar ao concluir, o app avisa em até 20 segundos e deixa tentar de novo, sem
+  onboarding, junto do tratamento, e o "Pular" segue em todas as telas. O selo "Lista oficial da ANVISA" fica em destaque
+  no rodapé. No tratamento, remédio líquido já nasce com a unidade certa da dose, tirada da própria caixa — gotas no
+  colírio e na dipirona, UI na insulina, mg nas canetas como o Mounjaro, mL no xarope — sem nenhuma pergunta a mais;
+  antes vinha vazia e o app mostrava "1 mL" até a pessoa editar. A busca por nome, aqui e no cadastro completo, passa a
+  pedir 3 letras antes de procurar: com 2 ela dizia "Nenhum resultado" mesmo para remédios que existem. Se a conexão
+  travar ao concluir, o app avisa em até 20 segundos e deixa tentar de novo, sem
   duplicar o remédio, em vez de ficar carregando.
   Store-note: relevante — entra no texto do pacote `0.34.0` junto do cadastro pela caixa.
 

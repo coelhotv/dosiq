@@ -57,6 +57,10 @@ function getErrorMessage(err: unknown): string | undefined {
 // nunca hardcoded — repo é opensource público.
 export const ANVISA_BASE_URL = `${nativePublicAppConfig.supabaseUrl}/storage/v1/object/public/dosiq-assets/anvisa/v1`
 
+// Mínimo de letras para buscar (066 E, C-8): uma fonte só para a busca e para quem mostra o aviso —
+// o fluxo da busca 2C liberava com 2 e a base devolvia vazio ("Nenhum resultado" enganoso).
+export const MIN_SEARCH_CHARS = 3
+
 const FILE_KEY = 'medicineDatabase'
 
 const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
@@ -171,7 +175,7 @@ export function useMedicineDatabase({
   // Early break: para de iterar assim que atinge o limite total.
   const search = useCallback(
     (query: string | null | undefined, limit = 10): Medicine[] => {
-      if (!normalizedDatabase || !query || query.trim().length < 3) return []
+      if (!normalizedDatabase || !query || query.trim().length < MIN_SEARCH_CHARS) return []
       const q = normalizeText(query)
       const nameMatches: Medicine[] = []
       const ingredientMatches: Medicine[] = []

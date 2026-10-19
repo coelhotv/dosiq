@@ -18,7 +18,7 @@ import {
   type CmedMedicineDraft,
   type PickerConcentration,
 } from '@dosiq/core'
-import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
+import { useMedicineDatabase, MIN_SEARCH_CHARS } from '@shared/hooks/useMedicineDatabase'
 import { useCmedIndex } from '@shared/hooks/useCmedIndex'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -73,12 +73,12 @@ export function useMedicineSearchFlow({ active, onSelect }: SearchFlowOptions) {
 
   const trimmed = query.trim()
   const results = useMemo(() => {
-    if (!isReady || trimmed.length < 2) return []
+    if (!isReady || trimmed.length < MIN_SEARCH_CHARS) return []
     return search(trimmed, 40)
   }, [search, trimmed, isReady])
 
   const hint = useMemo(() => {
-    if (trimmed.length < 2) return 'Digite ao menos 2 caracteres'
+    if (trimmed.length < MIN_SEARCH_CHARS) return `Digite ao menos ${MIN_SEARCH_CHARS} letras`
     if (results.length === 0) return 'Nenhum resultado'
     return results.length === 1 ? '1 resultado' : `${results.length} resultados`
   }, [trimmed, results.length])

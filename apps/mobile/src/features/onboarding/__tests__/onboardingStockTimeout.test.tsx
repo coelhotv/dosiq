@@ -11,7 +11,7 @@ const mockNav = { navigate: jest.fn(), goBack: jest.fn() }
 const mockShow = jest.fn()
 const mockMedicineCreate = jest.fn()
 const mockProtocolCreate = jest.fn()
-const mockChooseStockMode = jest.fn(() => Promise.resolve())
+const mockChooseStockMode = jest.fn((..._args: any[]) => Promise.resolve())
 
 jest.mock('@react-navigation/native', () => ({ useNavigation: () => mockNav }))
 jest.mock('@shared/components/feedback/Toast', () => ({ useToast: () => ({ show: mockShow }) }))

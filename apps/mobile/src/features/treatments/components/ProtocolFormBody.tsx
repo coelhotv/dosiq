@@ -27,6 +27,7 @@ import {
   INTERVAL_DAYS_MIN,
   INTERVAL_DAYS_MAX,
   resolveCurrentStep,
+  defaultIntakeUnitFor,
 } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
@@ -107,7 +108,8 @@ function useProtocolFormDerived(form, medicine) {
 
   // Default da unidade de tomada: gotas é a apresentação líquida mais comum (mg é
   // exceção do GLP-1 — usuário troca p/ mg manualmente). ui/ml → 'UI'.
-  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'gotas'
+  // 066 E (C-7): a regra mora no core — o onboarding usa a mesma quando a caixa não diz a unidade.
+  const defaultIntake = defaultIntakeUnitFor(medicine?.dosage_unit) ?? 'gotas'
   const isMg = form.values.intake_unit === 'mg'
   // mg usa a CONCENTRAÇÃO já cadastrada (dosage_per_pill = mg/ml) — não pede densidade.
   // Dropdown dinâmico por forma (022 + B2): ui/ml → {UI, gotas}; mg/ml → {mg, ml, gotas}; resto → {gotas, ml}.
