@@ -145,3 +145,4 @@ supabase/.temp/
 # graftroom local cache
 /.graftroom/
 /.agent
+.claude/settings.local.json

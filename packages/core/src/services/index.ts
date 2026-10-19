@@ -162,11 +162,14 @@ export type {
   PickerLabChoice,
 } from './cmed/cmedIndex'
 export { medicineDraftFromRow, strengthChoicesFromDs } from './cmed/cmedMedicine'
+export { packageFromText, presentationFromRow } from './cmed/cmedPackage'
+export type { CmedPackage, InjectionContainer } from './cmed/cmedPackage'
 export type { CmedMedicineDraft, CmedStrengthChoice } from './cmed/cmedMedicine'
-export { findMedicineCandidates } from './cmed/medicineCandidates'
+export { brandDiffers, classifySameMedicine, findMedicineCandidates } from './cmed/medicineCandidates'
 export type {
   CandidateMedicineLike,
   CandidateDraftLike,
   CandidateMatch,
   MedicineCandidate,
+  SameMedicineMatch,
 } from './cmed/medicineCandidates'

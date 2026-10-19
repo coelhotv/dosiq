@@ -1125,6 +1125,7 @@ export type Database = {
       purchases: {
         Row: {
           created_at: string
+          ean: string | null
           expiration_date: string | null
           id: string
           injection_container: string | null
@@ -1140,6 +1141,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          ean?: string | null
           expiration_date?: string | null
           id?: string
           injection_container?: string | null
@@ -1155,6 +1157,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          ean?: string | null
           expiration_date?: string | null
           id?: string
           injection_container?: string | null
@@ -1916,6 +1919,7 @@ export type Database = {
       }
       create_purchase_with_stock: {
         Args: {
+          p_ean?: string
           p_expiration_date?: string
           p_injection_container?: string
           p_laboratory?: string

@@ -27,6 +27,15 @@ jest.mock('@medications/components/MedicineAnvisaSheet', () => ({ MedicineAnvisa
 jest.mock('@platform/analytics/productAnalytics', () => ({
   logEvent: (...args: any[]) => mockLogEvent(...args),
 }))
+// 066 D2 · PO-4 guard: o cadastro por scan nunca chama o repositório de compra, com estoque ON ou OFF.
+const mockStockTracking = { current: false }
+const mockPurchaseCalls = jest.fn()
+jest.mock('@shared/hooks/useStockTracking', () => ({
+  useStockTracking: () => ({ enabled: mockStockTracking.current, isEnabled: mockStockTracking.current, loading: false }),
+}))
+jest.mock('@stock/services/stockService', () => ({
+  stockService: new Proxy({}, { get: (_t, name) => (...args: any[]) => mockPurchaseCalls(name, ...args) }),
+}))
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native')
   return {
@@ -234,5 +243,17 @@ describe('"É este que você já tem?" (PO-6 · D-4)', () => {
     mockMedicines.current = { data: [{ ...EXISTING, id: 'm2', name: 'Losartana', active_ingredient: 'Losartana', dosage_per_pill: '50' }], loading: false }
     const { queryByText } = renderScanned()
     expect(queryByText('É este que você já tem?')).toBeNull()
+  })
+})
+
+describe('cadastro por scan nunca cria compra (066 D2 · PO-4 guard)', () => {
+  it.each([false, true])('estoque %s: salvar o cadastro lido não toca o repositório de compra', async (on) => {
+    mockStockTracking.current = on
+    const { getByText } = renderScanned()
+    await act(async () => {
+      fireEvent.press(getByText('Criar medicamento'))
+    })
+    expect(mockCreate).toHaveBeenCalledTimes(1)
+    expect(mockPurchaseCalls).not.toHaveBeenCalled()
   })
 })
