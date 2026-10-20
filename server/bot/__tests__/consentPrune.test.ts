@@ -7,6 +7,9 @@ import {
   daysSince,
   PRUNE_DELETE_DAYS,
   PRUNE_DEFAULT_CAP,
+  checkEligibility,
+  executeDeletion,
+  sendDueNotice,
 } from '../consentPrune.js'
 
 /**
@@ -425,3 +428,42 @@ describe('dry-run levanta mesmo acima do cap (achado ao executar o PO-5)', () =>
   })
 })
 
+
+describe('peças extraídas (spec 107 T011)', () => {
+  it('checkEligibility revoked_90d: revogado ⇒ eligible; re-consentiu ⇒ resolved; trilha ilegível ⇒ unknown', async () => {
+    const a = criarSupabase({ userSettings: [], consentLog: trilhaRevogada('u', hÁDias(95)) })
+    expect(await checkEligibility(a.supabase, { user_id: 'u', reason: 'revoked_90d' })).toBe('eligible')
+
+    const b = criarSupabase({
+      userSettings: [],
+      consentLog: [...trilhaRevogada('u', hÁDias(95)), { user_id: 'u', consent_type: 'health_data', action: 'granted', created_at: hÁDias(1), seq: 9 }],
+    })
+    expect(await checkEligibility(b.supabase, { user_id: 'u', reason: 'revoked_90d' })).toBe('resolved')
+
+    const c = criarSupabase({ userSettings: [], consentLog: trilhaRevogada('u', hÁDias(95)), falhas: { trilha: true } })
+    expect(await checkEligibility(c.supabase, { user_id: 'u', reason: 'revoked_90d' })).toBe('unknown')
+  })
+
+  it('executeDeletion grava pruned ANTES da exclusão; trilha falha ⇒ nada é apagado', async () => {
+    const ok = criarSupabase({ userSettings: [], consentLog: [] })
+    expect(await executeDeletion(ok.supabase, 'u')).toBe('pruned')
+    expect(ok.rpcCalls.map(c => c.fn)).toEqual(['consent_controller_event', 'delete_user_account_by_id'])
+
+    const semTrilha = criarSupabase({ userSettings: [], consentLog: [], falhas: { rpcTrilha: true } })
+    expect(await executeDeletion(semTrilha.supabase, 'u')).toBe('trail_failed')
+    expect(semTrilha.rpcCalls.map(c => c.fn)).not.toContain('delete_user_account_by_id')
+
+    const falhaExclusao = criarSupabase({ userSettings: [], consentLog: [], falhas: { exclusao: true } })
+    expect(await executeDeletion(falhaExclusao.supabase, 'u')).toBe('aborted')
+  })
+
+  it('sendDueNotice: 1 aviso no D+60, silêncio no D+61, 2º no D+83', async () => {
+    const desde = hÁDias(60)
+    const s = criarSupabase({ userSettings: [], consentLog: [] })
+    const { dispatcher, enviados } = criarDispatcher()
+    expect(await sendDueNotice(s.supabase, dispatcher, { userId: 'u', days: 60, since: desde })).toBe('noticed')
+    expect(await sendDueNotice(s.supabase, dispatcher, { userId: 'u', days: 61, since: desde })).toBe('silent')
+    expect(await sendDueNotice(s.supabase, dispatcher, { userId: 'u', days: 83, since: desde })).toBe('noticed')
+    expect(enviados.map(e => e.data.stage)).toEqual(['d60', 'd83'])
+  })
+})
