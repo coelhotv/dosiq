@@ -18,6 +18,13 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
+// Worktrees do Claude Code vivem dentro do repo (workspaceRoot é observado por inteiro)
+// e carregam node_modules próprios — duplicam react-native/metro no mapa de arquivos.
+config.resolver.blockList = [
+  ...[].concat(config.resolver.blockList || []),
+  /[\\/]\.claude[\\/]worktrees[\\/].*/,
+]
+
 // Permite o lookup hierárquico padrão (solicitado pelo Expo Doctor)
 config.resolver.disableHierarchicalLookup = false
 
@@ -45,7 +52,8 @@ config.resolver.extraNodeModules = new Proxy(
   {
     get: (target, name) => {
       if (['react', 'react-native', '@react-native-async-storage/async-storage'].includes(name)) {
-        return path.resolve(projectRoot, 'node_modules', name)
+        // Resolve a partir do mobile (cópia local se houver; senão a hoisted na raiz)
+        return path.dirname(require.resolve(`${name}/package.json`, { paths: [projectRoot] }))
       }
       return target[name]
     },
