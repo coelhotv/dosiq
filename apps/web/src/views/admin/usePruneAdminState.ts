@@ -73,7 +73,7 @@ export function usePruneAdminState() {
   )
 
   const approve = useCallback(
-    (queueId: string, prefix: string) => run(queueId, () => pruneAdminService.approve(queueId, prefix), 'Exclusão aprovada. Executa no próximo ciclo das 10:00.'),
+    (queueId: string, prefix: string) => run(queueId, () => pruneAdminService.approve(queueId, prefix), 'Exclusão aprovada. Executa no próximo ciclo das 21:25.'),
     [run]
   )
 

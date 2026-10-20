@@ -35,7 +35,7 @@ const SECTIONS = [
   { key: 'email', title: '📧 Enviar e-mail hoje', hint: 'Copie o e-mail, envie pelo Gmail com o texto pronto e marque como enviado.' },
   { key: 'decide', title: '✅ Pronto para decidir', hint: 'No prazo e com os avisos em dia: apagar ou adiar.' },
   { key: 'blocked', title: '⛔ Bloqueado', hint: 'Não pode ser apagado ainda. A linha diz o que falta.' },
-  { key: 'approved', title: '⏳ Aprovadas — executam às 10:00', hint: 'Nada a fazer. Se o titular autorizar antes, a linha é cancelada sozinha.' },
+  { key: 'approved', title: '⏳ Aprovadas — executam às 21:25', hint: 'Nada a fazer. Se o titular autorizar antes, a linha é cancelada sozinha.' },
 ]
 
 const fmt = (iso?: string | null) => (iso ? parseISO(iso).toLocaleDateString('pt-BR') : '—')
@@ -296,7 +296,7 @@ export default function PruneAdmin({ onBack }) {
           <PendingSections state={state} />
           {summary && (
             <p className="prune-admin__summary">
-              Aprovadas aguardando execução (próx. 10:00): {summary.approved_waiting} · Executadas (30d): {summary.executed_30d}
+              Aprovadas aguardando execução (próx. 21:25): {summary.approved_waiting} · Executadas (30d): {summary.executed_30d}
             </p>
           )}
           <Wave2List state={state} />

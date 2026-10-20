@@ -42,8 +42,8 @@ falha próprio. Erro ou abort do job devolve **5xx** e o cron-job.org alerta.
 
 | Job | URL | Horário (America/Sao_Paulo) | O que faz |
 |---|---|---|---|
-| `prune_enqueue` | `https://<domínio>/api/ops?job=prune_enqueue` | diário 09:30 | abre linhas, reavalia, avisos D+60/D+83, alerta ao admin |
-| `prune_execute` | `https://<domínio>/api/ops?job=prune_execute` | diário 10:00 | apaga só `approved` válidas (máx. 5) |
+| `prune_enqueue` | `https://dosiq.app/api/ops?job=prune_enqueue` | diário 21:20 | abre linhas, reavalia, avisos D+60/D+83, alerta ao admin |
+| `prune_execute` | `https://dosiq.app/api/ops?job=prune_execute` | diário 21:25 | apaga só `approved` válidas (máx. 5) |
 
 Header: `Authorization: Bearer <CRON_SECRET>`. Método: `GET`.
 Depois do merge, conferir no cron-job.org que a 1ª execução de cada um voltou `200`.
@@ -72,14 +72,14 @@ sozinha.
    | 📧 Enviar e-mail hoje | aviso D+60/D+83 devido em conta sem push | **Copiar e-mail** (revela 1 linha, com registro) → Gmail com o texto pronto → **Marcar enviado** |
    | ✅ Pronto para decidir | no prazo e com os 2 avisos (ou o reaviso) | **Apagar esta conta** (digitar o início do id, ≥ 6) ou **Adiar…** (motivo + data) |
    | ⛔ Bloqueado | no prazo **sem** os 2 avisos, ou legado sem kill switch 0.34 | sem aviso: mandar o **reaviso** (copiar → enviar → marcar). O prazo vira marcação + 7 dias e a conta passa para "Pronto para decidir". Legado: ver §4 onda 3 |
-   | ⏳ Aprovadas | `approved` | nada — executa no ciclo das 10:00 a partir do prazo |
+   | ⏳ Aprovadas | `approved` | nada — executa no ciclo das 21:25 a partir do prazo |
    | 🕒 Em contagem (recolhida) | na fila, nada a fazer hoje | nada — a linha diz o próximo marco |
    | 📨 Onda 2 — legado | contas antigas sem autorização | ver §4 |
 
 3. Nenhum dado de saúde aparece na tela: só id curto, e-mail mascarado, motivo, datas e avisos.
 4. O servidor recusa aprovar sem os avisos (FR-014) — esconder o botão não é a trava. Vale: D+60 e
    D+83; ou só o D+83 (se o D+60 se perdeu, não se manda um 2º D+83); ou o reaviso, único por linha.
-5. Linha aprovada executa no ciclo das 10:00 a partir do prazo. Se o titular autorizou ou excluiu a
+5. Linha aprovada executa no ciclo das 21:25 a partir do prazo. Se o titular autorizou ou excluiu a
    conta antes, ela vira `cancelada` no Histórico, sem apagar nada.
 
 ### E-mails (FR-015)
