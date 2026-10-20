@@ -88,6 +88,11 @@ BEGIN
 END
 $$;
 
+-- O INSERT deste papel leva IP e user_id no texto: nunca pode ir para o log do Postgres, mesmo que
+-- alguém suba o log_statement global (hoje 'ddl') — S-2, RC5 2026-10-20.
+ALTER ROLE access_log_writer SET log_statement = 'none';
+ALTER ROLE access_log_writer SET log_min_duration_statement = -1;
+
 GRANT USAGE  ON SCHEMA private     TO access_log_writer;
 GRANT INSERT ON private.access_log TO access_log_writer;
 
