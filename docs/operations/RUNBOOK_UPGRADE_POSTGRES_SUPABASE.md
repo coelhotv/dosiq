@@ -78,6 +78,16 @@ ls -lh ~/local/db-backups/
 | Notificação | esperar o próximo ciclo do cron do `notify` | push chega |
 | Erros | Sentry + Supabase Logs na 1ª hora | sem pico novo |
 
+**Collation (`database "postgres" has a collation version mismatch` no log do Postgres):** a imagem nova trouxe
+outra versão da ICU. Conferir com
+`select datcollversion, pg_database_collation_actual_version(oid) from pg_database where datname='postgres';`
+— se diferirem, rodar no SQL editor, nesta ordem (reindex antes; só o REFRESH apenas cala o aviso):
+
+```sql
+REINDEX SCHEMA CONCURRENTLY public;
+ALTER DATABASE postgres REFRESH COLLATION VERSION;
+```
+
 Registrar no journal: versões antes/depois, horário de início/fim, nome do arquivo de backup, resultado de cada linha da tabela.
 
 ## 6. Se der errado
