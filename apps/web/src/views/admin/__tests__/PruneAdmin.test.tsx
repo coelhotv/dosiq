@@ -75,3 +75,22 @@ describe('PruneAdmin (PO-6)', () => {
     expect(previa.innerHTML).not.toContain('<b>')
   })
 })
+
+describe('PruneAdmin — aviso por e-mail devido (PO-5)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  it('linha sem push mostra o texto pronto, com a data e sem dado de saúde', async () => {
+    svc.list.mockResolvedValue({ ...LIST, data: [{ ...LIST.data[0], email_notice_due: 'd83' }] })
+    svc.getTexts.mockResolvedValue({ data: { body: 'Sua conta será excluída em {data} sem autorização.', version: 1 } })
+    render(<PruneAdmin onBack={undefined} />)
+    const texto = await screen.findByLabelText('Texto do aviso por e-mail')
+    expect(texto.textContent).toContain('Sua conta no dosiq precisa de uma ação')
+    expect(texto.textContent).toMatch(/excluídos em \d{2}\/\d{2}\/\d{4}/)
+    expect(texto.textContent).not.toContain('{data}')
+    expect(texto.textContent).not.toMatch(/remédio|medicament|dose/i)
+    expect(screen.getByRole('button', { name: 'Marcar enviado' })).toBeTruthy()
+  })
+})

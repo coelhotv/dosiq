@@ -73,7 +73,8 @@ sozinha.
 5. Linha aprovada executa no próximo ciclo das 10:00. Se o titular autorizou ou excluiu a conta antes,
    ela vira `cancelada` no Histórico, sem apagar nada.
 
-Texto dos avisos por e-mail (sem nenhum dado de saúde):
+Texto dos avisos por e-mail (sem nenhum dado de saúde). A tela mostra este texto pronto, já com a
+data, em cada linha com aviso devido — fonte única: `PRUNE_EMAIL_NOTICE_COPY` no `@dosiq/core`:
 
 > **Assunto:** Sua conta no dosiq precisa de uma ação
 > Você ainda não autorizou o uso de dados no dosiq. Sem essa autorização, sua conta e os dados dela

@@ -142,6 +142,19 @@ export const NEVER_CONSENTED_DEADLINE_COPY = Object.freeze({
   deleteNow: 'Prefiro excluir minha conta agora',
 } as const)
 
+/**
+ * Texto dos avisos por e-mail (D+60/D+83 e onda 2) — envio manual assistido (spec 107 RC3 E-3).
+ * Fonte única: o admin web mostra este texto pronto na linha, e o runbook o cita. Nenhum dado de
+ * saúde, nenhum nome de remédio (AS-3.2 / INV-4).
+ */
+export const PRUNE_EMAIL_NOTICE_COPY = Object.freeze({
+  subject: 'Sua conta no dosiq precisa de uma ação',
+  body:
+    'Você ainda não autorizou o uso de dados no dosiq. Sem essa autorização, sua conta e os dados ' +
+    'dela serão excluídos em {data}. Para manter a conta, abra o app (atualizado pela loja) e toque ' +
+    'em "Autorizar e continuar". Se preferir, você pode excluir a conta agora pelo próprio app.',
+} as const)
+
 /** Troca `{data}` pela data já formatada. Texto inválido ⇒ fallback embarcado. */
 export function renderDeadlineCopy(body: string | null | undefined, formattedDate: string): string {
   const parsed = consentCopyBodySchema.safeParse(body ?? '')

@@ -173,3 +173,13 @@
   font-size: 0.875rem;
   margin-top: 1rem;
 }
+
+.prune-admin__email-text {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg-subtle, #f3f4f6);
+  user-select: all;
+}

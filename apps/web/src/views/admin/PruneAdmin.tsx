@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { ArrowLeft, AlertTriangle, Mail } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
+import { PRUNE_EMAIL_NOTICE_COPY } from '@dosiq/core'
 import Loading from '@shared/components/ui/Loading'
 import Button from '@shared/components/ui/Button'
 import { usePruneAdminState, prefixMatches } from './usePruneAdminState'
@@ -65,6 +66,11 @@ function PruneRow({ item, state }) {
             onClick={() => state.markNotice(item.queue_id, target, item.email_notice_due)}>
             Marcar enviado
           </Button>
+          <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail">
+            <strong>{PRUNE_EMAIL_NOTICE_COPY.subject}</strong>
+            {'\n'}
+            {PRUNE_EMAIL_NOTICE_COPY.body.replace('{data}', fmt(item.eligible_at))}
+          </p>
         </div>
       )}
 
