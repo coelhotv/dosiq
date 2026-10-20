@@ -10,6 +10,15 @@ import { handleDiscard } from './admin/_handlers/discard.js';
 import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks.js';
 import { handleListNudges, handleCreateNudge, handleUpdateNudge, handleToggleNudge } from './admin/_handlers/nudges.js';
 import { handleGetVersionGate, handleUpdateVersionGate } from './admin/_handlers/versionGate.js';
+import {
+  handleListPrune,
+  handleApprovePrune,
+  handleDeferPrune,
+  handleRevealPrune,
+  handleMarkNoticePrune,
+  handleGetPruneTexts,
+  handleUpdatePruneTexts,
+} from './admin/_handlers/prune.js';
 import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -160,6 +169,31 @@ async function _routeVersionGate(req, res, supabase, adminUserId) {
   return res.status(405).json({ error: 'Method not allowed for versionGate' });
 }
 
+// Fila de exclusão com aprovação manual (spec 107 / ADR-111). Sem função nova (R-090): resource do
+// admin, herda a auth. Toda trava (queue_id + prefixo, janela, gate do legado, onda 2) vive no
+// handler — a tela é conveniência.
+const PRUNE_POST_ACTIONS = {
+  approve: handleApprovePrune,
+  defer: handleDeferPrune,
+  reveal: handleRevealPrune,
+  mark_notice: handleMarkNoticePrune,
+};
+
+async function _routePrune(req, res, action, supabase, adminUserId) {
+  if (action === 'texts') {
+    if (req.method === 'GET') return handleGetPruneTexts(req, res, supabase);
+    if (req.method === 'PUT') return handleUpdatePruneTexts(req, res, supabase, adminUserId);
+    return res.status(405).json({ error: 'Method not allowed for prune texts' });
+  }
+  if (req.method === 'GET' && (!action || action === 'list')) {
+    return handleListPrune(req, res, supabase);
+  }
+  if (req.method === 'POST' && Object.prototype.hasOwnProperty.call(PRUNE_POST_ACTIONS, action)) {
+    return PRUNE_POST_ACTIONS[action](req, res, supabase, adminUserId);
+  }
+  return res.status(405).json({ error: 'Method or action not allowed for prune' });
+}
+
 /**
  * Main Router
  */
@@ -183,12 +217,16 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: authResult.error });
   }
 
-  // resource: 'dlq' | 'feedbacks' | 'nudges' | 'health' | 'versionGate'
+  // resource: 'dlq' | 'feedbacks' | 'nudges' | 'health' | 'versionGate' | 'prune'
   // action: 'retry' | 'discard' | 'resolve'
   const { resource, action, scope } = req.query;
 
   if (resource === 'versionGate') {
     return _routeVersionGate(req, res, supabase, adminUserId);
+  }
+
+  if (resource === 'prune') {
+    return _routePrune(req, res, action, supabase, adminUserId);
   }
 
   if (resource === 'health') {

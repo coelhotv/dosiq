@@ -50,6 +50,7 @@ export function createFakeSupabase(state: FakeState, clock: () => string = () =>
     order(c: string, o?: { ascending?: boolean }) { this.orderBy = { col: c, asc: o?.ascending !== false }; return this; }
     limit(n: number) { this.limitN = n; return this; }
     single() { this.wantSingle = true; return this; }
+    maybeSingle() { this.wantSingle = true; return this; }
     private run() {
       if (state.failures?.[`${this.table}:${this.op}`]) return { data: null, error: { message: 'boom', code: 'XX000' }, count: null };
       const rows = tables[this.table];
