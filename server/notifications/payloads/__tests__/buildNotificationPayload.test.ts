@@ -415,3 +415,23 @@ describe('prescription_alert (076 — janela <= band)', () => {
     expect(build(7).metadata?.protocolId).toBe('p-1');
   });
 })
+
+describe('prune_admin_alert — só contagens (107 US-2 / S-7)', () => {
+  const build = (data: any) => buildNotificationPayload({ kind: 'prune_admin_alert', data })
+
+  it('vermelho no título quando há pendência perto do limite; contagens no corpo', () => {
+    const p = build({ overdue: 2, red: 1, emailsDue: 3 })
+    expect(p.title).toContain('limite')
+    expect(p.pushBody).toContain('2 contas vencidas')
+    expect(p.pushBody).toContain('1 a 10 dias ou menos')
+    expect(p.pushBody).toContain('3 avisos por e-mail')
+    expect(build({ overdue: 1, red: 0, emailsDue: 0 }).title).toBe('Exclusões aguardando decisão')
+  })
+
+  it('o schema não aceita nada além de contagens inteiras não-negativas', () => {
+    expect(() => build({ overdue: -1, red: 0, emailsDue: 0 })).toThrow()
+    expect(() => build({ overdue: 1.5, red: 0, emailsDue: 0 })).toThrow()
+    const p = build({ overdue: 1, red: 0, emailsDue: 0, email: 'x@y.z' } as any)
+    expect(`${p.title} ${p.pushBody} ${p.body}`).not.toContain('@')
+  })
+})

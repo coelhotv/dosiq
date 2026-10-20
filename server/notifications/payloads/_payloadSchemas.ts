@@ -109,7 +109,9 @@ export const kindSchema = z.enum([
   'dlq_digest',
   // 046 Slice C/T013d — aviso de exclusão por consentimento revogado. Copy NEUTRA: atravessa a
   // supressão por consentimento (CONSENT_LIFECYCLE_KINDS) justamente por não tratar dado de saúde.
-  'consent_prune_notice'
+  'consent_prune_notice',
+  // 107 US-2 — alerta diário ao ADMIN_USER_ID sobre a fila de exclusão. Só contagens (S-7).
+  'prune_admin_alert'
 ]);
 
 /**
@@ -121,6 +123,19 @@ export const consentPruneNoticeDataSchema = z.object({
   stage: z.enum(['d60', 'd83']),
   /** Dias restantes até a exclusão automática. Inteiro positivo. */
   daysLeft: z.number().int().positive()
+});
+
+/**
+ * Alerta ao admin sobre a fila de exclusão (spec 107 US-2). Só contagens e prazo: nenhum e-mail,
+ * id ou dado de saúde cabe neste schema (S-7) — o push aparece na tela de bloqueio do admin.
+ */
+export const pruneAdminAlertDataSchema = z.object({
+  /** Pendências com `eligible_at` vencida e sem decisão. */
+  overdue: z.number().int().nonnegative(),
+  /** Das vencidas, quantas estão a ≤ 10 dias do limite da política (90 + 15 d). */
+  red: z.number().int().nonnegative(),
+  /** Avisos D+60/D+83 (ou onda 2) que precisam sair por e-mail e ainda não foram marcados. */
+  emailsDue: z.number().int().nonnegative(),
 });
 
 // Schemas para ações interativas (Gate 4 preliminar)
