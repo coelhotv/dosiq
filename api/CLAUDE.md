@@ -19,8 +19,9 @@ Cada arquivo `.ts` (ou `.js` legado) na raiz do diretório `api/` conta como uma
 | 5 | `api/notify.ts` | Cron orchestrator (reminders, digests, reports) | 60s |
 | 6 | `api/report.ts` | Relatório clínico em PDF (Chromium headless, JWT do usuário — spec 097) | 30s · 2 GB |
 | 7 | `api/telegram.ts` | Telegram webhook | 10s |
+| 8 | `api/ops.ts` | Jobs operacionais (não-notificação) por `?job=`: `prune_enqueue`, `prune_execute` (spec 107) | 60s |
 
-**Total: 7/12 funções → 5 slots livres**
+**Total: 8/12 funções → 4 slots livres**
 
 ---
 
@@ -194,6 +195,10 @@ if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
 
 ## Cron Jobs
 
+> **Jobs operacionais (spec 107, CON-043):** o que NÃO é notificação mora em `api/ops.ts?job=<nome>`,
+> um ping por job no cron-job.org, allowlist + segredo em tempo constante + 5xx em erro. O prune saiu
+> do `notify.ts` (ver `docs/operations/RUNBOOK_PRUNE_APPROVAL.md`).
+
 O cron principal está em `api/notify.ts`, acionado de forma segura por autenticação baseada em segredo cron (`CRON_SECRET`).
 
 Schedule (fuso horário: America/Sao_Paulo):
@@ -230,8 +235,11 @@ api/
   notify.ts                          ← FUNÇÃO 5 (maxDuration: 60)
   report.ts                          ← FUNÇÃO 6 (relatório PDF; lógica em _report/)
   telegram.ts                        ← FUNÇÃO 7 (maxDuration: 10)
+  ops.ts                             ← FUNÇÃO 8 (jobs operacionais; lógica em _ops/)
+  _ops/                              ← jobs da fila de exclusão + auth do cron (não contado)
+  _shared/cronDispatcher.ts          ← dispatcher dos crons notify + ops (não contado)
 ```
 
 ---
 
-*Última atualização: 2026-10-03*
+*Última atualização: 2026-10-20*
