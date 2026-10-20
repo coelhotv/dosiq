@@ -53,7 +53,7 @@ END $$;
 INSERT INTO auth.users (id, email, created_at) VALUES
   ('10700000-0000-0000-0000-00000000000a', 't107-a@dosiq.test', now() - interval '200 days'),
   ('10700000-0000-0000-0000-00000000000b', 't107-b@dosiq.test', now() - interval '10 days');
-INSERT INTO public.user_settings (user_id) VALUES ('10700000-0000-0000-0000-00000000000a');
+-- user_settings nasce pelo gatilho de auth.users (23505 se inserida à mão).
 INSERT INTO public.medicines (user_id, name) VALUES ('10700000-0000-0000-0000-00000000000a', 't107 remédio');
 INSERT INTO private.access_log (user_id, ip, hour_bucket, first_seen, source)
   VALUES ('10700000-0000-0000-0000-00000000000a', '203.0.113.7', date_trunc('hour', now() - interval '3 days'), now() - interval '3 days', 'data_api');
