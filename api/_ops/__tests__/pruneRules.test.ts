@@ -41,6 +41,12 @@ describe('pruneSection', () => {
       .toEqual({ section: 'blocked', notice_due: null, block: 'legacy_gate' })
   })
 
+  it('FR-016: cadastro não confirmado não passa por avisos — decide pela data', () => {
+    const nc = row({ reason: 'unconfirmed_signup', eligible_at: addDays(INICIO, 90) })
+    expect(pruneSection(nc, ctx(0), dia(70))).toEqual({ section: 'counting', notice_due: null, block: null })
+    expect(pruneSection(nc, ctx(0), dia(91))).toEqual({ section: 'decide', notice_due: null, block: null })
+  })
+
   it('noticesComplete e nextMilestone', () => {
     expect(noticesComplete(1, false)).toBe(false)
     expect(noticesComplete(2, false)).toBe(true)

@@ -17,7 +17,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   administrador aprove aquela conta; na hora de apagar, o sistema confere de novo e cancela se a pessoa
   autorizou ou excluiu a conta por conta própria. A aprovação só é aceita depois dos dois avisos que a
   política promete; se a pessoa ficou sem eles, o administrador manda um último aviso por e-mail e o prazo
-  passa a ser 7 dias depois dele. Pendência vencida gera aviso diário no celular do
+  passa a ser 7 dias depois dele. Cadastros que nunca confirmaram o e-mail há mais de 30 dias entram na
+  fila sem aviso nenhum (o endereço pode não ser da pessoa), também só com aprovação. Pendência vencida gera aviso diário no celular do
   administrador. Os jobs operacionais saem da rotina de notificações para um endpoint próprio. Toda
   exclusão de conta — pedida pela pessoa ou pela fila — continua apagando na hora os dados de saúde, mas
   guarda por 6 meses, numa área do banco que nenhum usuário lê, o e-mail ligado à conta, para que o

@@ -15,6 +15,20 @@ export const RED_MARGIN_DAYS = 10;
 export const APPROVAL_WINDOW_DAYS = 7;
 /** Onboarding sem consentimento A por 30 dias entra na fila (FR-009). */
 export const ONBOARDING_GRACE_DAYS = 30;
+/**
+ * Cadastro sem e-mail confirmado há 30 dias entra na fila SEM onda 2 nem avisos (FR-016): o
+ * endereço pode não existir ou ser de outra pessoa. Vale para qualquer data de criação.
+ */
+export const UNCONFIRMED_GRACE_DAYS = 30;
+
+/** `void_reason` gravado quando a reconferência diz que a conta não é mais elegível. */
+export function voidReasonFor(state: string): string {
+  if (state === 'resolved') return 'granted';
+  if (state === 'confirmed') return 'confirmed';
+  if (state === 'gone') return 'self_deleted';
+  return 'unknown';
+}
+
 /** Legado sem retorno 7 dias após o e-mail da onda 2 entra na fila (FR-007). */
 export const WAVE2_GRACE_DAYS = 7;
 /**
@@ -117,6 +131,10 @@ export function pruneSection(
   now: Date,
 ): { section: PruneSection; notice_due: PruneNoticeDue | null; block: PruneBlock | null } {
   if (row.decision === 'approved') return { section: 'approved', notice_due: null, block: null };
+  // FR-016: cadastro não confirmado não tem avisos — decide-se pela data, e só.
+  if (row.reason === 'unconfirmed_signup') {
+    return { section: isApprovable(row, now) ? 'decide' : 'counting', notice_due: null, block: null };
+  }
   const stage = dueNoticeStage(row.scheduled_at, now);
   if (stage && !ctx.hasReaviso) {
     // D+83 devido = nada enviado DESDE o D+83 e ainda sem os 2. Contar só o total pediria um 2º

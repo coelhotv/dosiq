@@ -201,7 +201,7 @@ describe('deriveConsentState — desempate de created_at (046 T013e)', () => {
 
 describe('spec 107 — fila e texto da trava', () => {
   it('PRUNE_REASONS e PRUNE_DECISIONS = os CHECKs de prune_queue', () => {
-    expect([...PRUNE_REASONS]).toEqual(['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent'])
+    expect([...PRUNE_REASONS]).toEqual(['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent', 'unconfirmed_signup'])
     expect([...PRUNE_DECISIONS]).toEqual(['pending', 'approved', 'deferred', 'void'])
   })
 

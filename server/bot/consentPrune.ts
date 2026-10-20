@@ -239,7 +239,7 @@ const COUNTERS: Partial<Record<CandidateOutcome, 'pruned' | 'noticed' | 'skipped
 }
 
 /** Motivo pelo qual uma conta está na fila de exclusão (spec 107 FR-001). */
-export type PruneReason = 'revoked_90d' | 'legacy_no_consent' | 'onboarding_no_consent'
+export type PruneReason = 'revoked_90d' | 'legacy_no_consent' | 'onboarding_no_consent' | 'unconfirmed_signup'
 
 export interface EligibilityInput {
   user_id: string
@@ -250,8 +250,10 @@ export interface EligibilityInput {
  * A condição que tornou a conta elegível ainda vale AGORA? (spec 107, RC3 E-1)
  *
  * `'eligible'` é a única resposta que autoriza apagar. `'resolved'` = a pessoa autorizou;
- * `'gone'` = a conta já não existe (o titular se excluiu — INV-5); `'unknown'` = não deu para
- * saber (inclui erro de leitura) — e não sabendo, NÃO APAGAMOS.
+ * `'confirmed'` = cadastro não confirmado foi confirmado (FR-016: sai deste motivo; se seguir sem
+ * autorizar, volta pela regra de legado/onboarding); `'gone'` = a conta já não existe (o titular
+ * se excluiu — INV-5); `'unknown'` = não deu para saber (inclui erro de leitura) — e não sabendo,
+ * NÃO APAGAMOS.
  *
  * Por motivo: `revoked_90d` exige o último ato do titular ainda `revoked`; quem NUNCA consentiu
  * (legado/onboarding) não tem linha `granted|revoked`, e o ramo da 046 devolveria `unknown` para
@@ -260,7 +262,7 @@ export interface EligibilityInput {
 export async function checkEligibility(
   supabase: ConsentPruneClient,
   input: EligibilityInput,
-): Promise<'eligible' | 'resolved' | 'gone' | 'unknown'> {
+): Promise<'eligible' | 'resolved' | 'confirmed' | 'gone' | 'unknown'> {
   // `consent_log.user_id` vira NULL quando a conta some (FK SET NULL): a existência da conta
   // se pergunta ao auth, não à trilha.
   const { data: accounts, error: accountError } = await supabase.rpc('prune_account_emails', {
@@ -271,6 +273,13 @@ export async function checkEligibility(
     return 'unknown'
   }
   if (!Array.isArray(accounts) || accounts.length === 0) return 'gone'
+
+  // FR-016: só apaga cadastro que AINDA não confirmou o e-mail (campo ausente ⇒ não sabemos).
+  if (input.reason === 'unconfirmed_signup') {
+    const confirmed = (accounts[0] as { email_confirmed?: boolean }).email_confirmed
+    if (confirmed === true) return 'confirmed'
+    if (confirmed !== false) return 'unknown'
+  }
 
   if (input.reason === 'revoked_90d') {
     const state = await confirmStillRevoked(supabase, input.user_id)

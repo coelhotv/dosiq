@@ -6,7 +6,8 @@
 type Row = Record<string, any>;
 
 export interface FakeState {
-  users: Array<{ id: string; email: string; created_at: string }>;
+  /** `email_confirmed` ausente = confirmado (o caso comum; FR-016 testa o `false`). */
+  users: Array<{ id: string; email: string; created_at: string; email_confirmed?: boolean }>;
   tables: Record<string, Row[]>;
   failures?: Partial<Record<string, boolean>>;
 }
@@ -91,11 +92,11 @@ export function createFakeSupabase(state: FakeState, clock: () => string = () =>
     rpc: async (fn: string, args: any = {}) => {
       if (state.failures?.[`rpc:${fn}`]) return { data: null, error: { message: 'boom' } };
       if (fn === 'prune_account_emails') {
-        return { data: state.users.filter((u) => args.p_user_ids.includes(u.id)).map((u) => ({ user_id: u.id, email: u.email })), error: null };
+        return { data: state.users.filter((u) => args.p_user_ids.includes(u.id)).map((u) => ({ user_id: u.id, email: u.email, email_confirmed: u.email_confirmed !== false })), error: null };
       }
       if (fn === 'prune_unconsented_accounts') {
         const granted = new Set(tables.consent_log.filter((c) => c.action === 'granted').map((c) => c.user_id));
-        return { data: state.users.filter((u) => !granted.has(u.id)).map((u) => ({ user_id: u.id, created_at: u.created_at })), error: null };
+        return { data: state.users.filter((u) => !granted.has(u.id)).map((u) => ({ user_id: u.id, created_at: u.created_at, email_confirmed: u.email_confirmed !== false })), error: null };
       }
       rpcCalls.push({ fn, args });
       if (fn === 'consent_controller_event') {

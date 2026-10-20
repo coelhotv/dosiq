@@ -20,6 +20,7 @@ const U = 'a9f3e1c2-1111-4222-8333-944455556666'
 const LEG = 'c0ffee00-2222-4333-8444-955566667777'
 const LEG2 = 'deadbeef-3333-4444-8555-a66677778888'
 const P = 'e1e1e1e1-4444-4555-8666-b77788889999' // perdeu os avisos (cron caiu na janela)
+const NC = 'abcabcab-5555-4666-8777-c88899990000' // cadastro nunca confirmado (FR-016)
 
 afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers() })
 
@@ -53,6 +54,7 @@ function cenario(extra: { gates?: any[]; wave2For?: string[]; semAvisos?: boolea
       { id: LEG, email: 'legado@gmail.com', created_at: '2025-01-01T00:00:00Z' },
       { id: LEG2, email: 'legado2@gmail.com', created_at: '2025-01-01T00:00:00Z' },
       { id: P, email: 'perdeu@gmail.com', created_at: '2025-01-01T00:00:00Z' },
+      { id: NC, email: 'digitou-errado@example.com', created_at: '2025-01-01T00:00:00Z', email_confirmed: false },
     ],
     tables: {
       prune_queue: rows,
@@ -285,6 +287,23 @@ describe('FR-014 — sem os 2 avisos não aprova; reaviso único recomeça o pra
 
     r = res()
     await handleApprovePrune({ body }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(200)
+  })
+})
+
+describe('FR-016 — cadastro não confirmado', () => {
+  it('fora da onda 2; na fila, aprova sem aviso nenhum', async () => {
+    const { supabase, state } = cenario()
+    let r = res()
+    await handleListPrune({ query: {} }, r, supabase)
+    expect(r.body.wave2.map((w: any) => w.short_id)).not.toContain(NC.slice(0, 8))
+
+    state.tables.prune_queue.push({ id: 'q-nc', user_id: NC, reason: 'unconfirmed_signup', scheduled_at: '2025-01-01T00:00:00Z', eligible_at: em(0), decision: 'pending', executed_at: null })
+    r = res()
+    await handleListPrune({ query: {} }, r, supabase)
+    expect(r.body.data.find((i: any) => i.queue_id === 'q-nc')).toMatchObject({ section: 'decide', email_notice_due: null, approvable: true })
+    r = res()
+    await handleApprovePrune({ body: { queue_id: 'q-nc', prefix: 'abcabc' } }, r, supabase, ADMIN)
     expect(r.statusCode).toBe(200)
   })
 })

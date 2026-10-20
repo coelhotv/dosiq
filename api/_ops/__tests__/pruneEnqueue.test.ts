@@ -243,3 +243,28 @@ describe('runPruneEnqueue — alerta ao admin (PO-4)', () => {
     expect(tudo).not.toMatch(/medicine|protocol|dose/i)
   })
 })
+
+describe('runPruneEnqueue — cadastro não confirmado (FR-016)', () => {
+  const AGORA = new Date('2027-01-15T12:00:00Z')
+  const cenario = () => createFakeSupabase({
+    users: [
+      { id: 'NC_VELHO', email: 'x@example.com', created_at: '2025-03-01T00:00:00Z', email_confirmed: false },
+      { id: 'NC_NOVO', email: 'y@example.com', created_at: '2027-01-01T00:00:00Z', email_confirmed: false },
+      { id: 'LEG', email: 'legado@x.test', created_at: '2025-03-01T00:00:00Z' }, // confirmado, sem onda 2
+    ],
+    tables: {},
+  }, () => AGORA.toISOString())
+
+  it('> 30 d sem confirmar ⇒ fila direta, decidível já, sem aviso; < 30 d e legado confirmado ⇒ fora', async () => {
+    const { supabase, state } = cenario()
+    const { dispatcher, enviados } = dispatcherOk()
+    const r = await runPruneEnqueue({ supabase, dispatcher, adminUserId: ADMIN, now: AGORA, env: {} })
+    expect(state.tables.prune_queue.map((q) => [q.user_id, q.reason])).toEqual([['NC_VELHO', 'unconfirmed_signup']])
+    const q = state.tables.prune_queue[0]
+    expect(q.scheduled_at).toBe('2025-03-01T00:00:00Z')
+    expect(q.eligible_at).toBe(AGORA.toISOString())
+    expect(r.emailsDue).toBe(0)
+    expect(r.pushNoticed).toBe(0)
+    expect(enviados.filter((e) => e.kind === 'consent_prune_notice')).toHaveLength(0)
+  })
+})

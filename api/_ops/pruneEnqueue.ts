@@ -22,6 +22,7 @@ import {
   resolveCap,
   PRUNE_DEFAULT_NOTICE_CAP,
   type ConsentPruneClient,
+  type PruneReason,
 } from '../../server/bot/consentPrune.js';
 import {
   addDays,
@@ -35,8 +36,13 @@ import {
   ONBOARDING_GRACE_DAYS,
   ONBOARDING_RULE_START,
   PRUNE_CLOCK_DAYS,
+  UNCONFIRMED_GRACE_DAYS,
   WAVE2_GRACE_DAYS,
+  voidReasonFor,
 } from './pruneRules.js';
+
+/** FR-016: cadastro não confirmado não recebe aviso nenhum (push nem e-mail). */
+const takesNotices = (row: { reason: string }) => row.reason !== 'unconfirmed_signup';
 
 const logger = createLogger('PruneEnqueue');
 
@@ -69,7 +75,7 @@ export interface PruneEnqueueResult {
 interface LiveRow {
   id: string;
   user_id: string;
-  reason: 'revoked_90d' | 'legacy_no_consent' | 'onboarding_no_consent';
+  reason: PruneReason;
   scheduled_at: string;
   eligible_at: string;
   decision: string;
@@ -91,7 +97,7 @@ async function audit(supabase: ConsentPruneClient, row: { queue_id?: string | nu
 /** Abre a linha. `scheduled_deletion` (quando exigido) é gravado ANTES: sem prova, sem relógio. */
 async function openRow(
   supabase: ConsentPruneClient,
-  input: { user_id: string; reason: LiveRow['reason']; scheduled_at: string },
+  input: { user_id: string; reason: LiveRow['reason']; scheduled_at: string; eligible_at?: string },
 ): Promise<boolean> {
   if (input.reason !== 'revoked_90d') {
     const { error } = await supabase.rpc('consent_controller_event', {
@@ -110,7 +116,7 @@ async function openRow(
       user_id: input.user_id,
       reason: input.reason,
       scheduled_at: input.scheduled_at,
-      eligible_at: addDays(input.scheduled_at, PRUNE_CLOCK_DAYS),
+      eligible_at: input.eligible_at ?? addDays(input.scheduled_at, PRUNE_CLOCK_DAYS),
     })
     .select('id')
     .single();
@@ -158,10 +164,17 @@ async function fetchWave2Marks(supabase: ConsentPruneClient): Promise<Map<string
 
 /** Onde começa o relógio de quem nunca consentiu — ou `null` se ainda não começou. */
 function unconsentedClock(
-  acc: { created_at: string },
+  acc: { created_at: string; email_confirmed?: boolean },
   markedAt: string | undefined,
   now: Date,
-): { reason: LiveRow['reason']; scheduled_at: string } | null {
+): { reason: LiveRow['reason']; scheduled_at: string; eligible_at?: string } | null {
+  // FR-016: cadastro não confirmado não recebe onda 2 nem avisos (o e-mail pode não ser do
+  // titular). Decidível já ao abrir: relógio desde a criação, elegível agora. Só `false` explícito
+  // entra aqui — campo ausente segue as regras de sempre (na dúvida, o caminho com aviso).
+  if (acc.email_confirmed === false) {
+    if (daysBetween(acc.created_at, now) < UNCONFIRMED_GRACE_DAYS) return null;
+    return { reason: 'unconfirmed_signup', scheduled_at: acc.created_at, eligible_at: now.toISOString() };
+  }
   if (acc.created_at >= ONBOARDING_RULE_START) {
     if (daysBetween(acc.created_at, now) < ONBOARDING_GRACE_DAYS) return null;
     return { reason: 'onboarding_no_consent', scheduled_at: addDays(acc.created_at, ONBOARDING_GRACE_DAYS) };
@@ -175,7 +188,7 @@ function unconsentedClock(
 async function openNewRows(ctx: Ctx): Promise<void> {
   const { supabase, now, result } = ctx;
   const hasLive = new Set((await fetchLive(supabase)).map((r) => r.user_id));
-  const open = async (user_id: string, clock: { reason: LiveRow['reason']; scheduled_at: string }) => {
+  const open = async (user_id: string, clock: { reason: LiveRow['reason']; scheduled_at: string; eligible_at?: string }) => {
     if (await openRow(supabase, { user_id, ...clock })) {
       result.enqueued += 1;
       hasLive.add(user_id);
@@ -191,7 +204,7 @@ async function openNewRows(ctx: Ctx): Promise<void> {
   const unconsented = await supabase.rpc('prune_unconsented_accounts');
   if (unconsented.error) throw new Error(`prune_unconsented_accounts falhou: ${unconsented.error.message}`);
   const marks = await fetchWave2Marks(supabase);
-  for (const acc of (unconsented.data ?? []) as Array<{ user_id: string; created_at: string }>) {
+  for (const acc of (unconsented.data ?? []) as Array<{ user_id: string; created_at: string; email_confirmed?: boolean }>) {
     if (hasLive.has(acc.user_id)) continue;
     const clock = unconsentedClock(acc, marks.get(acc.user_id), now);
     if (clock) await open(acc.user_id, clock);
@@ -204,8 +217,8 @@ async function reevaluate(ctx: Ctx): Promise<LiveRow[]> {
   const stillLive: LiveRow[] = [];
   for (const row of await fetchLive(supabase)) {
     const state = await checkEligibility(supabase, { user_id: row.user_id, reason: row.reason });
-    if (state === 'resolved' || state === 'gone') {
-      const voidReason = state === 'resolved' ? 'granted' : 'self_deleted';
+    if (state === 'resolved' || state === 'gone' || state === 'confirmed') {
+      const voidReason = voidReasonFor(state);
       const { error } = await supabase.from('prune_queue').update({ decision: 'void', void_reason: voidReason }).eq('id', row.id).is('executed_at', null);
       if (!error) {
         result.voided += 1;
@@ -243,7 +256,7 @@ async function emailNoticeMissing(
 /** Etapa 3 — push para quem tem aparelho; sem push vira "e-mail devido" (F-6, nunca notice_sent sem envio). */
 async function sendNotices(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   const { supabase, dispatcher, env, now, correlationId, result } = ctx;
-  const due = rows.map((row) => ({ row, notice: dueNoticeStage(row.scheduled_at, now) })).filter((x) => x.notice !== null);
+  const due = rows.filter(takesNotices).map((row) => ({ row, notice: dueNoticeStage(row.scheduled_at, now) })).filter((x) => x.notice !== null);
   if (due.length === 0) return;
   const noticeCap = resolveCap(env.CONSENT_PRUNE_NOTICE_CAP, PRUNE_DEFAULT_NOTICE_CAP);
   if (due.length > noticeCap) {
@@ -273,7 +286,7 @@ async function sendNotices(ctx: Ctx, rows: LiveRow[]): Promise<void> {
  */
 async function countBlocked(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   const { supabase, now, result } = ctx;
-  const candidates = rows.filter((r) => r.decision !== 'approved' && dueNoticeStage(r.scheduled_at, now) === null && isApprovable(r, now));
+  const candidates = rows.filter((r) => takesNotices(r) && r.decision !== 'approved' && dueNoticeStage(r.scheduled_at, now) === null && isApprovable(r, now));
   if (candidates.length === 0) return;
   const marks = await supabase
     .from('prune_queue_audit')

@@ -77,7 +77,10 @@ async function wave2Candidates(supabase): Promise<Array<{ user_id: string; creat
   ])
   for (const r of [accounts, live, marks]) if (r.error) throw new Error(`wave2: ${r.error.message}`)
   const exclude = new Set([...(live.data ?? []), ...(marks.data ?? [])].map((r) => r.user_id))
-  return (accounts.data ?? []).filter((a) => a.created_at < ONBOARDING_RULE_START && !exclude.has(a.user_id))
+  // FR-016: cadastro não confirmado não recebe e-mail — vai à fila pelo motivo próprio.
+  return (accounts.data ?? []).filter(
+    (a) => a.created_at < ONBOARDING_RULE_START && a.email_confirmed !== false && !exclude.has(a.user_id),
+  )
 }
 
 async function legacyRequirements(supabase, userId: string): Promise<{ gate: boolean; wave2: boolean }> {

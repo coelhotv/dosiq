@@ -84,7 +84,7 @@ export const HEALTH_CONSENT_COPY = Object.freeze({
 // ─── Spec 107 — fila de exclusão com aprovação manual ─────────────────────────────────────
 
 /** Motivo da linha na fila. Espelha o CHECK de `prune_queue.reason`. */
-export const PRUNE_REASONS = ['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent'] as const
+export const PRUNE_REASONS = ['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent', 'unconfirmed_signup'] as const
 /** Decisão da linha. Espelha o CHECK de `prune_queue.decision`. */
 export const PRUNE_DECISIONS = ['pending', 'approved', 'deferred', 'void'] as const
 

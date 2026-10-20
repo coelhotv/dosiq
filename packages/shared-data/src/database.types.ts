@@ -2122,6 +2122,7 @@ export type Database = {
         Args: { p_user_ids: string[] }
         Returns: {
           email: string
+          email_confirmed: boolean
           user_id: string
         }[]
       }
@@ -2133,6 +2134,7 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          email_confirmed: boolean
           user_id: string
         }[]
       }

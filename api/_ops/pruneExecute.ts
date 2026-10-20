@@ -21,7 +21,7 @@ import {
   type ConsentPruneClient,
   type ConsentPruneMode,
 } from '../../server/bot/consentPrune.js';
-import { legacyGateOpen } from './pruneRules.js';
+import { legacyGateOpen, voidReasonFor } from './pruneRules.js';
 
 const logger = createLogger('PruneExecute');
 
@@ -91,7 +91,7 @@ async function processRow({ supabase, row, gateOpen, mode, now, correlationId }:
 
   const state = await checkEligibility(supabase, { user_id: row.user_id, reason: row.reason });
   if (state !== 'eligible') {
-    const voidReason = state === 'resolved' ? 'granted' : state === 'gone' ? 'self_deleted' : 'unknown';
+    const voidReason = voidReasonFor(state);
     return (await voidRow(supabase, row, voidReason)) ? 'voided' : 'skipped';
   }
 

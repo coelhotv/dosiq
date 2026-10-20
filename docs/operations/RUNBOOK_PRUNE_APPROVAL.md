@@ -129,6 +129,11 @@ SELECT coalesce(d.app_version, 'sem aparelho') AS versao, count(DISTINCT u.id) A
 Medido em 2026-10-20: 36 contas — 22 sem aparelho, 13 com aparelho e só 1 em versão ≥ 0.30.0. Para
 quase todas, o e-mail é o único canal.
 
+**Cadastro não confirmado (FR-016):** conta sem e-mail confirmado há mais de 30 dias (qualquer data de
+criação) entra direto na fila como "Cadastro não confirmado", já em ✅ Pronto para decidir — sem onda 2,
+sem aviso, sem e-mail (o endereço pode não ser do titular). Não aparece na lista da onda 2. Se a pessoa
+confirmar antes da execução, a linha é cancelada (`confirmed`).
+
 **Onboarding (FR-009):** contas criadas a partir de 2026-10-20 sem autorização entram sozinhas na fila
 30 dias depois (`onboarding_no_consent`). As anteriores são legado e **só** entram pela onda 2 (G-5).
 

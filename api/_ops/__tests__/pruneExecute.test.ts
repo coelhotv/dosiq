@@ -148,3 +148,23 @@ describe('runPruneExecute — legado exige kill switch ≥ 0.34 (PO-8, INV-6)', 
     expect(rpcCalls.map((c) => c.fn)).toEqual(['consent_controller_event', 'delete_user_account_by_id'])
   })
 })
+
+describe('runPruneExecute — cadastro não confirmado (FR-016)', () => {
+  const naoConf = (confirmou: boolean) => createFakeSupabase({
+    users: [{ ...user('nc'), email_confirmed: confirmou }],
+    tables: { prune_queue: [linha('qn', 'nc', { reason: 'unconfirmed_signup', scheduled_at: '2026-01-01T00:00:00Z' })] },
+  }, () => AGORA.toISOString())
+
+  it('segue sem confirmar ⇒ apaga; confirmou no meio do caminho ⇒ void(confirmed), nada apagado', async () => {
+    let f = naoConf(false)
+    let r = await runPruneExecute({ supabase: f.supabase, env: ARMADO, now: AGORA })
+    expect(r.executed).toBe(1)
+    expect(f.state.users).toHaveLength(0)
+
+    f = naoConf(true)
+    r = await runPruneExecute({ supabase: f.supabase, env: ARMADO, now: AGORA })
+    expect(r.executed).toBe(0)
+    expect(f.state.users).toHaveLength(1)
+    expect(f.state.tables.prune_queue[0]).toMatchObject({ decision: 'void', void_reason: 'confirmed' })
+  })
+})

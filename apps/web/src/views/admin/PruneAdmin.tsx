@@ -21,9 +21,10 @@ const REASON_LABEL = {
   revoked_90d: 'Retirou a autorização',
   legacy_no_consent: 'Legado sem autorização',
   onboarding_no_consent: 'Cadastro sem autorização',
+  unconfirmed_signup: 'Cadastro não confirmado (sem aviso: e-mail não verificado)',
 }
 const DECISION_LABEL = { pending: 'Pendente', approved: 'Aprovada', deferred: 'Adiada', void: 'Cancelada' }
-const VOID_LABEL = { granted: 'autorizou', self_deleted: 'excluída pelo titular', unknown: 'não verificável' }
+const VOID_LABEL = { granted: 'autorizou', confirmed: 'confirmou o cadastro', self_deleted: 'excluída pelo titular', unknown: 'não verificável' }
 
 const NOTICE_LABEL = { d60: 'Aviso D+60 por e-mail', d83: 'Aviso D+83 por e-mail', reaviso: 'Reaviso por e-mail (titular perdeu os avisos)' }
 const BLOCK_LABEL = {
