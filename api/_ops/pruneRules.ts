@@ -84,9 +84,18 @@ export const REQUIRED_NOTICES = 2;
  */
 export const REAVISO_GRACE_DAYS = 7;
 
-/** O titular foi avisado como a política promete? 2 avisos desde o início, ou o reaviso. */
-export function noticesComplete(sentSinceStart: number, hasReaviso: boolean): boolean {
-  return hasReaviso || sentSinceStart >= REQUIRED_NOTICES;
+/** Dia (desde o início do relógio) a partir do qual vale o aviso D+83. */
+export const D83_DAY = 83;
+
+/** Início da janela do D+83 de uma linha — avisos a partir daqui contam como o último aviso. */
+export const d83Start = (scheduledAt: string): string => addDays(scheduledAt, D83_DAY);
+
+/**
+ * O titular foi avisado como a política promete? 2 avisos desde o início; OU o aviso D+83 (quem
+ * perdeu o D+60 recebe só o último, com prazo — PO 2026-10-20); OU o reaviso.
+ */
+export function noticesComplete(sentSinceStart: number, hasReaviso: boolean, sentSinceD83 = 0): boolean {
+  return hasReaviso || sentSinceStart >= REQUIRED_NOTICES || sentSinceD83 >= 1;
 }
 
 export type PruneSection = 'email' | 'decide' | 'blocked' | 'approved' | 'counting';
@@ -104,16 +113,21 @@ export type PruneNoticeDue = 'd60' | 'd83' | 'reaviso';
  */
 export function pruneSection(
   row: { reason: string; scheduled_at: string; decision: string; eligible_at: string; executed_at?: string | null },
-  ctx: { sentSinceStart: number; hasReaviso: boolean; legacyGate: boolean },
+  ctx: { sentSinceStart: number; sentSinceD83: number; hasReaviso: boolean; legacyGate: boolean },
   now: Date,
 ): { section: PruneSection; notice_due: PruneNoticeDue | null; block: PruneBlock | null } {
   if (row.decision === 'approved') return { section: 'approved', notice_due: null, block: null };
   const stage = dueNoticeStage(row.scheduled_at, now);
-  if (stage && !ctx.hasReaviso && ctx.sentSinceStart < stage.expected) {
-    return { section: 'email', notice_due: stage.stage, block: null };
+  if (stage && !ctx.hasReaviso) {
+    // D+83 devido = nada enviado DESDE o D+83 e ainda sem os 2. Contar só o total pediria um 2º
+    // e-mail D+83 a quem perdeu o D+60 (achado do smoke 2026-10-20).
+    const missing = stage.stage === 'd60'
+      ? ctx.sentSinceStart < 1
+      : ctx.sentSinceD83 < 1 && ctx.sentSinceStart < REQUIRED_NOTICES;
+    if (missing) return { section: 'email', notice_due: stage.stage, block: null };
   }
   if (!isApprovable(row, now)) return { section: 'counting', notice_due: null, block: null };
-  if (!noticesComplete(ctx.sentSinceStart, ctx.hasReaviso)) {
+  if (!noticesComplete(ctx.sentSinceStart, ctx.hasReaviso, ctx.sentSinceD83)) {
     return { section: 'blocked', notice_due: 'reaviso', block: 'missing_notices' };
   }
   if (row.reason === 'legacy_no_consent' && !ctx.legacyGate) {

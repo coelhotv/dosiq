@@ -18,7 +18,7 @@ import {
   addDays,
   alertState,
   isApprovable,
-  dueNoticeStage,
+  d83Start,
   legacyGateOpen,
   maskEmail,
   pruneSection,
@@ -110,6 +110,13 @@ async function legacyGateIsOpen(supabase): Promise<boolean> {
   return gates.error ? false : legacyGateOpen(gates.data)
 }
 
+/** Avisos desde o início do relógio e desde o D+83 (o D+83 sozinho basta — `noticesComplete`). */
+function noticeCounts(dates: string[] | undefined, scheduledAt: string) {
+  const since = (dates ?? []).filter((at) => at >= scheduledAt)
+  const fromD83 = d83Start(scheduledAt)
+  return { sentSinceStart: since.length, sentSinceD83: since.filter((at) => at >= fromD83).length }
+}
+
 /** Seção da linha com o rastro lido do banco — a MESMA conta da lista e das travas. */
 async function sectionOf(supabase, row, now: Date) {
   const [notices, reaviso, gate] = await Promise.all([
@@ -117,8 +124,7 @@ async function sectionOf(supabase, row, now: Date) {
     reavisoQueues(supabase, [row.id]),
     row.reason === 'legacy_no_consent' ? legacyGateIsOpen(supabase) : Promise.resolve(true),
   ])
-  const sent = (notices.get(row.user_id) ?? []).filter((at) => at >= row.scheduled_at)
-  return pruneSection(row, { sentSinceStart: sent.length, hasReaviso: reaviso.has(row.id), legacyGate: gate }, now)
+  return pruneSection(row, { ...noticeCounts(notices.get(row.user_id), row.scheduled_at), hasReaviso: reaviso.has(row.id), legacyGate: gate }, now)
 }
 
 async function loadRow(supabase, queueId: unknown) {
@@ -155,7 +161,7 @@ export async function handleListPrune(req, res, supabase) {
     const items = visible.map((r) => {
       const sent = (notices.get(r.user_id) ?? []).filter((at) => at >= r.scheduled_at)
       const hasReaviso = reaviso.has(r.id)
-      const where = pruneSection(r, { sentSinceStart: sent.length, hasReaviso, legacyGate: gate }, now)
+      const where = pruneSection(r, { ...noticeCounts(sent, r.scheduled_at), hasReaviso, legacyGate: gate }, now)
       return {
         queue_id: r.id,
         short_id: r.user_id.slice(0, 8),
@@ -353,13 +359,9 @@ export async function handleMarkNoticePrune(req, res, supabase, adminUserId: str
       if (where.block !== 'missing_notices') return res.status(409).json({ error: 'Reaviso não devido para esta linha' })
       newEligibleAt = addDays(now.toISOString(), REAVISO_GRACE_DAYS)
     } else if (target.row) {
-      // D+60/D+83: só se o marco é o devido hoje e ainda não foi marcado (1× por marco).
-      const stage = dueNoticeStage(target.row.scheduled_at, nowDate())
-      const sent = (await noticesByUser(supabase, [target.userId])).get(target.userId) ?? []
-      const sinceStart = sent.filter((at) => at >= target.row.scheduled_at).length
-      if (!stage || stage.stage !== body.milestone || sinceStart >= stage.expected) {
-        return res.status(409).json({ error: 'Aviso não devido para este marco' })
-      }
+      // D+60/D+83: só se o marco é o devido HOJE pela mesma regra da tela (1× por marco).
+      const where = await sectionOf(supabase, target.row, now)
+      if (where.notice_due !== body.milestone) return res.status(409).json({ error: 'Aviso não devido para este marco' })
     }
 
     const { error } = await supabase.rpc('consent_controller_event', {

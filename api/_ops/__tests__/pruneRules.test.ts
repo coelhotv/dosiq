@@ -10,24 +10,27 @@ const ELEG = addDays(INICIO, 90)
 const dia = (n: number) => new Date(Date.parse(addDays(INICIO, n)))
 const row = (extra: Partial<{ reason: string; decision: string; eligible_at: string }> = {}) =>
   ({ reason: 'revoked_90d', scheduled_at: INICIO, eligible_at: ELEG, decision: 'pending', executed_at: null, ...extra })
-const ctx = (sent: number, extra: Partial<{ hasReaviso: boolean; legacyGate: boolean }> = {}) =>
-  ({ sentSinceStart: sent, hasReaviso: false, legacyGate: true, ...extra })
+const ctx = (sent: number, extra: Partial<{ sentSinceD83: number; hasReaviso: boolean; legacyGate: boolean }> = {}) =>
+  ({ sentSinceStart: sent, sentSinceD83: 0, hasReaviso: false, legacyGate: true, ...extra })
 
 describe('pruneSection', () => {
   it('mapa dia × avisos → seção', () => {
-    const casos: Array<[number, number, string, string | null]> = [
-      [30, 0, 'counting', null],
-      [60, 0, 'email', 'd60'],
-      [60, 1, 'counting', null],
-      [83, 1, 'email', 'd83'],
-      [85, 2, 'decide', null],      // janela de 7 dias antes do prazo
-      [90, 2, 'decide', null],
-      [91, 1, 'blocked', 'reaviso'], // perdeu o D+83
-      [91, 0, 'blocked', 'reaviso'], // cron caiu a janela inteira
+    // [dia, avisos desde o início, avisos desde o D+83, seção, aviso devido]
+    const casos: Array<[number, number, number, string, string | null]> = [
+      [30, 0, 0, 'counting', null],
+      [60, 0, 0, 'email', 'd60'],
+      [60, 1, 0, 'counting', null],
+      [83, 1, 0, 'email', 'd83'],
+      [83, 0, 0, 'email', 'd83'],     // perdeu o D+60: só o D+83 é pedido…
+      [84, 1, 1, 'decide', null],     // …e 1 aviso desde o D+83 basta (sem 2º e-mail D+83)
+      [85, 2, 1, 'decide', null],     // janela de 7 dias antes do prazo
+      [90, 2, 1, 'decide', null],
+      [91, 1, 0, 'blocked', 'reaviso'], // perdeu o D+83
+      [91, 0, 0, 'blocked', 'reaviso'], // cron caiu a janela inteira
     ]
-    for (const [d, sent, section, due] of casos) {
-      const s = pruneSection(row(), ctx(sent), dia(d))
-      expect([d, sent, s.section, s.notice_due]).toEqual([d, sent, section, due])
+    for (const [d, sent, d83, section, due] of casos) {
+      const s = pruneSection(row(), ctx(sent, { sentSinceD83: d83 }), dia(d))
+      expect([d, sent, d83, s.section, s.notice_due]).toEqual([d, sent, d83, section, due])
     }
   })
 
@@ -42,6 +45,7 @@ describe('pruneSection', () => {
     expect(noticesComplete(1, false)).toBe(false)
     expect(noticesComplete(2, false)).toBe(true)
     expect(noticesComplete(0, true)).toBe(true)
+    expect(noticesComplete(1, false, 1)).toBe(true) // só o D+83
     expect(nextMilestone(row(), dia(10))).toEqual({ label: 'D+60', at: addDays(INICIO, 60) })
     expect(nextMilestone(row(), dia(70))).toEqual({ label: 'D+83', at: addDays(INICIO, 83) })
     expect(nextMilestone(row(), dia(84))).toEqual({ label: 'prazo', at: ELEG })

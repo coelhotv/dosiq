@@ -77,8 +77,8 @@ sozinha.
    | 📨 Onda 2 — legado | contas antigas sem autorização | ver §4 |
 
 3. Nenhum dado de saúde aparece na tela: só id curto, e-mail mascarado, motivo, datas e avisos.
-4. O servidor recusa aprovar sem os 2 avisos (FR-014) — esconder o botão não é a trava. O reaviso é
-   único por linha.
+4. O servidor recusa aprovar sem os avisos (FR-014) — esconder o botão não é a trava. Vale: D+60 e
+   D+83; ou só o D+83 (se o D+60 se perdeu, não se manda um 2º D+83); ou o reaviso, único por linha.
 5. Linha aprovada executa no ciclo das 10:00 a partir do prazo. Se o titular autorizou ou excluiu a
    conta antes, ela vira `cancelada` no Histórico, sem apagar nada.
 

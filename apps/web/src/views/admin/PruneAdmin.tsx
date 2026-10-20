@@ -40,8 +40,11 @@ const SECTIONS = [
 const fmt = (iso?: string | null) => (iso ? parseISO(iso).toLocaleDateString('pt-BR') : '—')
 
 function noticeSummary(item) {
-  const dates = item.notices_sent.length === 0 ? '' : ` (${item.notices_sent.map(fmt).join(' · ')})`
-  return `Avisos: ${item.notices_sent.length} de 2${dates}${item.has_reaviso ? ' · reaviso enviado' : ''}`
+  const sent = item.notices_sent ?? []
+  // Reaviso substitui os avisos perdidos: "1 de 2" faria parecer que ainda falta um (smoke 107).
+  if (item.has_reaviso) return `Avisos: reaviso enviado em ${fmt(sent.at(-1))} · prazo ${fmt(item.eligible_at)}`
+  const dates = sent.length === 0 ? '' : ` (${sent.map(fmt).join(' · ')})`
+  return `Avisos: ${sent.length} de 2${dates}`
 }
 
 function copyToClipboard(text: string) {
@@ -49,18 +52,22 @@ function copyToClipboard(text: string) {
 }
 
 /**
- * Copia a mensagem como HTML + texto: colada no Gmail, mantém a formatação; num campo de texto puro,
- * vira o texto. Sem ClipboardItem (navegador antigo) ⇒ só o texto.
+ * Copia a mensagem SÓ como `text/html` (pedido do PO): o Gmail cola com o CSS inline e os links.
+ * Duas tentativas anteriores chegaram como texto puro no smoke (ClipboardItem HTML+texto, e cópia
+ * de seleção de um elemento escondido). Aqui o handler do evento `copy` grava o conteúdo
+ * explicitamente — o navegador não decide nada sobre o que vai para a área de transferência.
  */
-function copyRichToClipboard(htmlBody: string, plain: string) {
-  const Item = (globalThis as any).ClipboardItem
-  if (!Item || !navigator.clipboard?.write) return copyToClipboard(plain)
-  navigator.clipboard
-    .write([new Item({
-      'text/html': new Blob([htmlBody], { type: 'text/html' }),
-      'text/plain': new Blob([plain], { type: 'text/plain' }),
-    })])
-    .catch(() => copyToClipboard(plain))
+function copyHtmlOnly(htmlBody: string): boolean {
+  const onCopy = (e: ClipboardEvent) => {
+    e.clipboardData?.setData('text/html', htmlBody)
+    e.preventDefault()
+  }
+  document.addEventListener('copy', onCopy)
+  try {
+    return document.execCommand('copy')
+  } finally {
+    document.removeEventListener('copy', onCopy)
+  }
 }
 
 /** Bloco do e-mail a enviar: assunto, prévia e as 3 cópias (endereço, assunto, mensagem formatada). */
@@ -71,11 +78,13 @@ function EmailNotice({ label, variant, deadline, busy, onRevealEmail, onMark }) 
       <Mail size={14} /> {label}
       <Button size="sm" variant="secondary" disabled={busy} onClick={onRevealEmail}>Copiar e-mail</Button>
       <Button size="sm" variant="secondary" onClick={() => copyToClipboard(email.subject)}>Copiar assunto</Button>
-      <Button size="sm" variant="secondary" onClick={() => copyRichToClipboard(email.html, email.text)}>Copiar mensagem formatada</Button>
+      <Button size="sm" variant="secondary" onClick={() => copyHtmlOnly(email.html)}>Copiar mensagem formatada</Button>
       <Button size="sm" variant="secondary" disabled={busy} onClick={onMark}>Marcar enviado</Button>
       <details className="prune-admin__email-preview">
         <summary>Assunto: {email.subject}</summary>
-        <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail">{email.text}</p>
+        {/* Prévia com o visual real; sandbox sem scripts. O texto puro fica só para leitura/teste. */}
+        <iframe title="Prévia do e-mail" sandbox="" srcDoc={email.html} className="prune-admin__email-frame" />
+        <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail" hidden>{email.text}</p>
       </details>
     </div>
   )

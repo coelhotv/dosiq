@@ -214,6 +214,14 @@ describe('PO-SEC-9 — marco wave2 só no conjunto calculado pelo servidor, 1× 
     await handleMarkNoticePrune({ body: { queue_id: 'q-ok', milestone: 'd83' } }, r2, supabase, ADMIN)
     expect(r2.statusCode).toBe(200)
     expect(rpcCalls).toHaveLength(1)
+    // perdeu o D+60: o D+83 sozinho basta — um 2º e-mail D+83 é recusado e a linha fica decidível
+    const r3 = res()
+    await handleMarkNoticePrune({ body: { queue_id: 'q-ok', milestone: 'd83' } }, r3, supabase, ADMIN)
+    expect(r3.statusCode).toBe(409)
+    expect(rpcCalls).toHaveLength(1)
+    const ap = res()
+    await handleApprovePrune({ body: { queue_id: 'q-ok', prefix: 'a9f3e1' } }, ap, supabase, ADMIN)
+    expect(ap.statusCode).toBe(200)
   })
 })
 

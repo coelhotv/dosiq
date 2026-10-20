@@ -30,6 +30,8 @@ import {
   daysBetween,
   isApprovable,
   noticesComplete,
+  d83Start,
+  REQUIRED_NOTICES,
   ONBOARDING_GRACE_DAYS,
   ONBOARDING_RULE_START,
   PRUNE_CLOCK_DAYS,
@@ -221,6 +223,23 @@ async function reevaluate(ctx: Ctx): Promise<LiveRow[]> {
   return stillLive;
 }
 
+/**
+ * Aviso por e-mail ainda pendente? Mesma regra da tela (`pruneSection`): D+60 se nada foi enviado;
+ * D+83 se nada foi enviado desde o D+83 e ainda não há 2. Leitura falhou ⇒ não conta (não incomoda).
+ */
+async function emailNoticeMissing(
+  supabase: ConsentPruneClient,
+  row: LiveRow,
+  notice: { stage: 'd60' | 'd83' } | null,
+): Promise<boolean> {
+  if (!notice) return false;
+  const sent = await countNoticesSince(supabase, row.user_id, row.scheduled_at);
+  if (sent === null) return false;
+  if (notice.stage === 'd60') return sent < 1;
+  const fromD83 = await countNoticesSince(supabase, row.user_id, d83Start(row.scheduled_at));
+  return fromD83 !== null && fromD83 < 1 && sent < REQUIRED_NOTICES;
+}
+
 /** Etapa 3 — push para quem tem aparelho; sem push vira "e-mail devido" (F-6, nunca notice_sent sem envio). */
 async function sendNotices(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   const { supabase, dispatcher, env, now, correlationId, result } = ctx;
@@ -244,8 +263,7 @@ async function sendNotices(ctx: Ctx, rows: LiveRow[]): Promise<void> {
       if (outcome === 'noticed') result.pushNoticed += 1;
       continue;
     }
-    const sent = await countNoticesSince(supabase, row.user_id, row.scheduled_at);
-    if (sent !== null && notice && sent < notice.expected) result.emailsDue += 1;
+    if (await emailNoticeMissing(supabase, row, notice)) result.emailsDue += 1;
   }
 }
 
@@ -268,7 +286,8 @@ async function countBlocked(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   for (const row of candidates) {
     if (withReaviso.has(row.id)) continue;
     const sent = await countNoticesSince(supabase, row.user_id, row.scheduled_at);
-    if (sent !== null && !noticesComplete(sent, false)) result.emailsDue += 1;
+    const fromD83 = await countNoticesSince(supabase, row.user_id, d83Start(row.scheduled_at));
+    if (sent !== null && fromD83 !== null && !noticesComplete(sent, false, fromD83)) result.emailsDue += 1;
   }
 }
 

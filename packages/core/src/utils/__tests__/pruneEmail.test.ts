@@ -36,7 +36,10 @@ describe('buildPruneEmail', () => {
       expect(e.html).toContain(`href="${url}"`)
       expect(e.text).toContain(url)
     }
-    expect(e.html).toContain(`>${PRUNE_EMAIL_LINKS.appStore.replace('https://', '')}</a>`)
+    // destino legível: domínio da loja escrito sob o selo; dosiq.app como texto do link
+    expect(e.html).toContain('apps.apple.com</p>')
+    expect(e.html).toContain('play.google.com</p>')
+    expect(e.html).toContain('>dosiq.app</a>')
     // só domínios nossos ou das lojas
     const hosts = [...e.html.matchAll(/href="https:\/\/([^/"]+)/g)].map((m) => m[1])
     expect(new Set(hosts)).toEqual(new Set(['apps.apple.com', 'play.google.com', 'dosiq.app']))

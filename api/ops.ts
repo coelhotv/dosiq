@@ -31,7 +31,7 @@ type Job = (correlationId: string) => Promise<JobResult>;
 function dispatcher() {
   const bot = createNotifyBotAdapter(process.env.TELEGRAM_BOT_TOKEN);
   const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
-  return createCronDispatcher({ supabase, expoClient, bot });
+  return createCronDispatcher({ supabase, expoClient, bot, label: 'Ops' });
 }
 
 /** Allowlist. Job novo entra AQUI, com ping próprio no cron-job.org (runbook). */

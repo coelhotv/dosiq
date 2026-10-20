@@ -123,8 +123,11 @@ export function createNotifyBotAdapter(token) {
 }
 
 
-/** Dispatcher do ciclo de cron sobre o client service-role e o Expo do chamador. */
-export function createCronDispatcher({ supabase, expoClient, bot }) {
+/** Dispatcher do ciclo de cron sobre o client service-role e o Expo do chamador. `label` = rótulo no log. */
+export function createCronDispatcher({ supabase, expoClient, bot, label = 'CronNotify' }) {
+  // Rótulo do chamador no log: `api/ops` não é o cron de notificações (smoke 107: o alerta do
+  // prune saía como [CronNotify] e confundia a busca no log da Vercel).
+  const log = createLogger(label);
 // === HELPERS: Repository factories ===
 
 // 🔴 046 T014 — o repo de preferências É o canônico, não uma cópia local.
@@ -151,7 +154,7 @@ const devicesRepo = {
       .from('notification_devices')
       .update({ is_active: false, updated_at: getServerTimestamp() })
       .eq('push_token', token);
-    if (error) logger.error('Falha ao desativar device por token', null, { error: error.message });
+    if (error) log.error('Falha ao desativar device por token', null, { error: error.message });
   }
 };
 
@@ -196,7 +199,7 @@ const dlqRepo = {
           expoClient
         });
 
-        logger.info('[notificationDispatcher] Resultado do envio', {
+        log.info('[notificationDispatcher] Resultado do envio', {
           userId,
           kind,
           success: result.success,
@@ -207,7 +210,7 @@ const dlqRepo = {
 
         return result;
       } catch (error) {
-        logger.error('[notificationDispatcher] Erro ao enviar notificação', error, { userId, kind, correlationId: context?.correlationId });
+        log.error('[notificationDispatcher] Erro ao enviar notificação', error, { userId, kind, correlationId: context?.correlationId });
         return { success: false, channels: [], totalDelivered: 0, totalFailed: 1, deactivatedTokens: [], errors: [{ message: error.message }] };
       }
     }

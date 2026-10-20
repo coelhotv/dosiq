@@ -195,13 +195,13 @@
 }
 
 .prune-admin__section h2,
-.prune-admin__section summary {
+.prune-admin__section > summary {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0 0 0.25rem 0;
 }
 
-.prune-admin__section summary {
+.prune-admin__section > summary {
   cursor: pointer;
   margin-bottom: 0.75rem;
 }
@@ -235,4 +235,25 @@
 .prune-admin__wave2-row .prune-admin__email-due {
   flex-basis: 100%;
   margin-top: 0.25rem;
+}
+
+/* Botões da tela: verde sólido, sem gradiente nem brilho (pedido do PO no smoke). O "Apagar" segue danger. */
+.prune-admin .btn-primary,
+.prune-admin .btn-secondary {
+  background: var(--color-primary, #006a5e);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.prune-admin .btn-secondary:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.prune-admin__email-frame {
+  width: 100%;
+  height: 640px;
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  background: #ffffff;
 }

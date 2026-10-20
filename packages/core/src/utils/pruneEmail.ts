@@ -90,6 +90,9 @@ const link = (href: string, label: string) =>
   `<a href="${href}" target="_blank" style="color: #006a5e; font-weight: 600; text-decoration: underline;">${escapeHtml(label)}</a>`
 // URL visível como texto do link (anti-phishing): o que se lê é para onde vai.
 const visible = (href: string) => link(href, href.replace(/^https:\/\//, ''))
+// Selo oficial da loja, com o domínio escrito logo abaixo (o destino continua legível).
+const badge = (href: string, img: string, alt: string) =>
+  `<a href="${href}" target="_blank" style="text-decoration: none; display: inline-block;"><img src="${img}" alt="${escapeHtml(alt)}" width="160" style="display: block; width: 160px; height: auto; border: 0;" /></a>`
 
 function html(c: Copy, deadline: string): string {
   const p = (text: string, extra = '') =>
@@ -106,12 +109,18 @@ function html(c: Copy, deadline: string): string {
         <p style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">${escapeHtml(fill(c.title, deadline))}</p>
         ${c.paragraphs.map((t) => p(t)).join('\n        ')}
         ${p(c.action, 'font-weight: 600; color: #0f172a;')}
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 16px 0; background-color: #f8fafc; border-left: 4px solid #006a5e; border-radius: 8px;">
-          <tr><td style="padding: 14px 16px; font-size: 14px; line-height: 22px;">
-            <strong style="color: #0f172a;">Baixar ou atualizar o app</strong><br />
-            App Store (iPhone): ${visible(L.appStore)}<br />
-            Google Play (Android): ${visible(L.googlePlay)}<br />
-            No navegador: ${visible(L.web)}
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 20px 0; background-color: #f8fafc; border-radius: 12px;">
+          <tr><td align="center" style="padding: 20px 16px 4px 16px; font-size: 15px; font-weight: 700; color: #0f172a;">Baixar ou atualizar o app</td></tr>
+          <tr><td align="center" style="padding: 12px 16px 0 16px;">
+            ${badge(L.appStore, 'https://dosiq.app/download-ios.png', 'Baixar na App Store')}
+            <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">iPhone · apps.apple.com</p>
+          </td></tr>
+          <tr><td align="center" style="padding: 16px 16px 0 16px;">
+            ${badge(L.googlePlay, 'https://dosiq.app/download-android.png', 'Disponível no Google Play')}
+            <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Android · play.google.com</p>
+          </td></tr>
+          <tr><td align="center" style="padding: 18px 16px 20px 16px; font-size: 14px;">
+            Prefere usar no navegador? ${visible(L.web)}
           </td></tr>
         </table>
         <p style="margin: 0 0 14px 0; font-size: 14px;">Regras do dosiq: ${link(L.privacy, 'Política de Privacidade')} · ${link(L.terms, 'Termos de Uso')}</p>
