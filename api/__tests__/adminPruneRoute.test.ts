@@ -14,6 +14,9 @@ vi.mock('../admin/_handlers/prune.js', () => ({
   handleMarkNoticePrune: vi.fn(), handleGetPruneTexts: vi.fn(), handleUpdatePruneTexts: vi.fn(),
 }))
 vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({}) }))
+// admin.ts → retry/DLQ → dispatcher → client Supabase do servidor, que LANÇA no import sem env.
+// Local passava (o vitest carrega apps/web/.env); no CI não há .env. Reproduzido com env vazio.
+vi.mock('../../server/services/supabase.js', () => ({ supabase: {} }))
 
 function res() {
   const r: any = { statusCode: 0, body: null }
