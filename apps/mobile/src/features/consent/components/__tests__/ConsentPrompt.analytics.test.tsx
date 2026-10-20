@@ -9,6 +9,9 @@ jest.mock('@platform/analytics/productAnalytics', () => ({
   logEvent: (...args: unknown[]) => mockLogEvent(...args),
 }))
 
+// 107: o prompt consulta o prazo de exclusão; aqui ele é irrelevante (fontes sem prazo + fail-open).
+jest.mock('@platform/consent/deletionNoticeService', () => ({ fetchDeletionNotice: jest.fn(async () => null) }))
+
 import ConsentPrompt from '../ConsentPrompt'
 
 const consentCalls = () => mockLogEvent.mock.calls.filter(([n]) => String(n).startsWith('consent_'))

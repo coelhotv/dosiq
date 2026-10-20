@@ -39,7 +39,8 @@ import {
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
   buildDlqDigestPayload,
-  buildConsentPruneNoticePayload
+  buildConsentPruneNoticePayload,
+  buildPruneAdminAlertPayload
 } from './_payloadBuilders.js';
 
 type Kind = z.infer<typeof kindSchema>;
@@ -97,6 +98,7 @@ const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title:
   prescription_alert: (data) => buildPrescriptionAlertPayload(data as never),
   dlq_digest: (data) => buildDlqDigestPayload(data as never),
   consent_prune_notice: (data) => buildConsentPruneNoticePayload(data as never),
+  prune_admin_alert: (data) => buildPruneAdminAlertPayload(data as never),
 };
 
 // Auxiliar para direcionar a construção do payload conforme o kind.

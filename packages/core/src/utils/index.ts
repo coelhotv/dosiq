@@ -337,3 +337,6 @@ export { SCHEDULE_PRESETS, DEFAULT_ANCHORS, DAY_START, EARLY_MORNING_START, EARL
 export type { SchedulePresetKey, SchedulePresetValue } from './schedulePresets'
 export { getDoseCycle, cycleDoseAmount, scheduleTimesPerDay } from './doseCycle'
 export type { DoseCycle } from './doseCycle'
+// 107 FR-015: e-mails da fila de exclusão (HTML + texto, envio manual por privacidade@dosiq.app).
+export { PRUNE_EMAIL_LINKS, PRUNE_EMAIL_CONTROLLER, pruneEmailVariant, buildPruneEmail } from './pruneEmail'
+export type { PruneEmailVariant } from './pruneEmail'

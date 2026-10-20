@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -160,6 +160,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      consent_copy: {
+        Row: {
+          body: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          body: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          body?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      consent_copy_history: {
+        Row: {
+          body: string
+          id: number
+          key: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          body: string
+          id?: never
+          key: string
+          updated_at: string
+          updated_by?: string | null
+          version: number
+        }
+        Update: {
+          body?: string
+          id?: never
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
       }
       consent_log: {
         Row: {
@@ -1122,6 +1173,92 @@ export type Database = {
           },
         ]
       }
+      prune_queue: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          eligible_at: string
+          executed_at: string | null
+          id: string
+          note: string | null
+          reason: string
+          reevaluate_at: string | null
+          scheduled_at: string
+          user_id: string
+          void_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          eligible_at: string
+          executed_at?: string | null
+          id?: string
+          note?: string | null
+          reason: string
+          reevaluate_at?: string | null
+          scheduled_at: string
+          user_id: string
+          void_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          eligible_at?: string
+          executed_at?: string | null
+          id?: string
+          note?: string | null
+          reason?: string
+          reevaluate_at?: string | null
+          scheduled_at?: string
+          user_id?: string
+          void_reason?: string | null
+        }
+        Relationships: []
+      }
+      prune_queue_audit: {
+        Row: {
+          action: string
+          actor: string
+          created_at: string
+          detail: Json
+          id: number
+          queue_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor: string
+          created_at?: string
+          detail?: Json
+          id?: never
+          queue_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          created_at?: string
+          detail?: Json
+          id?: never
+          queue_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prune_queue_audit_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "prune_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           created_at: string
@@ -1849,6 +1986,13 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      access_log_health: {
+        Args: never
+        Returns: {
+          check_name: string
+          detail: string
+        }[]
+      }
       apply_manual_stock_adjustment: {
         Args: {
           p_medicine_id: string
@@ -1973,9 +2117,26 @@ export type Database = {
           total_quantity: number
         }[]
       }
+      get_my_deletion_notice: { Args: never; Returns: string }
+      prune_account_emails: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          email: string
+          email_confirmed: boolean
+          user_id: string
+        }[]
+      }
       prune_notification_outbox: {
         Args: { retention_days?: number }
         Returns: number
+      }
+      prune_unconsented_accounts: {
+        Args: never
+        Returns: {
+          created_at: string
+          email_confirmed: boolean
+          user_id: string
+        }[]
       }
       refresh_stock_summary: { Args: never; Returns: undefined }
       register_dose_atomic: {

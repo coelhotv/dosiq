@@ -10,6 +10,7 @@ import {
   prescriptionAlertDataSchema,
   dlqDigestDataSchema,
   consentPruneNoticeDataSchema,
+  pruneAdminAlertDataSchema,
   doseReminderByPlanDataSchema,
   doseReminderMiscDataSchema
 } from './_payloadSchemas.js';
@@ -394,5 +395,22 @@ export function buildConsentPruneNoticePayload(
     `Você retirou sua autorização de uso de dados no dosiq. Se nada for feito, sua conta e seus ` +
     `dados serão excluídos automaticamente em ${prazo}. Para manter a conta, abra o app e ` +
     `autorize novamente. Você também pode exportar seus dados ou excluir a conta agora.`;
+  return { title, body: escapeMarkdownV2(plain), pushBody: plain };
+}
+
+/**
+ * Alerta diário ao admin sobre a fila de exclusão (spec 107 US-2/AS-2.2). Só contagens: o push
+ * aparece na tela de bloqueio do aparelho do admin (S-7).
+ */
+export function buildPruneAdminAlertPayload(
+  data: z.input<typeof pruneAdminAlertDataSchema>
+): NotificationPayload {
+  const { overdue, red, emailsDue } = pruneAdminAlertDataSchema.parse(data);
+  const title = red > 0 ? '🔴 Exclusões perto do limite da política' : 'Exclusões aguardando decisão';
+  const partes: string[] = [];
+  if (overdue > 0) partes.push(overdue === 1 ? '1 conta vencida sem decisão' : `${overdue} contas vencidas sem decisão`);
+  if (red > 0) partes.push(red === 1 ? '1 a 10 dias ou menos do limite' : `${red} a 10 dias ou menos do limite`);
+  if (emailsDue > 0) partes.push(emailsDue === 1 ? '1 aviso por e-mail a enviar' : `${emailsDue} avisos por e-mail a enviar`);
+  const plain = `${partes.join(' · ')}. Abra o admin web para decidir.`;
   return { title, body: escapeMarkdownV2(plain), pushBody: plain };
 }

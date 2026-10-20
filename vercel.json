@@ -6,6 +6,7 @@
   "devCommand": "cd apps/web && npx vite --port $PORT",
   "functions": {
     "api/notify.ts": { "maxDuration": 60 },
+    "api/ops.ts": { "maxDuration": 60 },
     "api/telegram.ts": { "maxDuration": 10 },
     "api/generate-doses.ts": { "maxDuration": 60 },
     "api/report.ts": { "maxDuration": 30, "memory": 2048, "includeFiles": "node_modules/@sparticuz/chromium/bin/**" }
@@ -48,6 +49,18 @@
     {
       "source": "/api/admin/nudges",
       "destination": "/api/admin.ts?resource=nudges"
+    },
+    {
+      "source": "/api/admin/prune/:action",
+      "destination": "/api/admin.ts?resource=prune&action=:action"
+    },
+    {
+      "source": "/api/admin/prune",
+      "destination": "/api/admin.ts?resource=prune&action=list"
+    },
+    {
+      "source": "/api/ops/:job",
+      "destination": "/api/ops.ts?job=:job"
     },
     {
       "source": "/api/health/notifications",

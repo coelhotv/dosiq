@@ -80,7 +80,21 @@ pedindo os IPs de outra pessoa) **não** dá acesso: responder pedindo a ordem.
 
 1. Conferir que a ordem nomeia a conta (e-mail ou identificador) e o período, e que o período cabe
    nos últimos 6 meses. Período mais antigo: responder que o registro não existe mais (prazo legal).
-2. Achar o `user_id` pelo e-mail em `auth.users`.
+2. Achar o(s) `user_id` do e-mail — na conta viva **e** na lápide de contas excluídas (spec 107,
+   FR-013: `private.account_tombstone` guarda e-mail ↔ `user_id` por 6 meses após a exclusão). O
+   mesmo e-mail pode ter mais de uma conta (excluída e recriada, S-12): a consulta lista todas, com
+   a janela de existência de cada uma, e só entra na extração a conta cujo período cruza o da ordem.
+   ```sql
+   SELECT id AS user_id, created_at AS existiu_de, NULL::timestamptz AS existiu_ate, 'viva' AS origem
+     FROM auth.users WHERE lower(email) = lower('<e-mail da ordem>')
+   UNION ALL
+   SELECT user_id, account_created_at, deleted_at, 'excluída'
+     FROM private.account_tombstone WHERE lower(email) = lower('<e-mail da ordem>')
+   ORDER BY existiu_de;
+   ```
+   Ordem que traz só o **IP** (sem e-mail): rodar o passo 4 sem o filtro de `user_id` (filtrando
+   `ip = '<ip>'` e o período), e resolver cada `user_id` encontrado para e-mail pela mesma união
+   acima (`WHERE id = …` / `WHERE user_id = …`). Lápide e `access_log` vivem o mesmo prazo.
 3. **Registrar ANTES de extrair** (no SQL Editor do Supabase):
    ```sql
    INSERT INTO private.access_log_disclosures

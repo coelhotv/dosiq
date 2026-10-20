@@ -238,6 +238,157 @@ const COUNTERS: Partial<Record<CandidateOutcome, 'pruned' | 'noticed' | 'skipped
   skipped: 'skipped',
 }
 
+/** Motivo pelo qual uma conta está na fila de exclusão (spec 107 FR-001). */
+export type PruneReason = 'revoked_90d' | 'legacy_no_consent' | 'onboarding_no_consent' | 'unconfirmed_signup'
+
+export interface EligibilityInput {
+  user_id: string
+  reason: PruneReason
+}
+
+/**
+ * A condição que tornou a conta elegível ainda vale AGORA? (spec 107, RC3 E-1)
+ *
+ * `'eligible'` é a única resposta que autoriza apagar. `'resolved'` = a pessoa autorizou;
+ * `'confirmed'` = cadastro não confirmado foi confirmado (FR-016: sai deste motivo; se seguir sem
+ * autorizar, volta pela regra de legado/onboarding); `'gone'` = a conta já não existe (o titular
+ * se excluiu — INV-5); `'unknown'` = não deu para saber (inclui erro de leitura) — e não sabendo,
+ * NÃO APAGAMOS.
+ *
+ * Por motivo: `revoked_90d` exige o último ato do titular ainda `revoked`; quem NUNCA consentiu
+ * (legado/onboarding) não tem linha `granted|revoked`, e o ramo da 046 devolveria `unknown` para
+ * sempre — o executor aprovado viraria no-op silencioso. Para esses, elegível = nenhum `granted`.
+ */
+export async function checkEligibility(
+  supabase: ConsentPruneClient,
+  input: EligibilityInput,
+): Promise<'eligible' | 'resolved' | 'confirmed' | 'gone' | 'unknown'> {
+  // `consent_log.user_id` vira NULL quando a conta some (FK SET NULL): a existência da conta
+  // se pergunta ao auth, não à trilha.
+  const { data: accounts, error: accountError } = await supabase.rpc('prune_account_emails', {
+    p_user_ids: [input.user_id],
+  })
+  if (accountError) {
+    logger.error('Leitura da conta falhou — elegibilidade desconhecida', accountError, { userId: input.user_id })
+    return 'unknown'
+  }
+  if (!Array.isArray(accounts) || accounts.length === 0) return 'gone'
+
+  // FR-016: só apaga cadastro que AINDA não confirmou o e-mail (campo ausente ⇒ não sabemos).
+  if (input.reason === 'unconfirmed_signup') {
+    const confirmed = (accounts[0] as { email_confirmed?: boolean }).email_confirmed
+    if (confirmed === true) return 'confirmed'
+    if (confirmed !== false) return 'unknown'
+  }
+
+  if (input.reason === 'revoked_90d') {
+    const state = await confirmStillRevoked(supabase, input.user_id)
+    return state === 'revoked' ? 'eligible' : state
+  }
+
+  const { count, error } = await supabase
+    .from('consent_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', input.user_id)
+    .eq('consent_type', 'health_data')
+    .eq('action', 'granted')
+  if (error) {
+    logger.error('Reconferência da trilha falhou — elegibilidade desconhecida', error, { userId: input.user_id })
+    return 'unknown'
+  }
+  return (count ?? 0) === 0 ? 'eligible' : 'resolved'
+}
+
+export interface DeletionContext {
+  correlationId?: string
+}
+
+/**
+ * O ato irreversível: grava `pruned` na trilha e SÓ ENTÃO exclui a conta.
+ *
+ * `pruned` vem ANTES da exclusão: depois dela não existe mais e-mail em auth.users para derivar o
+ * `subject_hash`, e o evento nasceria sem prova de quem era. O `account_deleted` sai de dentro da
+ * própria transação de `_delete_user_account_core`.
+ *
+ * 🔴 E se a trilha NÃO gravar, a exclusão não acontece. Ignorando o retorno, uma RPC fora do ar
+ * produziria conta apagada SEM registro de por quê — e o registro é irrecuperável depois (o e-mail
+ * que deriva o hash morre com a conta). Excluir sem poder provar a base legal é o oposto do que a
+ * spec 046 existe para entregar. O chamador aborta o run: se a RPC da trilha caiu, caiu para todos.
+ */
+export async function executeDeletion(
+  supabase: ConsentPruneClient,
+  userId: string,
+  ctx: DeletionContext = {},
+): Promise<'pruned' | 'aborted' | 'trail_failed'> {
+  const { correlationId } = ctx
+  if (!(await writeControllerEvent(supabase, userId, 'pruned'))) {
+    logger.error('Trilha não registrou o `pruned` — exclusão CANCELADA e run abortado', null, {
+      correlationId, userId,
+    })
+    return 'trail_failed'
+  }
+
+  const { error } = await supabase.rpc('delete_user_account_by_id', { p_user_id: userId })
+  if (error) {
+    // Aborta o run: exclusão que falha no meio de um lote é sintoma (privilégio, RPC, dado
+    // inconsistente), e seguir apagando os próximos seria propagar o desconhecido.
+    logger.error('Exclusão falhou — run abortado (demais candidatos intocados)', error, {
+      correlationId, userId,
+    })
+    return 'aborted'
+  }
+  return 'pruned'
+}
+
+export interface NoticeInput {
+  userId: string
+  /** Dias decorridos desde o início do relógio (revogação, ou marcação do controlador). */
+  days: number
+  /** Início do relógio — só avisos gravados depois dele contam para o anti-spam. */
+  since: string
+  correlationId?: string
+}
+
+/**
+ * Envia o aviso do dia por push, se houver um devido: 1º na janela do D+60, 2º na do D+83. Já
+ * tendo os dois, nada sai até a data da exclusão (`'silent'`).
+ *
+ * Quantos avisos ele já recebeu decide SE há um a enviar hoje — sem isso o job vira spam, porque
+ * "days >= 60" é verdade em D+60, D+61, D+62…
+ */
+export async function sendDueNotice(
+  supabase: ConsentPruneClient,
+  dispatcher: ConsentPruneDeps['dispatcher'],
+  input: NoticeInput,
+): Promise<'noticed' | 'skipped' | 'silent'> {
+  const { userId, days, since, correlationId } = input
+  const notices = await countNoticesSince(supabase, userId, since)
+  if (notices === null) return 'skipped'
+
+  const stage = days >= PRUNE_NOTICE_DAYS.d83 ? 'd83' : 'd60'
+  const expectedNotices = stage === 'd83' ? 2 : 1
+  if (notices >= expectedNotices) return 'silent'
+
+  const daysLeft = Math.max(PRUNE_DELETE_DAYS - days, 1)
+  try {
+    // Copy neutra (S8) — ver CONSENT_LIFECYCLE_KINDS: este kind atravessa a supressão por
+    // consentimento justamente por não tratar dado de saúde.
+    await dispatcher.dispatch({
+      userId,
+      kind: 'consent_prune_notice',
+      data: { stage, daysLeft },
+      context: { correlationId },
+    })
+  } catch (err) {
+    logger.error('Aviso de prune falhou (isolado — demais candidatos seguem)', err, {
+      correlationId, userId, stage,
+    })
+    return 'skipped'
+  }
+
+  return (await writeControllerEvent(supabase, userId, 'notice_sent')) ? 'noticed' : 'skipped'
+}
+
 /**
  * Decide e executa o ato do dia para UM candidato.
  *
@@ -261,8 +412,8 @@ async function processCandidate({
     return 'skipped'
   }
 
-  const state = await confirmStillRevoked(supabase, row.user_id)
-  if (state !== 'revoked') {
+  const state = await checkEligibility(supabase, { user_id: row.user_id, reason: 'revoked_90d' })
+  if (state !== 'eligible') {
     // 'resolved' = re-consentiu (o flag ainda não zerou ou a varredura pegou uma corrida).
     // 'unknown' = não deu para ler a trilha ⇒ pula. Erro de leitura NUNCA autoriza apagar.
     return 'skipped'
@@ -273,61 +424,12 @@ async function processCandidate({
       logger.warn('[dry-run] candidato ELEGÍVEL a exclusão — nada foi apagado', { correlationId, userId: row.user_id, days })
       return 'skipped'
     }
-    // `pruned` ANTES da exclusão: depois dela não existe mais e-mail em auth.users para derivar o
-    // `subject_hash`, e o evento nasceria sem prova de quem era. O `account_deleted` sai de dentro
-    // da própria transação de `_delete_user_account_core`.
-    //
-    // 🔴 E se a trilha NÃO gravar, a exclusão não acontece. A ordem sozinha não bastava: ignorando
-    // o retorno, uma RPC fora do ar produziria conta apagada SEM registro de por quê — e o registro
-    // é irrecuperável depois (o e-mail que deriva o hash morre com a conta). Excluir sem poder
-    // provar a base legal é o oposto do que esta spec existe para entregar. Aborta o run: se a RPC
-    // da trilha caiu, ela caiu para todos os candidatos.
-    if (!(await writeControllerEvent(supabase, row.user_id, 'pruned'))) {
-      logger.error('Trilha não registrou o `pruned` — exclusão CANCELADA e run abortado', null, {
-        correlationId, userId: row.user_id,
-      })
-      return 'trail_failed'
-    }
-
-    const { error } = await supabase.rpc('delete_user_account_by_id', { p_user_id: row.user_id })
-    if (error) {
-      // Aborta o run: exclusão que falha no meio de um lote é sintoma (privilégio, RPC, dado
-      // inconsistente), e seguir apagando os próximos seria propagar o desconhecido.
-      logger.error('Exclusão falhou — run abortado (demais candidatos intocados)', error, {
-        correlationId, userId: row.user_id,
-      })
-      return 'aborted'
-    }
-    return 'pruned'
+    return executeDeletion(supabase, row.user_id, { correlationId })
   }
 
-  // Quantos avisos ele já recebeu decide SE há um a enviar hoje: 1º na janela do D+60, 2º na do
-  // D+83. Já tendo os dois, nada sai até a data da exclusão.
-  const notices = await countNoticesSince(supabase, row.user_id, row.consent_revoked_at)
-  if (notices === null) return 'skipped'
-
-  const stage = days >= PRUNE_NOTICE_DAYS.d83 ? 'd83' : 'd60'
-  const expectedNotices = stage === 'd83' ? 2 : 1
-  if (notices >= expectedNotices) return 'silent'
-
-  const daysLeft = Math.max(PRUNE_DELETE_DAYS - days, 1)
-  try {
-    // Copy neutra (S8) — ver CONSENT_LIFECYCLE_KINDS: este kind atravessa a supressão por
-    // consentimento justamente por não tratar dado de saúde.
-    await dispatcher.dispatch({
-      userId: row.user_id,
-      kind: 'consent_prune_notice',
-      data: { stage, daysLeft },
-      context: { correlationId },
-    })
-  } catch (err) {
-    logger.error('Aviso de prune falhou (isolado — demais candidatos seguem)', err, {
-      correlationId, userId: row.user_id, stage,
-    })
-    return 'skipped'
-  }
-
-  return (await writeControllerEvent(supabase, row.user_id, 'notice_sent')) ? 'noticed' : 'skipped'
+  return sendDueNotice(supabase, dispatcher, {
+    userId: row.user_id, days, since: row.consent_revoked_at, correlationId,
+  })
 }
 
 /**

@@ -1,0 +1,259 @@
+/* apps/web/src/views/admin/PruneAdmin.css — fila de exclusão (spec 107) */
+
+.prune-admin {
+  padding: 1.5rem;
+  max-width: 880px;
+  margin: 0 auto;
+  min-height: 100vh;
+  color: var(--color-text-primary, #111827);
+}
+
+.prune-admin__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.prune-admin__header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary, #059669);
+  margin: 0;
+}
+
+.prune-admin__hint,
+.prune-admin__meta {
+  color: var(--color-text-secondary, #4b5563);
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.prune-admin__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-card, #ffffff);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.prune-admin__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.prune-admin__tabs button {
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 999px;
+  background: var(--color-bg-card, #ffffff);
+  cursor: pointer;
+}
+
+.prune-admin__tabs button[aria-selected='true'] {
+  background: var(--color-primary, #059669);
+  border-color: var(--color-primary, #059669);
+  color: #ffffff;
+}
+
+.prune-admin__row {
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.prune-admin__row--red {
+  border-color: var(--color-error, #ba1a1a);
+  background: var(--color-error-container, #ffdad6);
+}
+
+.prune-admin__row-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.prune-admin__when {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.prune-admin__actions,
+.prune-admin__email-due,
+.prune-admin__confirm,
+.prune-admin__wave2-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.prune-admin__actions {
+  justify-content: flex-end;
+}
+
+.prune-admin__confirm label {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
+.prune-admin__confirm input,
+.prune-admin__texts textarea {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+  font: inherit;
+}
+
+.prune-admin__texts textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.prune-admin__wave2,
+.prune-admin__texts {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.prune-admin__wave2 h2,
+.prune-admin__texts h2 {
+  font-size: 1.125rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.prune-admin__preview {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg-subtle, #f3f4f6);
+  white-space: pre-wrap;
+}
+
+.prune-admin__issues {
+  color: var(--color-error, #ba1a1a);
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+}
+
+.prune-admin__message {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.prune-admin__message--success {
+  background: var(--color-success-container, #d1fae5);
+}
+
+.prune-admin__message--error {
+  background: var(--color-error-container, #ffdad6);
+  color: var(--color-error, #ba1a1a);
+}
+
+.prune-admin__summary,
+.prune-admin__empty {
+  color: var(--color-text-secondary, #4b5563);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.prune-admin__email-text {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg-subtle, #f3f4f6);
+  user-select: all;
+}
+
+/* FR-014 — seções pela próxima ação do admin */
+.prune-admin__counters {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.prune-admin__section {
+  margin-bottom: 1.5rem;
+}
+
+.prune-admin__section h2,
+.prune-admin__section > summary {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.prune-admin__section > summary {
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.prune-admin__count {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--color-bg-subtle, #f3f4f6);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.prune-admin__block {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--color-error, #ba1a1a);
+}
+
+.prune-admin__email-preview {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
+.prune-admin__email-preview summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.prune-admin__wave2-row .prune-admin__email-due {
+  flex-basis: 100%;
+  margin-top: 0.25rem;
+}
+
+/* Botões da tela: verde sólido, sem gradiente nem brilho (pedido do PO no smoke). O "Apagar" segue danger. */
+.prune-admin .btn-primary,
+.prune-admin .btn-secondary {
+  background: var(--color-primary, #006a5e);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.prune-admin .btn-secondary:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.prune-admin__email-frame {
+  width: 100%;
+  height: 640px;
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  background: #ffffff;
+}

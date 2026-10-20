@@ -14,7 +14,7 @@ export const CONSENT_TYPES = ['health_data', 'terms_privacy'] as const
  * Ações da trilha. Espelha o CHECK de `consent_log.action`.
  *
  * `granted`/`revoked` são atos do TITULAR — únicos alcançáveis pelas RPCs `consent_grant` /
- * `consent_revoke`. `notice_sent`/`pruned`/`account_deleted` são atos do CONTROLADOR: só
+ * `consent_revoke`. `notice_sent`/`pruned`/`account_deleted`/`scheduled_deletion` são atos do CONTROLADOR: só
  * `service_role` ou função `SECURITY DEFINER` os escreve. O cliente não tem caminho até eles —
  * nem por parâmetro (as RPCs não recebem `action`).
  */
@@ -24,6 +24,9 @@ export const CONSENT_ACTIONS = [
   'notice_sent',
   'pruned',
   'account_deleted',
+  // 107: o controlador marcou a conta para exclusão (legado/onboarding). Nunca é `revoked` —
+  // revogação é ato do titular, e quem nunca consentiu não revogou nada (INV-3).
+  'scheduled_deletion',
 ] as const
 
 /** Plataformas de origem do evento. Espelha o CHECK de `consent_log.platform`. */
@@ -77,6 +80,74 @@ export const HEALTH_CONSENT_COPY = Object.freeze({
     'Você continua podendo exportar seus dados ou excluir sua conta. Se não voltar a consentir ' +
     'em 90 dias, sua conta e seus dados serão excluídos automaticamente.',
 } as const)
+
+// ─── Spec 107 — fila de exclusão com aprovação manual ─────────────────────────────────────
+
+/** Motivo da linha na fila. Espelha o CHECK de `prune_queue.reason`. */
+export const PRUNE_REASONS = ['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent', 'unconfirmed_signup'] as const
+/** Decisão da linha. Espelha o CHECK de `prune_queue.decision`. */
+export const PRUNE_DECISIONS = ['pending', 'approved', 'deferred', 'void'] as const
+
+export type PruneReason = (typeof PRUNE_REASONS)[number]
+export type PruneDecision = (typeof PRUNE_DECISIONS)[number]
+
+/** Linha da `public.prune_queue` como o servidor a lê (service role). */
+export const pruneQueueRowSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  reason: z.enum(PRUNE_REASONS),
+  scheduled_at: z.string(),
+  eligible_at: z.string(),
+  decision: z.enum(PRUNE_DECISIONS),
+  decided_at: z.string().nullable().optional(),
+  decided_by: z.string().uuid().nullable().optional(),
+  note: z.string().nullable().optional(),
+  reevaluate_at: z.string().nullable().optional(),
+  executed_at: z.string().nullable().optional(),
+  void_reason: z.string().nullable().optional(),
+  created_at: z.string(),
+})
+export type PruneQueueRow = z.infer<typeof pruneQueueRowSchema>
+
+/** Placeholder ÚNICO aceito no texto da trava (S-5). */
+export const CONSENT_COPY_DATE_PLACEHOLDER = '{data}'
+
+/**
+ * Texto da trava de quem nunca consentiu (FR-010, editável no admin). Texto PURO: o app e a web
+ * o renderizam como nó de texto, e ainda assim nada que pareça marcação entra — o admin é uma
+ * conta, e conta pode ser comprometida. Espelha o CHECK `consent_copy_body_chk` (20–600 chars,
+ * `{data}` exatamente 1×) e acrescenta o que o CHECK não vê: outros placeholders e `<`/`>`.
+ */
+export const consentCopyBodySchema = z
+  .string()
+  .trim()
+  .min(20, 'Texto curto demais (mínimo 20 caracteres)')
+  .max(600, 'Texto longo demais (máximo 600 caracteres)')
+  .refine((s) => !/[<>]/.test(s), 'Texto não pode conter < ou >')
+  .refine((s) => s.split(CONSENT_COPY_DATE_PLACEHOLDER).length === 2, 'O texto precisa ter {data} exatamente uma vez')
+  .refine(
+    (s) => !/\{[^}]*\}/.test(s.split(CONSENT_COPY_DATE_PLACEHOLDER).join('')),
+    'Só o marcador {data} é permitido',
+  )
+
+/**
+ * Fallback embarcado (OQ-2). Usado quando o servidor não responde ou devolve texto inválido —
+ * o aviso legal NUNCA some por causa de rede ou de edição ruim.
+ */
+export const NEVER_CONSENTED_DEADLINE_COPY = Object.freeze({
+  title: 'Precisamos da sua autorização',
+  body:
+    'Para guardar e organizar suas informações, o dosiq precisa que você autorize o uso desses ' +
+    'dados. Sem essa autorização, sua conta e tudo o que está nela serão excluídos em {data}.',
+  deleteNow: 'Prefiro excluir minha conta agora',
+} as const)
+
+/** Troca `{data}` pela data já formatada. Texto inválido ⇒ fallback embarcado. */
+export function renderDeadlineCopy(body: string | null | undefined, formattedDate: string): string {
+  const parsed = consentCopyBodySchema.safeParse(body ?? '')
+  const source = parsed.success === false ? NEVER_CONSENTED_DEADLINE_COPY.body : parsed.data
+  return source.replace(CONSENT_COPY_DATE_PLACEHOLDER, formattedDate)
+}
 
 /** Estado derivado do consentimento = último evento daquele tipo. */
 export const CONSENT_STATUSES = ['granted', 'revoked', 'missing'] as const

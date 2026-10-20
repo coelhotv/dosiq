@@ -17,16 +17,31 @@ const aqui = dirname(fileURLToPath(import.meta.url))
  * settings JÁ MONTADAS — provam a política, não a query. A defesa possível é estrutural: garantir
  * que existe UM repositório, não dois.
  */
-describe('api/notify.ts — fonte única das settings de notificação', () => {
-  const fonte = readFileSync(resolve(aqui, '../notify.ts'), 'utf8')
+describe('dispatcher do cron — fonte única das settings de notificação', () => {
+  // 107: o dispatcher saiu de notify.ts para api/_shared/cronDispatcher.ts (notify + ops o usam).
+  const dispatcher = readFileSync(resolve(aqui, '../_shared/cronDispatcher.ts'), 'utf8')
+  const notify = readFileSync(resolve(aqui, '../notify.ts'), 'utf8')
+  const ops = readFileSync(resolve(aqui, '../ops.ts'), 'utf8')
 
   it('usa o repositório canônico, não uma implementação local', () => {
-    expect(fonte).toContain("repositories/notificationPreferenceRepository.js'")
-    expect(fonte).toContain('const preferencesRepo = notificationPreferenceRepository')
+    expect(dispatcher).toContain("repositories/notificationPreferenceRepository.js'")
+    expect(dispatcher).toContain('const preferencesRepo = notificationPreferenceRepository')
   })
 
-  it('🔴 não define um getSettingsByUserId próprio (a duplicata É o bug)', () => {
-    expect(fonte).not.toMatch(/async\s+getSettingsByUserId\s*\(/)
+  it('notify e ops montam o dispatcher pela fábrica compartilhada', () => {
+    expect(notify).toContain('createCronDispatcher(')
+    expect(ops).toContain('createCronDispatcher(')
+  })
+
+  it('107 PO-7: o prune NÃO roda mais no notify (sem prune paralelo à fila)', () => {
+    expect(notify).not.toContain('consent_prune')
+    expect(notify).not.toContain('runConsentPrune')
+  })
+
+  it('🔴 nenhum dos três define um getSettingsByUserId próprio (a duplicata É o bug)', () => {
+    for (const fonte of [dispatcher, notify, ops]) {
+      expect(fonte).not.toMatch(/async\s+getSettingsByUserId\s*\(/)
+    }
   })
 })
 
