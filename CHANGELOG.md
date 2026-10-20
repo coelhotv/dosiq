@@ -7,6 +7,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Registro de acesso guardado por 6 meses (Marco Civil, art. 15 — spec 106)
+
+- **Backend/Infra** (`Added`, `patch` — sem arquivo de versão nem app novo; migração no Supabase e
+  deploy na Vercel no merge). Cada uso do app e da web por uma conta logada passa a guardar data,
+  hora (UTC) e IP — a primeira requisição de cada hora, por IP, com o IP visto pela borda do
+  Supabase e não o informado pelo aparelho — como a lei exige de empresa provedora de aplicação. O registro fica
+  numa área do banco que nenhum usuário do app lê, é apagado depois de 6 meses e só é entregue a
+  terceiros com ordem judicial, com cada entrega registrada. Se a coleta parar, o alerta diário das
+  05:00 avisa. Uma falha na coleta nunca derruba uma requisição do app. Clientes já instalados geram registro sem
+  atualizar o app.
+
 ### Primeiro remédio pela caixa no onboarding (spec 066, slice E)
 
 - **Mobile** (`Added`, `patch`; entra no pacote de loja `0.34.0` — os builds intermediários de smoke não são citados aqui,
