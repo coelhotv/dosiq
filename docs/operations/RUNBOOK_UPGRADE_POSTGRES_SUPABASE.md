@@ -10,6 +10,9 @@
   **Versão principal (17 → 18):** NÃO seguir este runbook sem antes ler as notas de upgrade do Supabase e testar numa branch.
 - **Indisponibilidade de alguns minutos.** Nessa janela falham: app mobile, PWA, bot do Telegram, crons do
   `api/notify` (lembretes de dose podem não sair) e qualquer RPC.
+  Medido em 2026-10-20 (17.6.1 → 17.11): ~8 min até o painel mostrar saudável, **mais ~4 min** de
+  `522`/`504` do edge para chamadas da Vercel com o PostgREST já de pé — contar ~12 min no total.
+  Erro nessa cauda é esperado; só investigar se passar de 10 min após o painel voltar.
 - **Sem desfazer pelo painel.** No plano Free não existe restauração para um ponto no tempo (PITR). O backup da §3 é a única volta.
 - **Auth e PostgREST não entram aqui.** O Supabase os atualiza sozinho; o efeito disso na spec 106 é vigiado pelo audit diário (FR-004 da 106).
 
