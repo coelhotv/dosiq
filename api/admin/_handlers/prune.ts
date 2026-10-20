@@ -17,6 +17,7 @@ import { consentCopyBodySchema } from '@dosiq/core/schemas'
 import {
   addDays,
   alertState,
+  atOrAfter,
   isApprovable,
   d83Start,
   legacyGateOpen,
@@ -79,7 +80,7 @@ async function wave2Candidates(supabase): Promise<Array<{ user_id: string; creat
   const exclude = new Set([...(live.data ?? []), ...(marks.data ?? [])].map((r) => r.user_id))
   // FR-016: cadastro não confirmado não recebe e-mail — vai à fila pelo motivo próprio.
   return (accounts.data ?? []).filter(
-    (a) => a.created_at < ONBOARDING_RULE_START && a.email_confirmed !== false && !exclude.has(a.user_id),
+    (a) => !atOrAfter(a.created_at, ONBOARDING_RULE_START) && a.email_confirmed !== false && !exclude.has(a.user_id),
   )
 }
 
@@ -115,9 +116,9 @@ async function legacyGateIsOpen(supabase): Promise<boolean> {
 
 /** Avisos desde o início do relógio e desde o D+83 (o D+83 sozinho basta — `noticesComplete`). */
 function noticeCounts(dates: string[] | undefined, scheduledAt: string) {
-  const since = (dates ?? []).filter((at) => at >= scheduledAt)
+  const since = (dates ?? []).filter((at) => atOrAfter(at, scheduledAt))
   const fromD83 = d83Start(scheduledAt)
-  return { sentSinceStart: since.length, sentSinceD83: since.filter((at) => at >= fromD83).length }
+  return { sentSinceStart: since.length, sentSinceD83: since.filter((at) => atOrAfter(at, fromD83)).length }
 }
 
 /** Seção da linha com o rastro lido do banco — a MESMA conta da lista e das travas. */
@@ -128,6 +129,27 @@ async function sectionOf(supabase, row, now: Date) {
     row.reason === 'legacy_no_consent' ? legacyGateIsOpen(supabase) : Promise.resolve(true),
   ])
   return pruneSection(row, { ...noticeCounts(notices.get(row.user_id), row.scheduled_at), hasReaviso: reaviso.has(row.id), legacyGate: gate }, now)
+}
+
+/**
+ * Histórico = executadas OU canceladas nos últimos 90 dias, pela data do EVENTO. Filtrar por
+ * `created_at` escondia toda execução: a linha nasce no início do relógio e só executa ≥ 90 d
+ * depois (RC6 #894). O void não tem coluna de data — vem da auditoria (`action = 'void'`).
+ */
+async function historyRows(supabase, since: string) {
+  const [executed, voids] = await Promise.all([
+    supabase.from('prune_queue').select(QUEUE_COLUMNS).gte('executed_at', since),
+    supabase.from('prune_queue_audit').select('queue_id').eq('action', 'void').gte('created_at', since),
+  ])
+  if (executed.error || voids.error) return { data: null, error: executed.error ?? voids.error }
+  const voidIds = [...new Set((voids.data ?? []).map((v) => v.queue_id).filter(Boolean))]
+  const voided = voidIds.length === 0
+    ? { data: [], error: null }
+    : await supabase.from('prune_queue').select(QUEUE_COLUMNS).in('id', voidIds).eq('decision', 'void')
+  if (voided.error) return { data: null, error: voided.error }
+  const all = [...(executed.data ?? []), ...(voided.data ?? [])]
+  all.sort((a, b) => Date.parse(b.executed_at ?? b.created_at) - Date.parse(a.executed_at ?? a.created_at))
+  return { data: all, error: null }
 }
 
 async function loadRow(supabase, queueId: unknown) {
@@ -146,13 +168,13 @@ export async function handleListPrune(req, res, supabase) {
     // eslint-disable-next-line no-restricted-syntax -- instante absoluto
     const since = new Date(now.getTime() - HISTORY_DAYS * 86_400_000).toISOString()
 
-    const query = supabase.from('prune_queue').select(QUEUE_COLUMNS).order('eligible_at', { ascending: true })
     const { data: rows, error } = tab === 'pending'
-      ? await query.in('decision', LIVE).is('executed_at', null)
-      : await query.gte('created_at', since)
+      ? await supabase.from('prune_queue').select(QUEUE_COLUMNS).order('eligible_at', { ascending: true })
+        .in('decision', LIVE).is('executed_at', null)
+      : await historyRows(supabase, since)
     if (error) return res.status(500).json({ error: 'Falha ao ler a fila' })
 
-    const visible = tab === 'pending' ? rows ?? [] : (rows ?? []).filter((r) => r.executed_at || r.decision === 'void')
+    const visible = rows ?? []
     const ids = visible.map((r) => r.user_id)
     const [emails, notices, reaviso, gate] = await Promise.all([
       emailsFor(supabase, ids),
@@ -162,7 +184,7 @@ export async function handleListPrune(req, res, supabase) {
     ])
 
     const items = visible.map((r) => {
-      const sent = (notices.get(r.user_id) ?? []).filter((at) => at >= r.scheduled_at)
+      const sent = (notices.get(r.user_id) ?? []).filter((at) => atOrAfter(at, r.scheduled_at))
       const hasReaviso = reaviso.has(r.id)
       const where = pruneSection(r, { ...noticeCounts(sent, r.scheduled_at), hasReaviso, legacyGate: gate }, now)
       return {

@@ -27,6 +27,7 @@ import {
 import {
   addDays,
   alertState,
+  atOrAfter,
   dueNoticeStage,
   daysBetween,
   isApprovable,
@@ -157,7 +158,7 @@ async function fetchWave2Marks(supabase: ConsentPruneClient): Promise<Map<string
   const marks = new Map<string, string>();
   for (const m of (data ?? []) as Array<{ user_id: string; created_at: string }>) {
     const prev = marks.get(m.user_id);
-    if (!prev || m.created_at < prev) marks.set(m.user_id, m.created_at);
+    if (!prev || !atOrAfter(m.created_at, prev)) marks.set(m.user_id, m.created_at);
   }
   return marks;
 }
@@ -175,7 +176,7 @@ function unconsentedClock(
     if (daysBetween(acc.created_at, now) < UNCONFIRMED_GRACE_DAYS) return null;
     return { reason: 'unconfirmed_signup', scheduled_at: acc.created_at, eligible_at: now.toISOString() };
   }
-  if (acc.created_at >= ONBOARDING_RULE_START) {
+  if (atOrAfter(acc.created_at, ONBOARDING_RULE_START)) {
     if (daysBetween(acc.created_at, now) < ONBOARDING_GRACE_DAYS) return null;
     return { reason: 'onboarding_no_consent', scheduled_at: addDays(acc.created_at, ONBOARDING_GRACE_DAYS) };
   }

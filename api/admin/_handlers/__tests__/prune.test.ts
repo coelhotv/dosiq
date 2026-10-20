@@ -308,6 +308,27 @@ describe('FR-016 — cadastro não confirmado', () => {
   })
 })
 
+describe('RC6 #894 — Histórico pela data do evento', () => {
+  it('execução de linha criada há > 90 d aparece; void recente (auditoria) aparece; void antigo não', async () => {
+    const { supabase, state } = cenario()
+    state.tables.prune_queue.push(
+      { id: 'q-velha-exec', user_id: 'f0000000-0000-4000-8000-0000000000e1', reason: 'revoked_90d', scheduled_at: em(-200), eligible_at: em(-110), decision: 'approved', decided_by: ADMIN, decided_at: em(-5), executed_at: em(-3), created_at: em(-200) },
+      { id: 'q-void-recente', user_id: 'f0000000-0000-4000-8000-0000000000e2', reason: 'revoked_90d', scheduled_at: em(-150), eligible_at: em(-60), decision: 'void', void_reason: 'granted', executed_at: null, created_at: em(-150) },
+      { id: 'q-void-antigo', user_id: 'f0000000-0000-4000-8000-0000000000e3', reason: 'revoked_90d', scheduled_at: em(-300), eligible_at: em(-210), decision: 'void', void_reason: 'granted', executed_at: null, created_at: em(-300) },
+    )
+    state.tables.prune_queue_audit.push(
+      { queue_id: 'q-void-recente', user_id: 'x', action: 'void', actor: 'job:prune_enqueue', detail: {}, created_at: em(-2) },
+      { queue_id: 'q-void-antigo', user_id: 'x', action: 'void', actor: 'job:prune_enqueue', detail: {}, created_at: em(-200) },
+    )
+    const r = res()
+    await handleListPrune({ query: { tab: 'history' } }, r, supabase)
+    const ids = r.body.data.map((i: any) => i.queue_id)
+    expect(ids).toContain('q-velha-exec')
+    expect(ids).toContain('q-void-recente')
+    expect(ids).not.toContain('q-void-antigo')
+  })
+})
+
 describe('PO-SEC-3 — texto da trava', () => {
   it('5 casos inválidos ⇒ 400 sem tocar o banco; válido ⇒ versão +1 e histórico com a anterior', async () => {
     const { supabase, state } = cenario()

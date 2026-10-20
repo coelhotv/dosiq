@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { pruneSection, noticesComplete, nextMilestone, addDays } from '../pruneRules.js'
+import { pruneSection, noticesComplete, nextMilestone, addDays, atOrAfter } from '../pruneRules.js'
 
 /** FR-014 — cada linha mora numa seção só, pela próxima ação do admin. */
 
@@ -55,5 +55,11 @@ describe('pruneSection', () => {
     expect(nextMilestone(row(), dia(10))).toEqual({ label: 'D+60', at: addDays(INICIO, 60) })
     expect(nextMilestone(row(), dia(70))).toEqual({ label: 'D+83', at: addDays(INICIO, 83) })
     expect(nextMilestone(row(), dia(84))).toEqual({ label: 'prazo', at: ELEG })
+  })
+
+  it('atOrAfter compara instante, não texto (RC6 #894: +00:00 vs Z na fronteira)', () => {
+    // lexicograficamente '…00+00:00' < '…00.000Z' ('+' < '.'), mas é o MESMO instante
+    expect(atOrAfter('2026-10-20T03:00:00+00:00', '2026-10-20T03:00:00.000Z')).toBe(true)
+    expect(atOrAfter('2026-10-20T02:59:59.999+00:00', '2026-10-20T03:00:00.000Z')).toBe(false)
   })
 })

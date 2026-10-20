@@ -45,6 +45,13 @@ export const addDays = (iso: string, days: number): string =>
   // eslint-disable-next-line no-restricted-syntax
   new Date(Date.parse(iso) + days * DAY_MS).toISOString();
 
+/**
+ * `a` é o mesmo instante ou depois de `b`? Compara epoch, nunca texto: o PostgREST devolve
+ * `+00:00` (com ou sem fração) e o código gera `…Z` — na fronteira exata a ordem lexicográfica
+ * inverte ('+' < '.'). RC6 #894.
+ */
+export const atOrAfter = (a: string, b: string): boolean => Date.parse(a) >= Date.parse(b);
+
 /** Dias corridos inteiros entre `fromIso` e `now` (negativo se no futuro). */
 export function daysBetween(fromIso: string, now: Date): number {
   return Math.floor((now.getTime() - Date.parse(fromIso)) / DAY_MS);
