@@ -7,6 +7,12 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 
 vi.mock('../pruneEnqueue.js', () => ({ runPruneEnqueue: vi.fn() }))
 vi.mock('../pruneExecute.js', () => ({ runPruneExecute: vi.fn() }))
+// O dispatcher real importa o client Supabase do servidor, que LANÇA sem env no import — no CI não
+// há `.env` (local havia, e a suíte passava). O contrato do api/ops não depende do dispatcher.
+vi.mock('../../_shared/cronDispatcher.js', () => ({
+  createCronDispatcher: vi.fn(() => ({ dispatch: vi.fn() })),
+  createNotifyBotAdapter: vi.fn(() => ({})),
+}))
 vi.mock('../../../server/observability/sentry.js', () => ({
   initSentry: vi.fn(), captureServerException: vi.fn(), flushSentry: vi.fn(async () => {}),
 }))
