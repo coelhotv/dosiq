@@ -4,14 +4,31 @@
     {
       "name": "Dosiq (React + Vite)",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
     },
     {
       "name": "Bot Server (Telegram)",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "server"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "server"
+      ],
       "port": null
+    },
+    {
+      "name": "Mocks (estático)",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "python3 -m http.server ${PORT:-8766} --directory plans/mocks_app_mobile/project"
+      ],
+      "port": 8766
     }
   ]
 }
