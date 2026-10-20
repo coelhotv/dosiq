@@ -20,6 +20,7 @@ import {
   PRUNE_DEFAULT_CAP,
   type ConsentPruneClient,
   type ConsentPruneMode,
+  type PruneReason,
 } from '../../server/bot/consentPrune.js';
 import { legacyGateOpen, voidReasonFor } from './pruneRules.js';
 
@@ -48,7 +49,7 @@ export interface PruneExecuteResult {
 interface ApprovedRow {
   id: string;
   user_id: string;
-  reason: 'revoked_90d' | 'legacy_no_consent' | 'onboarding_no_consent';
+  reason: PruneReason;
 }
 
 async function audit(supabase: ConsentPruneClient, row: ApprovedRow, action: 'void' | 'execute', detail: object) {
