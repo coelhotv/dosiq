@@ -10,16 +10,22 @@
  *
  * Adiar NÃO é um evento da trilha: `revoked` é a retirada de um consentimento que EXISTIU. Quem
  * nunca consentiu e adia segue `missing` — o botão de adiar não escreve nada no banco.
+ *
+ * Spec 107 (FR-010): se a conta está na fila de exclusão (legado/onboarding sem autorização), o
+ * prompt mostra a DATA e o texto vindo do servidor (fallback embarcado se inválido/offline), e —
+ * quando quem monta passa `onDeleteAccount` — a saída "excluir agora" (INV-5, imediata). Sem data,
+ * nada muda. Revogado não passa por aqui (ConsentResolutionScreen).
  */
 import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { HEALTH_CONSENT_COPY } from '@dosiq/core'
+import { HEALTH_CONSENT_COPY, NEVER_CONSENTED_DEADLINE_COPY, renderDeadlineCopy, parseISO, formatDatePtBR } from '@dosiq/core'
 import HealthConsentCheckbox from './HealthConsentCheckbox'
 import ConsentLegalHeader from './ConsentLegalHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import { fetchDeletionNotice, type DeletionNotice } from '@platform/consent/deletionNoticeService'
 
 // 065 PR D / US9 — de onde este prompt foi renderizado (4 call-sites reais, achados no C1.5;
 // ConsentRegularizationSheet é aceite de política nova e usa componente PRÓPRIO, não este).
@@ -35,13 +41,23 @@ interface ConsentPromptProps {
   onGrant: () => Promise<{ ok: boolean; error?: string }>
   onDismiss?: () => void
   onGranted: () => void
+  /** 107: saída "excluir agora" — só onde a rota de exclusão existe (navigator travado). */
+  onDeleteAccount?: () => void
 }
 
-export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, onGranted }: ConsentPromptProps) {
+/** Fontes em que a conta pode estar na fila (nunca consentiu). O opt-in voluntário e o revogado não. */
+const DEADLINE_SOURCES: ConsentPromptSource[] = ['prompt_blocking', 'prompt_dismissible']
+
+export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, onGranted, onDeleteAccount }: ConsentPromptProps) {
   const [checked, setChecked] = useState(false)
   const [showError, setShowError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<DeletionNotice | null>(null)
+
+  const deadlineText = notice
+    ? renderDeadlineCopy(notice.body, formatDatePtBR(parseISO(notice.eligibleAt)) || '')
+    : null
 
   // 1x por montagem (não por render) — mesma disciplina do FR-1: `source`/`blocking` vêm de quem
   // monta este componente, nunca de um default silencioso.
@@ -49,6 +65,18 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
     void logEvent(EVENTS.CONSENT_PROMPT_SHOWN, { blocking, source, surface: SURFACES.MOBILE })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 107: prazo de exclusão (fail-open — sem resposta, o prompt é o de sempre). Sem cache.
+  useEffect(() => {
+    if (!DEADLINE_SOURCES.includes(source)) return
+    let alive = true
+    void fetchDeletionNotice().then((n) => {
+      if (alive) setNotice(n)
+    })
+    return () => {
+      alive = false
+    }
+  }, [source])
 
   function handleDismiss() {
     void logEvent(EVENTS.CONSENT_PROMPT_DISMISSED, { source, surface: SURFACES.MOBILE })
@@ -84,11 +112,16 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <ConsentLegalHeader />
-        <Text style={styles.title}>{HEALTH_CONSENT_COPY.title}</Text>
-        <Text style={styles.lead}>
-          Para continuar usando o dosiq, precisamos da sua autorização para tratar os dados de saúde
-          que fazem o app funcionar.
-        </Text>
+        <Text style={styles.title}>{deadlineText ? NEVER_CONSENTED_DEADLINE_COPY.title : HEALTH_CONSENT_COPY.title}</Text>
+        {deadlineText ? (
+          // Nó de texto puro: o conteúdo vem do servidor (S-5), nunca é interpretado como marcação.
+          <Text style={styles.lead} testID="consent-deadline-text">{deadlineText}</Text>
+        ) : (
+          <Text style={styles.lead}>
+            Para continuar usando o dosiq, precisamos da sua autorização para tratar os dados de saúde
+            que fazem o app funcionar.
+          </Text>
+        )}
 
         <HealthConsentCheckbox
           checked={checked}
@@ -117,6 +150,12 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
             <Text style={styles.confirmText}>Autorizar e continuar</Text>
           )}
         </Pressable>
+
+        {deadlineText && onDeleteAccount ? (
+          <Pressable style={styles.dismiss} onPress={onDeleteAccount} disabled={saving} accessibilityRole="button">
+            <Text style={styles.deleteText}>{NEVER_CONSENTED_DEADLINE_COPY.deleteNow}</Text>
+          </Pressable>
+        ) : null}
 
         {!blocking && onDismiss ? (
           <Pressable style={styles.dismiss} onPress={handleDismiss} disabled={saving} accessibilityRole="button">
@@ -180,6 +219,11 @@ const styles = StyleSheet.create({
     height: 46,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  deleteText: {
+    color: colors.status.error,
+    fontSize: 14,
+    fontWeight: '600',
   },
   dismissText: {
     color: colors.text.secondary,

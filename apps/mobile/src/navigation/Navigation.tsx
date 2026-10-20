@@ -248,7 +248,16 @@ function ConsentLockedNavigator({ mode, onGrant, onGranted }) {
         <Stack.Screen name={ROUTES.CONSENT_RESOLUTION} component={ConsentResolutionScreen} />
       ) : (
         <Stack.Screen name={ROUTES.CONSENT_RESOLUTION}>
-          {() => <ConsentPrompt blocking source="prompt_blocking" onGrant={onGrant} onGranted={onGranted} />}
+          {({ navigation }) => (
+            <ConsentPrompt
+              blocking
+              source="prompt_blocking"
+              onGrant={onGrant}
+              onGranted={onGranted}
+              // 107 INV-5: "excluir agora" leva à exclusão imediata, já liberada por esta allowlist.
+              onDeleteAccount={() => navigation.navigate(ROUTES.DELETE_ACCOUNT)}
+            />
+          )}
         </Stack.Screen>
       )}
       {/* Hub do 008: export + política + exclusão. É esta rota que sustenta o anti-deadlock.
