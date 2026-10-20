@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   CONSENT_TYPES,
   CONSENT_ACTIONS,
+  PRUNE_REASONS,
+  PRUNE_DECISIONS,
+  consentCopyBodySchema,
+  renderDeadlineCopy,
+  NEVER_CONSENTED_DEADLINE_COPY,
   CONSENT_PLATFORMS,
   CURRENT_POLICY_VERSION,
   HEALTH_CONSENT_COPY,
@@ -28,13 +33,14 @@ describe('consentSchema — vocabulário espelha os CHECKs do banco', () => {
     expect([...CONSENT_TYPES]).toEqual(['health_data', 'terms_privacy'])
   })
 
-  it('CONSENT_ACTIONS inclui os 3 atos do CONTROLADOR além dos 2 do titular', () => {
+  it('CONSENT_ACTIONS inclui os 4 atos do CONTROLADOR além dos 2 do titular (CHECK de 2026-10-20)', () => {
     expect([...CONSENT_ACTIONS]).toEqual([
       'granted',
       'revoked',
       'notice_sent',
       'pruned',
       'account_deleted',
+      'scheduled_deletion',
     ])
   })
 
@@ -192,3 +198,34 @@ describe('deriveConsentState — desempate de created_at (046 T013e)', () => {
   })
 })
 
+
+describe('spec 107 — fila e texto da trava', () => {
+  it('PRUNE_REASONS e PRUNE_DECISIONS = os CHECKs de prune_queue', () => {
+    expect([...PRUNE_REASONS]).toEqual(['revoked_90d', 'legacy_no_consent', 'onboarding_no_consent'])
+    expect([...PRUNE_DECISIONS]).toEqual(['pending', 'approved', 'deferred', 'void'])
+  })
+
+  it('consentCopyBodySchema recusa os 5 casos do PO-SEC-3 e aceita o texto aprovado', () => {
+    const casos = [
+      '<b>autorize</b> até {data} por favor, obrigado',
+      'Sem marcador de data neste texto aqui, só palavras',
+      'Excluímos em {data} e depois em {data}, repetido',
+      'Excluímos em {data} para {nome}, texto qualquer',
+      'x'.repeat(601) + '{data}',
+      '',
+      '   {data}   ',
+    ]
+    for (const c of casos) expect(consentCopyBodySchema.safeParse(c).success).toBe(false)
+    expect(consentCopyBodySchema.safeParse(NEVER_CONSENTED_DEADLINE_COPY.body).success).toBe(true)
+  })
+
+  it('renderDeadlineCopy troca {data}; texto inválido ou ausente cai no fallback embarcado', () => {
+    expect(renderDeadlineCopy('Sua conta será excluída em {data}, autorize.', '20/01/2027'))
+      .toBe('Sua conta será excluída em 20/01/2027, autorize.')
+    for (const ruim of [null, undefined, '<script>{data}</script> texto longo', 'sem data alguma no texto aqui']) {
+      const out = renderDeadlineCopy(ruim, '20/01/2027')
+      expect(out).toContain('20/01/2027')
+      expect(out).toBe(NEVER_CONSENTED_DEADLINE_COPY.body.replace('{data}', '20/01/2027'))
+    }
+  })
+})

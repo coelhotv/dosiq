@@ -217,6 +217,13 @@ export {
   CURRENT_POLICY_VERSION,
   HEALTH_CONSENT_COPY,
   deriveConsentState,
+  PRUNE_REASONS,
+  PRUNE_DECISIONS,
+  pruneQueueRowSchema,
+  CONSENT_COPY_DATE_PLACEHOLDER,
+  consentCopyBodySchema,
+  NEVER_CONSENTED_DEADLINE_COPY,
+  renderDeadlineCopy,
 } from './consentSchema'
 export type {
   ConsentType,
@@ -225,6 +232,9 @@ export type {
   ConsentStatus,
   ConsentEvent,
   ConsentState,
+  PruneReason,
+  PruneDecision,
+  PruneQueueRow,
 } from './consentSchema'
 
 // Evolução do tratamento / titulação N2 (spec 029 — ADR-080; modelo titrations + titration_steps)
