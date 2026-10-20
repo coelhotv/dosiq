@@ -34,7 +34,9 @@ interface Row { [k: string]: any }
 function criarSupabase(estado: {
   userSettings: Row[]
   consentLog: Row[]
-  falhas?: { trilha?: boolean; candidatos?: boolean; exclusao?: boolean; rpcTrilha?: boolean }
+  falhas?: { trilha?: boolean; candidatos?: boolean; exclusao?: boolean; rpcTrilha?: boolean; conta?: boolean }
+  /** Contas que já não existem em auth.users (autoexclusão). */
+  contasSumidas?: string[]
 }) {
   const rpcCalls: Array<{ fn: string; args: any }> = []
   const falhas = estado.falhas ?? {}
@@ -74,6 +76,12 @@ function criarSupabase(estado: {
   const supabase = {
     from: (tabela: string) => new Query(tabela),
     rpc: async (fn: string, args: any) => {
+      // Leitura (107): existência da conta. Fora de `rpcCalls`, que registra só escritas.
+      if (fn === 'prune_account_emails') {
+        if (falhas.conta) return { data: null, error: { message: 'boom' } }
+        const sumidas = estado.contasSumidas ?? []
+        return { data: (args.p_user_ids as string[]).filter(id => !sumidas.includes(id)).map(id => ({ user_id: id, email: 'x' })), error: null }
+      }
       rpcCalls.push({ fn, args })
       if (fn === 'delete_user_account_by_id' && falhas.exclusao) {
         return { data: null, error: { message: 'boom' } }
@@ -442,6 +450,25 @@ describe('peças extraídas (spec 107 T011)', () => {
 
     const c = criarSupabase({ userSettings: [], consentLog: trilhaRevogada('u', hÁDias(95)), falhas: { trilha: true } })
     expect(await checkEligibility(c.supabase, { user_id: 'u', reason: 'revoked_90d' })).toBe('unknown')
+  })
+
+  it('checkEligibility legado/onboarding (E-1): sem granted ⇒ eligible; com granted ⇒ resolved; nunca unknown por falta de trilha', async () => {
+    for (const reason of ['legacy_no_consent', 'onboarding_no_consent'] as const) {
+      const vazio = criarSupabase({ userSettings: [], consentLog: [] })
+      expect(await checkEligibility(vazio.supabase, { user_id: 'u', reason })).toBe('eligible')
+      const autorizou = criarSupabase({
+        userSettings: [],
+        consentLog: [{ user_id: 'u', consent_type: 'health_data', action: 'granted', created_at: hÁDias(1), seq: 1 }],
+      })
+      expect(await checkEligibility(autorizou.supabase, { user_id: 'u', reason })).toBe('resolved')
+    }
+  })
+
+  it('checkEligibility: conta excluída pelo titular ⇒ gone; leitura da conta falha ⇒ unknown', async () => {
+    const sumiu = criarSupabase({ userSettings: [], consentLog: [], contasSumidas: ['u'] })
+    expect(await checkEligibility(sumiu.supabase, { user_id: 'u', reason: 'legacy_no_consent' })).toBe('gone')
+    const erro = criarSupabase({ userSettings: [], consentLog: [], falhas: { conta: true } })
+    expect(await checkEligibility(erro.supabase, { user_id: 'u', reason: 'revoked_90d' })).toBe('unknown')
   })
 
   it('executeDeletion grava pruned ANTES da exclusão; trilha falha ⇒ nada é apagado', async () => {

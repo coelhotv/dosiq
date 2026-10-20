@@ -249,18 +249,45 @@ export interface EligibilityInput {
 /**
  * A condição que tornou a conta elegível ainda vale AGORA? (spec 107, RC3 E-1)
  *
- * `'eligible'` é a única resposta que autoriza apagar. `'resolved'` = a pessoa autorizou de novo;
- * `'unknown'` = não deu para saber (inclui erro de leitura) — e não sabendo, NÃO APAGAMOS.
+ * `'eligible'` é a única resposta que autoriza apagar. `'resolved'` = a pessoa autorizou;
+ * `'gone'` = a conta já não existe (o titular se excluiu — INV-5); `'unknown'` = não deu para
+ * saber (inclui erro de leitura) — e não sabendo, NÃO APAGAMOS.
+ *
+ * Por motivo: `revoked_90d` exige o último ato do titular ainda `revoked`; quem NUNCA consentiu
+ * (legado/onboarding) não tem linha `granted|revoked`, e o ramo da 046 devolveria `unknown` para
+ * sempre — o executor aprovado viraria no-op silencioso. Para esses, elegível = nenhum `granted`.
  */
 export async function checkEligibility(
   supabase: ConsentPruneClient,
   input: EligibilityInput,
-): Promise<'eligible' | 'resolved' | 'unknown'> {
+): Promise<'eligible' | 'resolved' | 'gone' | 'unknown'> {
+  // `consent_log.user_id` vira NULL quando a conta some (FK SET NULL): a existência da conta
+  // se pergunta ao auth, não à trilha.
+  const { data: accounts, error: accountError } = await supabase.rpc('prune_account_emails', {
+    p_user_ids: [input.user_id],
+  })
+  if (accountError) {
+    logger.error('Leitura da conta falhou — elegibilidade desconhecida', accountError, { userId: input.user_id })
+    return 'unknown'
+  }
+  if (!Array.isArray(accounts) || accounts.length === 0) return 'gone'
+
   if (input.reason === 'revoked_90d') {
     const state = await confirmStillRevoked(supabase, input.user_id)
     return state === 'revoked' ? 'eligible' : state
   }
-  return 'unknown'
+
+  const { count, error } = await supabase
+    .from('consent_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', input.user_id)
+    .eq('consent_type', 'health_data')
+    .eq('action', 'granted')
+  if (error) {
+    logger.error('Reconferência da trilha falhou — elegibilidade desconhecida', error, { userId: input.user_id })
+    return 'unknown'
+  }
+  return (count ?? 0) === 0 ? 'eligible' : 'resolved'
 }
 
 export interface DeletionContext {
