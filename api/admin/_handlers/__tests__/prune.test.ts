@@ -19,6 +19,7 @@ const ADMIN = 'b0c9746c-c4d9-4954-a198-59856009be26'
 const U = 'a9f3e1c2-1111-4222-8333-944455556666'
 const LEG = 'c0ffee00-2222-4333-8444-955566667777'
 const LEG2 = 'deadbeef-3333-4444-8555-a66677778888'
+const P = 'e1e1e1e1-4444-4555-8666-b77788889999' // perdeu os avisos (cron caiu na janela)
 
 afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers() })
 
@@ -32,25 +33,32 @@ function res() {
 const agora = () => new Date()
 const em = (dias: number) => new Date(agora().getTime() + dias * 86_400_000).toISOString()
 
-function cenario(extra: { gates?: any[]; wave2For?: string[] } = {}) {
+const aviso = (user_id: string, dias: number, seq: number) =>
+  ({ user_id, consent_type: 'health_data', action: 'notice_sent', created_at: em(dias), seq })
+
+function cenario(extra: { gates?: any[]; wave2For?: string[]; semAvisos?: boolean } = {}) {
+  // FR-014: por padrão U e LEG receberam o D+60 e o D+83 — aprovar exige os 2 avisos.
+  const avisos = extra.semAvisos ? [] : [aviso(U, -28, 2), aviso(U, -5, 3), aviso(LEG, -28, 4), aviso(LEG, -5, 5)]
   const rows = [
     { id: 'q-ok', user_id: U, reason: 'revoked_90d', scheduled_at: em(-88), eligible_at: em(2), decision: 'pending', executed_at: null },
     { id: 'q-longe', user_id: 'f0000000-0000-4000-8000-000000000001', reason: 'revoked_90d', scheduled_at: em(-30), eligible_at: em(60), decision: 'pending', executed_at: null },
     { id: 'q-void', user_id: 'f0000000-0000-4000-8000-000000000002', reason: 'revoked_90d', scheduled_at: em(-95), eligible_at: em(-5), decision: 'void', void_reason: 'granted', executed_at: null },
     { id: 'q-exec', user_id: 'f0000000-0000-4000-8000-000000000003', reason: 'revoked_90d', scheduled_at: em(-95), eligible_at: em(-5), decision: 'approved', decided_by: ADMIN, decided_at: em(-1), executed_at: em(-1) },
     { id: 'q-leg', user_id: LEG, reason: 'legacy_no_consent', scheduled_at: em(-89), eligible_at: em(1), decision: 'pending', executed_at: null },
+    { id: 'q-perdeu', user_id: P, reason: 'revoked_90d', scheduled_at: em(-91), eligible_at: em(-1), decision: 'pending', executed_at: null },
   ]
   return createFakeSupabase({
     users: [
       { id: U, email: 'ana.souza@gmail.com', created_at: '2025-01-01T00:00:00Z' },
       { id: LEG, email: 'legado@gmail.com', created_at: '2025-01-01T00:00:00Z' },
       { id: LEG2, email: 'legado2@gmail.com', created_at: '2025-01-01T00:00:00Z' },
+      { id: P, email: 'perdeu@gmail.com', created_at: '2025-01-01T00:00:00Z' },
     ],
     tables: {
       prune_queue: rows,
       app_version_gate: extra.gates ?? [],
       prune_queue_audit: (extra.wave2For ?? []).map((user_id) => ({ user_id, action: 'mark_notice', actor: `admin:${ADMIN}`, detail: { milestone: 'wave2' }, created_at: em(-100) })),
-      consent_log: [{ user_id: LEG, consent_type: 'health_data', action: 'scheduled_deletion', created_at: em(-89), seq: 1 }],
+      consent_log: [{ user_id: LEG, consent_type: 'health_data', action: 'scheduled_deletion', created_at: em(-89), seq: 1 }, ...avisos],
       consent_copy: [{ key: 'never_consented_deadline', body: 'Sua conta será excluída em {data} sem autorização.', version: 1, updated_by: null, updated_at: em(-10) }],
     },
   })
@@ -148,11 +156,12 @@ describe('PO-6 / PO-SEC-6 — list mascarado, sem saúde; e-mail inteiro só por
     for (const email of ['ana.souza@gmail.com', 'legado@gmail.com', 'legado2@gmail.com']) expect(txt).not.toContain(email)
     expect(txt).toContain('ana***@gmail.com')
     expect(txt).not.toMatch(/medicine|protocol|dose|dosage|titration/i)
-    expect(r.body.data.map((i: any) => i.queue_id).sort()).toEqual(['q-leg', 'q-longe', 'q-ok'])
+    expect(r.body.data.map((i: any) => i.queue_id).sort()).toEqual(['q-leg', 'q-longe', 'q-ok', 'q-perdeu'])
     const ok = r.body.data.find((i: any) => i.queue_id === 'q-ok')
     expect(Object.keys(ok).sort()).toEqual([
-      'approvable', 'decided_at', 'decision', 'eligible_at', 'email_masked', 'email_notice_due', 'executed_at',
-      'note', 'notices_sent', 'overdue', 'queue_id', 'reason', 'red', 'reevaluate_at', 'scheduled_at', 'short_id', 'void_reason',
+      'approvable', 'block', 'decided_at', 'decision', 'eligible_at', 'email_deadline', 'email_masked', 'email_notice_due',
+      'executed_at', 'has_reaviso', 'next_milestone', 'note', 'notices_sent', 'overdue', 'queue_id', 'reason', 'red',
+      'reevaluate_at', 'scheduled_at', 'section', 'short_id', 'void_reason',
     ])
     expect(ok.approvable).toBe(true)
     // onda 2: só a conta legado ainda sem marca e fora da fila
@@ -196,7 +205,7 @@ describe('PO-SEC-9 — marco wave2 só no conjunto calculado pelo servidor, 1× 
   })
 
   it('marco D+83 de linha da fila: só quando devido, 1× por marco', async () => {
-    const { supabase, rpcCalls } = cenario()
+    const { supabase, rpcCalls } = cenario({ semAvisos: true })
     const r1 = res()
     await handleMarkNoticePrune({ body: { queue_id: 'q-ok', milestone: 'd60' } }, r1, supabase, ADMIN) // dia 88 ⇒ devido é d83
     expect(r1.statusCode).toBe(409)
@@ -205,6 +214,70 @@ describe('PO-SEC-9 — marco wave2 só no conjunto calculado pelo servidor, 1× 
     await handleMarkNoticePrune({ body: { queue_id: 'q-ok', milestone: 'd83' } }, r2, supabase, ADMIN)
     expect(r2.statusCode).toBe(200)
     expect(rpcCalls).toHaveLength(1)
+  })
+})
+
+describe('FR-014 — sem os 2 avisos não aprova; reaviso único recomeça o prazo em 7 dias', () => {
+  it('list põe cada linha numa seção só, pela próxima ação', async () => {
+    const { supabase } = cenario({ gates: GATE_034, wave2For: [LEG] })
+    const r = res()
+    await handleListPrune({ query: {} }, r, supabase)
+    const por = Object.fromEntries(r.body.data.map((i: any) => [i.queue_id, [i.section, i.block, i.email_notice_due]]))
+    expect(por).toEqual({
+      'q-ok': ['decide', null, null],
+      'q-leg': ['decide', null, null],
+      'q-longe': ['counting', null, null],
+      'q-perdeu': ['blocked', 'missing_notices', 'reaviso'],
+    })
+    expect(r.body.summary.by_section).toMatchObject({ decide: 2, counting: 1, blocked: 1, email: 0 })
+    const perdeu = r.body.data.find((i: any) => i.queue_id === 'q-perdeu')
+    expect(Date.parse(perdeu.email_deadline)).toBeGreaterThan(Date.parse(em(6.9)))
+  })
+
+  it('aviso D+83 ainda devido ⇒ seção email e approve 409', async () => {
+    const { supabase } = cenario({ semAvisos: true })
+    const r = res()
+    await handleApprovePrune({ body: { queue_id: 'q-ok', prefix: 'a9f3e1' } }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(409)
+    expect(r.body.error).toContain('reaviso')
+  })
+
+  it('bloqueada: approve 409 → reaviso marca, prazo = hoje + 7 → approve 200; 2º reaviso 409', async () => {
+    const { supabase, rpcCalls, state } = cenario()
+    const body = { queue_id: 'q-perdeu', prefix: 'e1e1e1' }
+    let r = res()
+    await handleApprovePrune({ body }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(409)
+
+    // reaviso só para linha bloqueada por falta de aviso
+    r = res()
+    await handleMarkNoticePrune({ body: { queue_id: 'q-ok', milestone: 'reaviso' } }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(409)
+    expect(rpcCalls).toHaveLength(0)
+
+    r = res()
+    await handleRevealPrune({ body: { queue_id: 'q-perdeu', milestone: 'reaviso' } }, r, supabase, ADMIN)
+    expect(r.body.data.email).toBe('perdeu@gmail.com')
+
+    r = res()
+    await handleMarkNoticePrune({ body: { queue_id: 'q-perdeu', milestone: 'reaviso' } }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(200)
+    expect(rpcCalls).toEqual([{ fn: 'consent_controller_event', args: { p_user_id: P, p_action: 'notice_sent', p_consent_type: 'health_data' } }])
+    const linha = state.tables.prune_queue.find((q) => q.id === 'q-perdeu')
+    const dias = (Date.parse(linha.eligible_at) - Date.now()) / 86_400_000
+    expect(dias).toBeGreaterThan(6.9)
+    expect(dias).toBeLessThanOrEqual(7)
+    expect(state.tables.prune_queue_audit.at(-1)).toMatchObject({
+      queue_id: 'q-perdeu', action: 'mark_notice', detail: { milestone: 'reaviso', eligible_at: linha.eligible_at },
+    })
+
+    r = res()
+    await handleMarkNoticePrune({ body: { queue_id: 'q-perdeu', milestone: 'reaviso' } }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(409)
+
+    r = res()
+    await handleApprovePrune({ body }, r, supabase, ADMIN)
+    expect(r.statusCode).toBe(200)
   })
 })
 

@@ -52,5 +52,9 @@ describe('usePruneAdminState', () => {
     await act(async () => { ok = await result.current.approve('q1', 'zzzzzz') })
     expect(ok).toBe(false)
     expect(result.current.message).toEqual({ type: 'error', text: 'Confirmação inválida' })
+
+    // smoke 107: a mensagem de uma ação não acompanha a troca de aba
+    act(() => { result.current.setTab('history') })
+    expect(result.current.message).toBeNull()
   })
 })

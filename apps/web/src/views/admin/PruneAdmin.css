@@ -183,3 +183,41 @@
   background: var(--color-bg-subtle, #f3f4f6);
   user-select: all;
 }
+
+/* FR-014 — seções pela próxima ação do admin */
+.prune-admin__counters {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.prune-admin__section {
+  margin-bottom: 1.5rem;
+}
+
+.prune-admin__section h2,
+.prune-admin__section summary {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.prune-admin__section summary {
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.prune-admin__count {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--color-bg-subtle, #f3f4f6);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.prune-admin__block {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--color-error, #ba1a1a);
+}

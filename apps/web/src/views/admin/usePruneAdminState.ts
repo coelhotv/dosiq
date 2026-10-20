@@ -20,7 +20,11 @@ export function prefixMatches(typed: string, userIdShort: string): boolean {
 export function usePruneAdminState() {
   const [tab, setTab] = useState<'pending' | 'history'>('pending')
   const [items, setItems] = useState<any[]>([])
-  const [summary, setSummary] = useState<{ approved_waiting: number; executed_30d: number } | null>(null)
+  const [summary, setSummary] = useState<{
+    approved_waiting: number
+    executed_30d: number
+    by_section?: Record<string, number>
+  } | null>(null)
   const [wave2, setWave2] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +83,7 @@ export function usePruneAdminState() {
     [run]
   )
 
-  const reveal = useCallback(async (key: string, target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2') => {
+  const reveal = useCallback(async (key: string, target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2' | 'reaviso') => {
     setBusy(key)
     setMessage(null)
     try {
@@ -94,11 +98,17 @@ export function usePruneAdminState() {
     }
   }, [])
 
+  // Mensagem de uma ação não sobrevive à troca de aba (smoke 107: "aprovada" ficou no Histórico).
+  const changeTab = useCallback((next: 'pending' | 'history') => {
+    setMessage(null)
+    setTab(next)
+  }, [])
+
   const markNotice = useCallback(
-    (key: string, target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2') =>
+    (key: string, target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2' | 'reaviso') =>
       run(key, () => pruneAdminService.markNotice(target, milestone), 'Aviso marcado como enviado.'),
     [run]
   )
 
-  return { tab, setTab, items, summary, wave2, isLoading, error, busy, message, revealed, reload: () => load(tab), approve, defer, reveal, markNotice }
+  return { tab, setTab: changeTab, items, summary, wave2, isLoading, error, busy, message, revealed, reload: () => load(tab), approve, defer, reveal, markNotice }
 }

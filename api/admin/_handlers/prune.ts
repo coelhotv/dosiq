@@ -5,6 +5,8 @@
 //   S-1  approve só por `queue_id`; o `user_id` é lido da linha. Corpo com `user_id` ⇒ 400.
 //   S-2  o prefixo digitado (≥ 6) é conferido contra o `user_id` da linha ⇒ 422.
 //   S-1  só pending/deferred, só elegível em ≤ 7 dias ⇒ 409.
+//   FR-014 só com os 2 avisos (D+60/D+83) ou o reaviso no rastro ⇒ 409. Quem perdeu os avisos
+//        recebe UM reaviso por e-mail e o prazo passa a ser a marcação + 7 dias.
 //   PO-8 legado só com kill switch ≥ 0.34 ativo nas duas plataformas E e-mail da onda 2 ⇒ 409.
 //   S-3  `list` devolve e-mail MASCARADO; o inteiro sai só por `reveal`, 1 linha, com auditoria.
 //   S-11 marco `wave2` só para conta do conjunto que o servidor calcula; 1× por conta ⇒ 409.
@@ -13,13 +15,17 @@
 
 import { consentCopyBodySchema } from '@dosiq/core/schemas'
 import {
+  addDays,
   alertState,
   isApprovable,
   dueNoticeStage,
   legacyGateOpen,
   maskEmail,
+  pruneSection,
+  nextMilestone,
   APPROVE_PREFIX_MIN,
   ONBOARDING_RULE_START,
+  REAVISO_GRACE_DAYS,
 } from '../../_ops/pruneRules.js'
 
 const LIVE = ['pending', 'approved', 'deferred']
@@ -83,6 +89,36 @@ async function legacyRequirements(supabase, userId: string): Promise<{ gate: boo
   }
 }
 
+/** Linhas da fila que já receberam o reaviso (marco `reaviso` na auditoria, 1× por linha). */
+async function reavisoQueues(supabase, queueIds: string[]): Promise<Set<string>> {
+  if (queueIds.length === 0) return new Set()
+  const { data, error } = await supabase
+    .from('prune_queue_audit')
+    .select('queue_id')
+    .in('queue_id', queueIds)
+    .eq('action', 'mark_notice')
+    .eq('detail->>milestone', 'reaviso')
+  if (error) throw new Error(`auditoria do reaviso: ${error.message}`)
+  return new Set((data ?? []).map((r) => r.queue_id))
+}
+
+/** Kill switch 0.34 ativo nas duas plataformas? Erro de leitura ⇒ false (na dúvida, bloqueia). */
+async function legacyGateIsOpen(supabase): Promise<boolean> {
+  const gates = await supabase.from('app_version_gate').select('platform, min_supported_version, is_active')
+  return gates.error ? false : legacyGateOpen(gates.data)
+}
+
+/** Seção da linha com o rastro lido do banco — a MESMA conta da lista e das travas. */
+async function sectionOf(supabase, row, now: Date) {
+  const [notices, reaviso, gate] = await Promise.all([
+    noticesByUser(supabase, [row.user_id]),
+    reavisoQueues(supabase, [row.id]),
+    row.reason === 'legacy_no_consent' ? legacyGateIsOpen(supabase) : Promise.resolve(true),
+  ])
+  const sent = (notices.get(row.user_id) ?? []).filter((at) => at >= row.scheduled_at)
+  return pruneSection(row, { sentSinceStart: sent.length, hasReaviso: reaviso.has(row.id), legacyGate: gate }, now)
+}
+
 async function loadRow(supabase, queueId: unknown) {
   if (typeof queueId !== 'string' || queueId.length === 0) return { row: null, status: 400, error: 'queue_id obrigatório' }
   const { data, error } = await supabase.from('prune_queue').select(QUEUE_COLUMNS).eq('id', queueId).maybeSingle()
@@ -107,11 +143,17 @@ export async function handleListPrune(req, res, supabase) {
 
     const visible = tab === 'pending' ? rows ?? [] : (rows ?? []).filter((r) => r.executed_at || r.decision === 'void')
     const ids = visible.map((r) => r.user_id)
-    const [emails, notices] = await Promise.all([emailsFor(supabase, ids), noticesByUser(supabase, ids)])
+    const [emails, notices, reaviso, gate] = await Promise.all([
+      emailsFor(supabase, ids),
+      noticesByUser(supabase, ids),
+      reavisoQueues(supabase, visible.map((r) => r.id)),
+      visible.some((r) => r.reason === 'legacy_no_consent') ? legacyGateIsOpen(supabase) : Promise.resolve(true),
+    ])
 
     const items = visible.map((r) => {
       const sent = (notices.get(r.user_id) ?? []).filter((at) => at >= r.scheduled_at)
-      const stage = dueNoticeStage(r.scheduled_at, now)
+      const hasReaviso = reaviso.has(r.id)
+      const where = pruneSection(r, { sentSinceStart: sent.length, hasReaviso, legacyGate: gate }, now)
       return {
         queue_id: r.id,
         short_id: r.user_id.slice(0, 8),
@@ -126,8 +168,14 @@ export async function handleListPrune(req, res, supabase) {
         executed_at: r.executed_at ?? null,
         void_reason: r.void_reason ?? null,
         notices_sent: sent,
-        email_notice_due: stage && sent.length < stage.expected ? stage.stage : null,
-        approvable: isApprovable(r, now),
+        has_reaviso: hasReaviso,
+        section: where.section,
+        block: where.block,
+        email_notice_due: tab === 'pending' ? where.notice_due : null,
+        // Data que vai no texto do e-mail: no reaviso, o prazo novo (hoje + 7); nos demais, o atual.
+        email_deadline: where.notice_due === 'reaviso' ? addDays(now.toISOString(), REAVISO_GRACE_DAYS) : r.eligible_at,
+        approvable: where.section === 'decide',
+        next_milestone: where.section === 'counting' ? nextMilestone(r, now) : null,
         ...alertState(r, now),
       }
     })
@@ -146,6 +194,9 @@ export async function handleListPrune(req, res, supabase) {
       data: items,
       summary: {
         approved_waiting: items.filter((i) => i.decision === 'approved').length,
+        by_section: Object.fromEntries(
+          ['email', 'decide', 'blocked', 'approved', 'counting'].map((k) => [k, items.filter((i) => i.section === k).length]),
+        ),
         executed_30d: executed30.count ?? 0,
       },
       wave2: wave2.map((w) => ({
@@ -178,6 +229,10 @@ export async function handleApprovePrune(req, res, supabase, adminUserId: string
     const prefix = typeof body.prefix === 'string' ? body.prefix.trim().toLowerCase() : ''
     if (prefix.length < APPROVE_PREFIX_MIN || !row.user_id.toLowerCase().startsWith(prefix)) {
       return res.status(422).json({ error: `Confirmação inválida: digite os ${APPROVE_PREFIX_MIN}+ primeiros caracteres do id` })
+    }
+    const where = await sectionOf(supabase, row, now)
+    if (where.block === 'missing_notices' || where.section === 'email') {
+      return res.status(409).json({ error: 'Titular sem os 2 avisos da política: envie o reaviso antes (FR-014)' })
     }
     if (row.reason === 'legacy_no_consent') {
       const req2 = await legacyRequirements(supabase, row.user_id)
@@ -253,7 +308,7 @@ async function resolveTarget(supabase, body, milestone: string) {
     }
     return { userId: body.user_id as string, queueId: null, row: null }
   }
-  if (milestone !== 'd60' && milestone !== 'd83') return { error: 'milestone inválido', status: 400 }
+  if (milestone !== 'd60' && milestone !== 'd83' && milestone !== 'reaviso') return { error: 'milestone inválido', status: 400 }
   const { row, status, error } = await loadRow(supabase, body.queue_id)
   if (!row) return { error, status }
   if (!LIVE.includes(row.decision) || row.executed_at) return { error: 'Linha não está viva', status: 409 }
@@ -286,7 +341,14 @@ export async function handleMarkNoticePrune(req, res, supabase, adminUserId: str
     const target = await resolveTarget(supabase, body, body.milestone)
     if ('error' in target) return res.status(target.status).json({ error: target.error })
 
-    if (target.row) {
+    const now = nowDate()
+    let newEligibleAt: string | null = null
+    if (target.row && body.milestone === 'reaviso') {
+      // Reaviso: só para linha bloqueada por falta de aviso, e 1× por linha (FR-014).
+      const where = await sectionOf(supabase, target.row, now)
+      if (where.block !== 'missing_notices') return res.status(409).json({ error: 'Reaviso não devido para esta linha' })
+      newEligibleAt = addDays(now.toISOString(), REAVISO_GRACE_DAYS)
+    } else if (target.row) {
       // D+60/D+83: só se o marco é o devido hoje e ainda não foi marcado (1× por marco).
       const stage = dueNoticeStage(target.row.scheduled_at, nowDate())
       const sent = (await noticesByUser(supabase, [target.userId])).get(target.userId) ?? []
@@ -300,10 +362,18 @@ export async function handleMarkNoticePrune(req, res, supabase, adminUserId: str
       p_user_id: target.userId, p_action: 'notice_sent', p_consent_type: 'health_data',
     })
     if (error) return res.status(500).json({ error: 'Falha ao registrar o aviso na trilha' })
+    if (newEligibleAt) {
+      // O prazo recomeça: aprovar continua possível já (janela de 7 dias), mas o executor só
+      // apaga a partir de `eligible_at` — o titular tem os 7 dias prometidos para responder.
+      const { error: upErr } = await supabase
+        .from('prune_queue').update({ eligible_at: newEligibleAt }).eq('id', target.queueId).is('executed_at', null)
+      if (upErr) return res.status(500).json({ error: 'Aviso registrado, mas o prazo não foi atualizado' })
+    }
     await audit(supabase, {
-      queue_id: target.queueId, user_id: target.userId, action: 'mark_notice', detail: { milestone: body.milestone },
+      queue_id: target.queueId, user_id: target.userId, action: 'mark_notice',
+      detail: newEligibleAt ? { milestone: body.milestone, eligible_at: newEligibleAt } : { milestone: body.milestone },
     }, adminUserId)
-    return res.status(200).json({ data: { milestone: body.milestone } })
+    return res.status(200).json({ data: { milestone: body.milestone, eligible_at: newEligibleAt } })
   } catch (err) {
     console.error('[Prune API] mark_notice:', err instanceof Error ? err.message : 'erro')
     return res.status(500).json({ error: 'Internal server error' })

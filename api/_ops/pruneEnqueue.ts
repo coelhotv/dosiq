@@ -28,6 +28,8 @@ import {
   alertState,
   dueNoticeStage,
   daysBetween,
+  isApprovable,
+  noticesComplete,
   ONBOARDING_GRACE_DAYS,
   ONBOARDING_RULE_START,
   PRUNE_CLOCK_DAYS,
@@ -247,6 +249,29 @@ async function sendNotices(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   }
 }
 
+/**
+ * Etapa 3b — linhas no prazo SEM os 2 avisos (cron caiu na janela, e-mail não marcado): o admin
+ * precisa mandar o reaviso (FR-014). Entram na contagem de e-mails a enviar do alerta.
+ */
+async function countBlocked(ctx: Ctx, rows: LiveRow[]): Promise<void> {
+  const { supabase, now, result } = ctx;
+  const candidates = rows.filter((r) => r.decision !== 'approved' && dueNoticeStage(r.scheduled_at, now) === null && isApprovable(r, now));
+  if (candidates.length === 0) return;
+  const marks = await supabase
+    .from('prune_queue_audit')
+    .select('queue_id')
+    .in('queue_id', candidates.map((r) => r.id))
+    .eq('action', 'mark_notice')
+    .eq('detail->>milestone', 'reaviso');
+  if (marks.error) throw new Error(`auditoria do reaviso ilegível: ${marks.error.message}`);
+  const withReaviso = new Set(((marks.data ?? []) as Array<{ queue_id: string }>).map((m) => m.queue_id));
+  for (const row of candidates) {
+    if (withReaviso.has(row.id)) continue;
+    const sent = await countNoticesSince(supabase, row.user_id, row.scheduled_at);
+    if (sent !== null && !noticesComplete(sent, false)) result.emailsDue += 1;
+  }
+}
+
 /** Etapa 4 — alerta ao admin por push (só contagens, S-7); falha ⇒ Sentry (AS-2.1). */
 async function alertAdmin(ctx: Ctx, rows: LiveRow[]): Promise<void> {
   const { dispatcher, now, correlationId, adminUserId, capture, result } = ctx;
@@ -299,6 +324,7 @@ export async function runPruneEnqueue(deps: PruneEnqueueDeps): Promise<PruneEnqu
   await openNewRows(ctx);
   const live = await reevaluate(ctx);
   await sendNotices(ctx, live);
+  await countBlocked(ctx, live);
   await alertAdmin(ctx, live);
 
   logger.info('prune_enqueue concluído', { correlationId: ctx.correlationId, ...result });

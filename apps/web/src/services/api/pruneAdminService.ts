@@ -42,10 +42,10 @@ export const pruneAdminService = {
     return post('defer', { queue_id: queueId, note, reevaluate_at: reevaluateAt })
   },
   /** `milestone` vai para a auditoria: por que o e-mail foi revelado. */
-  reveal(target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2') {
+  reveal(target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2' | 'reaviso') {
     return post('reveal', { queue_id: target.queueId, user_id: target.userId, milestone })
   },
-  markNotice(target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2') {
+  markNotice(target: { queueId?: string; userId?: string }, milestone: 'd60' | 'd83' | 'wave2' | 'reaviso') {
     return post('mark_notice', { queue_id: target.queueId, user_id: target.userId, milestone })
   },
   getTexts() {

@@ -15,7 +15,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   autorização, as contas antigas que nunca autorizaram (depois de um e-mail sem resposta em 7 dias) e quem
   criou a conta há 30 dias sem autorizar — e envia os avisos de 60 e 83 dias. Nada é apagado sem que o
   administrador aprove aquela conta; na hora de apagar, o sistema confere de novo e cancela se a pessoa
-  autorizou ou excluiu a conta por conta própria. Pendência vencida gera aviso diário no celular do
+  autorizou ou excluiu a conta por conta própria. A aprovação só é aceita depois dos dois avisos que a
+  política promete; se a pessoa ficou sem eles, o administrador manda um último aviso por e-mail e o prazo
+  passa a ser 7 dias depois dele. Pendência vencida gera aviso diário no celular do
   administrador. Os jobs operacionais saem da rotina de notificações para um endpoint próprio. Toda
   exclusão de conta — pedida pela pessoa ou pela fila — continua apagando na hora os dados de saúde, mas
   guarda por 6 meses, numa área do banco que nenhum usuário lê, o e-mail ligado à conta, para que o
@@ -23,7 +25,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Web/PWA** (`Added`, `minor` 4.29.1 → 4.30.0). Tela de administração "Exclusões pendentes": fila sem
   nenhum dado de saúde, e-mail mascarado (revelado uma linha por vez, com registro), confirmação digitando
   o início do identificador, adiar com nota, marcar aviso por e-mail enviado, histórico e edição do texto
-  do aviso mostrado no app.
+  do aviso mostrado no app. A fila é organizada pelo que o administrador precisa fazer em cada conta
+  (enviar e-mail, decidir, bloqueada, aprovadas, em contagem), com contadores no topo.
 - **Mobile** (`Changed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade
   nova). Quem nunca autorizou o uso de dados de saúde passa a ver, na tela que pede a autorização, a data
   em que a conta será excluída se não autorizar, e a opção de excluir a conta na hora. O texto vem do

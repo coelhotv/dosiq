@@ -76,6 +76,60 @@ export function dueNoticeStage(scheduledAt: string, now: Date): { stage: 'd60' |
   return days >= 83 ? { stage: 'd83', expected: 2 } : { stage: 'd60', expected: 1 };
 }
 
+/** A política promete 2 avisos (D+60 e D+83) antes de qualquer exclusão (FR-014). */
+export const REQUIRED_NOTICES = 2;
+/**
+ * Quem perdeu os avisos recebe UM reaviso por e-mail; o novo prazo é a marcação + 7 dias
+ * (decisão do PO 2026-10-20, mesma folga da onda 2). Sem isso a linha fica bloqueada para sempre.
+ */
+export const REAVISO_GRACE_DAYS = 7;
+
+/** O titular foi avisado como a política promete? 2 avisos desde o início, ou o reaviso. */
+export function noticesComplete(sentSinceStart: number, hasReaviso: boolean): boolean {
+  return hasReaviso || sentSinceStart >= REQUIRED_NOTICES;
+}
+
+export type PruneSection = 'email' | 'decide' | 'blocked' | 'approved' | 'counting';
+export type PruneBlock = 'missing_notices' | 'legacy_gate';
+export type PruneNoticeDue = 'd60' | 'd83' | 'reaviso';
+
+/**
+ * Em que seção da tela a linha mora HOJE — uma só, pela próxima ação do admin (FR-014):
+ *   approved  aprovada, aguarda o executor;
+ *   email     aviso D+60/D+83 devido e ainda não enviado (conta sem push);
+ *   blocked   no prazo, mas sem os 2 avisos (⇒ reaviso) ou legado sem kill switch 0.34;
+ *   decide    no prazo e com tudo em ordem: apagar ou adiar;
+ *   counting  nada a fazer hoje.
+ * O handler do admin usa ESTA função tanto para a lista quanto para recusar approve/reaviso.
+ */
+export function pruneSection(
+  row: { reason: string; scheduled_at: string; decision: string; eligible_at: string; executed_at?: string | null },
+  ctx: { sentSinceStart: number; hasReaviso: boolean; legacyGate: boolean },
+  now: Date,
+): { section: PruneSection; notice_due: PruneNoticeDue | null; block: PruneBlock | null } {
+  if (row.decision === 'approved') return { section: 'approved', notice_due: null, block: null };
+  const stage = dueNoticeStage(row.scheduled_at, now);
+  if (stage && !ctx.hasReaviso && ctx.sentSinceStart < stage.expected) {
+    return { section: 'email', notice_due: stage.stage, block: null };
+  }
+  if (!isApprovable(row, now)) return { section: 'counting', notice_due: null, block: null };
+  if (!noticesComplete(ctx.sentSinceStart, ctx.hasReaviso)) {
+    return { section: 'blocked', notice_due: 'reaviso', block: 'missing_notices' };
+  }
+  if (row.reason === 'legacy_no_consent' && !ctx.legacyGate) {
+    return { section: 'blocked', notice_due: null, block: 'legacy_gate' };
+  }
+  return { section: 'decide', notice_due: null, block: null };
+}
+
+/** Próximo marco de uma linha "em contagem", para a tela dizer quando ela volta a pedir ação. */
+export function nextMilestone(row: { scheduled_at: string; eligible_at: string }, now: Date): { label: 'D+60' | 'D+83' | 'prazo'; at: string } {
+  const days = daysBetween(row.scheduled_at, now);
+  if (days < 60) return { label: 'D+60', at: addDays(row.scheduled_at, 60) };
+  if (days < 83) return { label: 'D+83', at: addDays(row.scheduled_at, 83) };
+  return { label: 'prazo', at: row.eligible_at };
+}
+
 /**
  * Kill switch de versão mínima ativo e ≥ 0.34 nas DUAS plataformas (INV-6). Linha ausente,
  * inativa, versão ilegível ⇒ false: na dúvida, o legado não é aprovado nem apagado.

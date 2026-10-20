@@ -197,6 +197,25 @@ describe('runPruneEnqueue — alerta ao admin (PO-4)', () => {
     }
   })
 
+  it('FR-014: no prazo sem os 2 avisos conta como e-mail a enviar (reaviso); com reaviso marcado, não', async () => {
+    const semAvisos = () => {
+      const f = cenario()
+      f.state.tables.consent_log.length = 0
+      return f
+    }
+    let f = semAvisos()
+    let { dispatcher, enviados } = dispatcherOk()
+    let r = await runPruneEnqueue({ supabase: f.supabase, dispatcher, adminUserId: ADMIN, now: em(ELEG, 1), env: {} })
+    expect(r.emailsDue).toBe(1)
+    expect(enviados.find((e) => e.kind === 'prune_admin_alert').data.emailsDue).toBe(1)
+
+    f = semAvisos()
+    f.state.tables.prune_queue_audit.push({ queue_id: 'q', user_id: 'U', action: 'mark_notice', actor: `admin:${ADMIN}`, detail: { milestone: 'reaviso' }, created_at: ELEG })
+    ;({ dispatcher, enviados } = dispatcherOk())
+    r = await runPruneEnqueue({ supabase: f.supabase, dispatcher, adminUserId: ADMIN, now: em(ELEG, 1), env: {} })
+    expect(r.emailsDue).toBe(0)
+  })
+
   it('falha no envio do alerta ⇒ Sentry, nunca silêncio (AS-2.1)', async () => {
     const { supabase } = cenario()
     const capture = vi.fn()

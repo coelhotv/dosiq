@@ -4,6 +4,8 @@
 // 🔴 INV-4: nenhum dado de saúde na tela — só id curto, e-mail mascarado, motivo, datas e avisos.
 // 🔴 F-4: não existe "aprovar todas". Apagar exige digitar o início do id; o SERVIDOR confere (S-2).
 // 🔴 S-3: e-mail inteiro só por "Copiar e-mail", uma linha por vez, com registro de quem revelou.
+// FR-014: a lista é organizada pela PRÓXIMA AÇÃO do admin (seção calculada no servidor), não pelo
+// estado — cada conta aparece numa seção só, com um botão principal.
 
 import { useState } from 'react'
 import { ArrowLeft, AlertTriangle, Mail } from 'lucide-react'
@@ -23,7 +25,24 @@ const REASON_LABEL = {
 const DECISION_LABEL = { pending: 'Pendente', approved: 'Aprovada', deferred: 'Adiada', void: 'Cancelada' }
 const VOID_LABEL = { granted: 'autorizou', self_deleted: 'excluída pelo titular', unknown: 'não verificável' }
 
+const NOTICE_LABEL = { d60: 'Aviso D+60 por e-mail', d83: 'Aviso D+83 por e-mail', reaviso: 'Reaviso por e-mail (titular perdeu os avisos)' }
+const BLOCK_LABEL = {
+  missing_notices: 'Sem os 2 avisos da política: envie o reaviso. O prazo passa a ser 7 dias após a marcação.',
+  legacy_gate: 'Legado: aguarda o kill switch 0.34 ativo nas duas plataformas.',
+}
+const SECTIONS = [
+  { key: 'email', title: '📧 Enviar e-mail hoje', hint: 'Copie o e-mail, envie pelo Gmail com o texto pronto e marque como enviado.' },
+  { key: 'decide', title: '✅ Pronto para decidir', hint: 'No prazo e com os avisos em dia: apagar ou adiar.' },
+  { key: 'blocked', title: '⛔ Bloqueado', hint: 'Não pode ser apagado ainda. A linha diz o que falta.' },
+  { key: 'approved', title: '⏳ Aprovadas — executam às 10:00', hint: 'Nada a fazer. Se o titular autorizar antes, a linha é cancelada sozinha.' },
+]
+
 const fmt = (iso?: string | null) => (iso ? parseISO(iso).toLocaleDateString('pt-BR') : '—')
+
+function noticeSummary(item) {
+  const dates = item.notices_sent.length === 0 ? '' : ` (${item.notices_sent.map(fmt).join(' · ')})`
+  return `Avisos: ${item.notices_sent.length} de 2${dates}${item.has_reaviso ? ' · reaviso enviado' : ''}`
+}
 
 function copyToClipboard(text: string) {
   navigator.clipboard?.writeText(text).catch(() => {})
@@ -51,13 +70,17 @@ function PruneRow({ item, state }) {
         {REASON_LABEL[item.reason]} · relógio desde {fmt(item.scheduled_at)} · {DECISION_LABEL[item.decision]}
         {item.decision === 'deferred' && ` até ${fmt(item.reevaluate_at)} (${item.note})`}
       </p>
-      <p className="prune-admin__meta">
-        Avisos: {item.notices_sent.length === 0 ? 'nenhum' : item.notices_sent.map(fmt).join(' · ')}
-      </p>
+      <p className="prune-admin__meta">{noticeSummary(item)}</p>
+      {item.block && <p className="prune-admin__block">{BLOCK_LABEL[item.block]}</p>}
+      {item.next_milestone && (
+        <p className="prune-admin__meta">
+          Próximo marco: {item.next_milestone.label} em {fmt(item.next_milestone.at)}
+        </p>
+      )}
 
       {item.email_notice_due && (
         <div className="prune-admin__email-due">
-          <Mail size={14} /> Aviso {item.email_notice_due === 'd60' ? 'D+60' : 'D+83'} por e-mail devido
+          <Mail size={14} /> {NOTICE_LABEL[item.email_notice_due]}
           <Button size="sm" variant="secondary" disabled={busy}
             onClick={async () => { const e = await state.reveal(item.queue_id, target, item.email_notice_due); if (e) copyToClipboard(e) }}>
             Copiar e-mail
@@ -69,7 +92,7 @@ function PruneRow({ item, state }) {
           <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail">
             <strong>{PRUNE_EMAIL_NOTICE_COPY.subject}</strong>
             {'\n'}
-            {PRUNE_EMAIL_NOTICE_COPY.body.replace('{data}', fmt(item.eligible_at))}
+            {PRUNE_EMAIL_NOTICE_COPY.body.replace('{data}', fmt(item.email_deadline))}
           </p>
         </div>
       )}
@@ -118,7 +141,7 @@ function Wave2List({ state }) {
   if (state.wave2.length === 0) return null
   return (
     <section className="prune-admin__wave2">
-      <h2>Onda 2 — e-mail de reengajamento</h2>
+      <h2>📨 Onda 2 — legado <span className="prune-admin__count">{state.wave2.length}</span></h2>
       <p className="prune-admin__hint">
         Contas antigas sem autorização. Envie o e-mail e marque: a conta entra na fila 7 dias depois, sem retorno.
       </p>
@@ -141,6 +164,48 @@ function Wave2List({ state }) {
       })}
     </section>
   )
+}
+
+function PendingSections({ state }) {
+  const { items } = state
+  const counting = items.filter((i) => i.section === 'counting')
+  if (items.length === 0) {
+    return <p className="prune-admin__empty">Nenhuma conta na fila. Os avisos e alertas continuam rodando todo dia.</p>
+  }
+  return (
+    <>
+      {SECTIONS.map(({ key, title, hint }) => {
+        const rows = items.filter((i) => i.section === key)
+        if (rows.length === 0) return null
+        return (
+          <section key={key} className={`prune-admin__section prune-admin__section--${key}`}>
+            <h2>{title} <span className="prune-admin__count">{rows.length}</span></h2>
+            <p className="prune-admin__hint">{hint}</p>
+            {rows.map((item) => <PruneRow key={item.queue_id} item={item} state={state} />)}
+          </section>
+        )
+      })}
+      {counting.length > 0 && (
+        <details className="prune-admin__section prune-admin__section--counting">
+          <summary>🕒 Em contagem <span className="prune-admin__count">{counting.length}</span> — nada a fazer hoje</summary>
+          {counting.map((item) => <PruneRow key={item.queue_id} item={item} state={state} />)}
+        </details>
+      )}
+    </>
+  )
+}
+
+function SectionCounters({ summary, wave2Count }) {
+  const by = summary?.by_section ?? {}
+  const parts = [
+    by.email ? `${by.email} e-mail(s)` : null,
+    by.decide ? `${by.decide} para decidir` : null,
+    by.blocked ? `${by.blocked} bloqueada(s)` : null,
+    by.approved ? `${by.approved} aprovada(s)` : null,
+    wave2Count ? `${wave2Count} na onda 2` : null,
+  ].filter(Boolean)
+  if (parts.length === 0) return null
+  return <p className="prune-admin__counters">{parts.join(' · ')}</p>
 }
 
 function HistoryRow({ item }) {
@@ -191,11 +256,8 @@ export default function PruneAdmin({ onBack }) {
 
       {!isLoading && !error && tab === 'pending' && (
         <>
-          {items.length === 0 ? (
-            <p className="prune-admin__empty">Nenhuma conta na fila. Os avisos e alertas continuam rodando todo dia.</p>
-          ) : (
-            items.map((item) => <PruneRow key={item.queue_id} item={item} state={state} />)
-          )}
+          <SectionCounters summary={summary} wave2Count={state.wave2.length} />
+          <PendingSections state={state} />
           {summary && (
             <p className="prune-admin__summary">
               Aprovadas aguardando execução (próx. 10:00): {summary.approved_waiting} · Executadas (30d): {summary.executed_30d}
