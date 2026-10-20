@@ -33,21 +33,22 @@ describe('runAccessLogHealth (spec 106 FR-004)', () => {
   it('problema reportado: UM evento com as checagens e o detalhe', async () => {
     const rows = [
       { check_name: 'capture_stalled', detail: 'sessoes_renovadas_24h=5; ultima_linha=nenhuma' },
-      { check_name: 'trigger_missing', detail: 'trg_access_log_capture não existe em auth.sessions' },
+      { check_name: 'pre_request_missing', detail: 'pgrst.db_pre_request do authenticator não aponta para access_hook.capture_access' },
+      { check_name: 'writer_secret_missing', detail: 'segredo ACCESS_LOG_WRITER_DSN_PASSWORD ausente ou vazio no Vault' },
     ]
     await runAccessLogHealth({ supabase: fakeSupabase({ data: rows, error: null }), logger, correlationId: 'c2' })
     expect(captureServerEvent).toHaveBeenCalledTimes(1)
     const [message, context] = vi.mocked(captureServerEvent).mock.calls[0]
     expect(message).toMatch(/Marco Civil/)
     expect(context).toMatchObject({ level: 'error', correlationId: 'c2', job: 'access_log_health' })
-    expect(context?.extras).toEqual({ count: 2, items: rows })
+    expect(context?.extras).toEqual({ count: 3, items: rows })
   })
 
   it('🔴 PO-SEC-2: o evento nunca carrega ip nem user_id, mesmo se a RPC devolver campo extra', async () => {
     const rows = [
       {
-        check_name: 'capture_errors',
-        detail: 'erros_24h=1; ultimo=2026-10-20 05:00:00+00',
+        check_name: 'purge_failed',
+        detail: 'falhas_48h=1',
         ip: '203.0.113.7',
         user_id: '58ff7850-8d96-4db5-9051-0908a115611c',
       },
