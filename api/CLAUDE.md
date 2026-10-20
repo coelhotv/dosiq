@@ -198,6 +198,7 @@ O cron principal está em `api/notify.ts`, acionado de forma segura por autentic
 
 Schedule (fuso horário: America/Sao_Paulo):
 - A cada minuto: dose reminders (envio de lembretes imediatos)
+- 05:00 diário: apuração de entrega crítica (082) + saúde do registro de acesso Marco Civil (106)
 - 08:00 diário: titration alerts (atualizações de titulação)
 - 09:00 diário: stock alerts + DLQ digest (alertas de estoque baixo e sumário de erros ao admin)
 - 23:00 diário: daily digest (resumo geral do dia)

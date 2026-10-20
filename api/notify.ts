@@ -39,6 +39,7 @@ import {
   CRITICAL_DELIVERY_AUDIT_MONITOR,
 } from '../server/observability/sentry.js';
 import { runCriticalDeliveryAudit } from '../server/observability/criticalDeliveryAudit.js';
+import { runAccessLogHealth } from '../server/observability/accessLogHealth.js';
 
 const logger = createLogger('CronNotify');
 
@@ -476,6 +477,17 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
           semEntrega: report.criticalNoDelivery.total,
           semCanal: report.noChannelPatients.total,
         });
+      })
+    );
+
+    // Spec 106 FR-004 — saúde da guarda dos registros de acesso (Marco Civil art. 15). Monitoramento,
+    // não fluxo operacional: runJob próprio, fora do monitor do audit crítico (a falha de um não
+    // mascara o outro). Toda a regra mora em `public.access_log_health()`.
+    await runJob('access_log_health', 'access_log_health', (context) =>
+      runAccessLogHealth({
+        supabase,
+        logger,
+        correlationId: context?.correlationId || correlationId,
       })
     );
   }
