@@ -221,3 +221,18 @@
   font-size: 0.875rem;
   color: var(--color-error, #ba1a1a);
 }
+
+.prune-admin__email-preview {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
+.prune-admin__email-preview summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.prune-admin__wave2-row .prune-admin__email-due {
+  flex-basis: 100%;
+  margin-top: 0.25rem;
+}

@@ -82,13 +82,29 @@ sozinha.
 5. Linha aprovada executa no ciclo das 10:00 a partir do prazo. Se o titular autorizou ou excluiu a
    conta antes, ela vira `cancelada` no Histórico, sem apagar nada.
 
-Texto dos avisos por e-mail (sem nenhum dado de saúde). A tela mostra este texto pronto, já com a
-data (no reaviso, o prazo novo: hoje + 7 dias), em cada linha com aviso devido — fonte única: `PRUNE_EMAIL_NOTICE_COPY` no `@dosiq/core`:
+### E-mails (FR-015)
 
-> **Assunto:** Sua conta no dosiq precisa de uma ação
-> Você ainda não autorizou o uso de dados no dosiq. Sem essa autorização, sua conta e os dados dela
-> serão excluídos em **{data}**. Para manter a conta, abra o app (atualizado pela loja) e toque em
-> **Autorizar e continuar**. Se preferir, você pode excluir a conta agora pelo próprio app.
+**Remetente:** sempre `privacidade@dosiq.app` (domínio com SPF/DKIM/DMARC). Nunca de um Gmail pessoal:
+é o que mais se parece com phishing.
+
+**Como enviar:** na linha (ou na onda 2), **Copiar e-mail** → destinatário; **Copiar assunto** →
+assunto; **Copiar mensagem formatada** → colar no corpo do Gmail (vai HTML com a identidade do dosiq;
+num campo de texto puro, vira texto). Conferir a data na prévia ("Assunto: …" abre o texto) → enviar →
+**Marcar enviado**.
+
+Fonte única: `buildPruneEmail` em `packages/core/src/utils/pruneEmail.ts`. A tela escolhe a variante
+sozinha:
+
+| Variante | Quando | Gancho |
+|---|---|---|
+| `revoked` | D+60/D+83 de quem retirou a autorização | "Você retirou a autorização… exclusão em {prazo}" |
+| `never_consented` | onda 2 do legado; D+60/D+83 de legado/onboarding | "Você ainda não autorizou… autorize até {prazo}" |
+| `reaviso` | linha bloqueada sem os 2 avisos | "Último aviso: exclusão em {prazo}" (hoje + 7 dias) |
+
+Todas trazem, com o endereço visível: App Store, Google Play, `dosiq.app`, Política de Privacidade e
+Termos de Uso; "responda este e-mail" como contato; a frase "o dosiq nunca pede senha…"; e o rodapé com
+o controlador (razão social e CNPJ). Nenhuma traz dado de saúde. Na onda 2 o prazo é hoje + 97 dias
+(entra na fila 7 dias após a marcação, apaga 90 dias depois).
 
 ## 4. Ondas do legado (36 contas sem consentimento, FR-011)
 

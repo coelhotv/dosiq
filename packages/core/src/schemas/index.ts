@@ -223,7 +223,6 @@ export {
   CONSENT_COPY_DATE_PLACEHOLDER,
   consentCopyBodySchema,
   NEVER_CONSENTED_DEADLINE_COPY,
-  PRUNE_EMAIL_NOTICE_COPY,
   renderDeadlineCopy,
 } from './consentSchema'
 export type {

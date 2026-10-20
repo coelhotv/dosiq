@@ -26,7 +26,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   nenhum dado de saúde, e-mail mascarado (revelado uma linha por vez, com registro), confirmação digitando
   o início do identificador, adiar com nota, marcar aviso por e-mail enviado, histórico e edição do texto
   do aviso mostrado no app. A fila é organizada pelo que o administrador precisa fazer em cada conta
-  (enviar e-mail, decidir, bloqueada, aprovadas, em contagem), com contadores no topo.
+  (enviar e-mail, decidir, bloqueada, aprovadas, em contagem), com contadores no topo Os avisos por e-mail
+  saem prontos para copiar, com a identidade do dosiq, a variante certa para cada situação (retirou a
+  autorização, nunca autorizou, último aviso), links das lojas, da versão web, da Política de Privacidade
+  e dos Termos de Uso, e a identificação da empresa.
 - **Mobile** (`Changed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — funcionalidade
   nova). Quem nunca autorizou o uso de dados de saúde passa a ver, na tela que pede a autorização, a data
   em que a conta será excluída se não autorizar, e a opção de excluir a conta na hora. O texto vem do

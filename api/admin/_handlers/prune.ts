@@ -25,7 +25,9 @@ import {
   nextMilestone,
   APPROVE_PREFIX_MIN,
   ONBOARDING_RULE_START,
+  PRUNE_CLOCK_DAYS,
   REAVISO_GRACE_DAYS,
+  WAVE2_GRACE_DAYS,
 } from '../../_ops/pruneRules.js'
 
 const LIVE = ['pending', 'approved', 'deferred']
@@ -204,6 +206,8 @@ export async function handleListPrune(req, res, supabase) {
         short_id: w.user_id.slice(0, 8),
         email_masked: maskEmail(wave2Emails.get(w.user_id)),
         created_at: w.created_at,
+        // Prazo que vai no e-mail da onda 2: entra na fila 7 d após a marcação, apaga 90 d depois.
+        email_deadline: addDays(now.toISOString(), WAVE2_GRACE_DAYS + PRUNE_CLOCK_DAYS),
       })),
     })
   } catch (err) {

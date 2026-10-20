@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { ArrowLeft, AlertTriangle, Mail } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
-import { PRUNE_EMAIL_NOTICE_COPY } from '@dosiq/core'
+import { buildPruneEmail, pruneEmailVariant } from '@dosiq/core'
 import Loading from '@shared/components/ui/Loading'
 import Button from '@shared/components/ui/Button'
 import { usePruneAdminState, prefixMatches } from './usePruneAdminState'
@@ -48,6 +48,39 @@ function copyToClipboard(text: string) {
   navigator.clipboard?.writeText(text).catch(() => {})
 }
 
+/**
+ * Copia a mensagem como HTML + texto: colada no Gmail, mantém a formatação; num campo de texto puro,
+ * vira o texto. Sem ClipboardItem (navegador antigo) ⇒ só o texto.
+ */
+function copyRichToClipboard(htmlBody: string, plain: string) {
+  const Item = (globalThis as any).ClipboardItem
+  if (!Item || !navigator.clipboard?.write) return copyToClipboard(plain)
+  navigator.clipboard
+    .write([new Item({
+      'text/html': new Blob([htmlBody], { type: 'text/html' }),
+      'text/plain': new Blob([plain], { type: 'text/plain' }),
+    })])
+    .catch(() => copyToClipboard(plain))
+}
+
+/** Bloco do e-mail a enviar: assunto, prévia e as 3 cópias (endereço, assunto, mensagem formatada). */
+function EmailNotice({ label, variant, deadline, busy, onRevealEmail, onMark }) {
+  const email = buildPruneEmail(variant, fmt(deadline))
+  return (
+    <div className="prune-admin__email-due">
+      <Mail size={14} /> {label}
+      <Button size="sm" variant="secondary" disabled={busy} onClick={onRevealEmail}>Copiar e-mail</Button>
+      <Button size="sm" variant="secondary" onClick={() => copyToClipboard(email.subject)}>Copiar assunto</Button>
+      <Button size="sm" variant="secondary" onClick={() => copyRichToClipboard(email.html, email.text)}>Copiar mensagem formatada</Button>
+      <Button size="sm" variant="secondary" disabled={busy} onClick={onMark}>Marcar enviado</Button>
+      <details className="prune-admin__email-preview">
+        <summary>Assunto: {email.subject}</summary>
+        <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail">{email.text}</p>
+      </details>
+    </div>
+  )
+}
+
 function PruneRow({ item, state }) {
   const [mode, setMode] = useState<'idle' | 'approve' | 'defer'>('idle')
   const [prefix, setPrefix] = useState('')
@@ -79,22 +112,14 @@ function PruneRow({ item, state }) {
       )}
 
       {item.email_notice_due && (
-        <div className="prune-admin__email-due">
-          <Mail size={14} /> {NOTICE_LABEL[item.email_notice_due]}
-          <Button size="sm" variant="secondary" disabled={busy}
-            onClick={async () => { const e = await state.reveal(item.queue_id, target, item.email_notice_due); if (e) copyToClipboard(e) }}>
-            Copiar e-mail
-          </Button>
-          <Button size="sm" variant="secondary" disabled={busy}
-            onClick={() => state.markNotice(item.queue_id, target, item.email_notice_due)}>
-            Marcar enviado
-          </Button>
-          <p className="prune-admin__email-text" aria-label="Texto do aviso por e-mail">
-            <strong>{PRUNE_EMAIL_NOTICE_COPY.subject}</strong>
-            {'\n'}
-            {PRUNE_EMAIL_NOTICE_COPY.body.replace('{data}', fmt(item.email_deadline))}
-          </p>
-        </div>
+        <EmailNotice
+          label={NOTICE_LABEL[item.email_notice_due]}
+          variant={pruneEmailVariant(item.reason, item.email_notice_due)}
+          deadline={item.email_deadline}
+          busy={busy}
+          onRevealEmail={async () => { const e = await state.reveal(item.queue_id, target, item.email_notice_due); if (e) copyToClipboard(e) }}
+          onMark={() => state.markNotice(item.queue_id, target, item.email_notice_due)}
+        />
       )}
 
       {item.decision !== 'approved' && mode === 'idle' && (
@@ -152,13 +177,14 @@ function Wave2List({ state }) {
           <div key={w.user_id} className="prune-admin__wave2-row">
             <code>{w.short_id}…</code>
             <span>{state.revealed[key] ?? w.email_masked}</span>
-            <Button size="sm" variant="secondary" disabled={state.busy === key}
-              onClick={async () => { const e = await state.reveal(key, target, 'wave2'); if (e) copyToClipboard(e) }}>
-              Copiar e-mail
-            </Button>
-            <Button size="sm" variant="secondary" disabled={state.busy === key} onClick={() => state.markNotice(key, target, 'wave2')}>
-              Marcar enviado
-            </Button>
+            <EmailNotice
+              label="E-mail da onda 2"
+              variant="never_consented"
+              deadline={w.email_deadline}
+              busy={state.busy === key}
+              onRevealEmail={async () => { const e = await state.reveal(key, target, 'wave2'); if (e) copyToClipboard(e) }}
+              onMark={() => state.markNotice(key, target, 'wave2')}
+            />
           </div>
         )
       })}

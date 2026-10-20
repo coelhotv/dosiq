@@ -7,7 +7,6 @@ import {
   consentCopyBodySchema,
   renderDeadlineCopy,
   NEVER_CONSENTED_DEADLINE_COPY,
-  PRUNE_EMAIL_NOTICE_COPY,
   CONSENT_PLATFORMS,
   CURRENT_POLICY_VERSION,
   HEALTH_CONSENT_COPY,
@@ -228,15 +227,5 @@ describe('spec 107 — fila e texto da trava', () => {
       expect(out).toContain('20/01/2027')
       expect(out).toBe(NEVER_CONSENTED_DEADLINE_COPY.body.replace('{data}', '20/01/2027'))
     }
-  })
-})
-
-describe('spec 107 — texto do aviso por e-mail (PO-5 / AS-3.2)', () => {
-  it('sem nome de remédio, dose ou condição; com {data} uma vez', () => {
-    const txt = `${PRUNE_EMAIL_NOTICE_COPY.subject} ${PRUNE_EMAIL_NOTICE_COPY.body}`.toLowerCase()
-    for (const termo of ['medicament', 'remédio', 'dose', 'tratamento', 'mg', 'comprimido', 'doença', 'diagnóstico']) {
-      expect(txt).not.toContain(termo)
-    }
-    expect(PRUNE_EMAIL_NOTICE_COPY.body.split('{data}')).toHaveLength(2)
   })
 })
