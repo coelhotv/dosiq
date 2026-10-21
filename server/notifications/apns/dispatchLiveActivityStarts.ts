@@ -16,6 +16,7 @@ import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMe
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
+import { isTransferRedacted } from '../policies/transferRedaction.js'
 
 interface Logger {
   info?: (...args: unknown[]) => void
@@ -179,6 +180,36 @@ async function _alreadySignaledNoToken(supabase: any, logger: Logger | undefined
 }
 
 /** Dispositivos push-to-start ativos do usuário (por-provider). RLS bypassada — guard explícito no caller. */
+/**
+ * 096 T062 / ADR-112 — o titular tem B vigente? A LA vai pela Apple (EUA): sem B, sai `discreet`
+ * (sem `medicineName`/`doseLabel`). Fail-closed POR USUÁRIO: erro de leitura ⇒ redige — a LA segue
+ * aparecendo, só sem o nome. Nunca pula o start por isso (o aviso clínico não depende de B). @private
+ */
+type TransferRedactedFn = (supabase: any, logger: Logger | undefined, userId: string) => Promise<boolean>
+
+async function _readTransferRedacted(supabase: any, logger: Logger | undefined, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('international_transfer_granted_at')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error) {
+      logger?.error?.('Falha ao ler flag de B p/ Live Activity (redige)', error, { userId })
+      return true
+    }
+    return isTransferRedacted(data ?? null)
+  } catch (err) {
+    logger?.error?.('Falha ao ler flag de B p/ Live Activity (redige)', err, { userId })
+    return true
+  }
+}
+
+/** Default injetável fora do corpo do job (mantém a complexidade do orquestrador — R-122). @private */
+function _orReadTransferRedacted(fn?: TransferRedactedFn): TransferRedactedFn {
+  return fn ?? _readTransferRedacted
+}
+
 async function _fetchLiveActivityDevices(supabase: any, userId: string) {
   return supabase
     .from('notification_devices')
@@ -293,6 +324,7 @@ interface DispatchForUserParams {
   buildFn: BuildFn
   sendFn: SendFn
   audit: ReturnType<typeof createCriticalAuditService>
+  transferRedactedFn: TransferRedactedFn
 }
 
 /** `snoozed_until` no futuro? Ausente/ilegível ⇒ não. @private */
@@ -303,7 +335,7 @@ function _isSnoozedAt(inst: DoseInstanceRow, now: Date): boolean {
 }
 
 /** Envia o start p/ os devices de UM usuário (IDOR guard + 410 + idempotência). @private */
-async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit }: DispatchForUserParams): Promise<'skipped' | 'failed' | 'sent'> {
+async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit, transferRedactedFn }: DispatchForUserParams): Promise<'skipped' | 'failed' | 'sent'> {
   // Spec 101 C-18: dose com soneca vigente está escondida (Adiar) — o start da janela não a ressuscita.
   // Quem a traz de volta é a recriação no claim da soneca (`startSnoozedLiveActivity`).
   const items = instances.filter((inst) => !_isSnoozedAt(inst, now)).map(mapInstance)
@@ -342,8 +374,10 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
 
   const sourceItem = items.find((it) => String(it.instanceId) === String(active.instanceId))
   if (!sourceItem) return 'skipped'
-  // Explícito (mostra nome) — iOS não redige a LA (decisão PO 2026-06-29; paridade com a 039/foreground).
-  const payload = buildFn(sourceItem, { discreet: false, now })
+  // Com B: explícito (mostra nome) — iOS não redige a LA (decisão PO 2026-06-29; paridade com a 039).
+  // Sem B (096/ADR-112): discreet — o nome não vai à Apple.
+  const discreet = await transferRedactedFn(supabase, logger, userId)
+  const payload = buildFn(sourceItem, { discreet, now })
   if (!payload) return 'skipped'
 
   const anySent = await _sendStartToDevices({ supabase, logger, userId, instanceId: active.instanceId, devices, payload, sendFn })
@@ -396,6 +430,8 @@ interface DispatchLiveActivityStartsParams {
   leadMinutes?: number
   sendFn?: SendFn
   buildFn?: BuildFn
+  /** 096: injetável em teste; default lê `user_settings` do titular. */
+  transferRedactedFn?: TransferRedactedFn
 }
 
 interface DispatchLiveActivityStartsResult {
@@ -406,7 +442,7 @@ interface DispatchLiveActivityStartsResult {
 }
 
 /** Dispara o push-to-start (event=start) para doses críticas entrando na janela `upcoming`. */
-export async function dispatchLiveActivityStarts({ supabase, logger, now = parseISO(getServerTimestamp()), leadMinutes, sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload }: DispatchLiveActivityStartsParams): Promise<DispatchLiveActivityStartsResult> {
+export async function dispatchLiveActivityStarts({ supabase, logger, now = parseISO(getServerTimestamp()), leadMinutes, sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload, transferRedactedFn }: DispatchLiveActivityStartsParams): Promise<DispatchLiveActivityStartsResult> {
   const result: DispatchLiveActivityStartsResult = { processed: 0, sent: 0, skipped: 0, failed: 0 }
 
   // Fail-closed na config (R-088): sem credencial APNs, não dispara (alarme intacto). NÃO é erro.
@@ -435,7 +471,7 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   for (const userId of Object.keys(byUser)) {
     result.processed += 1
     try {
-      const outcome = await _dispatchForUser({ supabase, logger, userId, instances: byUser[userId], now, buildFn, sendFn, audit })
+      const outcome = await _dispatchForUser({ supabase, logger, userId, instances: byUser[userId], now, buildFn, sendFn, audit, transferRedactedFn: _orReadTransferRedacted(transferRedactedFn) })
       result[outcome] += 1
     } catch (err) {
       result.failed += 1
@@ -487,6 +523,8 @@ interface StartSnoozedParams {
   now?: Date
   sendFn?: SendFn
   buildFn?: BuildFn
+  /** 096: injetável em teste; default lê `user_settings` do titular. */
+  transferRedactedFn?: TransferRedactedFn
 }
 
 // C-14: o claim roda por minuto e reivindica a soneca do minuto corrente — até ~59 s ANTES de uma âncora
@@ -519,12 +557,13 @@ async function _snoozeCapableDevices(supabase: any, logger: Logger | undefined, 
  * start da janela `upcoming`, NÃO usa a trava `la_push_started_at` (já preenchida desde o 1º start): a
  * idempotência é o claim, que reivindica cada soneca uma única vez. Fail-open: nunca lança.
  */
-export async function startSnoozedLiveActivity({ supabase, logger, userId, item, now = parseISO(getServerTimestamp()), sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload }: StartSnoozedParams): Promise<'sent' | 'skipped' | 'failed'> {
+export async function startSnoozedLiveActivity({ supabase, logger, userId, item, now = parseISO(getServerTimestamp()), sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload, transferRedactedFn = _readTransferRedacted }: StartSnoozedParams): Promise<'sent' | 'skipped' | 'failed'> {
   try {
     if (!getApnsConfig()) return 'skipped'
     const devices = await _snoozeCapableDevices(supabase, logger, userId)
     if (!devices) return 'skipped'
-    const payload = buildFn(item as any, { discreet: false, now: _claimInstant(item.snoozedUntil, now) })
+    const discreet = await transferRedactedFn(supabase, logger, userId)
+    const payload = buildFn(item as any, { discreet, now: _claimInstant(item.snoozedUntil, now) })
     if (!payload) return 'skipped'
     const anySent = await _sendStartToDevices({ supabase, logger, userId, instanceId: item.instanceId, devices, payload, sendFn })
     await createCriticalAuditService({ client: supabase }).emit({

@@ -75,7 +75,7 @@ export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted 
             if (value) setShowError(false)
           }}
           disabled={isSaving}
-          showError={showError}
+          errorMessage={showError ? 'Para continuar, é preciso autorizar o tratamento dos dados de saúde.' : null}
         />
 
         {error && <div className="consent-prompt-error">{error}</div>}

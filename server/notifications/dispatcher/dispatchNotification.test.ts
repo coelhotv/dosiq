@@ -157,6 +157,47 @@ describe('dispatchNotification — consentimento revogado (046 T014)', () => {
   })
 })
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 096 T052/T063 — modo sem B. Ponto único: TODO canal recebe o payload redigido (o lembrete do
+// Telegram passa por aqui — doseReminders → dispatcherFactory → dispatchNotification).
+describe('dispatchNotification — modo sem B (096 / ADR-112)', () => {
+  const run = (settings: Record<string, unknown>) => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      notification_mode: 'realtime', quiet_hours_enabled: false,
+      channel_mobile_push_enabled: true, channel_telegram_enabled: true, ...settings,
+    })
+    mockBot.sendMessage.mockResolvedValue({ message_id: 1 })
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[abc]' }])
+    return dispatchNotification({
+      userId: 'user-b', kind: 'dose_reminder', data: mockData, channels: ['telegram', 'mobile_push'],
+      context: makeContext(), repositories: mockRepositories, bot: mockBot, expoClient: mockExpoClient,
+    })
+  }
+  const sent = () => JSON.stringify({
+    telegram: mockBot.sendMessage.mock.calls,
+    expo: mockExpoClient.sendPushNotificationsAsync.mock.calls,
+  })
+
+  it('🔴 sem B: Telegram e push saem genéricos, sem o nome do remédio (título, corpo nem data)', async () => {
+    const result = await run({ international_transfer_granted_at: null })
+    expect(result.totalDelivered).toBe(2) // o aviso não some — só perde o nome
+    expect(sent()).not.toContain('Medicamento Teste')
+    expect(sent()).toContain('Hora do seu remédio')
+  })
+
+  it('🔴 leitura das settings falhou ⇒ redige (nunca vaza por erro)', async () => {
+    await run({ international_transfer_granted_at: '2026-10-21T10:00:00Z', _read_failed: true, consent_revoked_at: null })
+    // _read_failed também suprime pelo consentimento (046): nada sai — e, se saísse, sairia redigido.
+    expect(sent()).not.toContain('Medicamento Teste')
+  })
+
+  it('com B: payload idêntico ao de hoje (nome presente)', async () => {
+    await run({ international_transfer_granted_at: '2026-10-21T10:00:00Z' })
+    expect(sent()).toContain('Medicamento Teste')
+  })
+})
+
 describe('dispatchNotification', () => {
   // Caso 1: both com Telegram OK + push OK → ambos entregues
   it('caso 1: both — Telegram e push entregues', async () => {

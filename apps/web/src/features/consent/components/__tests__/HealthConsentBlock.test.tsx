@@ -1,4 +1,4 @@
-// HealthConsentBlock.test.tsx — opt-in destacado (spec 046, T006/T007).
+// HealthConsentBlock.test.tsx — caixa A (spec 046 T006 → spec 096 v0.4).
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
@@ -7,6 +7,7 @@ vi.mock('@dashboard/services/analyticsService', () => ({
   analyticsService: { track: trackMock },
 }))
 
+import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import HealthConsentBlock from '../HealthConsentBlock'
 
 afterEach(() => {
@@ -15,53 +16,46 @@ afterEach(() => {
 })
 
 describe('HealthConsentBlock', () => {
-  it('renderiza a copy canônica (título, label, helper)', () => {
+  it('caixa e frase verbatim da v0.4 são um único alvo (label)', () => {
     render(<HealthConsentBlock checked={false} onChange={vi.fn()} />)
-
-    expect(screen.getByText('Consentimento para dados de saúde')).toBeTruthy()
-    expect(screen.getByLabelText(/Autorizo o dosiq a tratar meus dados de saúde/)).toBeTruthy()
-    expect(screen.getByText(/Sem essa autorização o dosiq não consegue funcionar/)).toBeTruthy()
+    const box = screen.getByLabelText(HEALTH_CONSENT_COPY.label)
+    expect(box).not.toBeChecked() // guarda 1: nasce desmarcada
   })
 
-  it('link da política abre em nova aba', () => {
+  it('"Detalhes ›" abre a folha S6-A com a copy do core', () => {
     render(<HealthConsentBlock checked={false} onChange={vi.fn()} />)
-
-    const link = screen.getByText('Ver política de privacidade') as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe('/politica-de-privacidade.html')
-    expect(link.getAttribute('target')).toBe('_blank')
+    fireEvent.click(screen.getByText('Detalhes ›'))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    // a copy tem parágrafo ("\n\n"); o matcher padrão colapsa o espaço do nó, então compara o mesmo colapso
+    expect(screen.getByText(HEALTH_CONSENT_COPY.details.replace(/\s+/g, ' '))).toBeTruthy()
   })
 
-  it('marcar o checkbox NÃO dispara analytics de recusa', () => {
+  it('marcar NÃO dispara analytics de recusa', () => {
     const onChange = vi.fn()
     render(<HealthConsentBlock checked={false} onChange={onChange} />)
-
     fireEvent.click(screen.getByRole('checkbox'))
-
     expect(onChange).toHaveBeenCalledWith(true)
     expect(trackMock).not.toHaveBeenCalled()
   })
 
-  it('desmarcar o checkbox dispara consent_health_declined sem PII (FR-008)', () => {
+  it('desmarcar dispara consent_health_declined sem PII (FR-008)', () => {
     const onChange = vi.fn()
     render(<HealthConsentBlock checked onChange={onChange} />)
-
     fireEvent.click(screen.getByRole('checkbox'))
-
     expect(onChange).toHaveBeenCalledWith(false)
     expect(trackMock).toHaveBeenCalledWith('consent_health_declined', {})
   })
 
-  it('mostra a mensagem de erro só quando showError é true', () => {
+  it('erro: mensagem em role=alert e foco na caixa (D-8)', () => {
     const { rerender } = render(<HealthConsentBlock checked={false} onChange={vi.fn()} />)
     expect(screen.queryByRole('alert')).toBeNull()
-
-    rerender(<HealthConsentBlock checked={false} onChange={vi.fn()} showError />)
-    expect(screen.getByRole('alert')).toBeTruthy()
+    rerender(<HealthConsentBlock checked={false} onChange={vi.fn()} errorMessage="Marque a autorização." />)
+    expect(screen.getByRole('alert').textContent).toBe('Marque a autorização.')
+    expect(document.activeElement).toBe(screen.getByRole('checkbox'))
   })
 
-  it('desabilita o checkbox quando disabled=true', () => {
+  it('desabilita a caixa quando disabled=true', () => {
     render(<HealthConsentBlock checked={false} onChange={vi.fn()} disabled />)
-
     expect(screen.getByRole('checkbox')).toBeDisabled()
   })
 })

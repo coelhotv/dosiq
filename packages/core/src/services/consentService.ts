@@ -31,6 +31,8 @@ const CONSENT_COLUMNS = 'id, consent_type, action, policy_version, platform, cre
 /** Formato da intenção de consentimento carregada no `user_metadata` durante o signup. */
 export interface ConsentIntent {
   health_consent?: boolean | null
+  /** Spec 096: caixa B marcada no signup (opcional — nunca condição de cadastro). */
+  transfer_consent?: boolean | null
   policy_version?: string | null
 }
 
@@ -109,6 +111,18 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
     return deriveConsentState(data as unknown as ConsentEvent[])
   }
 
+  /** Grava B da intenção do signup — só sobre `missing` (nunca ressuscita um `revoked`). */
+  async function materializeTransfer(platform: ConsentPlatform): Promise<void> {
+    let current: ConsentState
+    try {
+      current = await getStatus('international_transfer')
+    } catch {
+      return // não sabemos o estado de B ⇒ não escrevemos; fica sem B (lado protetor do ADR-112)
+    }
+    if (current.status !== 'missing') return
+    await callRpc('consent_grant', 'international_transfer', platform)
+  }
+
   return {
     grant: (consentType, platform) => callRpc('consent_grant', consentType, platform),
     revoke: (consentType, platform) => callRpc('consent_revoke', consentType, platform),
@@ -145,7 +159,19 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
       if (current.status !== 'missing') return { materialized: false }
 
       const res = await callRpc('consent_grant', 'health_data', platform)
-      return { materialized: res.ok }
+      if (res.ok !== true) return { materialized: false }
+
+      // Spec 096 (T051): o rodapé do signup v0.4 diz "ao criar a conta, você aceita os Termos e a
+      // Política" — o aceite vira evento próprio, separado de A (guarda 3).
+      // Falha não desfaz A (já gravado) — 1 nova tentativa e, persistindo, log para reprocessar (RC6 #898).
+      const terms = await callRpc('consent_grant', 'terms_privacy', platform)
+      if (terms.ok !== true) {
+        const retry = await callRpc('consent_grant', 'terms_privacy', platform)
+        if (retry.ok !== true) console.error('[consent] terms_privacy não gravado no cadastro:', retry.error)
+      }
+      // Caixa B: só se marcada E ainda sem ato do titular. Falha aqui não desfaz A (B é opcional).
+      if (intent.transfer_consent === true) await materializeTransfer(platform)
+      return { materialized: true }
     },
   }
 }

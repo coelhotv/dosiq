@@ -121,6 +121,25 @@ async function verifyAuth(token) {
   }
 }
 
+/**
+ * 096 T039 / ADR-112 — o assistente manda a pergunta e um resumo dos tratamentos à Groq (EUA): só
+ * com `international_transfer` vigente. Imposto AQUI, não só no cliente — app antigo (0.30.x) ou
+ * chamada direta não contornam. Fail-closed: erro de leitura ⇒ sem B ⇒ 403.
+ */
+async function hasTransferConsent(userId) {
+  try {
+    const { data, error } = await getSupabase()
+      .from('user_settings')
+      .select('international_transfer_granted_at')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error) return false
+    return Boolean(data?.international_transfer_granted_at)
+  } catch {
+    return false
+  }
+}
+
 const chatbotRequestSchema = z.object({
   message: z
     .string()
@@ -148,6 +167,11 @@ export default async function handler(req, res) {
   const auth = await verifyAuth(extractToken(req))
   if (!auth.success) {
     return res.status(401).json({ error: 'Não autorizado' })
+  }
+
+  // 1b. Envio para fora do Brasil (caixa B) — antes de qualquer contato com a Groq.
+  if (!(await hasTransferConsent(auth.userId))) {
+    return res.status(403).json({ error: 'transfer_consent_required' })
   }
 
   // 2. Rate limit por usuário
