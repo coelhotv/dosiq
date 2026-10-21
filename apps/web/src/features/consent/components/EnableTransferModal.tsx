@@ -5,16 +5,12 @@
 // mesmo padrão de erro da caixa A (foco + role=alert).
 
 import { useState } from 'react'
+import { ENABLE_TRANSFER_COPY } from '@dosiq/core'
 import TransferConsentBlock from './TransferConsentBlock'
 import './EnableTransferModal.css'
 
-export const ENABLE_TRANSFER_COPY = Object.freeze({
-  title: 'Ligar o processamento fora do Brasil',
-  body: 'Permite os três juntos: lembretes com o nome do remédio, assistente IA e medições de uso.',
-  authorize: 'Autorizar',
-  cancel: 'Cancelar',
-  errorNoBox: 'Marque a autorização para ligar.',
-})
+// Copy no core desde a B3 (uma fonte web↔mobile).
+export { ENABLE_TRANSFER_COPY }
 
 interface EnableTransferModalProps {
   onAuthorize: () => Promise<boolean>

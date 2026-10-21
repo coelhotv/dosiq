@@ -49,6 +49,18 @@ describe('chatbotService — ai_assistant_message_sent (PO-6)', () => {
     expect(JSON.stringify(payload)).not.toMatch(/pergunta sensível|resposta sensível/)
   })
 
+  // 096 B3: 403 sem autorização B ⇒ sinal próprio para a tela trocar pelo aviso (sem texto técnico).
+  it('403 transfer_consent_required ⇒ transferRequired', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: 'transfer_consent_required' }),
+    }) as unknown as typeof fetch
+
+    const out = await sendChatMessage({ message: 'oi', patientContext: 'ctx' })
+    expect(out).toEqual({ response: '', error: true, transferRequired: true })
+  })
+
   // 092 FR-006 / PO-4: error_kind por ramo, nunca a mensagem do servidor.
   const SERVER_MSG = 'detalhe interno do servidor'
   it.each([
