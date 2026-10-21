@@ -13,7 +13,7 @@ tags:
   - android
   - closed-testing
 created_at: "2026-07-22"
-updated_at: "2026-07-22"
+updated_at: "2026-10-20"
 ---
 
 # Template de E-mail de Boas-vindas Dosiq (Android Closed Testing)
@@ -183,7 +183,8 @@ Este é o fragmento HTML e CSS inline purificado, projetado especificamente para
         <tr>
           <td align="center" style="padding-top: 28px; padding-bottom: 10px; color: #64748b; font-size: 12px; line-height: 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: center;">
             <p style="margin: 0 0 6px 0;">Você recebeu este e-mail porque se cadastrou na lista do Dosiq.</p>
-            <p style="margin: 0 0 12px 0;">Dosiq — Desenvolvido para o bem comum.</p>
+            <p style="margin: 0 0 6px 0;">Dosiq — Desenvolvido para o bem comum.</p>
+            <p style="margin: 0 0 12px 0;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150</p>
             <p style="margin: 0;">
               <a href="https://dosiq.app" target="_blank" style="color: #006a5e; text-decoration: none; font-weight: 600;">dosiq.app</a>
               <span style="color: #cbd5e1; padding: 0 8px;">•</span>

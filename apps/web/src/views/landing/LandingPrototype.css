@@ -926,6 +926,32 @@
   font-size: 0.875rem;
 }
 
+.lp-footer__legal {
+  margin: 24px auto 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--lp-slate-500);
+  text-align: center;
+}
+
+.lp-footer__legal span + span::before {
+  content: ' · ';
+}
+
+.lp-footer__legal a:hover {
+  color: var(--lp-green-600);
+}
+
+@media (max-width: 767px) {
+  .lp-footer__legal span {
+    display: block;
+  }
+
+  .lp-footer__legal span + span::before {
+    content: none;
+  }
+}
+
 @keyframes lp-bounce {
   0%,
   100% {

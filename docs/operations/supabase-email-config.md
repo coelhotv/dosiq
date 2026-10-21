@@ -12,7 +12,7 @@ tags:
   - email
   - dark-mode
 created_at: "2026-07-08"
-updated_at: "2026-07-08"
+updated_at: "2026-10-20"
 ---
 
 # Configuração de E-mails Transacionais — Supabase + Dosiq (Revisado para Modo Escuro)
@@ -138,6 +138,7 @@ Dosiq — Ativação de conta
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
@@ -233,6 +234,7 @@ Dosiq — Instruções para redefinir sua senha
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
@@ -328,6 +330,7 @@ Dosiq — Link de acesso rápido
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
@@ -398,6 +401,7 @@ Segurança Dosiq — Senha alterada
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
@@ -493,6 +497,7 @@ Segurança Dosiq — Confirmação de novo e-mail
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
@@ -578,6 +583,7 @@ Seu convite para a plataforma Dosiq chegou!
     <div class="email-footer" style="background-color: #f2f4f5; padding: 20px 24px; text-align: center; font-size: 12px; color: #6d7a76; border-top: 1px solid #eceeef;">
       <strong style="color: #191c1d; font-family: 'Public Sans', 'Inter', sans-serif;">Dosiq</strong> — Inteligência em Doses<br/>
       <span style="font-size: 11px; display: inline-block; margin-top: 4px;">Este é um e-mail transacional de segurança. Por favor, não o responda.</span><br/>
+      <span style="font-size: 11px; display: inline-block; margin-top: 4px;">dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11 · Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150 · privacidade@dosiq.app</span><br/>
       <a href="https://dosiq.app/politica-de-privacidade" style="color: #006a5e; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 8px;">Política de Privacidade</a>
     </div>
 
