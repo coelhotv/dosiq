@@ -26,12 +26,22 @@ TABLES=(medicines treatment_plans protocols titrations titration_steps purchases
         dose_instances stock_consumptions stock_adjustments biomarkers_log dose_adherence_monthly
         dose_critical_events consent_log)
 
-ex() { "$BIN/psql" "$PROD_URI" -v ON_ERROR_STOP=1 -q -c "\\copy ($1) to '$OUT/$2.csv' with (format csv, header)"; }
+# Colunas GERADAS (ex.: auth.users.confirmed_at) não entram em COPY — exporta só as graváveis.
+cols_of() {
+  "$BIN/psql" "$PROD_URI" -v ON_ERROR_STOP=1 -Atq -c "select string_agg(quote_ident(column_name), ',' order by ordinal_position)
+    from information_schema.columns where table_schema = '$1' and table_name = '$2' and is_generated = 'NEVER'"
+}
+# ex <schema> <tabela> <coluna-do-user> <arquivo>
+ex() {
+  local cols; cols=$(cols_of "$1" "$2")
+  "$BIN/psql" "$PROD_URI" -v ON_ERROR_STOP=1 -q \
+    -c "\\copy (select $cols from $1.$2 where $3 in ($IDS_SQL)) to '$OUT/$4.csv' with (format csv, header)"
+}
 
-ex "select * from auth.users where id in ($IDS_SQL)" auth_users
-ex "select * from auth.identities where user_id in ($IDS_SQL)" auth_identities
-ex "select * from public.user_settings where user_id in ($IDS_SQL)" user_settings
-for t in "${TABLES[@]}"; do ex "select * from public.$t where user_id in ($IDS_SQL)" "$t"; done
+ex auth users id auth_users
+ex auth identities user_id auth_identities
+ex public user_settings user_id user_settings
+for t in "${TABLES[@]}"; do ex public "$t" user_id "$t"; done
 echo "exportado: $(wc -l "$OUT"/*.csv | tail -1)"
 
 {
