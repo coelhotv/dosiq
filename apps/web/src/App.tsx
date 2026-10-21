@@ -61,7 +61,11 @@ function AppShell({
   // do fluxo de resolução — o speeddial de registro, o FAB do chatbot, a bottom nav. Sem isto, a
   // trava do AppViewRouter cobre só o CONTEÚDO da view, e esses atalhos (que vivem no shell, fora do
   // router) seguiriam disparando registro de dose e chat com dado de saúde de quem pediu para parar.
-  const { locked: consentLocked } = useConsentGate()
+  const { locked: consentLocked, needsRegularization } = useConsentGate()
+  // 096: "Não concordo" no reconsentimento vive AQUI, não no AppViewRouter — o router fica dentro do
+  // motion.div com key={currentView} e remonta a cada troca de tela, o que zerava a escolha e trazia o
+  // modal de volta no próprio Perfil (smoke B2 2.5).
+  const [regularizationDeclined, setRegularizationDeclined] = useState(false)
 
   return (
     <OnboardingProvider>
@@ -100,6 +104,8 @@ function AppShell({
                   setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
                   setIsDoseModalOpen={setIsDoseModalOpen}
                   setDoseModalInitialValues={setDoseModalInitialValues}
+                  regularizationDeclined={regularizationDeclined}
+                  setRegularizationDeclined={setRegularizationDeclined}
                 />
               </motion.div>
             </AnimatePresence>
@@ -124,7 +130,9 @@ function AppShell({
             />
           )}
 
-          {isAuthenticated && !isPasswordRecovery && !consentLocked && (
+          {/* Reconsentimento pendente: nada de produto por cima/ao lado do modal — FAB do chat, speed-dial,
+              onboarding (smoke B2 2.1/2.2). */}
+          {isAuthenticated && !isPasswordRecovery && !consentLocked && !needsRegularization && (
             <AppAuthOverlays
               isChatOpen={isChatOpen}
               setIsChatOpen={setIsChatOpen}

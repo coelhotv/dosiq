@@ -1,7 +1,7 @@
 // ConsentResolution.tsx — tela travada de resolução da revogação (spec 046, T010, web).
 //
 // Espelho web da ConsentResolutionScreen mobile. Anti-deadlock (R2/F8): TRÊS saídas SEMPRE
-// acessíveis — exportar (view 'profile', onde vive o ExportDialog do 008), excluir (view
+// acessíveis — exportar (ExportDialog INLINE, aqui mesmo), excluir (view
 // 'account-settings') e re-consentir (consentService.grant via useConsentGate). O guard usa
 // ALLOWLIST, não denylist — nenhuma destas saídas pode desaparecer condicionalmente.
 

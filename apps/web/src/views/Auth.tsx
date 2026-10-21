@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { signIn, signUp, sendPasswordReset, verifyOtp, captureDeviceTimezone } from '@shared/utils/supabase'
 import HealthConsentBlock from '@features/consent/components/HealthConsentBlock'
@@ -7,6 +7,26 @@ import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 import './Auth.css'
 
 /** Erro sem a caixa A no cadastro (DESIGN_DECISOES §4, S4). */
+// Validação própria em PT (form com noValidate): o balão nativo do `required` sai no idioma do
+// NAVEGADOR ("Please fill out this field") e destoa do erro da caixa A (smoke 096 B2).
+export const AUTH_FIELD_ERRORS = Object.freeze({
+  emailEmpty: 'Informe o e-mail.',
+  emailInvalid: 'Confira o e-mail: ele precisa ter o formato nome@exemplo.com.',
+  passwordEmpty: 'Informe a senha.',
+  passwordShort: 'A senha precisa ter pelo menos 6 caracteres.',
+})
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validateAuthFields(email: string, password: string, isLogin: boolean) {
+  const errors: { email?: string; password?: string } = {}
+  const trimmed = email.trim()
+  if (!trimmed) errors.email = AUTH_FIELD_ERRORS.emailEmpty
+  else if (!EMAIL_PATTERN.test(trimmed)) errors.email = AUTH_FIELD_ERRORS.emailInvalid
+  if (!password) errors.password = AUTH_FIELD_ERRORS.passwordEmpty
+  else if (!isLogin && password.length < 6) errors.password = AUTH_FIELD_ERRORS.passwordShort
+  return errors
+}
+
 const SIGNUP_CONSENT_ERROR = 'Marque a autorização de dados de saúde para criar a conta.'
 
 function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
@@ -259,9 +279,20 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
   // 096: caixa B — opcional, nasce desmarcada e nunca condiciona o cadastro (guarda 4).
   const [transferConsent, setTransferConsent] = useState(false)
   const [consentError, setConsentError] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Campos primeiro, na ordem da tela; foco no primeiro com erro (mesmo padrão da caixa A).
+    const errors = validateAuthFields(email, password, isLogin)
+    setFieldErrors(errors)
+    if (errors.email || errors.password) {
+      ;(errors.email ? emailRef : passwordRef).current?.focus()
+      return
+    }
 
     // Gate de submit (FR-002): sem opt-in, o cadastro não sai daqui. Barrar ANTES do signUp é o
     // que dá sentido ao "consentimento é condição de uso" — criar a conta e só depois pedir
@@ -362,32 +393,39 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
         )}
         <AuthHeader isLogin={isLogin} />
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
+              ref={emailRef}
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors((f) => ({ ...f, email: undefined })) }}
               placeholder="seu@email.com"
-              required
-              className="auth-input"
+              aria-invalid={fieldErrors.email ? true : undefined}
+              aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+              className={`auth-input${fieldErrors.email ? ' auth-input--error' : ''}`}
             />
+            {fieldErrors.email && <p id="email-error" className="auth-field-error" role="alert">{fieldErrors.email}</p>}
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Senha</label>
             <input
+              ref={passwordRef}
               id="password"
               type="password"
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors((f) => ({ ...f, password: undefined })) }}
               placeholder="••••••••"
-              required
-              minLength={6}
-              className="auth-input"
+              aria-invalid={fieldErrors.password ? true : undefined}
+              aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+              className={`auth-input${fieldErrors.password ? ' auth-input--error' : ''}`}
             />
+            {fieldErrors.password && <p id="password-error" className="auth-field-error" role="alert">{fieldErrors.password}</p>}
           </div>
 
           {isLogin && (

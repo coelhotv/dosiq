@@ -2,7 +2,7 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Auth from './views/Auth'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useConsentGate, isConsentAllowedView } from '@shared/hooks/useConsentGate'
@@ -108,6 +108,8 @@ export default function AppViewRouter({
   setDoseModalInitialValues,
   isPasswordRecovery,
   onResetComplete,
+  regularizationDeclined = false,
+  setRegularizationDeclined = (() => {}) as (declined: boolean) => void,
 }) {
   // Spec 044 F3: rota /stock não existe quando o controle de estoque está desligado —
   // redirect SILENCIOSO pro dashboard (decisão do PO, sem tela de erro/toast).
@@ -115,8 +117,9 @@ export default function AppViewRouter({
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
   const consent = useConsentGate()
   // Reconsentimento v0.4 (096, DQ-1): bloqueante. "Não concordo" leva ao Perfil (revogação) e só lá
-  // o modal sai da frente — fora da allowlist ele volta, porque a decisão continua pendente.
-  const [regularizationDeclined, setRegularizationDeclined] = useState(false)
+  // o modal sai da frente (Perfil fica fora da allowlist do bloqueio, mas é a saída de quem recusa o
+  // reconsentimento — quem está `stale` não está travado) — em outra view ele volta. O estado
+  // `regularizationDeclined` vem do App (este componente remonta a cada troca de view).
 
   useEffect(() => {
     if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
@@ -221,7 +224,7 @@ export default function AppViewRouter({
     <>
       {content}
       <ConsentRegularizationModal
-        visible={consent.needsRegularization && !(regularizationDeclined && isConsentAllowedView(currentView))}
+        visible={consent.needsRegularization && !(regularizationDeclined && (currentView === 'profile' || isConsentAllowedView(currentView)))}
         onDecline={() => { setRegularizationDeclined(true); setCurrentView('profile') }}
         onConfirmed={() => { setRegularizationDeclined(false); consent.refresh() }}
       />

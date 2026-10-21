@@ -1,7 +1,8 @@
 .enable-transfer-modal {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  /* também abre de dentro do chat (aviso sem B): precisa ficar acima do overlay e do aviso */
+  z-index: calc(var(--z-chatbot, 1100) + 2);
   display: flex;
   align-items: flex-end;
   justify-content: center;

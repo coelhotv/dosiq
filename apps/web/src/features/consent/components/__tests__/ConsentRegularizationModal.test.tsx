@@ -7,6 +7,14 @@ vi.mock('@shared/hooks/useConsentGate', () => ({
   useConsentGate: () => ({ grantV04: grantV04Mock }),
 }))
 vi.mock('@dashboard/services/analyticsService', () => ({ analyticsService: { track: vi.fn() } }))
+const { getStatusMock } = vi.hoisted(() => ({
+  getStatusMock: vi.fn().mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false }),
+}))
+vi.mock('@shared/utils/supabase', () => ({ supabase: {} }))
+vi.mock('@dosiq/core', async () => {
+  const actual = await vi.importActual<typeof import('@dosiq/core')>('@dosiq/core')
+  return { ...actual, createConsentService: () => ({ getStatus: getStatusMock }) }
+})
 
 import { HEALTH_CONSENT_COPY, TRANSFER_CONSENT_COPY, REGULARIZATION_V04_COPY } from '@dosiq/core'
 import ConsentRegularizationModal from '../ConsentRegularizationModal'
@@ -81,5 +89,12 @@ describe('ConsentRegularizationModal (v0.4)', () => {
     fireEvent.click(screen.getByText(REGULARIZATION_V04_COPY.decline))
     expect(onDecline).toHaveBeenCalledTimes(1)
     expect(grantV04Mock).not.toHaveBeenCalled()
+  })
+
+  it('B já ligado na v0.4 ⇒ sem a caixa B, com o aviso de que já está ligado (smoke 2.6)', async () => {
+    getStatusMock.mockResolvedValueOnce({ status: 'granted', policyVersion: '0.4', updatedAt: '2026-10-21T05:00:00-03:00', stale: false })
+    renderModal()
+    expect(await screen.findByText(REGULARIZATION_V04_COPY.transferAlreadyOn)).toBeTruthy()
+    expect(screen.queryByLabelText(TRANSFER_CONSENT_COPY.label)).toBeNull()
   })
 })

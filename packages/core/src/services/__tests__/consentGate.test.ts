@@ -95,8 +95,8 @@ describe('isConsentAllowedRoute — ALLOWLIST, nunca denylist (R2/F8)', () => {
 
   it('web: a saída da revogação e o caminho do export ficam alcançáveis DENTRO da trava', () => {
     expect(isConsentAllowedRoute('consent-resolution', CONSENT_ALLOWED_WEB_VIEWS)).toBe(true)
-    // `profile` é onde vive o ExportDialog (export LGPD do 008 na web).
-    expect(isConsentAllowedRoute('profile', CONSENT_ALLOWED_WEB_VIEWS)).toBe(true)
+    // `profile` fora (096 B2): export é inline na resolução; o Perfil mostra dado de saúde.
+    expect(isConsentAllowedRoute('profile', CONSENT_ALLOWED_WEB_VIEWS)).toBe(false)
     expect(isConsentAllowedRoute('account-settings', CONSENT_ALLOWED_WEB_VIEWS)).toBe(true)
   })
 

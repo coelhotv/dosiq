@@ -25,6 +25,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   o envio para fora do Brasil: desligar pede confirmação mostrando os efeitos; ligar abre a autorização
   completa. Sem essa autorização, o assistente não abre o chat: mostra "O assistente está desligado", com
   o atalho para a autorização, e nenhuma pergunta é enviada.
+- **Web/PWA** (`Fixed`, no mesmo `minor` 4.31.0 — achados do smoke). O assistente de primeiro uso não abre
+  mais depois de todo login nem por cima do reconsentimento; com o reconsentimento pendente, os botões do
+  chat e de registro somem. O botão "Retirar consentimento" da segunda confirmação voltou a aparecer
+  (estava branco sobre branco). Quem retira a autorização de dados de saúde vai direto à tela de bloqueio
+  e não vê mais o Perfil (cartão de emergência, consulta, histórico e relatório). Login e cadastro
+  mostram os erros de e-mail e senha em português, abaixo de cada campo, em vez do aviso do navegador.
 
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 

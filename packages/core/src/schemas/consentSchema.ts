@@ -80,7 +80,7 @@ export const HEALTH_CONSENT_COPY = Object.freeze({
     'A DOSIQ usa o que você cadastra (remédios, tratamentos, doses tomadas, estoque e medidas como ' +
     'peso, glicemia e pressão) para enviar os lembretes, guardar o histórico, calcular a adesão ao ' +
     'tratamento e melhorar o app. Os dados ficam guardados no Brasil. ' +
-    'Sem esta autorização o app não funciona, porque é com esses dados que ele lembra e registra. ' +
+    'Sem esta autorização o app não funciona, porque é com esses dados que ele lembra e registra.\n\n' +
     'Para retirar: Perfil › Privacidade e dados. Exportar ou excluir: a qualquer momento.',
   helper:
     'Sem essa autorização o dosiq não consegue funcionar — é o dado de saúde que gera os ' +
@@ -141,6 +141,8 @@ export const REGULARIZATION_V04_COPY = Object.freeze({
   confirm: 'Confirmar',
   decline: 'Não concordo',
   errorNoHealth: 'Marque a autorização de dados de saúde para confirmar.',
+  /** B já autorizado na v0.4 (ex.: ligado em Privacidade depois de "Não concordo") — não pedir de novo. */
+  transferAlreadyOn: 'O processamento fora do Brasil já está ligado. Para mudar: Perfil › Privacidade e dados.',
 } as const)
 
 /**

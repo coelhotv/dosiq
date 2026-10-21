@@ -145,10 +145,11 @@ describe('useConsentGate — estados lidos com sucesso', () => {
 })
 
 describe('isConsentAllowedView — allowlist (R2/F8)', () => {
-  it('rota de produto NÃO passa; a saída da revogação e o export passam', () => {
+  it('rota de produto NÃO passa (Perfil incluso — dado de saúde); a saída da revogação e a conta passam', () => {
     expect(isConsentAllowedView('dashboard')).toBe(false)
     expect(isConsentAllowedView('treatment')).toBe(false)
+    expect(isConsentAllowedView('profile')).toBe(false)
     expect(isConsentAllowedView('consent-resolution')).toBe(true)
-    expect(isConsentAllowedView('profile')).toBe(true)
+    expect(isConsentAllowedView('account-settings')).toBe(true)
   })
 })

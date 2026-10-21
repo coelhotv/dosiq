@@ -3,7 +3,7 @@
   inset: 0;
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 16px;
   background: rgba(15, 23, 42, 0.45);
@@ -13,10 +13,12 @@
   width: 100%;
   max-width: 460px;
   padding: 24px;
-  border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+  border-radius: var(--radius-lg, 16px);
   background: var(--color-bg-card, #fff);
-  box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
+  /* centrado e inteiro na tela visível (smoke 096 B2 2.1: ancorado embaixo, cortava o fim) */
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
 }
 
@@ -115,6 +117,13 @@
 .consent-regularization-modal__terms {
   margin: 0 0 12px;
   font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.consent-regularization-modal__transfer-on {
+  margin: 0;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-secondary);
 }

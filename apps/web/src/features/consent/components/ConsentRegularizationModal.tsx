@@ -6,13 +6,16 @@
 // A caixa A não depende de "abrir a política antes" (o antigo `hasRead`): o detalhe está a 1 toque
 // em "O que mudou ›" e em "Detalhes ›" de cada caixa (guarda 8).
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
-import { REGULARIZATION_V04_COPY as COPY } from '@dosiq/core'
+import { createConsentService, REGULARIZATION_V04_COPY as COPY } from '@dosiq/core'
 import HealthConsentBlock from './HealthConsentBlock'
 import TransferConsentBlock from './TransferConsentBlock'
 import { useConsentGate } from '@shared/hooks/useConsentGate'
+import { supabase } from '@shared/utils/supabase'
 import './ConsentRegularizationModal.css'
+
+const consentService = createConsentService({ client: supabase })
 
 interface ConsentRegularizationModalProps {
   visible: boolean
@@ -33,6 +36,19 @@ export default function ConsentRegularizationModal({
   const [changedOpen, setChangedOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // B já vigente na v0.4 ⇒ a caixa B sai (pedir de novo, desmarcada, sugeria que estava desligado —
+  // smoke B2 2.6). Leitura que falha mantém a caixa: marcar de novo só regrava o mesmo aceite.
+  const [transferAlreadyOn, setTransferAlreadyOn] = useState(false)
+
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
+    consentService
+      .getStatus('international_transfer')
+      .then((s) => { if (!cancelled) setTransferAlreadyOn(s.status === 'granted' && !s.stale) })
+      .catch(() => { if (!cancelled) setTransferAlreadyOn(false) })
+    return () => { cancelled = true }
+  }, [visible])
 
   if (!visible) return null
 
@@ -93,7 +109,11 @@ export default function ConsentRegularizationModal({
             disabled={saving}
             errorMessage={healthError ? COPY.errorNoHealth : null}
           />
-          <TransferConsentBlock checked={transfer} onChange={setTransfer} disabled={saving} />
+          {transferAlreadyOn ? (
+            <p className="consent-regularization-modal__transfer-on">{COPY.transferAlreadyOn}</p>
+          ) : (
+            <TransferConsentBlock checked={transfer} onChange={setTransfer} disabled={saving} />
+          )}
         </div>
 
         <p className="consent-regularization-modal__terms">{COPY.termsFooter}</p>

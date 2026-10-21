@@ -84,6 +84,7 @@ describe('ChatWindow — modo sem B', () => {
     render(<ChatWindow isOpen onClose={vi.fn()} />)
     fireEvent.click(await screen.findByText('enviar'))
     await waitFor(() => expect(screen.getByText(CHAT_WITHOUT_TRANSFER_COPY.title)).toBeInTheDocument())
-    expect(screen.queryByTestId('chat-drawer')).not.toBeInTheDocument()
+    // o drawer sai pelo AnimatePresence (animação de saída) — sob carga ainda está montado no 1º frame
+    await waitFor(() => expect(screen.queryByTestId('chat-drawer')).not.toBeInTheDocument())
   })
 })

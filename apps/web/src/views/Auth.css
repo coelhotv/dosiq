@@ -89,6 +89,12 @@
   gap: 0.5rem;
 }
 
+/* components.css dá margin-bottom global ao .form-group; somado ao gap do form, abria ~44 px entre
+   e-mail e senha (smoke 096 B2). O ritmo aqui é só o gap do .auth-form. */
+.auth-form .form-group {
+  margin-bottom: 0;
+}
+
 .form-group label {
   font-family: var(--font-body, 'Lexend', sans-serif);
   font-size: var(--text-body-md, 0.875rem);
@@ -124,6 +130,19 @@
 .auth-input:focus {
   border-color: var(--color-primary, #006a5e);
   background: var(--color-surface-container-lowest, #ffffff);
+}
+
+.auth-input--error,
+.auth-input--error:hover {
+  border-color: var(--color-error, #ba1a1a);
+  background: rgba(186, 26, 26, 0.04);
+}
+
+.auth-field-error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-error, #ba1a1a);
 }
 
 /* Feedback */

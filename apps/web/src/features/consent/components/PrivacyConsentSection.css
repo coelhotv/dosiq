@@ -88,7 +88,9 @@
   cursor: pointer;
 }
 
-.privacy-consent-section__confirm-danger {
+/* Mesma especificidade do seletor de base (`… __confirm-actions button`), senão o fundo branco dele vence e
+   o texto branco some (smoke 096 B2 2.9). */
+.privacy-consent-section__confirm-actions .privacy-consent-section__confirm-danger {
   border-color: var(--color-error, #b91c1c);
   background: var(--color-error, #b91c1c);
   color: #fff;

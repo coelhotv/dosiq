@@ -68,6 +68,8 @@
 
 .consent-details-sheet__text {
   margin: 0;
+  /* parágrafos da copy vêm como "\n\n" (fonte única no core, também lida pelo mobile) */
+  white-space: pre-line;
   font-size: 14px;
   line-height: 1.55;
   color: var(--color-text-secondary);

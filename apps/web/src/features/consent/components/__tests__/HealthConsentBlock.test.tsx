@@ -26,7 +26,8 @@ describe('HealthConsentBlock', () => {
     render(<HealthConsentBlock checked={false} onChange={vi.fn()} />)
     fireEvent.click(screen.getByText('Detalhes ›'))
     expect(screen.getByRole('dialog')).toBeTruthy()
-    expect(screen.getByText(HEALTH_CONSENT_COPY.details)).toBeTruthy()
+    // a copy tem parágrafo ("\n\n"); o matcher padrão colapsa o espaço do nó, então compara o mesmo colapso
+    expect(screen.getByText(HEALTH_CONSENT_COPY.details.replace(/\s+/g, ' '))).toBeTruthy()
   })
 
   it('marcar NÃO dispara analytics de recusa', () => {

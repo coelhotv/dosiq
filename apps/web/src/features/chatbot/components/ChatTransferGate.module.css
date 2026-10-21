@@ -1,11 +1,14 @@
 .sheet {
   position: fixed;
-  left: 50%;
+  /* centrado sem transform: o framer-motion anima `y` e reescreve o transform inteiro */
+  left: 16px;
+  right: 16px;
   bottom: 16px;
-  z-index: 1001;
-  width: calc(100% - 32px);
+  margin: 0 auto;
+  /* acima do overlay do chat (--z-chatbot), igual ao drawer — senão o véu cinza fica por cima */
+  z-index: calc(var(--z-chatbot, 1100) + 1);
   max-width: 420px;
-  transform: translateX(-50%);
+  height: fit-content;
   padding: 24px;
   border-radius: var(--radius-lg, 16px);
   background: var(--color-bg-card, #fff);
@@ -17,9 +20,8 @@
 
 @media (min-width: 640px) {
   .sheet {
-    top: 50%;
-    bottom: auto;
-    transform: translate(-50%, -50%);
+    top: 16px;
+    margin: auto;
   }
 }
 
