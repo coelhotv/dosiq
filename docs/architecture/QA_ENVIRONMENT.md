@@ -30,6 +30,7 @@ updated_at: "2026-10-21"
 | Dados | reais | **sintéticos** + config copiada (sem titular real) |
 | `pg_cron` | 4 jobs de limpeza | **nenhum job** |
 | Integrações (Telegram, Brevo, APNs, Groq, PostHog, Sentry) | ligadas | **desligadas** (env vazia) |
+| Confirmação de e-mail no signup (Auth) | ligada | **desligada** (QA não envia e-mail) — fluxo `unconfirmed_signup` (spec 107) não se testa no QA |
 
 Por que existe: branching do Supabase exige plano pago. O plano free permite 2 projetos; o segundo é o QA.
 Ele é onde toda migração roda primeiro, onde o teste `BEGIN..ROLLBACK` acontece, e o banco do smoke web.
