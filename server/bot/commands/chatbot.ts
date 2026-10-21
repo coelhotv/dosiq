@@ -1,100 +1,41 @@
 /**
  * Handler para mensagens de texto não-comando no Telegram.
  *
- * Intercepta mensagens que NÃO começam com '/' e as encaminha
- * para o chatbot IA (Groq) com contexto personalizado do paciente.
- *
- * Requer: GROQ_API_KEY no env
+ * Desde a spec 096 (B0) o assistente de IA não roda pelo bot: texto livre recebe
+ * uma resposta fixa (copy S13) e nada é enviado a provedor de LLM. O assistente
+ * fica só no app, sob o aceite de transferência internacional.
  *
  * @module commands/chatbot
  */
 
-import { getUserIdByChatId } from '../../services/userService.js'
-import { sendTelegramChatMessage } from '../services/chatbotServerService.js'
 import { createLogger } from '../logger.js'
 
-const logger = createLogger('ChatbotCommand')
+const logger = createLogger('FreeTextReply')
 
-async function _processAndReply(bot, chatId, message, userId) {
-  try {
-    // Mostrar indicador de digitação enquanto processa
-    logger.debug('🕐 Enviando ação "typing" ao Telegram', { chatId })
-    await bot.sendChatAction(chatId, 'typing')
-
-    logger.debug('🤖 Chamando sendTelegramChatMessage', { chatId, userId, msgLen: message.length })
-    const result = await sendTelegramChatMessage({ message, userId })
-
-    logger.info('✅ Resultado do chatbot recebido', {
-      chatId,
-      userId,
-      blocked: result.blocked,
-      rateLimited: result.rateLimited,
-      responseLen: result.response?.length || 0,
-      responsePreview: result.response?.substring(0, 80) || '(vazio)',
-    })
-
-    logger.debug('📤 Enviando resposta ao Telegram', { chatId, respLen: result.response?.length })
-    const prefixedResponse = `🤖 IA: ${result.response}`
-    await bot.sendMessage(chatId, prefixedResponse)
-    logger.info('✅ Mensagem enviada com sucesso', { chatId, respLen: prefixedResponse?.length })
-  } catch (error) {
-    logger.error('❌ Erro no handler do chatbot', error, {
-      chatId,
-      userId,
-      errorMessage: error.message,
-      errorStatus: error.response?.statusCode,
-    })
-    try {
-      await bot.sendMessage(chatId, '🤖 IA: Desculpe, tive um problema. Tente novamente.')
-    } catch (sendError) {
-      logger.error('❌ Erro ao enviar mensagem de erro', sendError, {
-        chatId,
-        errorMessage: sendError.message,
-        errorStatus: sendError.response?.statusCode,
-      })
-    }
-  }
-}
+/** Copy S13 (DESIGN_DECISOES.md §4) — já escapada para MarkdownV2. */
+export const FREE_TEXT_REPLY =
+  'O assistente agora fica só no app\\. Abra o dosiq e toque no botão de conversa\\.'
 
 /**
- * Processa mensagem de texto do usuário e responde com chatbot IA.
+ * Responde texto livre com a copy fixa S13.
  *
  * @param {import('node-telegram-bot-api')} bot
  * @param {import('node-telegram-bot-api').Message} msg
  */
-export async function handleChatbotMessage(bot, msg) {
+export async function handleFreeTextMessage(bot, msg) {
   const chatId = msg.chat.id
-  const message = msg.text?.trim()
+  const text = msg.text?.trim()
 
-  // Log de entrada
-  logger.info('📨 Mensagem de chat recebida', {
-    chatId,
-    msgPreview: message?.substring(0, 50) || '(vazio)',
-    msgLen: message?.length || 0,
-  })
+  // Sem texto (foto/sticker), vazio ou comando: outros handlers cuidam ou nada a fazer
+  if (!text || text.startsWith('/')) return
 
-  // Ignorar mensagens vazias ou comandos (tratados por outros handlers)
-  if (!message || message.startsWith('/')) {
-    logger.debug('⏭️ Ignorando (vazio ou comando)', { chatId })
-    return
-  }
-
-  // Verificar API key antes de processar
-  if (!process.env.GROQ_API_KEY) {
-    logger.warn('❌ GROQ_API_KEY não configurada — chatbot desabilitado')
-    return
-  }
-
-  let userId
   try {
-    userId = await getUserIdByChatId(chatId)
-    logger.info('✅ userId obtido', { chatId, userId })
-  } catch (err) {
-    // Usuário não vinculado: ignorar silenciosamente (sem mensagem de erro)
-    // (o /start vai orientá-los a vincular a conta)
-    logger.warn('❌ Usuário não vinculado', { chatId, error: err.message })
-    return
+    await bot.sendMessage(chatId, FREE_TEXT_REPLY, { parse_mode: 'MarkdownV2' })
+  } catch (error) {
+    logger.error('❌ Erro ao enviar resposta de texto livre', error, {
+      chatId,
+      errorMessage: error.message,
+      errorStatus: error.response?.statusCode,
+    })
   }
-
-  await _processAndReply(bot, chatId, message, userId)
 }

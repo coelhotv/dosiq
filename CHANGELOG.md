@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Assistente de IA sai do bot do Telegram (spec 096 B0)
+
+- **Backend/Infra** (`Removed`, sem bump — Backend/Infra não tem fonte de versão canônica e web/mobile não
+  mudam; vai ao ar no deploy da Vercel). Mensagem de texto livre no bot do Telegram deixa de ser enviada
+  ao assistente de IA (Groq): o bot responde "O assistente agora fica só no app. Abra o dosiq e toque no
+  botão de conversa." O texto da mensagem também deixa de ser gravado nos logs do bot. Comandos, lembretes
+  e botões do bot seguem iguais.
+
 ### Exclusão de conta por falta de autorização só com aprovação manual, e registro mínimo do Marco Civil (spec 107)
 
 - **Backend/Infra** (`Changed`, `minor` junto da web — migração no Supabase e deploy na Vercel no merge). A
