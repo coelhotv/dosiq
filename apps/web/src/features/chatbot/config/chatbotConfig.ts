@@ -4,7 +4,7 @@
  * Fonte canônica para constantes compartilhadas entre:
  * - Web: safetyGuard.js, chatbotService.js
  * - Serverless: api/chatbot.js
- * - Telegram Bot: server/bot/services/chatbotServerService.js
+ * (o bot do Telegram não usa o assistente desde a spec 096 B0)
  *
  * REGRA: Este arquivo NÃO deve importar nada (sem dependências).
  * Apenas constantes puras compatíveis com browser e Node.js.

@@ -12,9 +12,8 @@ tags:
   - node-telegram-bot-api
   - server-engine
   - stock-control
-  - chatbot-ai
 created_at: "2026-02-01"
-updated_at: "2026-07-30"
+updated_at: "2026-10-20"
 epic: "049"
 ---
 
@@ -36,7 +35,7 @@ Desde o épico 040, a base de código do servidor e do bot foi totalmente migrad
 - **Registro Interativo**: Baixa automática de estoque com consumo via RPC PostgreSQL (`consume_stock_fifo`).
 - **Ancoragem de Doses**: Registro acoplado ao motor de `dose_instances` para calculadoras de adesão e streaks.
 - **Monitoramento de Estoque**: Alertas preditivos baseados em consumo diário calculados pela biblioteca `@dosiq/core`.
-- **Assistente Clínico IA**: Integração nativa com LLM via Groq SDK (`meta-llama/llama-4-scout-17b-16e-instruct`) com isolamento de contexto do paciente.
+- **Sem assistente de IA** (spec 096 B0): texto livre recebe resposta fixa apontando para o app; o assistente vive só no app.
 
 ### Visão Geral da Arquitetura
 
@@ -67,7 +66,6 @@ flowchart TD
             Cmds["Commands (/hoje, /estoque, /status, ...)\nserver/bot/commands/*.ts"]
             DoseActions["Callbacks de Dose (Tomar/Adiar/Pular)\nserver/bot/callbacks/doseActions.ts"]
             ConvCallbacks["Callbacks Conversacionais\nserver/bot/callbacks/conversational.ts"]
-            ChatbotService["Chatbot Server Service (Groq IA)\nserver/bot/services/chatbotServerService.ts"]
         end
     end
 
@@ -124,7 +122,7 @@ server/bot/
 ├── commands/                    # Handlers dos 11 comandos de texto do bot
 │   ├── adicionar_estoque.ts    # /adicionar_estoque e atalho /repor
 │   ├── ajuda.ts                # /ajuda - Menu de instrução
-│   ├── chatbot.ts              # /chatbot - Consulta com assistente clínico IA
+│   ├── chatbot.ts              # Texto livre → resposta fixa S13 (assistente só no app)
 │   ├── estoque.ts              # /estoque - Saldo e previsões de término
 │   ├── historico.ts            # /historico - Registros recentes de doses
 │   ├── hoje.ts                 # /hoje - Cronograma de doses do dia
@@ -143,7 +141,6 @@ server/bot/
 │   └── userResolver.ts         # Mapeamento do Telegram Chat ID para Supabase User UUID
 ├── scheduler.ts                 # Configuração de cron jobs do servidor em background
 ├── services/                    # Serviços especializados do bot
-│   ├── chatbotServerService.ts # Engine de integração com Groq SDK e contexto do paciente
 │   └── stockTrackingGuard.ts   # Guard de proteção para modo de uso "dose-only"
 ├── state.ts                     # Interface de persistência de sessões de usuário
 ├── tasks.ts                     # Tarefas executadas periodicamente pelo scheduler
@@ -427,7 +424,7 @@ O bot suporta 11 comandos principais de texto e atalhos parametrizados. Todos os
 | `/repor` | `server/bot/commands/adicionar_estoque.ts` | Atalho rápido para repor estoque: `/repor Nome Quantidade` | ✅ Sim |
 | `/historico` | `server/bot/commands/historico.ts` | Exibe os últimos registros de tomadas de dose | ✅ Sim |
 | `/protocols` | `server/bot/commands/protocols.ts` | Gerencia os protocolos (suporta os subcomandos `/pausar` e `/retomar`) | ✅ Sim |
-| `/chatbot` | `server/bot/commands/chatbot.ts` | Inicia consulta com a inteligência artificial clínica Groq | ✅ Sim |
+| *(texto livre)* | `server/bot/commands/chatbot.ts` | Resposta fixa: "O assistente agora fica só no app" — nada vai à Groq (spec 096 B0) | ✅ Sim |
 | `/status` | `server/bot/commands/status.ts` | Lista os protocolos ativos com dosagem e horários | ✅ Sim |
 
 ### Exemplo 1: Comando `/hoje` (`server/bot/commands/hoje.ts`)
@@ -775,42 +772,13 @@ export function escapeMarkdownV2(text: string): string {
 
 ## 🤖 Serviços Internos do Bot
 
-### Chatbot Clínico IA (`server/bot/services/chatbotServerService.ts`)
+### Texto livre (`server/bot/commands/chatbot.ts`)
 
-O serviço de chatbot fornece respostas contextualizadas utilizando o modelo LLM Groq SDK (`meta-llama/llama-4-scout-17b-16e-instruct`). O contexto é montado pela biblioteca `@dosiq/core`.
-
-```typescript
-// server/bot/services/chatbotServerService.ts (Trecho principal)
-import Groq from 'groq-sdk';
-import { supabase } from '../../services/supabase.js';
-import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core';
-
-type CoreSupabaseClient = Parameters<typeof fetchChatbotContextData>[0]['supabase'];
-
-export async function buildPatientContextForUser(userId: string) {
-  try {
-    const data = await fetchChatbotContextData({
-      supabase: supabase as unknown as CoreSupabaseClient,
-      getUserId: async () => userId,
-    });
-    const context = buildPatientContext(data);
-    return { context, error: null };
-  } catch (error) {
-    return { context: null, error: 'Erro ao carregar contexto.' };
-  }
-}
-
-export function buildStaticSystemRules(): string {
-  return [
-    'Você é o assistente de saúde do app Dosiq no Telegram.',
-    'Missão: orientar sobre o cronograma de doses, adesão e estoque do paciente.',
-    'REGRAS ABSOLUTAS:',
-    '- NUNCA recomende ou altere dosagens.',
-    '- NUNCA sugira diagnósticos ou substituição de medicamentos.',
-    '- Responda em português simples e sem formatação complexa.'
-  ].join('\n');
-}
-```
+Desde a spec 096 (B0, 2026-10-20) o bot **não** tem assistente de IA. Texto livre sem sessão
+conversacional ativa recebe a copy fixa S13 em MarkdownV2 e nada é enviado a provedor de LLM.
+O assistente vive só no app, sob o aceite de transferência internacional (`international_transfer`,
+spec 096 B2/B3). Guarda: `server/bot/__tests__/freeTextReply.test.ts` falha se qualquer arquivo do
+bot voltar a importar `groq-sdk`.
 
 ### Guard de Controle de Estoque (`server/bot/services/stockTrackingGuard.ts`)
 

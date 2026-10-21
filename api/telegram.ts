@@ -104,11 +104,13 @@ async function _handleTextMessage(bot, msg) {
   const text = msg.text;
   const chatId = msg.chat.id;
 
+  // Texto livre pode conter dado de saúde: só comandos entram no log (spec 096 B0)
+  const isCommand = text.startsWith('/');
   logger.info('💬 Mensagem de texto recebida', {
     chatId,
-    textPreview: text.substring(0, 50),
+    textPreview: isCommand ? text.substring(0, 50) : undefined,
     textLen: text.length,
-    isCommand: text.startsWith('/')
+    isCommand
   });
 
   // Try simple command handlers
@@ -147,11 +149,8 @@ async function _handleTextMessage(bot, msg) {
     return;
   }
 
-  // Fallback: chatbot
-  logger.info('🤖 Emitindo evento "message" para listeners (chatbot IA)', {
-    chatId,
-    textPreview: text.substring(0, 50)
-  });
+  // Fallback: texto livre → listeners (sessão conversacional ou resposta S13)
+  logger.info('💬 Emitindo evento "message" para listeners (texto livre)', { chatId });
   await bot._emit('message', msg);
 }
 
