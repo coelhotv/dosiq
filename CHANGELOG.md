@@ -7,6 +7,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Tela inicial do app destaca canetas injetáveis, código de barras e alarme no silencioso (spec 048 B)
+
+- **Mobile** (`Changed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — atualização da
+  proposta de valor na tela inicial não logada). A tela de boas-vindas do app passa a mostrar o título
+  "Nunca mais esqueça uma dose." e um exemplo de aplicação semanal em caneta ("Semaglutida 1,7 mg · Caneta ≈
+  0,75 mL", com o ícone de seringa), mantendo o cartão de adesão do dia ("Hoje · Adesão excelente!"). Os dois
+  destaques da tela passam a apresentar o alarme que toca até no silencioso ("Alarme confiável · toca até no
+  silencioso") e o cadastro pela embalagem ("Código de barras · direto pela embalagem").
+  Store-note: relevante — nova tela inicial destacando canetas injetáveis, leitor de código de barras e
+  alarme no silencioso.
+
 ### Autorização para envio de dados para fora do Brasil e modo sem envio (spec 096 B2)
 
 - **Backend/Infra** (`Added`, `minor` server `4.1.2 → 4.2.0` e core `0.23.0 → 0.24.0` — migração no
