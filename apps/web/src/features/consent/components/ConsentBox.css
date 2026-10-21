@@ -1,8 +1,8 @@
 .consent-box {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
+  gap: 2px;
+  padding: 10px 14px 6px;
   border: 1.5px solid var(--color-primary, #16a34a);
   border-radius: var(--radius-md, 10px);
   background: var(--color-primary-bg, #f0fdf4);
@@ -11,6 +11,13 @@
 .consent-box--error {
   border-color: var(--color-error, #b91c1c);
   background: var(--color-error-bg, #fef2f2);
+}
+
+.consent-box__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .consent-box__title {
@@ -53,9 +60,11 @@
 }
 
 .consent-box__details {
-  align-self: flex-start;
+  flex-shrink: 0;
+  /* alvo de 44 px sem empurrar a altura da linha do título */
   min-height: 44px;
-  padding: 0;
+  margin: -12px -8px -12px 0;
+  padding: 0 8px;
   border: none;
   background: none;
   font-size: 13px;

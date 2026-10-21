@@ -17,10 +17,10 @@ const consentService = createConsentService({ client: supabase })
 export const TRANSFER_CARD_COPY = Object.freeze({
   toggle: 'Processamento fora do Brasil',
   on: 'Ligado: lembretes com o nome do remédio, assistente IA e medições de uso. Os dados passam por serviços nos EUA.',
-  off: 'Desligado: os lembretes enviados pelos servidores chegam sem o nome do remédio, e o assistente e as medições ficam desligados. Os alarmes do celular continuam completos.',
+  off: 'Desligado: as notificações push chegam sem o nome do remédio, e o assistente e as medições ficam desligados. Os alarmes do celular continuam completos.',
   offTitle: 'Desligar o processamento fora do Brasil?',
   offEffects: [
-    'Os lembretes dos servidores chegam sem o nome do remédio.',
+    'As notificações push chegam sem o nome do remédio.',
     'O assistente e as medições de uso ficam desligados.',
     'O app continua funcionando, e os alarmes do celular seguem completos.',
     'Dá para ligar de novo quando quiser.',

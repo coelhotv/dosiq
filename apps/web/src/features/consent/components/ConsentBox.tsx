@@ -39,7 +39,13 @@ export default function ConsentBox({
 
   return (
     <div className={`consent-box${errorMessage ? ' consent-box--error' : ''}`}>
-      <p className="consent-box__title">{title}</p>
+      {/* "Detalhes ›" na linha do título, à direita (smoke B2 1.1/1.11: a caixa ficava longa demais). */}
+      <div className="consent-box__header">
+        <p className="consent-box__title">{title}</p>
+        <button type="button" className="consent-box__details" onClick={() => setDetailsOpen(true)}>
+          Detalhes ›
+        </button>
+      </div>
 
       <label className="consent-box__row" htmlFor={`${id}-checkbox`}>
         <input
@@ -55,10 +61,6 @@ export default function ConsentBox({
         />
         <span className="consent-box__label">{label}</span>
       </label>
-
-      <button type="button" className="consent-box__details" onClick={() => setDetailsOpen(true)}>
-        Detalhes ›
-      </button>
 
       {errorMessage && (
         <p id={`${id}-error`} className="consent-box__error" role="alert">

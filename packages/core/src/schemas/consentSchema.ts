@@ -78,9 +78,8 @@ export const HEALTH_CONSENT_COPY = Object.freeze({
   detailsTitle: 'Dados de saúde',
   details:
     'A DOSIQ usa o que você cadastra (remédios, tratamentos, doses tomadas, estoque e medidas como ' +
-    'peso, glicemia e pressão) para enviar os lembretes, guardar o histórico e calcular a adesão ao ' +
-    'tratamento. Também mede, sem conteúdo clínico, como o app é usado, para melhorá-lo; essa medição ' +
-    'só acontece com a autorização de envio para fora do Brasil. Os dados ficam guardados no Brasil. ' +
+    'peso, glicemia e pressão) para enviar os lembretes, guardar o histórico, calcular a adesão ao ' +
+    'tratamento e melhorar o app. Os dados ficam guardados no Brasil. ' +
     'Sem esta autorização o app não funciona, porque é com esses dados que ele lembra e registra. ' +
     'Para retirar: Perfil › Privacidade e dados. Exportar ou excluir: a qualquer momento.',
   helper:
@@ -106,7 +105,7 @@ export const TRANSFER_CONSENT_COPY = Object.freeze({
   withoutTitle: 'Sem a autorização',
   without:
     'O app funciona normalmente. Os alarmes do próprio celular continuam completos, porque não saem ' +
-    'do aparelho. Os avisos dos servidores chegam com texto genérico; assistente e medições ficam desligados.',
+    'do aparelho. As notificações push chegam com texto genérico; assistente e medições ficam desligados.',
   contrastWith: '💊 Losartana 50 mg • 1 comprimido — 08:00',
   contrastWithout: '💊 Hora do seu remédio',
   table: [
