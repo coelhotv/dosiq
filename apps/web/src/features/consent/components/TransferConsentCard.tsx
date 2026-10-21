@@ -27,6 +27,7 @@ export const TRANSFER_CARD_COPY = Object.freeze({
   ],
   offConfirm: 'Desligar',
   offKeep: 'Manter ligado',
+  offError: 'Não foi possível desligar agora. Confira a conexão e tente de novo.',
 })
 
 export default function TransferConsentCard() {
@@ -36,6 +37,7 @@ export default function TransferConsentCard() {
   const [confirmOff, setConfirmOff] = useState(false)
   const [enabling, setEnabling] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [offError, setOffError] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,15 +73,24 @@ export default function TransferConsentCard() {
     return res.ok
   }
 
+  // Falha (ex.: sem conexão) mantém a confirmação aberta com o erro — fechar calado deixaria o
+  // interruptor ligado sem explicar por quê (smoke B2 3.9).
   const handleTurnOff = async () => {
     setSaving(true)
+    setOffError(false)
+    let ok = false
     try {
-      const res = await consentService.revoke('international_transfer', 'web')
-      if (res.ok) await load()
-    } finally {
-      setSaving(false)
-      setConfirmOff(false)
+      ok = (await consentService.revoke('international_transfer', 'web')).ok
+    } catch {
+      ok = false
     }
+    setSaving(false)
+    if (!ok) {
+      setOffError(true)
+      return
+    }
+    setConfirmOff(false)
+    await load()
   }
 
   return (
@@ -113,8 +124,9 @@ export default function TransferConsentCard() {
           <ul className="privacy-consent-section__confirm-list">
             {TRANSFER_CARD_COPY.offEffects.map((e) => <li key={e}>{e}</li>)}
           </ul>
+          {offError && <p className="privacy-consent-section__error" role="alert">{TRANSFER_CARD_COPY.offError}</p>}
           <div className="privacy-consent-section__confirm-actions">
-            <button type="button" onClick={() => setConfirmOff(false)} disabled={saving}>
+            <button type="button" onClick={() => { setConfirmOff(false); setOffError(false) }} disabled={saving}>
               {TRANSFER_CARD_COPY.offKeep}
             </button>
             <button type="button" className="privacy-consent-section__confirm-warning-btn" onClick={handleTurnOff} disabled={saving}>

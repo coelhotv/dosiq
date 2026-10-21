@@ -154,6 +154,12 @@
   border: 1px solid var(--color-warning, #d97706);
 }
 
+.privacy-consent-section__error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--color-error, #b91c1c);
+}
+
 .privacy-consent-section__confirm-title {
   margin: 0 0 8px;
   font-size: 14px;

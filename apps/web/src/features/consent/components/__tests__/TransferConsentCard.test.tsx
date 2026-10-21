@@ -80,6 +80,17 @@ describe('TransferConsentCard', () => {
     await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('international_transfer', 'web'))
   })
 
+  it('"Desligar" sem conexão ⇒ confirmação continua aberta com erro, interruptor segue ligado', async () => {
+    getStatusMock.mockResolvedValue(granted)
+    revokeMock.mockRejectedValueOnce(new Error('Failed to fetch'))
+    render(<TransferConsentCard />)
+    fireEvent.click(await screen.findByRole('switch'))
+    fireEvent.click(screen.getByText(TRANSFER_CARD_COPY.offConfirm))
+    expect(await screen.findByRole('alert')).toHaveTextContent(TRANSFER_CARD_COPY.offError)
+    expect(screen.getByText(TRANSFER_CARD_COPY.offTitle)).toBeTruthy()
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+  })
+
   it('falha de leitura ⇒ erro explícito, interruptor desabilitado (nunca "desligado")', async () => {
     getStatusMock.mockRejectedValue(new Error('net'))
     render(<TransferConsentCard />)
