@@ -37,6 +37,10 @@ jest.mock('../screens/OnboardingMedicineSearchStep', () => ({ __esModule: true, 
 jest.mock('../screens/OnboardingTreatmentStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingStockStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingStockInitialBalanceStep', () => ({ __esModule: true, default: () => null }))
+jest.mock('../screens/OnboardingConsentStep', () => ({ __esModule: true, default: () => null }))
+jest.mock('@profile/screens/DeleteAccountScreen', () => ({ __esModule: true, default: () => null }))
+const mockRefNavigate = jest.fn()
+jest.mock('@navigation/navigationRef', () => ({ navigationRef: { isReady: () => true, navigate: (...a) => mockRefNavigate(...a) } }))
 // 066 Slice E (T051): o leitor da caixa também é tela do wizard.
 jest.mock('@medications/scan/BarcodeScannerScreen', () => ({ __esModule: true, default: () => null }))
 
@@ -67,13 +71,19 @@ describe('OnboardingNavigator — eventos', () => {
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
-  it('pular emite skip{step} e ZERO complete (antes eram a mesma função)', async () => {
+  // 096 B3: pular NÃO conclui mais — leva ao S1 sem dado; a conclusão vem do `finish` de lá.
+  it('pular emite skip{step}, vai ao S1 `empty` e não conclui sem A', async () => {
     const onComplete = jest.fn()
     render(<OnboardingNavigator onComplete={onComplete} />)
     await act(async () => { await global.__onbCtx.skip(2) })
     expect(mockLogEvent).toHaveBeenCalledWith('onboarding_skip', { surface: 'mobile', step: 2 })
+    expect(mockRefNavigate).toHaveBeenCalledWith('OnboardingConsent', { variant: 'empty' })
+    expect(mockCompleteOnboarding).not.toHaveBeenCalled()
+    expect(onComplete).not.toHaveBeenCalled()
+
+    // S1 empty conclui via finish: ZERO onboarding_complete (pular ≠ concluir, 065 G-4).
+    await act(async () => { await global.__onbCtx.finish() })
     expect(names()).not.toContain('onboarding_complete')
-    expect(mockCompleteOnboarding).toHaveBeenCalledTimes(1)
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 })

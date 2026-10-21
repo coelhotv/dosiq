@@ -330,7 +330,10 @@ describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
     const { client, rpc } = makeTypedClient({})
     let termsCalls = 0
     rpc.mockImplementation(async (_fn: string, args: Record<string, unknown>) => {
-      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) return { data: null, error: { message: 'net' } }
+      // Cast: o mock tipado só aceita o formato de sucesso; a falha é exatamente o caso deste teste.
+      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) {
+        return { data: null, error: { message: 'net' } } as unknown as { data: string; error: null }
+      }
       return { data: EVENT.id, error: null }
     })
     const result = await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
