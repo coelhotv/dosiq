@@ -7,7 +7,7 @@
 // Sem terceiro estado: a opção 1 (dose-only) vem PRÉ-MARCADA e "Continuar" está SEMPRE ativo —
 // nunca existe "sem seleção". Copy §9 do SPEC_044_DOSE-ONLY_DECISOES (copiada, não reescrita).
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -15,6 +15,15 @@ import { useNavigation } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
 const { CalendarClock, Box, Info } = LucideIcons as any
 import FormActions from '@shared/components/form/FormActions'
+import { useToast } from '@shared/components/feedback/Toast'
+import { chooseStockModeInOnboarding } from '@profile/services/stockPreferenceService'
+import { protocolService } from '@treatments/services/protocolService'
+import { medicineService } from '@medications/services/medicineService'
+import { enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { withTimeout } from '@shared/utils/withTimeout'
 import { ROUTES } from '@navigation/routes'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
@@ -37,26 +46,140 @@ const OPTIONS = [
   },
 ]
 
+// 066 E (C-4, smoke 2026-10-18): o "Continuar" chegou a girar para sempre sem nenhuma requisição sair
+// do aparelho. Cada escrita tem prazo; estourado, a pessoa vê o motivo e pode tentar de novo.
+export const WRITE_TIMEOUT_MS = 20_000
+const TIMEOUT_MESSAGE = 'A conexão está demorando. Verifique a internet e toque em Continuar de novo.'
+
+function timed<T>(promise: Promise<T>): Promise<T> {
+  return withTimeout(promise, WRITE_TIMEOUT_MS, TIMEOUT_MESSAGE)
+}
+
+// Reaproveita a escrita ainda em voo: o prazo não cancela a requisição, e ela pode gravar depois.
+// Sem isto, tentar de novo após o timeout criaria um 2º remédio/tratamento (classe do AP-283).
+// Falhou de verdade ⇒ esquece, e a próxima tentativa começa outra.
+function inFlight<T>(ref: { current: Promise<T> | null }, start: () => Promise<T>): Promise<T> {
+  if (!ref.current) {
+    const pending = start()
+    ref.current = pending
+    pending.catch(() => {
+      if (ref.current === pending) ref.current = null
+    })
+  }
+  return ref.current
+}
+
 export default function OnboardingStockStep() {
   const navigation = useNavigation<any>()
-  const { skip, setStockTracking } = useOnboarding()
+  const { medicine, medicineSource, treatment, finish, skip, markCompleted } = useOnboarding()
+  const { refresh: refreshStockTracking } = useStockTracking()
+  const { show } = useToast()
 
   // Opção 1 pré-marcada: o modo dose-only é o default do onboarding (a preferência no banco
   // nasce `true` por FR-009 — quem escolhe aqui é quem está criando a conta agora).
   const [selected, setSelected] = useState('doses')
+  const [submitting, setSubmitting] = useState(false)
+  // Idempotência do retry: a gravação são 3 escritas remotas em sequência (medicamento →
+  // tratamento → preferência). Se a 2ª falhar (rede), a 1ª JÁ persistiu — sem estes ids, um
+  // segundo "Continuar" criaria medicamento/tratamento duplicados. Guarda o que já foi gravado
+  // e retoma de onde parou.
+  const [createdMedicineId, setCreatedMedicineId] = useState<string | null>(null)
+  const [protocolCreated, setProtocolCreated] = useState(false)
+  const pendingMedicine = useRef<Promise<any> | null>(null)
+  const pendingProtocol = useRef<Promise<any> | null>(null)
 
   const headerProps = useMemo(
     () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: () => skip(3) }),
     [navigation, skip],
   )
 
-  // 096 B3 (T040a): este passo NÃO grava mais. A escolha vai para o contexto e o S1
-  // (`OnboardingConsentStep`) grava remédio, tratamento e preferência — só depois do consentimento A.
-  const handleContinue = useCallback(() => {
+  // Este é o passo que GRAVA o onboarding inteiro: medicamento, tratamento, permissão de push
+  // e a preferência de estoque. Os passos anteriores só acumulam no contexto — é o que torna o
+  // botão "voltar" seguro (voltar e continuar de novo não duplica nada no banco).
+  const handleContinue = useCallback(async () => {
     const option = OPTIONS.find((o) => o.id === selected)
-    setStockTracking(option.tracking)
-    navigation.navigate(ROUTES.ONBOARDING_CONSENT)
-  }, [selected, setStockTracking, navigation])
+    setSubmitting(true)
+    try {
+      if (!medicine || !treatment) {
+        throw new Error('Dados do onboarding não encontrados. Volte e revise os passos.')
+      }
+
+      let medicineId = createdMedicineId
+      if (!medicineId) {
+        // 066 E: `source` diz se o 1º remédio veio da caixa, da busca ou digitado (TRACKING_PLAN §5.3).
+        const createdMedicine = await timed(
+          inFlight(pendingMedicine, () =>
+            medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource }),
+          ),
+        )
+        medicineId = createdMedicine.id
+        setCreatedMedicineId(medicineId)
+      }
+
+      const { _remind, ...protocolData } = treatment
+      if (!protocolCreated) {
+        await timed(
+          inFlight(pendingProtocol, () =>
+            protocolService.create(
+              { ...protocolData, medicine_id: medicineId },
+              { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING }
+            ),
+          ),
+        )
+        setProtocolCreated(true)
+      }
+
+      await timed(chooseStockModeInOnboarding(option.tracking))
+      // O provider lê a preferência UMA vez (no login) — sem este refresh, o app abre com o
+      // valor lido ANTES desta escolha e a aba Estoque aparece para quem escolheu dose-only.
+      await timed(refreshStockTracking())
+
+      // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete no passo 3.
+      // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO → segue o
+      // fluxo; a dona Maria reativa depois em Configurações (sem nag aqui).
+      if (_remind) {
+        const { granted } = await enablePushAtIntent({ supabase }).catch(() => ({ granted: false }))
+        if (!granted) {
+          show('Tudo bem! Você pode ligar os lembretes depois em Configurações.', { variant: 'info', duration: 6000 })
+        }
+      }
+
+      // Opção 2 (opt-in) leva ao saldo inicial (spec 044, F4b/T017) — a tela seguinte sai do
+      // wizard tanto em "Ativar estoque" quanto em "Cancelar". A preferência já está ON aqui
+      // (chooseStockModeInOnboarding acima); medicamento/tratamento/push já gravados.
+      //
+      // ⚠️ MARCAR A CONCLUSÃO ANTES DE NAVEGAR (não no fim da tela de saldo): o setup já está
+      // TODO persistido neste ponto, e o saldo é coleta opcional. Se a marcação ficasse para
+      // depois, matar o app na tela de saldo reabriria o wizard do zero — e os guards de
+      // idempotência abaixo (`createdMedicineId`/`protocolCreated`) são estado de componente,
+      // perdidos no restart → medicamento e tratamento duplicados (classe do AP-283).
+      if (option.tracking) {
+        await timed(markCompleted())
+        setSubmitting(false)
+        navigation.navigate(ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE)
+        return
+      }
+
+      await timed(finish())
+    } catch (err) {
+      // Não avança em silêncio: deixa o usuário tentar de novo em vez de cair num app que não
+      // é o que ele escolheu — ou pior, sem o tratamento que ele acabou de configurar.
+      setSubmitting(false)
+      show(err?.message ?? 'Não foi possível concluir. Tente de novo.', { variant: 'error' })
+    }
+  }, [
+    selected,
+    medicine,
+    medicineSource,
+    treatment,
+    finish,
+    markCompleted,
+    show,
+    refreshStockTracking,
+    createdMedicineId,
+    protocolCreated,
+    navigation,
+  ])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -107,7 +230,7 @@ export default function OnboardingStockStep() {
       <FormActions
         primaryLabel="Continuar"
         onPrimary={handleContinue}
-        primaryLoading={false}
+        primaryLoading={submitting}
       />
     </SafeAreaView>
   )

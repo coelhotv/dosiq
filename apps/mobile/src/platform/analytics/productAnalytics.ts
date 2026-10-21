@@ -20,55 +20,6 @@ import { resolveTreatmentCountBucket } from '@dosiq/core'
 
 let client = null
 
-// ─── Spec 096 B3 — PostHog sob as autorizações A e B (CON-034, política v0.4 §4) ───────────────
-// "Sem esse segundo consentimento, o app não envia esses eventos." O wrapper é o ponto ÚNICO de
-// rede do PostHog (capture/screen/identify), então o gate mora aqui:
-//   pending → retém em memória (onboarding antes do A, leitura ainda não feita, sem sessão);
-//   allowed → A e B vigentes: opt-in no SDK, identify e flush na ordem original;
-//   denied  → sem B (ou leitura de B falhou): descarta o retido e não envia mais nada.
-// `resetUser` (logout, "Descartar e sair") zera a fila e volta a `pending`.
-// O SDK nasce `defaultOptIn: false` como segunda trava — se algum caminho escapar do wrapper, o
-// SDK também descarta. `register` (super properties) é local e não passa pelo gate.
-export type AnalyticsConsent = 'pending' | 'allowed' | 'denied'
-export const ANALYTICS_BUFFER_MAX = 200
-let consent: AnalyticsConsent = 'pending'
-let retained: Array<(c: any) => unknown> = []
-let identifiedUserId: string | null = null
-
-function dispatch(op: (c: any) => unknown) {
-  if (consent === 'denied') return
-  if (consent === 'pending') {
-    retained.push(op)
-    if (retained.length > ANALYTICS_BUFFER_MAX) retained = retained.slice(-ANALYTICS_BUFFER_MAX)
-    return
-  }
-  const c = getClient()
-  if (c) return op(c)
-}
-
-export async function setAnalyticsConsent(next: AnalyticsConsent) {
-  try {
-    if (next === consent) return
-    consent = next
-    const c = getClient()
-    if (next === 'denied') {
-      retained = []
-      if (c) await c.optOut?.()
-      return
-    }
-    if (next === 'allowed') {
-      const ops = retained
-      retained = []
-      if (!c) return
-      await c.optIn?.()
-      if (identifiedUserId) c.identify(identifiedUserId)
-      for (const op of ops) await op(c)
-    }
-  } catch (error) {
-    if (__DEV__) console.warn('[Analytics] setAnalyticsConsent error:', error.message)
-  }
-}
-
 // Instancia sob demanda (1x). Sem chave configurada → analytics vira no-op silencioso.
 function getClient() {
   if (client) return client
@@ -78,9 +29,6 @@ function getClient() {
       host: posthogHost,
       // Session replay desligado por decisão de custo (ADR-090): come cota de eventos.
       enableSessionReplay: false,
-      // 096 B3: nada sai antes de A+B (gate acima); flags não são usadas (ADR-090) — sem pré-carga.
-      defaultOptIn: false,
-      preloadFeatureFlags: false,
     })
     return client
   } catch (error) {
@@ -96,7 +44,9 @@ export function getPostHogClient() {
 
 export async function logEvent(eventName, params = {}) {
   try {
-    await dispatch((c) => c.capture(eventName, params))
+    const c = getClient()
+    if (!c) return
+    await c.capture(eventName, params)
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logEvent error:', error.message)
   }
@@ -115,11 +65,8 @@ export async function setUserId(userId) {
     // Sentry e PostHog têm config INDEPENDENTE (sentryDsn ≠ posthogApiKey): não acoplar. Um
     // early-return por causa do client PostHog ausente pularia o Sentry.setUser também, deixando
     // o crash sem dono num build com Sentry ligado e PostHog não (RC6 PR #773).
-    identifiedUserId = userId
-    if (consent === 'allowed') {
-      const c = getClient()
-      if (c) c.identify(userId)
-    }
+    const c = getClient()
+    if (c) c.identify(userId)
     // Mesmo UUID no Sentry: crash sem dono não dá para cruzar com o relato de suporte,
     // nem para responder "quantas pessoas esse crash atingiu?".
     Sentry.setUser({ id: userId })
@@ -133,13 +80,8 @@ export async function setUserId(userId) {
 // saúde entre pessoas. Anda junto com setUserId: ligar um sem o outro cria o bug inverso.
 export async function resetUser() {
   try {
-    retained = []
-    identifiedUserId = null
-    consent = 'pending'
     const c = getClient()
     if (c) {
-      // O opt-in do SDK persiste no aparelho: sem isto, a próxima pessoa herdaria a 2ª trava aberta.
-      await c.optOut?.()
       c.reset()
       // `reset()` apaga TODAS as super properties, inclusive as do APARELHO, que não são da
       // pessoa: sem isto, depois de sair e entrar de novo, todo evento até o próximo cold start
@@ -168,7 +110,9 @@ export async function setUserProperty(name, value) {
 
 export async function logScreenView(screenName, screenClass = screenName) {
   try {
-    await dispatch((c) => c.screen(screenName, { screen_class: screenClass }))
+    const c = getClient()
+    if (!c) return
+    await c.screen(screenName, { screen_class: screenClass })
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logScreenView error:', error.message)
   }

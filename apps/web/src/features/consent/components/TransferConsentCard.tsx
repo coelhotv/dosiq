@@ -7,15 +7,28 @@
 // getStatus() LANÇA em falha de leitura — vira estado de erro explícito, nunca "desligado".
 
 import { useCallback, useEffect, useState } from 'react'
-import { createConsentService, TRANSFER_TOGGLE_COPY } from '@dosiq/core'
+import { createConsentService } from '@dosiq/core'
 import type { ConsentState } from '@dosiq/core'
 import EnableTransferModal from './EnableTransferModal'
 import { supabase } from '@shared/utils/supabase'
 
 const consentService = createConsentService({ client: supabase })
 
-// Copy no core desde a B3 (uma fonte web↔mobile); o nome local fica para os consumidores atuais.
-export const TRANSFER_CARD_COPY = TRANSFER_TOGGLE_COPY
+export const TRANSFER_CARD_COPY = Object.freeze({
+  toggle: 'Processamento fora do Brasil',
+  on: 'Ligado: lembretes com o nome do remédio, assistente IA e medições de uso. Os dados passam por serviços nos EUA.',
+  off: 'Desligado: as notificações push chegam sem o nome do remédio, e o assistente e as medições ficam desligados. Os alarmes do celular continuam completos.',
+  offTitle: 'Desligar o processamento fora do Brasil?',
+  offEffects: [
+    'As notificações push chegam sem o nome do remédio.',
+    'O assistente e as medições de uso ficam desligados.',
+    'O app continua funcionando, e os alarmes do celular seguem completos.',
+    'Dá para ligar de novo quando quiser.',
+  ],
+  offConfirm: 'Desligar',
+  offKeep: 'Manter ligado',
+  offError: 'Não foi possível desligar agora. Confira a conexão e tente de novo.',
+})
 
 export default function TransferConsentCard() {
   const [state, setState] = useState<ConsentState | null>(null)

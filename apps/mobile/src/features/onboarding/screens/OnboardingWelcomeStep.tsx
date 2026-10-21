@@ -10,7 +10,6 @@ const { Bell, Package, ShieldCheck } = LucideIcons as any
 import { useNavigation } from '@react-navigation/native'
 import { ROUTES } from '@navigation/routes'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
-import { WELCOME_PRIVACY_COPY } from '../onboardingConsentCopy'
 
 export default function OnboardingWelcomeStep() {
   const navigation = useNavigation()
@@ -79,8 +78,9 @@ export default function OnboardingWelcomeStep() {
             </View>
             <View style={styles.pilarTextContainer}>
               <Text style={styles.pilarTitle}>Seguro e Privado</Text>
-              {/* 096 `welcome` (D-1 a): anuncia, antes do investimento, que o fim pede autorização. */}
-              <Text style={styles.pilarDescription}>{WELCOME_PRIVACY_COPY}</Text>
+              <Text style={styles.pilarDescription}>
+                Suas informações protegidas e guardadas com total segurança.
+              </Text>
             </View>
           </View>
         </View>

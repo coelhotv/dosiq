@@ -160,36 +160,6 @@ export const CHAT_WITHOUT_TRANSFER_COPY = Object.freeze({
   close: 'Fechar',
 } as const)
 
-/**
- * Cartão B em Privacidade e dados (S7 `priv-*`, web e mobile — DESIGN_DECISOES §4). Desligar =
- * confirmação inline âmbar com os efeitos; ligar = `ENABLE_TRANSFER_COPY` (guarda 11). Subiu da web
- * para o core na B3: uma fonte para as duas plataformas.
- */
-export const TRANSFER_TOGGLE_COPY = Object.freeze({
-  toggle: 'Processamento fora do Brasil',
-  on: 'Ligado: lembretes com o nome do remédio, assistente IA e medições de uso. Os dados passam por serviços nos EUA.',
-  off: 'Desligado: as notificações push chegam sem o nome do remédio, e o assistente e as medições ficam desligados. Os alarmes do celular continuam completos.',
-  offTitle: 'Desligar o processamento fora do Brasil?',
-  offEffects: [
-    'As notificações push chegam sem o nome do remédio.',
-    'O assistente e as medições de uso ficam desligados.',
-    'O app continua funcionando, e os alarmes do celular seguem completos.',
-    'Dá para ligar de novo quando quiser.',
-  ],
-  offConfirm: 'Desligar',
-  offKeep: 'Manter ligado',
-  offError: 'Não foi possível desligar agora. Confira a conexão e tente de novo.',
-} as const)
-
-/** Ligar B (`enableB`, guarda 11): sempre a autorização completa, nunca botão com nome de recurso. */
-export const ENABLE_TRANSFER_COPY = Object.freeze({
-  title: 'Ligar o processamento fora do Brasil',
-  body: 'Permite os três juntos: lembretes com o nome do remédio, assistente IA e medições de uso.',
-  authorize: 'Autorizar',
-  cancel: 'Cancelar',
-  errorNoBox: 'Marque a autorização para ligar.',
-} as const)
-
 // ─── Spec 107 — fila de exclusão com aprovação manual ─────────────────────────────────────
 
 /** Motivo da linha na fila. Espelha o CHECK de `prune_queue.reason`. */

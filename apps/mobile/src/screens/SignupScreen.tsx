@@ -14,6 +14,7 @@ import { signUpWithEmail, verifyOtpWithEmail } from '../platform/auth/authServic
 import { captureDeviceTimezone } from '@profile/services/profileService'
 import { ROUTES } from '../navigation/routes'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import HealthConsentCheckbox from '@features/consent/components/HealthConsentCheckbox'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
 function SignupSuccessView({
@@ -106,7 +107,7 @@ function SignupInfoCard() {
       <View style={styles.infoBody}>
         <Text style={styles.infoTitle}>Sua conta, suas regras</Text>
         <Text style={styles.infoText}>
-          Se você autorizar, seus dados de saúde ficam guardados no Brasil, em segurança, e o app funciona mesmo sem internet.
+          Seus dados ficam guardados em segurança e funcionam mesmo sem internet.
         </Text>
       </View>
     </View>
@@ -127,8 +128,8 @@ function SignupConfirmHint() {
 function SignupTerms() {
   return (
     <Text style={styles.terms}>
-      Ao continuar, você aceita os <Text style={styles.termsLink}>Termos de Uso</Text> e a{' '}
-      <Text style={styles.termsLink}>Política de Privacidade</Text>.
+      Ao continuar, você aceita os <Text style={styles.termsLink}>Termos</Text> e a{' '}
+      <Text style={styles.termsLink}>Privacidade</Text>.
     </Text>
   )
 }
@@ -143,15 +144,24 @@ export default function SignupScreen({ navigation }) {
   const [otpCode, setOtpCode] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [otpError, setOtpError] = useState(null)
-  // 096 B3 (S3): a autorização de dados de saúde saiu do cadastro — ela é colhida no fim do onboarding
-  // (S1), antes de qualquer dado de saúde ser gravado. A conta nasce sem A (E1b).
+  // 046 T005 — nasce DESMARCADO: consentimento pré-marcado não é consentimento (LGPD art. 8º §4).
+  const [healthConsent, setHealthConsent] = useState(false)
+  const [consentError, setConsentError] = useState(false)
+
   async function handleSignup() {
+    // Gate de submit (FR-002): sem opt-in, o cadastro para aqui. Criar a conta e só depois pedir
+    // consentimento deixaria uma conta sem base legal para o dado que ela já começou a gerar.
+    if (!healthConsent) {
+      setConsentError(true)
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
       // Campo único de senha: usamos o mesmo valor como confirmação (a validação
       // canônica de signup exige confirmPassword).
-      const { success, error: signupError } = await signUpWithEmail(email, password, password)
+      const { success, error: signupError } = await signUpWithEmail(email, password, password, { healthConsent })
       if (!success) {
         setError(signupError)
         return
@@ -163,6 +173,11 @@ export default function SignupScreen({ navigation }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleConsentChange(checked) {
+    setHealthConsent(checked)
+    if (checked) setConsentError(false)
   }
 
   async function handleVerifyOtp() {
@@ -260,6 +275,14 @@ export default function SignupScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
+          {/* Opt-in de dado de saúde — destacado por exigência legal (art. 11): não pode estar
+              embutido no aceite genérico de Termos/Privacidade do rodapé. */}
+          <HealthConsentCheckbox
+            checked={healthConsent}
+            onChange={handleConsentChange}
+            disabled={loading}
+            showError={consentError}
+          />
 
           {/* Card: Sua conta, suas regras */}
           <SignupInfoCard />

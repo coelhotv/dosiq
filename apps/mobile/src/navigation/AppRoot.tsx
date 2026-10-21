@@ -9,7 +9,6 @@ import { logEvent, getPostHogClient, setUserProperty, envTags } from '@platform/
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { bundleTags } from '@platform/updates/bundleInfo'
 import { sentryDsn } from '@platform/config/nativePublicAppConfig'
-import { scrubEvent, scrubBreadcrumb } from '@platform/observability/sentryScrub'
 import { ToastProvider } from '@shared/components/feedback/Toast'
 import ErrorBoundary from '@shared/components/ErrorBoundary'
 import AlarmSchedulerBridge from '@platform/alarms/AlarmSchedulerBridge'
@@ -44,11 +43,6 @@ if (sentryDsn) {
       // initialScope (e não setTag depois): tem de valer para crash de BOOT, que acontece antes de
       // qualquer effect rodar — justo o crash que o rollback precisa enxergar.
       initialScope: { tags: bundleTags() },
-      // 096 PO-SEC-4: o relatório sai sem conteúdo (query de rede, console, corpo, e-mail, IP) — a
-      // política v0.4 §6 afirma isso para a 0.34+. Allowlist em sentryScrub.ts; stack/tags/user.id ficam.
-      sendDefaultPii: false,
-      beforeBreadcrumb: (crumb) => scrubBreadcrumb(crumb as never),
-      beforeSend: (event) => scrubEvent(event as never),
     })
   } catch {
     // ignora — Sentry indisponível não pode quebrar o boot
