@@ -178,6 +178,10 @@ INSERT INTO user_settings (user_id) VALUES ('00000000-0000-0000-0000-00000000000
 
 4. Salve o arquivo
 
+5. **Ambiente de QA (opcional, recomendado para dev):** `apps/web/.env.qa` aponta o web para o projeto
+   `dosiq-qa` (`npm run dev --workspace @dosiq/web -- --mode qa`). Ver
+   [`docs/architecture/QA_ENVIRONMENT.md`](../architecture/QA_ENVIRONMENT.md).
+
 ---
 
 ## 🐙 Passo 3: Criar repositório no GitHub
