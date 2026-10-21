@@ -116,7 +116,7 @@ QA não guarda dado de saúde de titular real (CON-044 §3). Contas de smoke sã
 Contas de smoke do PO (dados inventados) vêm de prod com:
 
 ```bash
-scripts/qa-copy-smoke-accounts.sh "<URI_PROD>" "<URI_QA>" doktorr@gmail.com eu@coelho.me
+scripts/qa-copy-smoke-accounts.sh "<URI_PROD>" "<URI_QA>" <email-smoke-1> <email-smoke-2>
 ```
 
 Copia `auth.users`/`identities` (mesma senha), `user_settings` (sem `telegram_chat_id`) e o domínio

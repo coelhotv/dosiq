@@ -16,10 +16,16 @@ BIN="${PG_BIN:-/opt/homebrew/opt/libpq/bin}"
 OUT="${QA_OUT_DIR:-$HOME/local/dosiq-qa}/smoke-data"
 mkdir -p "$OUT"; umask 077; rm -f "$OUT"/*.csv
 
-case " $* " in *" coelhotv@live.com "*) echo "conta real do PO — proibido (CON-044 §3)" >&2; exit 1;; esac
 
 EMAILS=$(printf "'%s'," "$@"); EMAILS="${EMAILS%,}"
 IDS_SQL="select id from auth.users where email in ($EMAILS)"
+
+# CON-044 §3: conta de titular real nunca vai ao QA. A conta real do PO é barrada pelo id (sem e-mail no repo).
+REAL_ACCOUNT_ID_PREFIXES=("b0c9746c")
+ids=$("$BIN/psql" "$PROD_URI" -v ON_ERROR_STOP=1 -Atq -c "$IDS_SQL")
+for p in "${REAL_ACCOUNT_ID_PREFIXES[@]}"; do
+  if grep -q "^$p" <<<"$ids"; then echo "conta real (id $p…) — proibido (CON-044 §3)" >&2; exit 1; fi
+done
 
 # ordem respeita FKs (o load roda em session_replication_role=replica — ciclos medicine_logs↔dose_instances)
 TABLES=(medicines treatment_plans protocols titrations titration_steps purchases stock medicine_logs
