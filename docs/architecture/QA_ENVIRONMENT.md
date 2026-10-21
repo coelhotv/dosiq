@@ -101,6 +101,10 @@ Prod nunca vê uma migração que não passou pelo QA. Exceção só com pedido 
 - **Web:** `apps/web/.env.qa` (gitignored por `.env.*`) + `npm run dev --workspace @dosiq/web -- --mode qa`.
   O Vite carrega `.env.qa` **por cima** de `.env`/`.env.local` (prod): variável ausente no `.env.qa` vaza de
   prod — por isso as integrações estão declaradas vazias no arquivo.
+- **Preview da Vercel:** desde 2026-10-21 as variáveis do Supabase (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) são separadas — Production → prod, **Preview → QA**. Todo preview de
+  branch (web + `api/`) fala com o QA. Outras variáveis de Preview (Telegram, Groq, Sentry, `CRON_SECRET`) seguem
+  as de prod — com o banco do QA elas não alcançam titular real, mas o `api/` do preview pode chamar serviço externo.
 - **Mobile:** ainda não ligado (dev build lê `EXPO_PUBLIC_*` de prod). Pendente.
 - **Server/cron:** não roda contra o QA (sem `CRON_SECRET`, sem jobs).
 
