@@ -7,8 +7,13 @@
 import { z } from 'zod'
 import { compareSemver } from '../utils/semver'
 
-/** Tipos de consentimento registrados. Espelha o CHECK de `consent_log.consent_type`. */
-export const CONSENT_TYPES = ['health_data', 'terms_privacy'] as const
+/**
+ * Tipos de consentimento registrados. Espelha o CHECK de `consent_log.consent_type` E a whitelist da
+ * RPC `consent_write` (R-271 — os três mudam juntos; migração 20261021_096_consent_policy_v04).
+ * `international_transfer` = caixa B (spec 096, art. 33 VIII): opcional, liga o modo completo no
+ * servidor (ADR-112).
+ */
+export const CONSENT_TYPES = ['health_data', 'terms_privacy', 'international_transfer'] as const
 
 /**
  * Ações da trilha. Espelha o CHECK de `consent_log.action`.
@@ -51,7 +56,7 @@ export type ConsentPlatform = (typeof CONSENT_PLATFORMS)[number]
  * auditado escolheria a versão que diz ter aceitado). Ela serve para EXIBIR ("você aceitou a
  * versão X") e para detectar política nova.
  */
-export const CURRENT_POLICY_VERSION = '0.3'
+export const CURRENT_POLICY_VERSION = '0.4'
 
 /**
  * COPY CANÔNICA do opt-in de dado de saúde (LGPD art. 11 — consentimento específico e destacado).
@@ -63,14 +68,21 @@ export const CURRENT_POLICY_VERSION = '0.3'
  */
 export const HEALTH_CONSENT_COPY = Object.freeze({
   title: 'Consentimento para dados de saúde',
-  // Declaração de idade (16+) embutida na MESMA frase do opt-in (spec 046, item C das TAREFAS):
-  // mesmo clique, mesmo evento `granted` no consent_log — a prova de diligência nasce
-  // correlacionada ao ato que tratou o dado sensível, sem UI nova. A política cita este texto
-  // VERBATIM (T017) — mudou aqui, muda no HTML.
+  // Caixa A da v0.4 (spec 096, DESIGN_DECISOES §3) — 18+ (ECA Digital) na MESMA frase do opt-in:
+  // mesmo clique, mesmo evento `granted`. A política v0.4 §5 cita este texto VERBATIM — mudou aqui,
+  // muda lá (teste de igualdade em consentSchema.test.ts).
   label:
-    'Autorizo o dosiq a tratar meus dados de saúde (medicamentos, doses, adesão e biomarcadores) ' +
-    'para me enviar lembretes, registrar meu histórico e calcular minha adesão ao tratamento, ' +
-    'e declaro ter 16 anos ou mais.',
+    'Autorizo o uso dos meus dados de saúde para lembretes, histórico, adesão e melhoria do app. ' +
+    'Tenho 18 anos ou mais.',
+  /** Folha "Detalhes ›" da caixa A (S6-A, DESIGN_DECISOES §4) — camada 2, a 1 toque (guarda 8). */
+  detailsTitle: 'Dados de saúde',
+  details:
+    'A DOSIQ usa o que você cadastra (remédios, tratamentos, doses tomadas, estoque e medidas como ' +
+    'peso, glicemia e pressão) para enviar os lembretes, guardar o histórico e calcular a adesão ao ' +
+    'tratamento. Também mede, sem conteúdo clínico, como o app é usado, para melhorá-lo; essa medição ' +
+    'só acontece com a autorização de envio para fora do Brasil. Os dados ficam guardados no Brasil. ' +
+    'Sem esta autorização o app não funciona, porque é com esses dados que ele lembra e registra. ' +
+    'Para retirar: Perfil › Privacidade e dados. Exportar ou excluir: a qualquer momento.',
   helper:
     'Sem essa autorização o dosiq não consegue funcionar — é o dado de saúde que gera os ' +
     'lembretes e o histórico. Você pode retirar o consentimento a qualquer momento em ' +
@@ -79,6 +91,57 @@ export const HEALTH_CONSENT_COPY = Object.freeze({
     'Ao retirar o consentimento, o dosiq para de enviar lembretes e o app fica bloqueado. ' +
     'Você continua podendo exportar seus dados ou excluir sua conta. Se não voltar a consentir ' +
     'em 90 dias, sua conta e seus dados serão excluídos automaticamente.',
+} as const)
+
+/**
+ * COPY CANÔNICA da caixa B (spec 096 — envio para fora do Brasil, LGPD art. 33, VIII). Opcional:
+ * nunca é condição de cadastro nem de uso (guarda 4). Ligar B em qualquer superfície mostra esta
+ * frase + "Detalhes ›" (guarda 11). A política v0.4 §13 cita `label` VERBATIM.
+ */
+export const TRANSFER_CONSENT_COPY = Object.freeze({
+  label:
+    'Autorizo enviar meus dados de saúde para fora do Brasil (EUA) para notificações detalhadas, ' +
+    'assistente IA e medições de uso. Opcional.',
+  sheetTitle: 'Envio para fora do Brasil',
+  withoutTitle: 'Sem a autorização',
+  without:
+    'O app funciona normalmente. Os alarmes do próprio celular continuam completos, porque não saem ' +
+    'do aparelho. Os avisos dos servidores chegam com texto genérico; assistente e medições ficam desligados.',
+  contrastWith: '💊 Losartana 50 mg • 1 comprimido — 08:00',
+  contrastWithout: '💊 Hora do seu remédio',
+  table: [
+    {
+      use: 'Notificações detalhadas',
+      data: 'remédio, concentração, dose e horário; avisos de estoque, receita e adesão',
+      to: 'Expo, Apple, Google; Telegram, se vinculado',
+    },
+    { use: 'Assistente IA', data: 'a pergunta e um resumo dos tratamentos', to: 'Groq' },
+    { use: 'Medições de uso', data: 'telas e ações, sem remédio, dose ou medida', to: 'PostHog' },
+  ],
+  howToChange: 'Para mudar depois: Perfil › Privacidade e dados.',
+} as const)
+
+/**
+ * Reconsentimento da v0.4 (S5, web e mobile — DESIGN_DECISOES §4; DQ-5 título A). Bloqueante (DQ-1):
+ * sem "Agora não"; a recusa é "Não concordo" → tela de revogação existente.
+ */
+export const REGULARIZATION_V04_COPY = Object.freeze({
+  title: 'O dosiq agora é uma empresa',
+  body:
+    'A DOSIQ DIGITAL HEALTH WEB DESIGN LTDA passou a ser a responsável pelos dados. ' +
+    'O que o app faz com eles não mudou.',
+  changedLink: 'O que mudou ›',
+  changed: [
+    'Quem responde pelos dados: a DOSIQ DIGITAL HEALTH WEB DESIGN LTDA (CNPJ 68.335.606/0001-11).',
+    'Duas autorizações separadas: uma para usar os dados de saúde, obrigatória; outra para enviá-los para fora do Brasil, opcional.',
+    'Usos agora escritos: estoque e medição de uso do app já existiam e passaram a constar no texto.',
+    'Idade mínima: 18 anos.',
+    'O que não mudou: os dados que o app usa, onde ficam guardados (no Brasil) e o que ele faz com eles.',
+  ],
+  termsFooter: 'Ao confirmar, você aceita os Termos de Uso e a Política de Privacidade (v0.4).',
+  confirm: 'Confirmar',
+  decline: 'Não concordo',
+  errorNoHealth: 'Marque a autorização de dados de saúde para confirmar.',
 } as const)
 
 // ─── Spec 107 — fila de exclusão com aprovação manual ─────────────────────────────────────

@@ -122,9 +122,46 @@ describe('dispatchLiveActivityStarts', () => {
       { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
     ]);
     const sendFn = vi.fn((_p: { attributes: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
-    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    // Titular COM B (096): a LA mostra o detalhe. Sem B, discreet — ver bloco 096 abaixo.
+    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn, transferRedactedFn: async () => false });
     expect(sendFn).toHaveBeenCalledTimes(1);
     expect(String(sendFn.mock.calls[0]![0].attributes.doseLabel)).toMatch(/^10 UI/);
+  });
+
+  describe('096 T062 — modo sem B na Live Activity', () => {
+    const run = async (transferRedactedFn?: (...a: unknown[]) => Promise<boolean>, settingsRow?: QueryResult) => {
+      const queue: QueryResult[] = [
+        { data: [doseRow()], error: null },
+        { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+      ];
+      const supabase = makeSupabase(queue);
+      if (settingsRow) {
+        // leitura real da flag: `from('user_settings')...maybeSingle()`
+        const base = supabase.from;
+        supabase.from = ((table: string) => table === 'user_settings'
+          ? { select: () => ({ eq: () => ({ maybeSingle: async () => settingsRow }) }) }
+          : base()) as typeof supabase.from;
+      }
+      const sendFn = vi.fn((_p: { attributes: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
+      await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn, ...(transferRedactedFn ? { transferRedactedFn } : {}) });
+      expect(sendFn).toHaveBeenCalledTimes(1); // a LA nunca é pulada por falta de B
+      return sendFn.mock.calls[0]![0].attributes;
+    };
+
+    it('🔴 sem B (flag NULL) ⇒ attributes sem medicineName/doseLabel', async () => {
+      const attrs = await run(undefined, { data: { international_transfer_granted_at: null } as never, error: null });
+      expect(attrs).toMatchObject({ medicineName: '', doseLabel: '', discreet: true });
+    });
+
+    it('🔴 leitura da flag falha ⇒ discreet (fail-closed por usuário)', async () => {
+      const attrs = await run(undefined, { data: null, error: { message: 'timeout' } });
+      expect(attrs).toMatchObject({ medicineName: '', discreet: true });
+    });
+
+    it('com B ⇒ nome presente (comportamento de hoje)', async () => {
+      const attrs = await run(undefined, { data: { international_transfer_granted_at: '2026-10-21T10:00:00Z' } as never, error: null });
+      expect(attrs).toMatchObject({ medicineName: 'Selozok', discreet: false });
+    });
   });
 
   it('S-1 IDOR: token de outro user_id → não envia (guard)', async () => {

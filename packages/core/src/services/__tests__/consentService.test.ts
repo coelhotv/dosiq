@@ -293,3 +293,76 @@ describe('createConsentService — materializeSignupIntent', () => {
     expect(rpc).not.toHaveBeenCalled()
   })
 })
+
+// Spec 096 (T051) — o signup v0.4 grava A + termos (+ B se marcada). Leitura por TIPO: o estado de
+// B é independente do de A, então o mock responde conforme o `consent_type` filtrado.
+function makeTypedClient(byType: Record<string, unknown>) {
+  const rpc = vi.fn(async (_fn: string, _args: Record<string, unknown>) => ({ data: EVENT.id, error: null }))
+  const from = vi.fn((_table: string) => ({
+    select: (_c: string) => ({
+      eq: (_col: string, type: string) => ({
+        order: () => ({ limit: async () => byType[type] ?? { data: [], error: null } }),
+      }),
+    }),
+  }))
+  return { client: { rpc, from } as unknown as SupabaseClient<Database>, rpc }
+}
+
+describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
+  const grantedTypes = (rpc: ReturnType<typeof makeTypedClient>['rpc']) =>
+    rpc.mock.calls.map((c) => [c[0], c[1].p_consent_type])
+
+  it('A + B marcadas → grava health_data, terms_privacy e international_transfer', async () => {
+    const { client, rpc } = makeTypedClient({})
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+      ['consent_grant', 'international_transfer'],
+    ])
+  })
+
+  it('só A → B nunca é gravada (opcional, guarda 4)', async () => {
+    const { client, rpc } = makeTypedClient({})
+    await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+    ])
+  })
+
+  it('B já revogada → intenção velha não ressuscita B', async () => {
+    const { client, rpc } = makeTypedClient({
+      international_transfer: { data: [{ ...EVENT, consent_type: 'international_transfer', action: 'revoked' }], error: null },
+    })
+    await createConsentService({ client }).materializeSignupIntent({ health_consent: true, transfer_consent: true }, 'web')
+    expect(grantedTypes(rpc)).not.toContainEqual(['consent_grant', 'international_transfer'])
+  })
+
+  it('leitura de B falha → não grava B, A segue materializada', async () => {
+    const { client, rpc } = makeTypedClient({
+      international_transfer: { data: null, error: { message: 'network timeout' } },
+    })
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).not.toContainEqual(['consent_grant', 'international_transfer'])
+  })
+
+  it('grant de A falha → nada mais é gravado', async () => {
+    const { client, rpc } = makeTypedClient({})
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'boom' } } as never)
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: false })
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+})

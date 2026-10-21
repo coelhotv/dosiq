@@ -114,8 +114,9 @@ export default function AppViewRouter({
   // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
   const consent = useConsentGate()
-  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
-  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
+  // Reconsentimento v0.4 (096, DQ-1): bloqueante. "Não concordo" leva ao Perfil (revogação) e só lá
+  // o modal sai da frente — fora da allowlist ele volta, porque a decisão continua pendente.
+  const [regularizationDeclined, setRegularizationDeclined] = useState(false)
 
   useEffect(() => {
     if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
@@ -214,15 +215,15 @@ export default function AppViewRouter({
     )
   }
 
-  // 5. CONSENTIU numa política ANTIGA (`stale`) — nudge de regularização. NÃO trava (mode 'allow'):
-  //    o app segue livre, o modal é um convite dispensável por cima. Aceitar carimba a versão nova.
+  // 5. CONSENTIU numa política ANTIGA (`stale`) — reconsentimento v0.4, BLOQUEANTE por cima do app
+  //    (096 DQ-1). Confirmar carimba a versão nova; "Não concordo" abre o Perfil, onde fica a revogação.
   return (
     <>
       {content}
       <ConsentRegularizationModal
-        visible={consent.needsRegularization && !regularizationDismissed}
-        onDismiss={() => setRegularizationDismissed(true)}
-        onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+        visible={consent.needsRegularization && !(regularizationDeclined && isConsentAllowedView(currentView))}
+        onDecline={() => { setRegularizationDeclined(true); setCurrentView('profile') }}
+        onConfirmed={() => { setRegularizationDeclined(false); consent.refresh() }}
       />
     </>
   );

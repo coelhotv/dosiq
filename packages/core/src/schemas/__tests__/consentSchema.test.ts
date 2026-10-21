@@ -10,6 +10,7 @@ import {
   CONSENT_PLATFORMS,
   CURRENT_POLICY_VERSION,
   HEALTH_CONSENT_COPY,
+  TRANSFER_CONSENT_COPY,
   consentEventSchema,
   deriveConsentState,
   type ConsentEvent,
@@ -28,9 +29,29 @@ const base: ConsentEvent = {
   created_at: '2026-07-14T10:00:00.000Z',
 }
 
+// Spec 096 (T025): as caixas A e B são citadas VERBATIM pela política v0.4 (§5 e §13). Frases
+// fixadas a partir de docs/legal/POLITICA_DE_PRIVACIDADE_v0.4.md (B1, PR #896, l. 131 e 265) —
+// mudou a copy, muda a política, e este teste fica vermelho até as duas baterem.
+const POLICY_V04_BOX_A =
+  'Autorizo o uso dos meus dados de saúde para lembretes, histórico, adesão e melhoria do app. Tenho 18 anos ou mais.'
+const POLICY_V04_BOX_B =
+  'Autorizo enviar meus dados de saúde para fora do Brasil (EUA) para notificações detalhadas, assistente IA e medições de uso. Opcional.'
+
+describe('consentSchema — copy v0.4 = texto da política', () => {
+  it('versão vigente é 0.4', () => {
+    expect(CURRENT_POLICY_VERSION).toBe('0.4')
+  })
+  it('caixa A idêntica à política §5', () => {
+    expect(HEALTH_CONSENT_COPY.label).toBe(POLICY_V04_BOX_A)
+  })
+  it('caixa B idêntica à política §13', () => {
+    expect(TRANSFER_CONSENT_COPY.label).toBe(POLICY_V04_BOX_B)
+  })
+})
+
 describe('consentSchema — vocabulário espelha os CHECKs do banco', () => {
   it('CONSENT_TYPES = o CHECK de consent_log.consent_type', () => {
-    expect([...CONSENT_TYPES]).toEqual(['health_data', 'terms_privacy'])
+    expect([...CONSENT_TYPES]).toEqual(['health_data', 'terms_privacy', 'international_transfer'])
   })
 
   it('CONSENT_ACTIONS inclui os 4 atos do CONTROLADOR além dos 2 do titular (CHECK de 2026-10-20)', () => {
@@ -65,16 +86,20 @@ describe('consentSchema — copy canônica do opt-in', () => {
     expect(Object.isFrozen(HEALTH_CONSENT_COPY)).toBe(true)
   })
 
-  it('o label nomeia explicitamente os dados de saúde tratados (art. 11 — específico)', () => {
+  it('o label nomeia o dado e as finalidades (art. 11 — específico; exemplos vão à folha S6-A na v0.4)', () => {
     const label = HEALTH_CONSENT_COPY.label.toLowerCase()
     expect(label).toContain('dados de saúde')
-    expect(label).toContain('medicamentos')
+    expect(label).toContain('lembretes')
     expect(label).toContain('adesão')
-    expect(label).toContain('biomarcadores')
   })
 
-  it('o label embute a auto-declaração de idade 16+ no mesmo ato do consentimento (spec 046, item C)', () => {
-    expect(HEALTH_CONSENT_COPY.label.toLowerCase()).toContain('16 anos ou mais')
+  it('o label embute a auto-declaração de idade 18+ no mesmo ato (spec 096 — ECA Digital)', () => {
+    expect(HEALTH_CONSENT_COPY.label.toLowerCase()).toContain('18 anos ou mais')
+  })
+
+  it('a caixa B é congelada e se declara opcional (guarda 4)', () => {
+    expect(Object.isFrozen(TRANSFER_CONSENT_COPY)).toBe(true)
+    expect(TRANSFER_CONSENT_COPY.label).toContain('Opcional.')
   })
 
   it('o aviso de revogação informa o prune de 90 dias e as saídas do titular', () => {

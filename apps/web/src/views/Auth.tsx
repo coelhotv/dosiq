@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { signIn, signUp, sendPasswordReset, verifyOtp, captureDeviceTimezone } from '@shared/utils/supabase'
 import HealthConsentBlock from '@features/consent/components/HealthConsentBlock'
+import TransferConsentBlock from '@features/consent/components/TransferConsentBlock'
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 import './Auth.css'
+
+/** Erro sem a caixa A no cadastro (DESIGN_DECISOES §4, S4). */
+const SIGNUP_CONSENT_ERROR = 'Marque a autorização de dados de saúde para criar a conta.'
 
 function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -251,6 +256,8 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
   // 046 T005 — opt-in de dado de saúde. Nasce DESMARCADO: consentimento pré-marcado não é
   // consentimento (LGPD art. 8º §4 — tem que ser manifestação livre e inequívoca do titular).
   const [healthConsent, setHealthConsent] = useState(false)
+  // 096: caixa B — opcional, nasce desmarcada e nunca condiciona o cadastro (guarda 4).
+  const [transferConsent, setTransferConsent] = useState(false)
   const [consentError, setConsentError] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -273,7 +280,7 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
         await signIn(email, password)
         if (onAuthSuccess) onAuthSuccess()
       } else {
-        await signUp(email, password, { healthConsent })
+        await signUp(email, password, { healthConsent, transferConsent })
         setIsVerifyingOtp(true)
         setMessage('Conta criada! Enviamos um link e um código de confirmação para o seu e-mail.')
       }
@@ -398,19 +405,32 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
           {/* Opt-in de dado de saúde — só no cadastro. Destacado por exigência legal (art. 11):
               não pode estar embutido num aceite genérico de termos. */}
           {!isLogin && (
-            <HealthConsentBlock
-              checked={healthConsent}
-              onChange={handleConsentChange}
-              disabled={isLoading}
-              showError={consentError}
-            />
+            <>
+              <HealthConsentBlock
+                checked={healthConsent}
+                onChange={handleConsentChange}
+                disabled={isLoading}
+                errorMessage={consentError ? SIGNUP_CONSENT_ERROR : null}
+              />
+              <TransferConsentBlock
+                checked={transferConsent}
+                onChange={setTransferConsent}
+                disabled={isLoading}
+              />
+              <p className="auth-terms-footer">
+                Ao criar a conta, você aceita os{' '}
+                <a href="/termos-de-uso.html" target="_blank" rel="noreferrer">Termos de Uso</a> e a{' '}
+                <a href="/politica-de-privacidade.html" target="_blank" rel="noreferrer">Política de Privacidade</a>{' '}
+                (v{CURRENT_POLICY_VERSION}).
+              </p>
+            </>
           )}
 
           {error && <div className="auth-error">{error}</div>}
           {message && <div className="auth-message">{message}</div>}
 
           <button type="submit" className="auth-submit-btn" disabled={isLoading}>
-            {isLoading ? 'Carregando...' : isLogin ? 'Entrar' : 'Cadastrar'}
+            {isLoading ? 'Carregando...' : isLogin ? 'Entrar' : 'Criar conta'}
           </button>
         </form>
 

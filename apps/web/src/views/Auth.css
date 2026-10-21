@@ -234,8 +234,21 @@
   }
 }
 
-
 .auth-forgot-password-wrapper {
   text-align: right;
   margin-top: -8px;
+}
+
+/* 096: aceite de Termos/Política como RODAPÉ, fora das caixas A/B (guarda 3) */
+.auth-terms-footer {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.auth-terms-footer a {
+  color: var(--color-primary, #16a34a);
+  font-weight: 600;
+  text-decoration: underline;
 }

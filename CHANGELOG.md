@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Autorização para envio de dados para fora do Brasil e modo sem envio (spec 096 B2)
+
+- **Backend/Infra** (`Added`, `minor` server `4.1.2 → 4.2.0` e core `0.23.0 → 0.24.0` — migração no
+  Supabase e deploy na Vercel no Dia D da política v0.4). A política de privacidade passa à versão 0.4 e
+  ganha uma segunda autorização, opcional: enviar dados de saúde para serviços fora do Brasil (EUA). Quem
+  não der essa autorização continua recebendo todos os avisos, mas com texto genérico — "💊 Hora do seu
+  remédio" no lugar do nome do remédio — no celular, no navegador, na Live Activity do iPhone e no
+  Telegram; o assistente de IA não responde; e o bot do Telegram passa a responder um aviso no lugar das
+  listas de remédios e dos botões. Os alarmes do próprio celular não mudam. Ao entrar no ar, todo mundo
+  começa sem essa autorização até confirmá-la.
+- **Web/PWA** (`Added`, `minor` 4.30.1 → 4.31.0). O cadastro mostra duas caixas separadas e desmarcadas
+  — dados de saúde (obrigatória) e envio para fora do Brasil (opcional) —, cada uma com "Detalhes ›", e o
+  aceite dos Termos e da Política vira rodapé. Quem aceitou a política anterior vê "O dosiq agora é uma
+  empresa", com as mesmas duas caixas e "O que mudou ›", e precisa confirmar ou recusar ("Não concordo"
+  leva à tela de retirada da autorização). Em Perfil › Privacidade e dados, um interruptor liga e desliga
+  o envio para fora do Brasil: desligar pede confirmação mostrando os efeitos; ligar abre a autorização
+  completa.
+
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 
 - **Web/PWA** (`Changed`, `patch` 4.30.0 → 4.30.1 — rodapé, sem funcionalidade nova). O rodapé da página
