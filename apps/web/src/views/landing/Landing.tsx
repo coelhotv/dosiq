@@ -87,6 +87,24 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
 
             <p className="lp-footer__copy">© 2026 Dosiq. Desenvolvido para o bem comum.</p>
           </div>
+
+          {/* Identificação da PJ (spec 096 S11) — 1 linha no desktop, 3 no celular */}
+          <p className="lp-shell lp-footer__legal">
+            <span>
+              dosiq é operado por DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11
+            </span>
+            <span>Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150</span>
+            <span>
+              <a href="mailto:privacidade@dosiq.app">privacidade@dosiq.app</a> ·{' '}
+              <a href="/politica-de-privacidade.html" target="_blank" rel="noopener noreferrer">
+                Política de Privacidade
+              </a>{' '}
+              ·{' '}
+              <a href="/termos-de-uso.html" target="_blank" rel="noopener noreferrer">
+                Termos de Uso
+              </a>
+            </span>
+          </p>
         </footer>
       </div>
     </div>
