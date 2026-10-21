@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
+
+- **Web/PWA** (`Changed`, `patch` 4.30.0 → 4.30.1 — rodapé, sem funcionalidade nova). O rodapé da página
+  inicial passa a mostrar que o dosiq é operado pela DOSIQ DIGITAL HEALTH WEB DESIGN LTDA (CNPJ
+  68.335.606/0001-11), com endereço, contato de privacidade e links da Política de Privacidade e dos Termos
+  de Uso, que abrem em nova aba. Os modelos de e-mail (cadastro, senha, acesso e convites) ganham a mesma
+  identificação no rodapé.
+
 ### Assistente de IA sai do bot do Telegram (spec 096 B0)
 
 - **Backend/Infra** (`Removed`, sem bump — Backend/Infra não tem fonte de versão canônica e web/mobile não
