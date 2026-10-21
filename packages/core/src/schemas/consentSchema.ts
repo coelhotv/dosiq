@@ -144,6 +144,21 @@ export const REGULARIZATION_V04_COPY = Object.freeze({
   errorNoHealth: 'Marque a autorização de dados de saúde para confirmar.',
 } as const)
 
+/**
+ * Chat sem B (S8b `E-ChatSemB`, web e mobile — DESIGN_DECISOES §4). O assistente abre este aviso em vez
+ * do chat e NUNCA chama a API. "Ver a autorização" leva à autorização completa da caixa B (guarda 11),
+ * nunca a um botão "ativar assistente".
+ */
+export const CHAT_WITHOUT_TRANSFER_COPY = Object.freeze({
+  title: 'O assistente está desligado',
+  body:
+    'As perguntas e um resumo dos tratamentos vão para um serviço nos EUA. Para usar o assistente, é ' +
+    'preciso a autorização de processamento fora do Brasil, que também liga os lembretes detalhados e as ' +
+    'medições de uso.',
+  enable: 'Ver a autorização',
+  close: 'Fechar',
+} as const)
+
 // ─── Spec 107 — fila de exclusão com aprovação manual ─────────────────────────────────────
 
 /** Motivo da linha na fila. Espelha o CHECK de `prune_queue.reason`. */

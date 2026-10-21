@@ -7,6 +7,7 @@ import {
   clearPersistedHistory,
 } from '@/features/chatbot/services/chatbotService'
 import { createWelcomeMessage, CHATBOT_QUICK_SUGGESTIONS } from '@/features/chatbot/config/chatbotConfig'
+import { createConsentService } from '@dosiq/core'
 import {
   getNow,
   getTodayLocal,
@@ -17,6 +18,8 @@ import {
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import ChatWindowDrawer from './ChatWindowDrawer'
+import ChatTransferGate from './ChatTransferGate'
+import { supabase } from '@shared/utils/supabase'
 import styles from './ChatWindow.module.css'
 
 const formatMessageTime = (timestamp) => {
@@ -45,8 +48,12 @@ const formatDaySeparator = (timestamp) => {
   return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' })
 }
 
+const consentService = createConsentService({ client: supabase })
+
 /**
  * Drawer lateral de chat com o assistente IA.
+ * Sem B (`international_transfer`) abre o aviso S8b no lugar do chat e não chama a API (spec 096);
+ * leitura que falha conta como sem B (fail-closed, igual ao servidor).
  * Lazy-loaded — nao impacta main bundle.
  */
 export default function ChatWindow({ isOpen, onClose }) {
@@ -59,8 +66,21 @@ export default function ChatWindow({ isOpen, onClose }) {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [transferGate, setTransferGate] = useState<'checking' | 'open' | 'blocked'>('checking')
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTransferGate('checking')
+    consentService
+      .getStatus('international_transfer')
+      .then((state) => { if (!cancelled) setTransferGate(state.status === 'granted' ? 'open' : 'blocked') })
+      .catch(() => { if (!cancelled) setTransferGate('blocked') })
+    return () => { cancelled = true }
+  }, [isOpen])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -95,6 +115,11 @@ export default function ChatWindow({ isOpen, onClose }) {
       // de campos, então um campo novo do contexto NÃO viaja sozinho. Sem ele, o builder cai no
       // default `true` e o chat afirmaria "SEM ESTOQUE" para um usuário dose-only (US3).
       const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats: normalizedStats, doseInstances, stockTrackingEnabled } })
+      // B retirado em outra sessão: o servidor recusou (403) — troca o chat pelo aviso, sem erro técnico.
+      if (result.transferRequired) {
+        setTransferGate('blocked')
+        return
+      }
       // isError: exibe na tela mas NÃO persiste (savePersistedHistory filtra) — paridade mobile #686
       addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime(), isError: result.error === true })
     } finally {
@@ -121,7 +146,10 @@ export default function ChatWindow({ isOpen, onClose }) {
             onClick={onClose}
           />
         )}
-        {isOpen && (
+        {isOpen && transferGate === 'blocked' && (
+          <ChatTransferGate key="chat-transfer-gate" onClose={onClose} onAuthorized={() => setTransferGate('open')} />
+        )}
+        {isOpen && transferGate === 'open' && (
           <ChatWindowDrawer
             key="chat-drawer"
             messages={messages}

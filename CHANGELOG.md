@@ -23,7 +23,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   empresa", com as mesmas duas caixas e "O que mudou ›", e precisa confirmar ou recusar ("Não concordo"
   leva à tela de retirada da autorização). Em Perfil › Privacidade e dados, um interruptor liga e desliga
   o envio para fora do Brasil: desligar pede confirmação mostrando os efeitos; ligar abre a autorização
-  completa.
+  completa. Sem essa autorização, o assistente não abre o chat: mostra "O assistente está desligado", com
+  o atalho para a autorização, e nenhuma pergunta é enviada.
 
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 
