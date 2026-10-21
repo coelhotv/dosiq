@@ -55,15 +55,26 @@ describe('LandingScreen', () => {
   });
 
   it('renders correctly', () => {
-    const { getByText } = render(<LandingScreen navigation={mockNavigation} />);
+    const { getByText, queryByText } = render(<LandingScreen navigation={mockNavigation} />);
     
     expect(getByText('dosiq')).toBeTruthy();
-    expect(getByText(/Nunca mais/)).toBeTruthy();
+    expect(getByText(/Nunca mais esqueça uma/)).toBeTruthy();
+    expect(getByText('dose')).toBeTruthy();
     expect(getByText('91%')).toBeTruthy();
-    expect(getByText('40mg • 1 Comprimido')).toBeTruthy();
+    expect(getByText('Hoje')).toBeTruthy();
+    expect(getByText('Adesão excelente!')).toBeTruthy();
+    expect(getByText('Semaglutida 1,7 mg')).toBeTruthy();
+    expect(getByText('Caneta ≈ 0,75 mL')).toBeTruthy();
     expect(getByText('08:00')).toBeTruthy();
+    expect(getByText('Alarme confiável')).toBeTruthy();
+    expect(getByText('toca até no silencioso')).toBeTruthy();
+    expect(getByText('Código de barras')).toBeTruthy();
+    expect(getByText('direto pela embalagem')).toBeTruthy();
     expect(getByText('Criar conta')).toBeTruthy();
     expect(getByText('Já tenho conta')).toBeTruthy();
+
+    expect(queryByText('Atorvastatina')).toBeNull();
+    expect(queryByText('40mg • 1 Comprimido')).toBeNull();
   });
 
   it('navigates to Login when "Já tenho conta" is pressed', () => {
