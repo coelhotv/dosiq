@@ -171,7 +171,8 @@ Procedimentos operacionais de infraestrutura, bancos, publicação nas lojas e c
 | Documento | Descrição |
 |-----------|-----------|
 | [`legal/POLITICA_DE_PRIVACIDADE_v0.2.md`](legal/POLITICA_DE_PRIVACIDADE_v0.2.md) | Política de privacidade v0.2 |
-| [`legal/POLITICA_DE_PRIVACIDADE_v0.3.md`](legal/POLITICA_DE_PRIVACIDADE_v0.3.md) | Política de privacidade v0.3 (vigente) |
+| [`legal/POLITICA_DE_PRIVACIDADE_v0.3.md`](legal/POLITICA_DE_PRIVACIDADE_v0.3.md) | Política de privacidade v0.3 (arquivada) |
+| [`legal/POLITICA_DE_PRIVACIDADE_v0.4.md`](legal/POLITICA_DE_PRIVACIDADE_v0.4.md) | Política de privacidade v0.4 (vigente — controlador PJ) |
 | [`legal/TERMOS_DE_USO.md`](legal/TERMOS_DE_USO.md) | Termos de uso do aplicativo |
 | [`legal/RIPD.md`](legal/RIPD.md) | Relatório de Impacto à Proteção de Dados (LGPD) |
 
