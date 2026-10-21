@@ -25,6 +25,7 @@ import {
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { triggerConsentChange } from './consentSuppressionBus'
+import { setAnalyticsConsent, type AnalyticsConsent } from '@platform/analytics/productAnalytics'
 
 async function getUserId() {
   const { data } = await supabase.auth.getUser()
@@ -42,7 +43,29 @@ export interface ConsentGateValue extends ConsentGateDecision {
   dismissed: boolean
   dismiss: () => void
   grant: () => Promise<{ ok: boolean; error?: string }>
+  /**
+   * Spec 096: A (se ainda não vigente na versão atual) + Termos/Política (rodapé) + B opcional, num
+   * gesto. Usado no reconsentimento v0.4 e no S1 do onboarding. Termos falhando ⇒ `ok:false` (o
+   * rodapé afirma o aceite — espelho do web, RC6 #898). B falhando não desfaz A (`transferOk:false`).
+   */
+  grantV04: (opts: { transfer: boolean }) => Promise<{ ok: boolean; transferOk: boolean; error?: string }>
+  /** Caixa B vigente (`granted`). Leitura que falha conta como sem B (lado protetor do ADR-112). */
+  transferGranted: boolean
   refresh: () => Promise<void>
+}
+
+/**
+ * PostHog sob A e B (096 B3, CON-034): só envia com A e B vigentes. A desconhecido (onboarding antes
+ * do S1, leitura falhou, sem sessão) ⇒ retém; A retirado ou sem B ⇒ descarta. Pura, testável.
+ */
+export function resolveAnalyticsConsent(
+  hasSession: boolean,
+  state: ConsentState | null,
+  transferGranted: boolean,
+): AnalyticsConsent {
+  if (!hasSession || !state || state.status === 'missing') return 'pending'
+  if (state.status === 'revoked') return 'denied'
+  return transferGranted ? 'allowed' : 'denied'
 }
 
 interface Session {
@@ -65,11 +88,13 @@ function useConsentGateState(
   const [promptSessions, setPromptSessions] = useState(0)
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const [transferGranted, setTransferGranted] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!session) {
       setState(null)
       setPromptSessions(0)
+      setTransferGranted(false)
       setReady(true)
       return
     }
@@ -108,11 +133,16 @@ function useConsentGateState(
         sessions = bumped.sessions
       }
 
+      // B (096): leitura que falha = sem B (fail-closed). Não afeta a decisão de rota.
+      const transfer = await consentService.getStatus('international_transfer').catch(() => null)
+
       setState(current)
       setPromptSessions(sessions)
+      setTransferGranted(transfer?.status === 'granted')
     } catch {
       setState(null)
       setPromptSessions(0)
+      setTransferGranted(false)
     } finally {
       setReady(!awaitVerification)
       // Avisa os bridges de superfície (fora do Provider) que o consentimento foi reavaliado —
@@ -128,6 +158,20 @@ function useConsentGateState(
     return res
   }, [refresh])
 
+  const grantV04 = useCallback(async ({ transfer }: { transfer: boolean }) => {
+    // A já vigente na versão atual não é regravado (um 2º `granted` na mesma versão polui a trilha).
+    const health = await consentService.getStatus('health_data').catch(() => null)
+    if (!(health?.status === 'granted' && !health.stale)) {
+      const res = await consentService.grant('health_data', 'mobile')
+      if (!res.ok) return { ...res, transferOk: false }
+    }
+    const terms = await consentService.grant('terms_privacy', 'mobile')
+    if (!terms.ok) return { ok: false, transferOk: false, error: terms.error ?? 'terms_privacy_failed' }
+    const transferOk = transfer ? (await consentService.grant('international_transfer', 'mobile')).ok : true
+    await refresh()
+    return { ok: true, transferOk }
+  }, [refresh])
+
   const dismiss = useCallback(() => setDismissed(true), [])
 
   // R-010: os memos vêm depois dos useCallback porque dependem deles — ordem imposta pela
@@ -139,9 +183,14 @@ function useConsentGateState(
   // dependência, não por descuido.
   // eslint-disable-next-line no-restricted-syntax
   const value = useMemo(
-    () => ({ ...decision, ready, state, dismissed, dismiss, grant, refresh }),
-    [decision, ready, state, dismissed, dismiss, grant, refresh],
+    () => ({ ...decision, ready, state, dismissed, dismiss, grant, grantV04, transferGranted, refresh }),
+    [decision, ready, state, dismissed, dismiss, grant, grantV04, transferGranted, refresh],
   )
+
+  // Ponte para o PostHog (096 B3): sistema externo, sem setState aqui.
+  useEffect(() => {
+    void setAnalyticsConsent(resolveAnalyticsConsent(Boolean(session), state, transferGranted))
+  }, [session, state, transferGranted])
 
   // Sincroniza com um sistema externo (a trilha no backend): o setState acontece no callback
   // assíncrono de `refresh`, não no corpo do effect.
@@ -176,6 +225,8 @@ const DEFAULT_VALUE: ConsentGateValue = {
   dismissed: false,
   dismiss: () => {},
   grant: async () => ({ ok: false, error: 'ConsentGateProvider ausente' }),
+  grantV04: async () => ({ ok: false, transferOk: false, error: 'ConsentGateProvider ausente' }),
+  transferGranted: false,
   refresh: async () => {},
 }
 
