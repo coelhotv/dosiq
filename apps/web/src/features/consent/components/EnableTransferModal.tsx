@@ -39,8 +39,15 @@ export default function EnableTransferModal({ onAuthorize, onCancel }: EnableTra
     }
     setSaving(true)
     setError(null)
-    const ok = await onAuthorize()
-    setSaving(false)
+    // try/finally: rejeição (rede) não pode deixar o modal travado em "Registrando..." (RC6 #898)
+    let ok = false
+    try {
+      ok = await onAuthorize()
+    } catch {
+      ok = false
+    } finally {
+      setSaving(false)
+    }
     if (!ok) setError('Não foi possível registrar agora. Tente de novo.')
   }
 

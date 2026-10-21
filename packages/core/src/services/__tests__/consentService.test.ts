@@ -326,6 +326,22 @@ describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
     ])
   })
 
+  it('terms_privacy falha → 1 nova tentativa; A segue materializada (RC6 #898)', async () => {
+    const { client, rpc } = makeTypedClient({})
+    let termsCalls = 0
+    rpc.mockImplementation(async (_fn: string, args: Record<string, unknown>) => {
+      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) return { data: null, error: { message: 'net' } }
+      return { data: EVENT.id, error: null }
+    })
+    const result = await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+      ['consent_grant', 'terms_privacy'],
+    ])
+  })
+
   it('só A → B nunca é gravada (opcional, guarda 4)', async () => {
     const { client, rpc } = makeTypedClient({})
     await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')

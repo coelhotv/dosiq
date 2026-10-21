@@ -163,7 +163,12 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
 
       // Spec 096 (T051): o rodapé do signup v0.4 diz "ao criar a conta, você aceita os Termos e a
       // Política" — o aceite vira evento próprio, separado de A (guarda 3).
-      await callRpc('consent_grant', 'terms_privacy', platform)
+      // Falha não desfaz A (já gravado) — 1 nova tentativa e, persistindo, log para reprocessar (RC6 #898).
+      const terms = await callRpc('consent_grant', 'terms_privacy', platform)
+      if (terms.ok !== true) {
+        const retry = await callRpc('consent_grant', 'terms_privacy', platform)
+        if (retry.ok !== true) console.error('[consent] terms_privacy não gravado no cadastro:', retry.error)
+      }
       // Caixa B: só se marcada E ainda sem ato do titular. Falha aqui não desfaz A (B é opcional).
       if (intent.transfer_consent === true) await materializeTransfer(platform)
       return { materialized: true }

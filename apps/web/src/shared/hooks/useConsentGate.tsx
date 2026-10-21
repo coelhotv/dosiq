@@ -129,9 +129,17 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
   }, [refresh])
 
   const grantV04 = useCallback(async ({ transfer }: { transfer: boolean }) => {
-    const res = await consentService.grant('health_data', 'web')
-    if (!res.ok) return { ...res, transferOk: false }
-    await consentService.grant('terms_privacy', 'web')
+    // Nova tentativa após falha dos termos: A já vigente na versão atual não é regravado (um 2º
+    // `granted` de A na mesma versão poluiria a trilha — SC-001).
+    const health = await consentService.getStatus('health_data').catch(() => null)
+    if (!(health?.status === 'granted' && !health.stale)) {
+      const res = await consentService.grant('health_data', 'web')
+      if (!res.ok) return { ...res, transferOk: false }
+    }
+    // O rodapé afirma o aceite dos Termos/Política: sem o evento gravado, o reconsentimento não fecha
+    // (RC6 #898) — o modal mostra "Tente de novo".
+    const terms = await consentService.grant('terms_privacy', 'web')
+    if (!terms.ok) return { ok: false, transferOk: false, error: terms.error ?? 'terms_privacy_failed' }
     const transferOk = transfer ? (await consentService.grant('international_transfer', 'web')).ok : true
     await refresh()
     return { ok: true, transferOk }
