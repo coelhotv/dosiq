@@ -12,7 +12,7 @@ tags:
   - changelog
   - versioning
 created_at: "2026-07-15"
-updated_at: "2026-07-28"
+updated_at: "2026-10-22"
 ---
 # Releases externos — Notas de loja (dosiq mobile)
 
@@ -34,7 +34,81 @@ updated_at: "2026-07-28"
 
 ---
 
-## v0.30.1 — a publicar — Base renovada, alarme de dose crítica corrigido, correções que chegam sem esperar a loja
+## v0.34.0 — em revisão (liberação manual) — Cadastro pela câmera, alerta crítico no silencioso, canetas e relatório em PDF
+
+> Cobre tudo desde a `0.30.1` publicada: leitura do código de barras da caixa + busca ANVISA com
+> unidade automática (066), Alertas Críticos no iOS (054) e Live Activity sincronizada na soneca
+> (101), canal de alarme dedicado no Android (062), mapa do corpo para o local de aplicação (071),
+> peso na confirmação da dose semanal + peso por etapa (069), relatório em PDF nativo (097),
+> atalhos de horário e cadências mensal / a cada X dias (085/086), exclusão que arquiva sem apagar
+> histórico, e a política de privacidade v0.4 sob a PJ (096).
+>
+> **Build:** iOS e Android do mesmo commit `8ac2a321` (`feature/096-b-release`), registrados no
+> ledger em 2026-10-22. Enviados à revisão com **liberação manual** nas duas lojas: pela INV-8 da
+> spec 096, nenhum app com a política 0.4 pode ficar disponível antes da migração de
+> `consent_policy` — liberar só no Dia D, depois da migração.
+>
+> **Canônico da copy:** `plans/strategy-2026/benchmarks-aso/aso-refresh-v034-e-posteriores.md`
+> §2.7/§3.5 (local-only, não versionado). Contagem por script, quebras de linha incluídas.
+>
+> **Assimetria de plataforma:** Alertas Críticos e Live Activity só na nota da Apple; canal de
+> alarme dedicado só na do Google.
+>
+> **Linha de privacidade:** quem tem aceite da v0.3 vê o modal de reconsentimento ao abrir a 0.34;
+> a linha avisa antes, para o modal não surpreender. Diz o que é verdade pela INV-5 da spec 096: muda
+> o responsável, não o uso dos dados.
+>
+> **Fora da copy, de propósito:** scrub do Sentry (096), modo sem transferência internacional
+> (o efeito para o usuário já está no modal), kill switch e correções internas.
+
+### Apple App Store (pt-BR — 2.750 chars)
+
+```
+Chegou a maior atualização do ano no dosiq: cadastro pela câmera lendo o código de barras da caixa, Alertas Críticos no iPhone que tocam mesmo no silencioso, relatório em PDF para levar ao médico e acompanhamento completo para canetas injetáveis e tratamentos contínuos.
+
+CADASTRE PELA CAIXA, COM A CÂMERA (LISTA OFICIAL DA ANVISA)
+- Leitor de código de barras: aponte a câmera para a caixa do remédio ao criar a conta, ao cadastrar um medicamento ou ao registrar uma compra no estoque. O dosiq preenche nome, princípio ativo, concentração e forma automaticamente, deixando tudo aberto para você conferir.
+- Busca da ANVISA mais inteligente: ao buscar pelo nome, escolha a concentração e o laboratório da sua embalagem com um toque. Em medicamentos líquidos e canetas, a unidade da dose (gotas, mL, UI ou mg) já vem preenchida a partir da caixa.
+
+ALARME CRÍTICO QUE TOCA MESMO NO SILENCIOSO E NO FOCO
+- Alertas Críticos no iPhone: nos tratamentos marcados como críticos, você pode autorizar o alarme a tocar alto mesmo com o iPhone no modo Silencioso ou em Foco.
+- Ilha Dinâmica e Tela Bloqueada (Live Activity) sincronizadas: ao adiar uma dose, o aviso sai da tela e volta junto com o alarme no novo horário. Tomar, pular ou adiar pela notificação atualiza a tela Hoje na mesma hora.
+
+FEITO PARA CANETAS INJETÁVEIS E TRATAMENTOS SEMANAIS
+- Local da aplicação no desenho do corpo: escolha onde aplicou tocando no mapa do corpo (frente e costas), veja o último local usado e evite repetir o mesmo ponto.
+- Peso junto da dose e por etapa: ao confirmar a dose de um tratamento semanal, registre seu peso na mesma tela (opcional, uma vez por semana) e acompanhe o gráfico de peso em cada etapa da evolução de doses prescrita pelo seu médico.
+
+RELATÓRIO EM PDF DIRETO NO CELULAR
+- Gere o relatório de 7, 30 ou 90 dias em Perfil > Ferramentas para salvar ou compartilhar com o seu médico. Traz tomadas por horário, escada de doses, mapa dos locais de aplicação e medidas de glicemia, pressão e peso.
+
+HORÁRIOS RÁPIDOS E NOVAS FREQUÊNCIAS
+- Atalhos de horário: escolha 1x ao dia, 12 em 12h, 8 em 8h ou 6 em 6h e o app calcula os horários a partir da primeira dose.
+- Mensal e A cada X dias: cadastre injeções mensais (30 dias) ou intervalos de 2 a 180 dias, vendo na hora as próximas datas.
+
+MAIS PROTEÇÃO PARA O SEU HISTÓRICO
+- Excluir um tratamento ou medicamento agora arquiva o item sem apagar as doses que você já tomou no passado.
+
+PRIVACIDADE
+- Política de privacidade atualizada: o dosiq agora é operado por uma empresa brasileira, e o uso dos seus dados continua o mesmo. Ao abrir o app, você confirma as autorizações uma única vez.
+
+O dosiq organiza o plano que o seu médico prescreveu e nunca prescreve, sugere nem ajusta doses por conta própria.
+```
+
+### Google Play (pt-BR — 500 chars)
+
+```
+A maior atualização do dosiq no ano chegou:
+- Use a câmera para ler o código de barras e cadastre remédios e compras direto pela lista da ANVISA
+- Relatório em PDF para compartilhar com seu médico
+- Mapa do corpo para marcar o local das injeções e gráfico de peso por etapa
+- Atalhos de 8 em 8h, 12 em 12h e doses mensais ou a cada X dias
+- Alarme de dose crítica com som de alarme dedicado no Android
+- Nova política de privacidade: o dosiq agora é operado por empresa; o uso dos seus dados não muda
+```
+
+---
+
+## v0.30.1 — publicada — Base renovada, alarme de dose crítica corrigido, correções que chegam sem esperar a loja
 
 > Cobre tudo desde a `0.28.3` publicada (última que esteve em produção): bump do Expo SDK 53→54
 > (0.29.0), migração da exportação LGPD para a API nova de arquivos (0.29.1), edge-to-edge do
