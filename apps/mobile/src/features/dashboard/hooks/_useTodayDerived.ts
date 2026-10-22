@@ -49,12 +49,21 @@ export const STOCK_ALERT_MAX_DAYS = 7
  *
  * Dias em inteiros por `Math.floor`, como a aba Estoque exibe (`StockLevelBadge`). Consumo zero
  * (`Infinity`, ex.: "quando necessário") ou valor não-finito fica fora.
+ *
+ * 103 G1: o alerta leva `dosesRemaining`/`isDailyStock` da mesma fonte (ADR-067) para o banner
+ * falar em doses no plano não diário — semanal com 1 aplicação dá 7 dias de runway, mas é 1 dose.
  */
 export function deriveStockAlerts(stockItems) {
   if (!Array.isArray(stockItems)) return []
   return stockItems
     .filter((it) => it && Number.isFinite(it.daysRemaining))
-    .map((it) => ({ medicineId: it.id, medicineName: it.name, daysRemaining: Math.floor(it.daysRemaining) }))
+    .map((it) => ({
+      medicineId: it.id,
+      medicineName: it.name,
+      daysRemaining: Math.floor(it.daysRemaining),
+      dosesRemaining: it.dosesRemaining,
+      isDailyStock: it.isDailyStock,
+    }))
     .filter((a) => a.daysRemaining <= STOCK_ALERT_MAX_DAYS)
 }
 

@@ -20,7 +20,10 @@ export default function StockAlertInline({ alerts = [] }) {
   // Pegamos o alerta mais crítico (menor quantidade restante). Cópia antes do sort: ordenar a
   // prop in-place mutava o array do pai a cada render.
   const criticalItem = count > 0 ? [...alerts].sort((a, b) => a.daysRemaining - b.daysRemaining)[0] : null
-  const isCritical = criticalItem != null && criticalItem.daysRemaining <= 2
+  // 103 G1: saldo menor que 1 dose (floor ⇒ 0) é falta de estoque em qualquer cadência. Não depender de
+  // isDailyStock: com saldo 0 o core (stockDoseMetrics) devolve isDaily=true e o texto caía em "0 dias".
+  const noDoseLeft = criticalItem?.dosesRemaining === 0
+  const isCritical = criticalItem != null && (criticalItem.daysRemaining <= 2 || noDoseLeft)
   const kind = criticalItem == null ? null : isCritical ? 'critical' : 'low'
 
   // 065 C2 — `stock_low_viewed` nasce NA TELA: é evento de visualização (exceção declarada do
@@ -36,6 +39,15 @@ export default function StockAlertInline({ alerts = [] }) {
 
   if (!criticalItem) return null
 
+  // 103 G1: plano não diário fala em doses, como a aba Estoque (ADR-067). Sem a métrica, mantém dias.
+  const { daysRemaining, dosesRemaining, isDailyStock } = criticalItem
+  const headline = noDoseLeft ? 'Sem estoque' : 'Estoque Baixo'
+  const remainingText = noDoseLeft
+    ? 'Não há estoque para a próxima dose.'
+    : isDailyStock === false && Number.isFinite(dosesRemaining)
+    ? dosesRemaining === 1 ? 'Resta apenas 1 dose.' : `Restam apenas ${dosesRemaining} doses.`
+    : `Resta apenas para ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}.`
+
   // 090 S-6: o toque leva ao estoque do remédio do aviso (aba Estoque → detalhe), onde se registra
   // a compra — não ao cadastro do remédio.
   const openStock = () =>
@@ -48,7 +60,7 @@ export default function StockAlertInline({ alerts = [] }) {
     <Pressable
       onPress={openStock}
       accessibilityRole="button"
-      accessibilityLabel={`Estoque baixo: ${criticalItem.medicineName}. Abrir estoque`}
+      accessibilityLabel={`${headline}: ${criticalItem.medicineName}. Abrir estoque`}
       testID="stock-alert-banner"
       style={({ pressed }) => [
         styles.container,
@@ -66,10 +78,10 @@ export default function StockAlertInline({ alerts = [] }) {
       
       <View style={styles.content}>
         <Text style={[styles.title, isCritical ? styles.titleCritical : styles.titleWarning]}>
-          Estoque Baixo: {criticalItem.medicineName}
+          {headline}: {criticalItem.medicineName}
         </Text>
         <Text style={styles.description}>
-          Resta apenas para {criticalItem.daysRemaining} {criticalItem.daysRemaining === 1 ? 'dia' : 'dias'}.
+          {remainingText}
         </Text>
       </View>
     </Pressable>

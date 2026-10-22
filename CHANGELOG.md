@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Aviso de estoque baixo fala em doses no tratamento semanal (spec 103 G1)
+
+- **Mobile** (`Fixed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — correção de texto,
+  sem mudar propósito). No tratamento que não é diário (ex.: caneta semanal), o aviso de estoque baixo da
+  tela Hoje dizia "Resta apenas para 7 dias." quando sobrava 1 aplicação. Agora diz "Resta apenas 1 dose."
+  ("Restam apenas N doses."), como a aba Estoque já mostrava; se o saldo zera ou não completa uma dose (em
+  qualquer tratamento), o aviso fica vermelho, com o título "Sem estoque", e diz "Não há estoque para a próxima dose.". No tratamento diário segue em dias.
+
 ### Pedido de peso depois da dose sobe junto com o teclado (spec 069)
 
 - **Mobile** (`Fixed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314). Ao tocar no
