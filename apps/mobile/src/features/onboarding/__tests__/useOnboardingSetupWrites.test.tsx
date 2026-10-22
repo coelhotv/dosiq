@@ -9,13 +9,21 @@ import { useOnboardingSetupWrites, WRITE_TIMEOUT_MS } from '../hooks/useOnboardi
 
 const mockMedicineCreate = jest.fn()
 const mockProtocolCreate = jest.fn()
+const mockMedicineUpdate = jest.fn((..._args: any[]) => Promise.resolve({}))
+const mockProtocolUpdate = jest.fn((..._args: any[]) => Promise.resolve({}))
 const mockChooseStockMode = jest.fn((..._args: any[]) => Promise.resolve())
 
 jest.mock('@medications/services/medicineService', () => ({
-  medicineService: { create: (...args: any[]) => mockMedicineCreate(...args) },
+  medicineService: {
+    create: (...args: any[]) => mockMedicineCreate(...args),
+    update: (...args: any[]) => mockMedicineUpdate(...args),
+  },
 }))
 jest.mock('@treatments/services/protocolService', () => ({
-  protocolService: { create: (...args: any[]) => mockProtocolCreate(...args) },
+  protocolService: {
+    create: (...args: any[]) => mockProtocolCreate(...args),
+    update: (...args: any[]) => mockProtocolUpdate(...args),
+  },
 }))
 jest.mock('@profile/services/stockPreferenceService', () => ({
   chooseStockModeInOnboarding: (...args: any[]) => mockChooseStockMode(...args),
@@ -60,6 +68,28 @@ describe('useOnboardingSetupWrites', () => {
     expect(mockMedicineCreate).toHaveBeenCalledTimes(1)
     expect(mockProtocolCreate).toHaveBeenCalledTimes(2)
     expect(mockProtocolCreate.mock.calls[1][0]).toMatchObject({ medicine_id: 'med-1' })
+  })
+
+  // RC6 #900: falha parcial + voltar e editar ⇒ atualiza o que já existe (nem pula, nem duplica).
+  it('editou o remédio depois de criá-lo: atualiza o registro existente', async () => {
+    mockProtocolCreate.mockRejectedValueOnce(new Error('Erro de rede')).mockResolvedValueOnce({ id: 'prot-1' })
+    const { result } = renderHook(() => useOnboardingSetupWrites())
+    await act(async () => { await expect(result.current.writeSetup(INPUT)).rejects.toThrow('Erro de rede') })
+    const edited = { ...INPUT, medicine: { ...INPUT.medicine, dosage_per_pill: '100' } }
+    await act(async () => { await result.current.writeSetup(edited) })
+    expect(mockMedicineCreate).toHaveBeenCalledTimes(1)
+    expect(mockMedicineUpdate).toHaveBeenCalledWith('med-1', edited.medicine, { surface: 'mobile' })
+  })
+
+  it('editou o tratamento depois de criá-lo: atualiza o protocolo existente', async () => {
+    mockChooseStockMode.mockRejectedValueOnce(new Error('Erro de rede'))
+    const { result } = renderHook(() => useOnboardingSetupWrites())
+    await act(async () => { await expect(result.current.writeSetup(INPUT)).rejects.toThrow('Erro de rede') })
+    const edited = { ...INPUT, treatment: { frequency: 'semanal', _remind: false } }
+    await act(async () => { await result.current.writeSetup(edited) })
+    expect(mockProtocolCreate).toHaveBeenCalledTimes(1)
+    expect(mockProtocolUpdate).toHaveBeenCalledWith('prot-1', { frequency: 'semanal' }, { surface: 'mobile' })
+    expect(mockMedicineUpdate).not.toHaveBeenCalled()
   })
 
   it('escrita sem resposta: estoura o prazo com a mensagem e não segue', async () => {

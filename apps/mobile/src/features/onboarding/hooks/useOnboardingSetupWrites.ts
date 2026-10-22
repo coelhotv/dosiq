@@ -46,6 +46,12 @@ export interface SetupWritesInput {
 export function useOnboardingSetupWrites() {
   const createdMedicineId = useRef<string | null>(null)
   const protocolCreated = useRef(false)
+  const createdProtocolId = useRef<string | null>(null)
+  // O que já foi gravado (referência do objeto do contexto). Voltar e editar depois de uma falha
+  // parcial troca o objeto: aí o registro existente é ATUALIZADO, em vez de pulado (RC6 #900) ou
+  // duplicado (comportamento antigo, estado local do passo de estoque).
+  const writtenMedicine = useRef<Record<string, unknown> | null>(null)
+  const writtenTreatment = useRef<Record<string, unknown> | null>(null)
   const pendingMedicine = useRef<Promise<any> | null>(null)
   const pendingProtocol = useRef<Promise<any> | null>(null)
 
@@ -64,11 +70,15 @@ export function useOnboardingSetupWrites() {
       )
       medicineId = createdMedicine.id
       createdMedicineId.current = medicineId
+      writtenMedicine.current = medicine
+    } else if (writtenMedicine.current !== medicine) {
+      await timed(medicineService.update(medicineId, medicine, { surface: SURFACES.MOBILE }))
+      writtenMedicine.current = medicine
     }
 
     const { _remind, ...protocolData } = treatment
     if (!protocolCreated.current) {
-      await timed(
+      const createdProtocol = await timed(
         inFlight(pendingProtocol, () =>
           protocolService.create(
             { ...protocolData, medicine_id: medicineId },
@@ -77,6 +87,11 @@ export function useOnboardingSetupWrites() {
         ),
       )
       protocolCreated.current = true
+      createdProtocolId.current = createdProtocol?.id ?? null
+      writtenTreatment.current = treatment
+    } else if (writtenTreatment.current !== treatment && createdProtocolId.current) {
+      await timed(protocolService.update(createdProtocolId.current, protocolData, { surface: SURFACES.MOBILE }))
+      writtenTreatment.current = treatment
     }
 
     await timed(chooseStockModeInOnboarding(stockTracking))

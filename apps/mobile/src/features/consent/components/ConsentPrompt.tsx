@@ -155,11 +155,11 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
         {/* C-B3-13: autorizar aqui também grava o aceite dos Termos e da Política (gate.grant). */}
         <Text style={styles.terms}>
           Ao continuar, você aceita os{' '}
-          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE)}>
+          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => void Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE).catch(() => {})}>
             Termos de Uso
           </Text>{' '}
           e a{' '}
-          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY)}>
+          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => void Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY).catch(() => {})}>
             Política de Privacidade
           </Text>
           .
