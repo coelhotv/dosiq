@@ -96,6 +96,14 @@
       "destination": "/api/users.ts?action=register-webpush"
     },
     {
+      "source": "/glp-1",
+      "destination": "/glp-1.html"
+    },
+    {
+      "source": "/guia/rodizio-aplicacao",
+      "destination": "/guia/rodizio-aplicacao.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

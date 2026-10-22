@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Landings unificadas, páginas públicas de GLP-1/rodízio e novo molde estático (spec 048 A)
+
+- **Web** (`Added` e `Changed`, `minor` 4.31.0 → 4.32.0). A landing page da versão web é totalmente
+  harmonizada com os diferenciais da versão 0.34.0: novo título ("Nunca mais erre uma dose."), cartões
+  segmentados para comprimidos e canetas injetáveis, faixa de entrada para tratamentos com titulação,
+  vitrine dos 8 diferenciais (código de barras ANVISA, titulação, mapa corporal, alarme crítico, relatório
+  em PDF, biomarcadores, estoque e privacidade) e links diretos para as lojas da Apple e Google Play,
+  preservando os dados da pessoa jurídica no rodapé. São publicadas as páginas públicas estáticas da Onda 1
+  para motores de busca e IA: "/glp-1" (guia de titulação e canetas), "/guia/rodizio-aplicacao" (guia de rodízio
+  de locais de injeção subcutânea) e "/llms.txt" (documentação canônica para modelos de linguagem), acompanhadas
+  de regras de rota no "vercel.json" e mapa de site ("sitemap.xml").
+
 ### Aviso de estoque baixo fala em doses no tratamento semanal (spec 103 G1)
 
 - **Mobile** (`Fixed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — correção de texto,

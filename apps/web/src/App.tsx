@@ -164,7 +164,15 @@ function AppInner() {
   const [isMeasureModalOpen, setIsMeasureModalOpen] = useState(false)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
-  const [showAuth, setShowAuth] = useState(false)
+  const [showAuth, setShowAuth] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const params = new URLSearchParams(window.location.search)
+      return params.has('login') || params.has('signup') || params.has('auth')
+    } catch {
+      return false
+    }
+  })
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   // 012 Fase C / FR-010: registro de medida pelo speed-dial global. Salva e avisa as

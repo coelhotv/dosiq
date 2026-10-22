@@ -4,14 +4,8 @@
 import {
   ZapIcon,
   ArrowRightIcon,
-  DatabaseIcon,
-  LockIcon,
   BellIcon,
-  PackageIcon,
-  CalendarIcon,
   ShieldCheckIcon,
-  MessageCircleIcon,
-  LogoMark,
 } from './LandingIcons'
 
 export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue }) {
@@ -25,26 +19,32 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
           <div className="lp-hero__copy">
             <div className="lp-pill lp-pill--emerald">
               <ZapIcon size={16} />
-              <span>Gratuito para sempre • Sem Paywall em Saúde</span>
+              <span>Gratuito para sempre • Sem paywall em saúde</span>
             </div>
 
             <h1>
-              Nunca mais <span>esqueça</span> um remédio.
+              Nunca mais erre uma <span>dose</span>.
             </h1>
 
             <p>
-              O Dosiq lembra você de cada horário, prevê quando seu estoque vai acabar e funciona offline. Cadastre seus tratamentos com a base oficial da <b>ANVISA</b> e receba lembretes proativos. Tudo privado, gratuito e sem assinaturas.
+              Comprimido de todo dia ou caneta de toda semana: escaneie o código de barras da caixa pela câmera, receba alarmes que tocam até no silencioso e gere o relatório em PDF que o seu médico vai querer ver. Base oficial da <b>ANVISA</b>, funciona offline, sem assinatura.
             </p>
 
             <div className="lp-hero__cta">
               {!isAuthenticated ? (
                 <>
-                  <button className="lp-btn lp-btn--primary lp-btn--large" onClick={onOpenAuth}>
-                    Começar Agora
+                  <button
+                    className="lp-btn lp-btn--primary lp-btn--large"
+                    onClick={() => onOpenAuth?.('signup')}
+                  >
+                    Criar conta grátis
                     <ArrowRightIcon size={20} />
                   </button>
-                  <button className="lp-btn lp-btn--secondary lp-btn--large" onClick={onOpenAuth}>
-                    Conhecer o Bot Telegram
+                  <button
+                    className="lp-btn lp-btn--secondary lp-btn--large"
+                    onClick={() => onOpenAuth?.('login')}
+                  >
+                    Já tenho conta — entrar
                   </button>
                 </>
               ) : (
@@ -55,14 +55,19 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
               )}
             </div>
 
-            <div className="lp-hero__proofs">
-              <div className="lp-proof">
-                <BellIcon className="lp-proof__icon lp-proof__icon--blue" size={18} />
-                <span>Lembretes Proativos</span>
+            <div className="lp-hero__scope">
+              <div className="lp-scope">
+                <span className="lp-scope__tag">Comprimidos</span>
+                <p>
+                  <b>Vários remédios, vários horários.</b> Cadastro pelo código de barras da caixa (base ANVISA), lembretes críticos que tocam até no modo Silencioso e cartão de emergência offline.
+                </p>
               </div>
-              <div className="lp-proof">
-                <PackageIcon className="lp-proof__icon lp-proof__icon--green" size={18} />
-                <span>Estoque Inteligente</span>
+              <div className="lp-scope">
+                <span className="lp-scope__tag">Caneta</span>
+                <p>
+                  <b>Injetável semanal com titulação.</b> Escada de doses, mapa corporal frente e costas de rodízio, peso por etapa e relatório em PDF para a consulta.{' '}
+                  <a href="/glp-1">Ver como funciona →</a>
+                </p>
               </div>
             </div>
           </div>
@@ -85,29 +90,31 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
 
                 <div className="lp-alert-card">
                   <div className="lp-alert-card__header">
-                    <p>Estoque Crítico</p>
-                    <PackageIcon className="lp-text-red" size={16} />
+                    <p>Próxima aplicação</p>
+                    <span className="lp-badge lp-badge--blue">Semanal</span>
                   </div>
                   <div className="lp-alert-card__row">
-                    <p>Metformina 850mg</p>
-                    <p className="lp-text-red">4 comps restantes</p>
+                    <p>Semaglutida 1,7 mg</p>
+                    <p className="lp-text-green">quinta, 20:00</p>
                   </div>
                   <div className="lp-progress">
-                    <div className="lp-progress__fill" />
+                    <div className="lp-progress__fill" style={{ width: '72%', background: 'var(--lp-green-500)' }} />
                   </div>
+                  <p className="lp-dose-item__meta" style={{ marginTop: '8px' }}>
+                    Degrau 4 de 5 · sobe em 2 semanas
+                  </p>
                 </div>
 
                 <div className="lp-dose-list">
                   <div className="lp-dose-list__header">
-                    <p>Próximas Doses</p>
-                    <CalendarIcon size={14} />
+                    <p>Hoje</p>
                   </div>
 
                   <div className="lp-dose-item">
                     <div className="lp-dose-item__info">
                       <div className="lp-dose-item__time">12:00</div>
                       <div>
-                        <div className="lp-dose-item__name">Losartana</div>
+                        <div className="lp-dose-item__name">Losartana 50 mg</div>
                         <div className="lp-dose-item__meta">1 comp</div>
                       </div>
                     </div>
@@ -118,19 +125,19 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
                     <div className="lp-dose-item__info">
                       <div className="lp-dose-item__time">14:00</div>
                       <div>
-                        <div className="lp-dose-item__name">Omeprazol</div>
-                        <div className="lp-dose-item__meta">20mg</div>
+                        <div className="lp-dose-item__name">Metformina 850 mg</div>
+                        <div className="lp-dose-item__meta">1 comp</div>
                       </div>
                     </div>
-                    <div className="lp-badge lp-badge--purple">Gástrico</div>
+                    <div className="lp-badge lp-badge--purple">Diabetes</div>
                   </div>
 
                   <div className="lp-dose-item">
                     <div className="lp-dose-item__info">
                       <div className="lp-dose-item__time">20:00</div>
                       <div>
-                        <div className="lp-dose-item__name">Sinvastatina</div>
-                        <div className="lp-dose-item__meta">40mg</div>
+                        <div className="lp-dose-item__name">Sinvastatina 20 mg</div>
+                        <div className="lp-dose-item__meta">2 comp</div>
                       </div>
                     </div>
                     <div className="lp-badge lp-badge--orange">Colesterol</div>
@@ -144,13 +151,6 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
                   </div>
                   <p>Disponível offline para socorristas e médicos em caso de urgência.</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="lp-floating-bot">
-              <div className="lp-floating-bot__content">
-                <MessageCircleIcon className="lp-text-blue" size={24} />
-                <span>Telegram Bot Ativo</span>
               </div>
             </div>
           </div>
