@@ -3,6 +3,37 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+/**
+ * Plugin de desenvolvimento local: espelha os rewrites de rotas limpas do vercel.json
+ * para que arquivos HTML estáticos em public/ funcionem tanto em dev quanto em preview.
+ */
+function staticHtmlRewritesPlugin() {
+  const rewrites = {
+    '/glp-1': '/glp-1.html',
+    '/guia/rodizio-aplicacao': '/guia/rodizio-aplicacao.html',
+  }
+
+  const handler = (req, res, next) => {
+    const rawUrl = req.url || ''
+    const pathname = rawUrl.split('?')[0]
+    if (rewrites[pathname]) {
+      const query = rawUrl.includes('?') ? '?' + rawUrl.split('?')[1] : ''
+      req.url = rewrites[pathname] + query
+    }
+    next()
+  }
+
+  return {
+    name: 'static-html-rewrites',
+    configureServer(server) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Carrega .env* (inclui EXPO_PUBLIC_*) só no processo do Vite — NÃO expõe ao client.
@@ -92,6 +123,7 @@ export default defineConfig(({ mode }) => {
   },
   plugins: [
     react(),
+    staticHtmlRewritesPlugin(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',

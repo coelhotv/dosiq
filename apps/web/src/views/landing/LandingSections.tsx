@@ -1,22 +1,43 @@
 /**
  * LandingSections — Seções estáticas da Landing page.
  */
-import { useState } from 'react'
-import { signupForBeta } from '@shared/services/betaSignupService'
 import {
   ZapIcon,
   DatabaseIcon,
   LockIcon,
-  MessageCircleIcon,
   PackageIcon,
   FileTextIcon,
   ShieldCheckIcon,
   ActivityIcon,
   SmartphoneIcon,
-  ClockIcon,
-  DownloadIcon,
   CircleCheckIcon,
+  BarcodeIcon,
+  LayersIcon,
+  TargetIcon,
+  BellIcon,
 } from './LandingIcons'
+
+export function LandingWedge() {
+  return (
+    <section className="lp-section lp-wedge">
+      <div className="lp-shell">
+        <div className="lp-wedge__in">
+          <div>
+            <h2>Faz tratamento com caneta injetável?</h2>
+            <p>
+              Titulação em degraus, dia fixo da aplicação, mapa do corpo para rodízio de local e evolução do peso por etapa — a parte do dosiq feita para semaglutida, tirzepatida e insulina, com as respostas práticas de quem está começando.
+            </p>
+          </div>
+          <div>
+            <a className="lp-wedge__cta" href="/glp-1">
+              Entenda o progresso dos tratamentos →
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export function LandingSolucoes() {
   return (
@@ -46,10 +67,10 @@ export function LandingSolucoes() {
           </div>
 
           <div className="lp-card">
-            <div className="lp-card__icon"><MessageCircleIcon className="lp-text-sky" size={24} /></div>
-            <div className="lp-card__eyebrow">Flexível</div>
-            <h3>Alertas Multicanal</h3>
-            <p>Receba notificações push no celular ou lembretes no Telegram. E muito em breve com suporte direto ao WhatsApp.</p>
+            <div className="lp-card__icon"><BellIcon className="lp-text-sky" size={24} /></div>
+            <div className="lp-card__eyebrow">Confiável</div>
+            <h3>Alertas Críticos</h3>
+            <p>Notificações precisas no celular e alarme sonoro dedicado que toca mesmo no modo Silencioso e no Foco.</p>
           </div>
         </div>
       </div>
@@ -73,14 +94,46 @@ export function LandingFuncionalidades() {
         </div>
 
         <div className="lp-feature-grid">
-          <div className="lp-feature"><div className="lp-feature__icon"><PackageIcon size={20} /></div><h4>Controle de Estoque</h4><p>Alertas automáticos quando seus comprimidos estão acabando.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><FileTextIcon size={20} /></div><h4>PDF para o Médico</h4><p>Gere relatórios profissionais com seu histórico de adesão em um clique.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ShieldCheckIcon size={20} /></div><h4>Cartão de Emergência</h4><p>Acesso offline aos seus medicamentos ativos para situações de urgência.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ActivityIcon size={20} /></div><h4>Score de Adesão</h4><p>Acompanhe sua evolução com streaks e metas semanais de tomada.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><SmartphoneIcon size={20} /></div><h4>Use em Qualquer Lugar</h4><p>Baixe o app nativo nas lojas ou acesse direto pelo navegador do seu computador.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ClockIcon size={20} /></div><h4>Protocolos Flexíveis</h4><p>Diário, semanal, dias alternados ou desmame progressivo (titulação).</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><DownloadIcon size={20} /></div><h4>Portabilidade Total</h4><p>Exporte seus dados em CSV ou JSON a qualquer momento (lei LGPD).</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><LockIcon size={20} /></div><h4>Privacidade Total</h4><p>Seus dados são criptografados. Sem anúncios de terceiros ou venda de dados.</p></div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><BarcodeIcon size={20} /></div>
+            <h4>Código de Barras ANVISA</h4>
+            <p>Aponte a câmera para a caixa no app ou busque na lista oficial da ANVISA sem digitar nada à mão.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><LayersIcon size={20} /></div>
+            <h4>Titulação de Doses</h4>
+            <p>Escada de aumento gradual com o degrau atual e peso médio por etapa, mesmo ao trocar de caneta.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><TargetIcon size={20} /></div>
+            <h4>Mapa do Corpo (Rodízio)</h4>
+            <p>Toque no desenho do corpo (frente e costas) para registrar onde aplicou e não repetir o local.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><BellIcon size={20} /></div>
+            <h4>Alarme Crítico no Silencioso</h4>
+            <p>Alertas Críticos no iPhone e canal de alarme no Android para doses que não podem atrasar.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><FileTextIcon size={20} /></div>
+            <h4>PDF Clínico para o Médico</h4>
+            <p>Relatório de 7, 30 ou 90 dias com tomadas, escada de doses, locais de injeção e medidas.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><ActivityIcon size={20} /></div>
+            <h4>Biomarcadores Integrados</h4>
+            <p>Registre seu peso logo após a dose semanal e acompanhe glicemia e pressão ao lado da adesão.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><PackageIcon size={20} /></div>
+            <h4>Estoque Opcional pela Caixa</h4>
+            <p>Escaneie a caixa ao comprar para atualizar o estoque — ou desligue se só quiser lembretes.</p>
+          </div>
+          <div className="lp-feature">
+            <div className="lp-feature__icon"><LockIcon size={20} /></div>
+            <h4>Privacidade & Portabilidade</h4>
+            <p>Código aberto (AGPL-3.0), sem anúncios, sem venda de dados e exportação CSV/JSON (LGPD).</p>
+          </div>
         </div>
       </div>
     </section>
@@ -145,46 +198,26 @@ export function LandingPrivacidade() {
   )
 }
 
-// Link da App Store (iOS já publicado).
-const APP_STORE_URL = 'https://apps.apple.com/br/app/dosiq-intelig%C3%AAncia-em-doses/id6762740948'
+// Links parametrizados com UTM para atribuição das lojas
+const APP_STORE_URL =
+  'https://apps.apple.com/br/app/dosiq-intelig%C3%AAncia-em-doses/id6762740948?utm_source=landing_home'
+const GOOGLE_PLAY_URL =
+  'https://play.google.com/store/apps/details?id=com.coelhotv.dosiq&utm_source=landing_home'
 
 /**
- * LandingApp — promove o app nativo.
- * iOS: já na App Store (botão direto). Android: em testes fechados → captura
- * de e-mail para entrar na lista do closed testing (12 testers / 2 semanas).
+ * LandingApp — promove os apps nativos (iOS e Android ambos publicados).
  */
 export function LandingApp() {
-  // States
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
-  const [error, setError] = useState('')
-
-  // Handlers
-  async function handleAndroidSubmit(e) {
-    e.preventDefault()
-    if (status === 'loading') return
-    setStatus('loading')
-    setError('')
-    const { success, error: err } = await signupForBeta(email, 'android')
-    if (success) {
-      setStatus('success')
-      setEmail('')
-    } else {
-      setStatus('error')
-      setError(err || 'Não foi possível registrar agora.')
-    }
-  }
-
   return (
     <section id="app" className="lp-section lp-section--muted">
       <div className="lp-shell">
         <div className="lp-section__intro lp-section__intro--center">
           <div className="lp-pill">
             <SmartphoneIcon size={16} />
-            <span>Agora também no celular</span>
+            <span>Disponível no celular</span>
           </div>
           <h2>Leve o Dosiq no bolso.</h2>
-          <p>O app nativo traz lembretes na hora certa, mesmo offline.</p>
+          <p>O app nativo traz alarmes críticos na hora certa, leitura de código de barras e funcionamento offline.</p>
         </div>
 
         <div className="lp-app-grid">
@@ -192,8 +225,8 @@ export function LandingApp() {
           <div className="lp-app-card">
             <div className="lp-app-card__body">
               <div className="lp-card__eyebrow">iPhone (iOS)</div>
-              <h4>Disponível para iPhones</h4>
-              <p>Baixe agora e ative os lembretes em segundos.</p>
+              <h4>Disponível na App Store</h4>
+              <p>Alertas Críticos que tocam no Silencioso e Live Activities na Ilha Dinâmica.</p>
             </div>
             <div className="lp-app-card__cta">
               <a
@@ -208,48 +241,27 @@ export function LandingApp() {
             </div>
           </div>
 
-          {/* Android — closed testing → captura de e-mail */}
+          {/* Android — disponível */}
           <div className="lp-app-card">
             <div className="lp-app-card__body">
               <div className="lp-card__eyebrow">Android</div>
-              <h4>Android em breve...</h4>
-              {status === 'success' ? (
-                <p className="lp-app-success">
-                  <CircleCheckIcon className="lp-text-green" size={18} />
-                  Pronto! Você entrou na lista. Avisamos quando liberar o acesso.
-                </p>
-              ) : (
-                <>
-                  <p>Deixe seu e-mail para entrar na lista de testadores e receber o convite.</p>
-                  <form className="lp-app-form" onSubmit={handleAndroidSubmit} noValidate>
-                    <input
-                      type="email"
-                      className="lp-app-input"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(ev) => setEmail(ev.target.value)}
-                      aria-label="Seu e-mail para o beta Android"
-                      maxLength={254}
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="lp-btn lp-btn--primary"
-                      disabled={status === 'loading'}
-                    >
-                      {status === 'loading' ? 'Enviando…' : 'Quero testar'}
-                    </button>
-                  </form>
-                  {status === 'error' && <p className="lp-app-error">{error}</p>}
-                </>
-              )}
+              <h4>Disponível no Google Play</h4>
+              <p>Canal de alarme sonoro dedicado e leitura de código de barras pela câmera.</p>
             </div>
             <div className="lp-app-card__cta">
-              <img
-                src="/download-android.png"
-                alt="Em breve no Google Play"
-                className="lp-app-badge-img lp-app-badge-img--soon"
-              />
+              <a
+                className="lp-app-badge"
+                href={GOOGLE_PLAY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Disponível no Google Play"
+              >
+                <img
+                  src="/download-android.png"
+                  alt="Disponível no Google Play"
+                  className="lp-app-badge-img"
+                />
+              </a>
             </div>
           </div>
         </div>

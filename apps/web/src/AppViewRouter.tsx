@@ -2,7 +2,7 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Auth from './views/Auth'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useConsentGate, isConsentAllowedView } from '@shared/hooks/useConsentGate'
@@ -116,6 +116,15 @@ export default function AppViewRouter({
   // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
   const consent = useConsentGate()
+  const [authDefaultLogin, setAuthDefaultLogin] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const params = new URLSearchParams(window.location.search)
+      return params.has('login') || params.get('auth') === 'login'
+    } catch {
+      return false
+    }
+  })
   // Reconsentimento v0.4 (096, DQ-1): bloqueante. "Não concordo" leva ao Perfil (revogação) e só lá
   // o modal sai da frente (Perfil fica fora da allowlist do bloqueio, mas é a saída de quem recusa o
   // reconsentimento — quem está `stale` não está travado) — em outra view ele volta. O estado
@@ -127,6 +136,32 @@ export default function AppViewRouter({
     }
   }, [stockTrackingReady, stockTrackingEnabled, currentView, setCurrentView])
 
+  // Limpeza de parâmetros de autenticação vindos das páginas estáticas (/glp-1, guias)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('login') || params.has('signup') || params.has('auth')) {
+          const url = new URL(window.location.href)
+          url.searchParams.delete('login')
+          url.searchParams.delete('signup')
+          url.searchParams.delete('auth')
+          window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash)
+        }
+      } catch {
+        // Fallback silencioso em ambientes de teste sem URL completa
+      }
+    }
+  }, [])
+
+  const handleOpenAuth = (mode?: 'login' | 'signup' | boolean) => {
+    setAuthDefaultLogin(mode === 'login' || mode === true)
+    setShowAuth(true)
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0)
+    }
+  }
+
   if (isPasswordRecovery) {
     return W(<ResetPassword onComplete={onResetComplete} />)
   }
@@ -134,11 +169,11 @@ export default function AppViewRouter({
   if (!session) {
     return showAuth ? (
       <Auth
-        defaultLogin={false}
+        defaultLogin={authDefaultLogin}
         onAuthSuccess={() => { setShowAuth(false); setCurrentView('dashboard') }}
         onClose={() => setShowAuth(false)}
       />
-    ) : W(<Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />)
+    ) : W(<Landing isAuthenticated={false} onOpenAuth={handleOpenAuth} />)
   }
 
   // ── Gate de consentimento (046, T009) ────────────────────────────────────────────────────────

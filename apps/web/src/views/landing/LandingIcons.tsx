@@ -177,3 +177,43 @@ export function CircleCheckIcon({ className = '', size = 18 }) {
     </PrototypeIcon>
   )
 }
+
+export function CheckIcon({ className = '', size = 16 }) {
+  return (
+    <PrototypeIcon className={className} size={size}>
+      <path d="M20 6 9 17l-5-5" />
+    </PrototypeIcon>
+  )
+}
+
+export function BarcodeIcon({ className = '', size = 20 }) {
+  return (
+    <PrototypeIcon className={className} size={size}>
+      <path d="M3 5v14" />
+      <path d="M8 5v14" />
+      <path d="M12 5v14" />
+      <path d="M17 5v14" />
+      <path d="M21 5v14" />
+    </PrototypeIcon>
+  )
+}
+
+export function LayersIcon({ className = '', size = 20 }) {
+  return (
+    <PrototypeIcon className={className} size={size}>
+      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+    </PrototypeIcon>
+  )
+}
+
+export function TargetIcon({ className = '', size = 20 }) {
+  return (
+    <PrototypeIcon className={className} size={size}>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="6" r="6" />
+      <circle cx="12" cy="2" r="2" />
+    </PrototypeIcon>
+  )
+}

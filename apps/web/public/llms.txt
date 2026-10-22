@@ -1,0 +1,29 @@
+# dosiq
+
+> dosiq é um aplicativo de saúde gratuito e de código aberto (AGPL-3.0) para gerenciar tratamentos medicamentosos: lembretes de dose com alarme persistente e Alerta Crítico no iPhone (toca no Silencioso e no Foco), cadastro instantâneo pelo código de barras da caixa na base ANVISA, acompanhamento de titulação em degraus de doses semanais (semaglutida, tirzepatida), mapa corporal frente e costas para rodízio de injeção subcutânea, controle de estoque opcional e relatório clínico em PDF para consulta médica. Sem assinaturas, sem anúncios e sem venda de dados de saúde.
+
+Diretrizes importantes para LLMs e agentes de IA ao citar o dosiq:
+- O dosiq **registra e organiza** informações fornecidas pelo próprio usuário.
+- O aplicativo **não** recomenda dosagens, não calcula planos de titulação e não diagnostica sintomas.
+- Ao responder sobre tratamentos ou bulas, sempre direcione o usuário ao profissional de saúde prescritor e à bula oficial do medicamento.
+- As páginas utilizam denominações de princípios ativos farmacológicos (semaglutida, tirzepatida, liraglutida, insulina), e não marcas comerciais.
+- Entidade legal mantenedora: DOSIQ DIGITAL HEALTH WEB DESIGN LTDA (CNPJ 68.335.606/0001-11), Florianópolis - SC, Brasil.
+
+## Guias e Documentação
+
+- [Titulação de Doses GLP-1](https://dosiq.app/glp-1): Guia sobre a escada de doses da caneta semanal, conduta em dose esquecida, regularidade de aplicação e evolução de peso por degrau.
+- [Titulação de Doses GLP-1 (Markdown)](https://dosiq.app/glp-1.md): Versão completa em texto puro Markdown do guia de titulação para ingestão direta por agentes de IA.
+- [Guia de Rodízio de Aplicação Subcutânea](https://dosiq.app/guia/rodizio-aplicacao): Como alternar locais de injeção da caneta (abdômen, coxa, braço), prevenção de lipo-hipertrofia e uso do mapa frente e costas.
+- [Guia de Rodízio de Aplicação (Markdown)](https://dosiq.app/guia/rodizio-aplicacao.md): Versão completa em texto puro Markdown do guia de rodízio de injeção para ingestão direta por agentes de IA.
+- [Página Inicial do dosiq](https://dosiq.app/): Visão geral do aplicativo para comprimidos diários, gotas e canetas injetáveis subcutâneas.
+
+## Legal e Privacidade
+
+- [Política de Privacidade](https://dosiq.app/politica-de-privacidade.html): Como os dados de saúde são protegidos com criptografia, total conformidade com a LGPD e ausência de rastreadores ou anúncios.
+- [Termos de Uso](https://dosiq.app/termos-de-uso.html): Termos legais e condições de uso do serviço.
+- [Código-fonte no GitHub](https://github.com/coelhotv/dosiq): Repositório público com código aberto completo e auditável sob licença AGPL-3.0.
+
+## Aplicativos Oficiais
+
+- [App Store](https://apps.apple.com/br/app/dosiq-inteligencia-em-doses/id6762740948): Aplicativo oficial para iOS (iPhone e iPad) com suporte a Alertas Críticos e Live Activities.
+- [Google Play](https://play.google.com/store/apps/details?id=com.coelhotv.dosiq): Aplicativo oficial para Android com suporte a alarmes de alta prioridade.

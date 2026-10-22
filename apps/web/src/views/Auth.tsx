@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { signIn, signUp, sendPasswordReset, verifyOtp, captureDeviceTimezone } from '@shared/utils/supabase'
 import HealthConsentBlock from '@features/consent/components/HealthConsentBlock'
@@ -282,6 +282,10 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

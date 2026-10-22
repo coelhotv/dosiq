@@ -1,6 +1,12 @@
 import React from 'react'
 import LandingHero from './LandingHero'
-import { LandingSolucoes, LandingFuncionalidades, LandingPrivacidade, LandingApp } from './LandingSections'
+import {
+  LandingWedge,
+  LandingSolucoes,
+  LandingFuncionalidades,
+  LandingPrivacidade,
+  LandingApp,
+} from './LandingSections'
 import { LogoMark, CircleCheckIcon } from './LandingIcons'
 import './LandingPrototype.css'
 
@@ -20,15 +26,27 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
             <nav className="lp-nav">
               <a href="#solucoes">Soluções</a>
               <a href="#funcionalidades">Recursos</a>
+              <a className="lp-nav__wedge" href="/glp-1">
+                Tratamento com caneta
+              </a>
               <a href="#privacidade">Privacidade</a>
             </nav>
 
             <div className="lp-header__actions">
               <span className="lp-header__free">100% Gratuito</span>
               {!isAuthenticated ? (
-                <button className="lp-btn lp-btn--header" onClick={onOpenAuth}>Começar Agora</button>
+                <>
+                  <button className="lp-btn lp-btn--outline" onClick={() => onOpenAuth?.('login')}>
+                    Entrar
+                  </button>
+                  <button className="lp-btn lp-btn--header" onClick={() => onOpenAuth?.('signup')}>
+                    Criar conta
+                  </button>
+                </>
               ) : (
-                <button className="lp-btn lp-btn--header" onClick={onContinue}>Abrir App</button>
+                <button className="lp-btn lp-btn--header" onClick={onContinue}>
+                  Abrir painel
+                </button>
               )}
             </div>
           </div>
@@ -41,6 +59,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
             onContinue={onContinue}
           />
 
+          <LandingWedge />
           <LandingSolucoes />
           <LandingFuncionalidades />
           <LandingApp />
@@ -53,16 +72,23 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                 <p>Gratuito para sempre. Sem pegadinhas. Sem anúncios.</p>
                 <div className="lp-final-cta__actions">
                   {!isAuthenticated ? (
-                    <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onOpenAuth}>Começar Agora</button>
+                    <button
+                      className="lp-btn lp-btn--white lp-btn--xl"
+                      onClick={() => onOpenAuth?.('signup')}
+                    >
+                      Criar conta grátis
+                    </button>
                   ) : (
-                    <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onContinue}>Abrir Agora</button>
+                    <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onContinue}>
+                      Abrir painel
+                    </button>
                   )}
                   <div className="lp-final-proof">
                     <div className="lp-final-proof__line">
                       <CircleCheckIcon size={16} />
                       <span>App nativo + PWA</span>
                     </div>
-                    <p>App na App Store (iOS) · Android em breve · no Computador</p>
+                    <p>App na App Store (iOS) · Google Play (Android) · no Computador</p>
                   </div>
                 </div>
               </div>
@@ -76,13 +102,15 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <div className="lp-brand__mark lp-brand__mark--small">
                 <LogoMark size={25} />
               </div>
-              <span className="lp-brand__text lp-brand__text--small">Dosiq</span>
+              <span className="lp-brand__text lp-brand__text--small">dosiq</span>
             </div>
 
             <div className="lp-footer__links">
-              <a href="#funcionalidades">Base ANVISA</a>
-              <a href="#solucoes">Telegram Bot</a>
-              <a href="https://github.com/coelhotv/dosiq/">Código Aberto</a>
+              <a href="/glp-1">Tratamento com caneta</a>
+              <a href="/guia/rodizio-aplicacao">Guia de Aplicação</a>
+              <a href="https://github.com/coelhotv/dosiq/" target="_blank" rel="noopener noreferrer">
+                Código Aberto
+              </a>
             </div>
 
             <p className="lp-footer__copy">© 2026 Dosiq. Desenvolvido para o bem comum.</p>
