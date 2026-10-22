@@ -261,8 +261,8 @@ describe('deriveStockAlerts (090 D-5)', () => {
     ])
     const alerts = deriveStockAlerts(stock)
     expect(alerts).toEqual(expect.arrayContaining([
-      { medicineId: 'm7', medicineName: 'Sete', daysRemaining: 7 },
-      { medicineId: 'm0', medicineName: 'Zero', daysRemaining: 0 },
+      expect.objectContaining({ medicineId: 'm7', medicineName: 'Sete', daysRemaining: 7, isDailyStock: true }),
+      expect.objectContaining({ medicineId: 'm0', medicineName: 'Zero', daysRemaining: 0 }),
     ]))
     expect(alerts.map((a) => a.medicineId).sort()).toEqual(['m0', 'm7'])
   })
@@ -276,6 +276,15 @@ describe('deriveStockAlerts (090 D-5)', () => {
     expect(alert.daysRemaining).toBe(Math.floor(stock[0].daysRemaining))
     expect(alert.daysRemaining).toBe(6)
     expect(alert.daysRemaining).toBeLessThanOrEqual(STOCK_ALERT_MAX_DAYS)
+  })
+
+  // 103 G1: semanal (GLP-1) com 1 aplicação no saldo ⇒ runway 7 dias, mas o banner fala em doses,
+  // como a aba Estoque (ADR-067). O alerta carrega a métrica de doses da mesma fonte.
+  it('plano semanal com 1 dose ⇒ alerta leva isDailyStock=false e dosesRemaining=1 (103 G1)', () => {
+    const stock = transformStockData([med('mw', 'Semanal', 1, [{ id: 'pw', active: true, start_date: getTodayLocal(),
+      end_date: null, frequency: 'semanal', weekdays: [3], time_schedule: ['20:00'], dosage_per_intake: 1 }])])
+    const [alert] = deriveStockAlerts(stock)
+    expect(alert).toEqual({ medicineId: 'mw', medicineName: 'Semanal', daysRemaining: 7, dosesRemaining: 1, isDailyStock: false })
   })
 
   it.each([[null], [undefined], [[]], [[null]], [[{ id: 'x', name: 'NaN', daysRemaining: NaN }]]])(
