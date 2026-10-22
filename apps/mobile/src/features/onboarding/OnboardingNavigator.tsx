@@ -53,7 +53,7 @@ export default function OnboardingNavigator({ onComplete }) {
   // 096 B3: modo escolhido no S4; gravado só no S1, depois do A.
   const [stockTracking, setStockTracking] = useState(false)
   // Escritas do setup vivem AQUI (não no S1): os guardas de idempotência sobrevivem ao S1 desmontar.
-  const { writeSetup } = useOnboardingSetupWrites()
+  const { writeSetup: writeSetupRaw } = useOnboardingSetupWrites()
   // 065 C2 (G-4): `complete` sai UMA vez. Na opção 2 do passo de estoque `markCompleted` roda antes
   // e `finish` depois (tela de saldo) — sem a ref, a mesma conclusão contaria duas vezes.
   const completeEmitted = useRef(false)
@@ -78,6 +78,13 @@ export default function OnboardingNavigator({ onComplete }) {
     logEvent(EVENTS.ONBOARDING_SKIP, { surface: SURFACES.MOBILE, step })
     if (navigationRef.isReady()) (navigationRef.navigate as any)(ROUTES.ONBOARDING_CONSENT, { variant: 'empty' })
   }, [])
+
+  // Pulou, voltou e concluiu COM dados: deixou de ser skip (RC6 #900 — sem isto a pessoa sumia do
+  // `onboarding_complete` e ficava contada como skip no funil do 065 G-4).
+  const writeSetup = useMemo(() => async (input) => {
+    skipped.current = false
+    return writeSetupRaw(input)
+  }, [writeSetupRaw])
 
   // Marca a conclusão SEM sair do wizard (spec 044 F4b).
   //

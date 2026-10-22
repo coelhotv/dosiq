@@ -39,6 +39,10 @@ jest.mock('../screens/OnboardingStockStep', () => ({ __esModule: true, default: 
 jest.mock('../screens/OnboardingStockInitialBalanceStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingConsentStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('@profile/screens/DeleteAccountScreen', () => ({ __esModule: true, default: () => null }))
+const mockWriteSetupRaw = jest.fn(() => Promise.resolve({ remind: false }))
+jest.mock('../hooks/useOnboardingSetupWrites', () => ({
+  useOnboardingSetupWrites: () => ({ writeSetup: (...a) => mockWriteSetupRaw(...a) }),
+}))
 const mockRefNavigate = jest.fn()
 jest.mock('@navigation/navigationRef', () => ({ navigationRef: { isReady: () => true, navigate: (...a) => mockRefNavigate(...a) } }))
 // 066 Slice E (T051): o leitor da caixa também é tela do wizard.
@@ -85,5 +89,15 @@ describe('OnboardingNavigator — eventos', () => {
     await act(async () => { await global.__onbCtx.finish() })
     expect(names()).not.toContain('onboarding_complete')
     expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  // RC6 #900: pulou, voltou e concluiu COM dados ⇒ conta como conclusão, não como skip.
+  it('pular → voltar → gravar o setup → finish emite onboarding_complete', async () => {
+    render(<OnboardingNavigator onComplete={jest.fn()} />)
+    await act(async () => { await global.__onbCtx.skip(1) })
+    await act(async () => { await global.__onbCtx.writeSetup({ medicine: {}, treatment: {} }) })
+    await act(async () => { await global.__onbCtx.finish() })
+    expect(mockWriteSetupRaw).toHaveBeenCalledTimes(1)
+    expect(names().filter((n) => n === 'onboarding_complete')).toHaveLength(1)
   })
 })
