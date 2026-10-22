@@ -13,7 +13,7 @@ tags:
   - security
   - consent
 created_at: "2026-04-14"
-updated_at: "2026-10-20"
+updated_at: "2026-10-22"
 ---
 
 
@@ -25,7 +25,7 @@ updated_at: "2026-10-20"
 
 ## Versão do documento
 
-**v0.4** · **[DATA DE PUBLICAÇÃO — release 0.34]**
+**v0.4** · **22/10/2026**
 
 ### O que mudou da v0.3 para a v0.4
 

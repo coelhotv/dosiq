@@ -12,7 +12,7 @@ tags:
   - legal
   - consent
 created_at: "2026-07-15"
-updated_at: "2026-10-20"
+updated_at: "2026-10-22"
 ---
 
 
@@ -20,7 +20,7 @@ updated_at: "2026-10-20"
 
 **Fonte de verdade** deste documento — publicação em `apps/web/public/termos-de-uso.html` (conversão mecânica, sem reescrita de conteúdo, ver `PLAYBOOK.md §Publicacao` da spec 046).
 
-**v0.4** · **[DATA DE PUBLICAÇÃO — release 0.34]** — o que mudou: o dosiq passou a ser operado por uma empresa, identificada na nova seção "Partes". As regras de uso não mudaram; a redação ficou mais clara sobre o que o app faz e o que ele não pode garantir.
+**v0.4** · **22/10/2026** — o que mudou: o dosiq passou a ser operado por uma empresa, identificada na nova seção "Partes". As regras de uso não mudaram; a redação ficou mais clara sobre o que o app faz e o que ele não pode garantir.
 
 ---
 
