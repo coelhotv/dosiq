@@ -39,7 +39,7 @@ jest.mock('../screens/OnboardingStockStep', () => ({ __esModule: true, default: 
 jest.mock('../screens/OnboardingStockInitialBalanceStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('../screens/OnboardingConsentStep', () => ({ __esModule: true, default: () => null }))
 jest.mock('@profile/screens/DeleteAccountScreen', () => ({ __esModule: true, default: () => null }))
-const mockWriteSetupRaw = jest.fn(() => Promise.resolve({ remind: false }))
+const mockWriteSetupRaw = jest.fn((..._a: any[]) => Promise.resolve({ remind: false }))
 jest.mock('../hooks/useOnboardingSetupWrites', () => ({
   useOnboardingSetupWrites: () => ({ writeSetup: (...a) => mockWriteSetupRaw(...a) }),
 }))
