@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Otimização de meta tags para Bing e motores de busca (spec 048 fix)
+
+- **Web** (`Fixed`, `patch` 4.32.0 → 4.32.1). Otimizados os comprimentos de `<title>` (45–55 caracteres)
+  e `<meta name="description">` (135–145 caracteres) na home SPA (`index.html`) e nas páginas estáticas
+  da Onda 1 (`/glp-1` e `/guia/rodizio-aplicacao`) para cumprir os requisitos do Bing Webmaster Tools
+  e dos motores de busca sem truncamento. Inclusão de `<h1>` semântico acessível no HTML inicial da home
+  para crawlers estáticos.
+
 ### Landings unificadas, páginas públicas de GLP-1/rodízio e novo molde estático (spec 048 A)
 
 - **Web** (`Added` e `Changed`, `minor` 4.31.0 → 4.32.0). A landing page da versão web é totalmente
