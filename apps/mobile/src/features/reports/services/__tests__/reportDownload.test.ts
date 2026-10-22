@@ -122,7 +122,8 @@ describe('fetchReportPdf (PO-3)', () => {
   })
 
   it.each([
-    [401, {}, 'auth'],
+    [401, { error: 'unauthorized' }, 'auth'],
+    [401, {}, 'collect'], // 401 sem o corpo da nossa API (proteção da Vercel) não é sessão
     [429, {}, 'rate_limited'],
     [500, { error_code: 'render' }, 'render'],
     [500, { error_code: 'collect' }, 'collect'],

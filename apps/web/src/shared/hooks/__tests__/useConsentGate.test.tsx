@@ -142,6 +142,32 @@ describe('useConsentGate — estados lidos com sucesso', () => {
 
     expect(mockGrant).toHaveBeenCalledWith('health_data', 'web')
   })
+
+  // 096 B3 (C-B3-13): sem isto a conta legada consentia sem aceite dos Termos 0.4.
+  it('grant do pedido grava A e o aceite dos Termos, nessa ordem', async () => {
+    mockGetStatus.mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false })
+    mockGrant.mockResolvedValue({ ok: true })
+
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    mockGrant.mockClear()
+
+    await result.current.grant()
+
+    expect(mockGrant.mock.calls.map((c) => c[0])).toEqual(['health_data', 'terms_privacy'])
+  })
+
+  it('A falhou ⇒ não tenta os Termos', async () => {
+    mockGetStatus.mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false })
+    mockGrant.mockResolvedValue({ ok: false, error: 'net' })
+
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    mockGrant.mockClear()
+
+    expect(await result.current.grant()).toEqual({ ok: false, error: 'net' })
+    expect(mockGrant).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('isConsentAllowedView — allowlist (R2/F8)', () => {

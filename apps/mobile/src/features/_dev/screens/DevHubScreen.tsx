@@ -14,6 +14,7 @@ import { NotificationPermissionsSection } from '@features/_dev/sections/Notifica
 import { TreatmentSection } from '@features/_dev/sections/TreatmentSection'
 import { SessionSection } from '@features/_dev/sections/SessionSection'
 import { LayoutSection } from '@features/_dev/sections/LayoutSection'
+import { ObservabilitySection } from '@features/_dev/sections/ObservabilitySection'
 
 const { ChevronLeft } = LucideIcons as any
 
@@ -43,6 +44,7 @@ export default function DevHubScreen() {
         <TreatmentSection />
         <SessionSection />
         <LayoutSection />
+        <ObservabilitySection />
       </ScrollView>
     </SafeAreaView>
   )

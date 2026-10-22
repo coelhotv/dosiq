@@ -18,6 +18,41 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   Store-note: relevante — nova tela inicial destacando canetas injetáveis, leitor de código de barras e
   alarme no silencioso.
 
+### Autorizações da política v0.4 no app do celular (spec 096 B3)
+
+- **Mobile** (`Added`, `minor` 0.33.51 → 0.34.0; canal: **build de loja**, R-314 — funcionalidade nova;
+  vai às lojas no Dia D da política v0.4). A autorização de uso dos dados de saúde sai do cadastro e passa
+  para o fim da configuração inicial: a tela "Salvar o tratamento" mostra o remédio configurado e duas
+  caixas separadas e desmarcadas — dados de saúde (obrigatória) e envio para fora do Brasil (opcional) —,
+  cada uma com "Detalhes ›". Nada é gravado antes dessa autorização; "Agora não" explica que nada é salvo
+  e oferece voltar, sair da conta ou excluí-la. Quem pula os passos vê "Antes de entrar no app" e entra
+  sem cadastrar remédio. Quem fechar o app antes de autorizar volta à configuração inicial, e não à tela
+  de bloqueio. Quem aceitou a política anterior vê "O dosiq agora é uma empresa", com as mesmas caixas e
+  "O que mudou ›", e precisa confirmar ou tocar em "Não concordo" (leva a Privacidade e dados). Em
+  Privacidade e dados, um interruptor liga e desliga o envio para fora do Brasil (desligar mostra os
+  efeitos; ligar abre a autorização completa), e os Termos de Uso aparecem em Transparência. Sem essa
+  autorização, o assistente mostra "O assistente está desligado" e não envia nenhuma pergunta, e o app
+  não envia medições de uso. Os relatórios de falha deixam de levar endereços de consulta ao banco,
+  mensagens internas do app, e-mail e IP.
+- **Web/PWA** (`Changed`, sem bump — só a origem dos textos, sem mudança visível). Os textos do
+  interruptor e da autorização de envio para fora do Brasil passam a vir do pacote compartilhado, os
+  mesmos do app.
+- **Mobile** (`Fixed`, no mesmo pacote `0.34.0` — achados do smoke). O cartão do envio para fora do
+  Brasil em Privacidade e dados carrega na hora (a autorização era lida ~15 vezes por visita) e, se a
+  leitura não voltar em 10 s, mostra "Tentar de novo" em vez de girar sem fim; o interruptor desligado
+  ficou visível no iPhone, alinhado ao texto, e os Termos de uso ganharam separação da versão da
+  política. Quem autoriza pelo pedido antigo de dados de saúde passa a registrar também o aceite dos
+  Termos e da Política, com o aviso "Ao continuar, você aceita os Termos de Uso e a Política de
+  Privacidade". A configuração inicial não consome mais as sessões de cortesia do pedido de
+  autorização. As medições de uso guardadas durante a configuração inicial chegam com a hora em que
+  aconteceram. O relatório em PDF não diz mais "Sua sessão expirou" quando a falha é do servidor.
+- **Shared/Core** (`Fixed`, no mesmo `minor` 0.24.0). A leitura do estado de uma autorização é
+  compartilhada entre as telas por 2 s, refeita depois de qualquer gravação, e falha em 10 s se o
+  servidor não responder.
+- **Web/PWA** (`Fixed`, no mesmo `minor` 4.31.0). Quem autoriza pelo pedido antigo de dados de saúde
+  passa a registrar também o aceite dos Termos e da Política, com o aviso "Ao continuar, você aceita os
+  Termos de Uso e a Política de Privacidade" e os links.
+
 ### Autorização para envio de dados para fora do Brasil e modo sem envio (spec 096 B2)
 
 - **Backend/Infra** (`Added`, `minor` server `4.1.2 → 4.2.0` e core `0.23.0 → 0.24.0` — migração no

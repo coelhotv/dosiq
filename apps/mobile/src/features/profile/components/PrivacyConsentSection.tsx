@@ -22,6 +22,7 @@ import { useConsentGate } from '@platform/consent/useConsentGate'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import TransferConsentCard from '@features/consent/components/TransferConsentCard'
 
 const consentService = createConsentService({ client: supabase as never })
 
@@ -204,6 +205,7 @@ export default function PrivacyConsentSection() {
   }
 
   const resolved = _getConsentResolved(loading, loadError, state?.status)
+  const isGranted = resolved === 'granted'
   const { label: statusLabel, Icon: StatusIcon, color: statusColor } = STATUS_META[resolved]
 
   return (
@@ -213,6 +215,8 @@ export default function PrivacyConsentSection() {
         <Text style={styles.sectionLabelText}>CONSENTIMENTO</Text>
       </View>
       <View style={styles.card}>
+        {/* 096 `priv-*`: o cartão A diz de qual autorização se trata — o B vem logo abaixo. */}
+        <Text style={styles.cardTitle}>Dados de saúde</Text>
         <View style={styles.statusRow}>
           <StatusIcon size={18} color={statusColor} />
           <Text style={styles.statusLabel}>{statusLabel}</Text>
@@ -236,7 +240,7 @@ export default function PrivacyConsentSection() {
           <ConsentMissingState onGrant={() => navigation.navigate(ROUTES.CONSENT_PROMPT as never)} />
         ) : null}
 
-        {!loading && !loadError && state?.status === 'granted' ? (
+        {isGranted ? (
           <ConsentRevokeFlow
             confirmStep={confirmStep}
             revoking={revoking}
@@ -247,11 +251,19 @@ export default function PrivacyConsentSection() {
           />
         ) : null}
       </View>
+      {/* 096 S7: cartão B abaixo do A — só com A vigente (sem A o app está travado e B não se exerce). */}
+      {isGranted ? <TransferConsentCard /> : null}
     </>
   )
 }
 
 const styles = StyleSheet.create({
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing[1],
+  },
   sectionLabel: {
     flexDirection: 'row',
     alignItems: 'center',

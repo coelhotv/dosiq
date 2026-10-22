@@ -39,7 +39,8 @@ describe('rota StockInitialBalance (044 F4b)', () => {
 
   it('o onboarding usa a SUA rota (navigator próprio), não a do app', () => {
     expect(ROUTES.STOCK_INITIAL_BALANCE).not.toBe(ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE)
-    expect(read('features/onboarding/screens/OnboardingStockStep.tsx')).toContain(
+    expect(// 096 B3: quem navega ao saldo é o S1 (grava o setup depois do consentimento A).
+    read('features/onboarding/screens/OnboardingConsentStep.tsx')).toContain(
       'ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE',
     )
   })

@@ -124,7 +124,16 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
 
   const grant = useCallback(async () => {
     const res = await consentService.grant('health_data', 'web')
-    if (res.ok) await refresh()
+    if (!res.ok) return res
+    // 096 B3 (C-B3-13): o pedido legado concedia A sem o aceite dos Termos — e, com A já na versão
+    // vigente, o reconsentimento nunca mais aparecia. O rodapé do ConsentPrompt diz "ao continuar,
+    // você aceita os Termos". Falha aqui não desfaz A: 1 nova tentativa e log (desenho do cadastro).
+    const terms = await consentService.grant('terms_privacy', 'web')
+    if (!terms.ok) {
+      const retry = await consentService.grant('terms_privacy', 'web')
+      if (!retry.ok) console.error('[consent] terms_privacy não gravado no pedido:', retry.error)
+    }
+    await refresh()
     return res
   }, [refresh])
 

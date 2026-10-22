@@ -64,7 +64,7 @@ function ExportSection({ onOpenSheet }) {
   )
 }
 
-function TransparencySection({ onOpenPrivacyPolicy }) {
+function TransparencySection({ onOpenPrivacyPolicy, onOpenTerms }) {
   return (
     <>
       <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
@@ -83,6 +83,18 @@ function TransparencySection({ onOpenPrivacyPolicy }) {
                 Consentimento). Fonte canônica: CURRENT_POLICY_VERSION (@dosiq/core), síncrona,
                 independe de o usuário ter aceito esta versão ou não. */}
             <Text style={styles.linkRowSubtitle}>Versão vigente: v{CURRENT_POLICY_VERSION}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.primary[500]} />
+        </Pressable>
+        {/* 096 `priv-*`: Termos de Uso em Transparência (o aceite é rodapé do cadastro/reconsentimento). */}
+        <Pressable
+          style={[styles.linkRow, styles.linkRowDivided]}
+          onPress={onOpenTerms}
+          accessibilityRole="button"
+          accessibilityLabel="Termos de uso"
+        >
+          <View>
+            <Text style={styles.linkRowTitle}>Termos de uso</Text>
           </View>
           <ChevronRight size={16} color={colors.primary[500]} />
         </Pressable>
@@ -122,6 +134,7 @@ export default function PrivacyDataScreen() {
   const openExportParam = !!(route.params as { openExport?: boolean } | undefined)?.openExport
   const [exportSheetOpen, setExportSheetOpen] = useState(openExportParam)
   const [policyOpen, setPolicyOpen] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
 
   // O param é uma ORDEM, não estado da tela: consumir na chegada. Se ficar no state da
   // navegação, qualquer volta futura pra este hub (back, deep link) reabriria o sheet sozinho.
@@ -135,6 +148,7 @@ export default function PrivacyDataScreen() {
   const goToDeleteAccount = () => (navigation.navigate as any)(ROUTES.DELETE_ACCOUNT)
   // 097 B-1: visualizador único do app (antes expo-web-browser).
   const openPrivacyPolicy = () => setPolicyOpen(true)
+  const openTerms = () => setTermsOpen(true)
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -147,7 +161,7 @@ export default function PrivacyDataScreen() {
 
         <PrivacyConsentSection />
         <ExportSection onOpenSheet={openExportSheet} />
-        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} />
+        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} onOpenTerms={openTerms} />
         <DangerZoneSection onDeleteAccount={goToDeleteAccount} />
       </ScrollView>
 
@@ -161,6 +175,11 @@ export default function PrivacyDataScreen() {
         source={policyOpen ? { kind: 'web', url: EXTERNAL_URLS.PRIVACY_POLICY } : null}
         title="Política de privacidade"
         onClose={() => setPolicyOpen(false)}
+      />
+      <DocumentViewer
+        source={termsOpen ? { kind: 'web', url: EXTERNAL_URLS.TERMS_OF_USE } : null}
+        title="Termos de uso"
+        onClose={() => setTermsOpen(false)}
       />
     </SafeAreaView>
   )
@@ -260,6 +279,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  // Segunda linha do cartão (096 `priv-*`): divisória + respiro — sem isso "Termos de uso" colava na
+  // versão da política (smoke B3, C-B3-09).
+  linkRowDivided: {
+    marginTop: spacing[3],
+    paddingTop: spacing[3],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border.default,
   },
   linkRowTitle: {
     fontSize: 15,

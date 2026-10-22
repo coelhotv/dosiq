@@ -90,6 +90,13 @@ export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted 
             {isSaving ? 'Registrando...' : 'Autorizar e continuar'}
           </button>
 
+          {/* C-B3-13: autorizar aqui também grava o aceite dos Termos e da Política (gate.grant). */}
+          <p className="consent-prompt-terms">
+            Ao continuar, você aceita os{' '}
+            <a href="/termos-de-uso.html" target="_blank" rel="noreferrer">Termos de Uso</a> e a{' '}
+            <a href="/politica-de-privacidade.html" target="_blank" rel="noreferrer">Política de Privacidade</a>.
+          </p>
+
           {!blocking && onDismiss && (
             <button type="button" className="consent-prompt-dismiss" onClick={onDismiss} disabled={isSaving}>
               Agora não

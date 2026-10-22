@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { createConsentService } from '../consentService'
+import { createConsentService, CONSENT_READ_TIMEOUT_MS } from '../consentService'
 import { CURRENT_POLICY_VERSION } from '../../schemas/consentSchema'
 
 // 046 Slice A — consentService.
@@ -330,7 +330,10 @@ describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
     const { client, rpc } = makeTypedClient({})
     let termsCalls = 0
     rpc.mockImplementation(async (_fn: string, args: Record<string, unknown>) => {
-      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) return { data: null, error: { message: 'net' } }
+      // Cast: o mock tipado só aceita o formato de sucesso; a falha é exatamente o caso deste teste.
+      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) {
+        return { data: null, error: { message: 'net' } } as unknown as { data: string; error: null }
+      }
       return { data: EVENT.id, error: null }
     })
     const result = await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
@@ -380,5 +383,69 @@ describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
     )
     expect(result).toEqual({ materialized: false })
     expect(rpc).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 096 B3 (C-B3-10): uma visita à Privacidade gerava ~15 GETs idênticos em 4 s — gate, 3 bridges de
+// supressão, seção e cartão, cada um com a sua instância do serviço. E uma leitura presa deixava o
+// spinner girando 1 min.
+describe('createConsentService — leitura reaproveitada e teto de tempo', () => {
+  it('instâncias do MESMO client compartilham a leitura do mesmo tipo', async () => {
+    const { client, from } = makeClient()
+    const a = createConsentService({ client })
+    const b = createConsentService({ client })
+
+    await Promise.all([a.getStatus('health_data'), b.getStatus('health_data'), a.getStatus('health_data')])
+
+    expect(from).toHaveBeenCalledTimes(1)
+  })
+
+  it('tipos diferentes não se misturam', async () => {
+    const { client, from, eq } = makeClient()
+    const service = createConsentService({ client })
+
+    await service.getStatus('health_data')
+    await service.getStatus('international_transfer')
+
+    expect(from).toHaveBeenCalledTimes(2)
+    expect(eq.mock.calls.map((c) => c[1])).toEqual(['health_data', 'international_transfer'])
+  })
+
+  it('escrita invalida: a leitura seguinte vai ao banco', async () => {
+    const { client, from } = makeClient()
+    const service = createConsentService({ client })
+
+    await service.getStatus('international_transfer')
+    await service.grant('international_transfer', 'mobile')
+    await service.getStatus('international_transfer')
+
+    expect(from).toHaveBeenCalledTimes(2)
+  })
+
+  it('falha não fica guardada: "tentar de novo" vai ao banco', async () => {
+    const { client, from } = makeClient({ selectResult: { data: null, error: { message: 'net' } } })
+    const service = createConsentService({ client })
+
+    await expect(service.getStatus('health_data')).rejects.toThrow()
+    await expect(service.getStatus('health_data')).rejects.toThrow()
+
+    expect(from).toHaveBeenCalledTimes(2)
+  })
+
+  it('leitura que não volta LANÇA no teto, em vez de pendurar', async () => {
+    vi.useFakeTimers()
+    try {
+      const { client, from } = makeClient()
+      const limit = vi.fn(() => new Promise(() => {}))
+      from.mockReturnValue({ select: () => ({ eq: () => ({ order: () => ({ limit }) }) }) } as never)
+      const service = createConsentService({ client })
+
+      const pending = service.getStatus('health_data')
+      const assertion = expect(pending).rejects.toThrow('tempo esgotado')
+      await vi.advanceTimersByTimeAsync(CONSENT_READ_TIMEOUT_MS)
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

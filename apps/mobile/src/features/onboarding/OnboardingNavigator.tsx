@@ -5,14 +5,16 @@
 //   1. Primeiro remédio  → medicineService.create (F1)
 //   2. Primeiro tratamento → protocolService.create (F2)
 //   3. Modo de uso (estoque sim/não) → setStockTracking (spec 044, FR-001)
-// Ao concluir OU pular, marca onboarding_completed e chama onComplete (Navigation
-// troca para o app autenticado — "aha moment" no Dashboard).
+// Spec 096 B3: o consentimento A/B é colhido no FIM (S1, OnboardingConsentStep), e só ele grava o
+// setup. "Pular" leva ao S1 na variante sem dado — nunca conclui sem A (conclusão sem A cairia na
+// trava de legado). Concluído o S1, marca onboarding_completed e chama onComplete.
 //
 // ADR-036: JS stack (não native-stack) por compatibilidade Android API 24.
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from '@navigation/routes'
+import { navigationRef } from '@navigation/navigationRef'
 import { completeOnboarding } from '@profile/services/profileService'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -24,6 +26,9 @@ import OnboardingMedicineStep from './screens/OnboardingMedicineStep'
 import OnboardingTreatmentStep from './screens/OnboardingTreatmentStep'
 import OnboardingStockStep from './screens/OnboardingStockStep'
 import OnboardingStockInitialBalanceStep from './screens/OnboardingStockInitialBalanceStep'
+import OnboardingConsentStep from './screens/OnboardingConsentStep'
+import DeleteAccountScreen from '@profile/screens/DeleteAccountScreen'
+import { useOnboardingSetupWrites } from '@features/onboarding/hooks/useOnboardingSetupWrites'
 import BarcodeScannerScreen from '@medications/scan/BarcodeScannerScreen'
 
 // TODO(040-strict): Stack.Navigator não tipado p/ rotas dinâmicas (nível B)
@@ -45,6 +50,10 @@ export default function OnboardingNavigator({ onComplete }) {
   const [medicineIntakeUnit, setMedicineIntakeUnit] = useState(null)
   // Tratamento em configuração no passo 3.
   const [treatment, setTreatment] = useState(null)
+  // 096 B3: modo escolhido no S4; gravado só no S1, depois do A.
+  const [stockTracking, setStockTracking] = useState(false)
+  // Escritas do setup vivem AQUI (não no S1): os guardas de idempotência sobrevivem ao S1 desmontar.
+  const { writeSetup: writeSetupRaw } = useOnboardingSetupWrites()
   // 065 C2 (G-4): `complete` sai UMA vez. Na opção 2 do passo de estoque `markCompleted` roda antes
   // e `finish` depois (tela de saldo) — sem a ref, a mesma conclusão contaria duas vezes.
   const completeEmitted = useRef(false)
@@ -61,14 +70,21 @@ export default function OnboardingNavigator({ onComplete }) {
     onComplete?.()
   }, [onComplete])
 
-  // Pular ≠ concluir (065 C2, G-4): antes o "Pular" de 3 telas chamava `finish` direto e as duas
-  // saídas eram indistinguíveis. `step` = posição do header (1..3) — onde a pessoa desistiu.
+  // Pular ≠ concluir (065 C2, G-4). `step` = posição do header (1..3) — onde a pessoa desistiu.
+  // 096 B3: pular leva ao S1 sem dado ("Antes de entrar no app"); a conclusão (e o onComplete) só
+  // acontece lá, depois do A. `skipped` segue suprimindo o `complete` (o `finish` do S1 respeita).
   const skip = useMemo(() => async (step) => {
     skipped.current = true
     logEvent(EVENTS.ONBOARDING_SKIP, { surface: SURFACES.MOBILE, step })
-    await completeOnboarding()
-    onComplete?.()
-  }, [onComplete])
+    if (navigationRef.isReady()) (navigationRef.navigate as any)(ROUTES.ONBOARDING_CONSENT, { variant: 'empty' })
+  }, [])
+
+  // Pulou, voltou e concluiu COM dados: deixou de ser skip (RC6 #900 — sem isto a pessoa sumia do
+  // `onboarding_complete` e ficava contada como skip no funil do 065 G-4).
+  const writeSetup = useMemo(() => async (input) => {
+    skipped.current = false
+    return writeSetupRaw(input)
+  }, [writeSetupRaw])
 
   // Marca a conclusão SEM sair do wizard (spec 044 F4b).
   //
@@ -95,11 +111,14 @@ export default function OnboardingNavigator({ onComplete }) {
       setMedicineIntakeUnit,
       treatment,
       setTreatment,
+      stockTracking,
+      setStockTracking,
+      writeSetup,
       finish,
       skip,
       markCompleted,
     }),
-    [medicine, medicineSource, medicineIntakeUnit, treatment, finish, skip, markCompleted],
+    [medicine, medicineSource, medicineIntakeUnit, treatment, stockTracking, writeSetup, finish, skip, markCompleted],
   )
 
   // Entrou no wizard. Reabrir o app no meio conta nova tentativa (declarado, analysis-prC G-8).
@@ -118,6 +137,10 @@ export default function OnboardingNavigator({ onComplete }) {
         <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE_FORM} component={OnboardingMedicineStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_TREATMENT} component={OnboardingTreatmentStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_STOCK} component={OnboardingStockStep} />
+        {/* 096 B3: S1 — consentimento A/B; único ponto que grava o setup. */}
+        <Stack.Screen name={ROUTES.ONBOARDING_CONSENT} component={OnboardingConsentStep} />
+        {/* S2 "Excluir a conta" (recusa): a exclusão precisa existir dentro do wizard. */}
+        <Stack.Screen name={ROUTES.DELETE_ACCOUNT} component={DeleteAccountScreen} />
         {/* F4b/T017 — só navegada quando a opção 2 ("também avisar quando acabando") é
             escolhida; conclui o onboarding (finish) tanto em "Ativar estoque" quanto "Cancelar" */}
         <Stack.Screen
