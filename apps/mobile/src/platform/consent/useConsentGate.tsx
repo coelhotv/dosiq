@@ -17,6 +17,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import type { ReactNode } from 'react'
 import { AppState } from 'react-native'
 import {
+  clearConsentReadCache,
   createConsentService,
   createProfileRepository,
   resolveConsentGate,
@@ -83,6 +84,7 @@ function useConsentGateState(
   session: Session | null | undefined,
   canAutoWrite: boolean,
   verificationPending: boolean,
+  onboardingDone: boolean,
 ): ConsentGateValue {
   const [state, setState] = useState<ConsentState | null>(null)
   const [promptSessions, setPromptSessions] = useState(0)
@@ -92,6 +94,8 @@ function useConsentGateState(
 
   const refresh = useCallback(async () => {
     if (!session) {
+      // Troca de conta passa por aqui: leitura reaproveitada da conta anterior não pode vazar.
+      clearConsentReadCache(supabase)
       setState(null)
       setPromptSessions(0)
       setTransferGranted(false)
@@ -128,7 +132,9 @@ function useConsentGateState(
       // Sessão de prompt só conta quando SABEMOS que o titular nunca se manifestou. Se a leitura
       // acima tivesse lançado, este trecho não rodaria — que é o ponto.
       let sessions = 0
-      if (current.status === 'missing' && canAutoWrite) {
+      // Só conta com o onboarding concluído: durante o wizard o pedido nem aparece (o S1 grava A),
+      // e contar ali gastava sessão de cortesia que ninguém viu (smoke B3, C-B3-12).
+      if (current.status === 'missing' && canAutoWrite && onboardingDone) {
         const bumped = await profileRepo.bumpConsentPromptSession()
         sessions = bumped.sessions
       }
@@ -150,11 +156,21 @@ function useConsentGateState(
       // reagiriam no próximo ciclo de foreground (alarme já agendado dispararia nesse meio-tempo).
       triggerConsentChange()
     }
-  }, [session, canAutoWrite, verificationPending])
+  }, [session, canAutoWrite, verificationPending, onboardingDone])
 
   const grant = useCallback(async () => {
     const res = await consentService.grant('health_data', 'mobile')
-    if (res.ok) await refresh()
+    if (!res.ok) return res
+    // 096 B3 (C-B3-13): o pedido legado é o único caminho que concedia A sem o aceite dos Termos — e,
+    // com A já na versão vigente, o reconsentimento nunca mais aparecia. O rodapé do ConsentPrompt
+    // diz "ao continuar, você aceita os Termos". Falha aqui não desfaz A: 1 nova tentativa e log
+    // (mesmo desenho do cadastro, `materializeSignupIntent`).
+    const terms = await consentService.grant('terms_privacy', 'mobile')
+    if (!terms.ok) {
+      const retry = await consentService.grant('terms_privacy', 'mobile')
+      if (!retry.ok) console.error('[consent] terms_privacy não gravado no pedido:', retry.error)
+    }
+    await refresh()
     return res
   }, [refresh])
 
@@ -236,6 +252,7 @@ export function ConsentGateProvider({
   session,
   canAutoWrite = false,
   verificationPending = false,
+  onboardingDone = true,
   children,
 }: {
   session: Session | null | undefined
@@ -243,9 +260,11 @@ export function ConsentGateProvider({
   canAutoWrite?: boolean
   /** Spec 091: servidor ainda não respondeu (`checking`) — o gate espera em vez de decidir. */
   verificationPending?: boolean
+  /** 096 B3: onboarding concluído (e verificado para ESTA sessão) — só então conta sessão de prompt. */
+  onboardingDone?: boolean
   children: ReactNode
 }) {
-  const value = useConsentGateState(session, canAutoWrite, verificationPending)
+  const value = useConsentGateState(session, canAutoWrite, verificationPending, onboardingDone)
   return <ConsentGateContext.Provider value={value}>{children}</ConsentGateContext.Provider>
 }
 

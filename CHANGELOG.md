@@ -37,6 +37,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Web/PWA** (`Changed`, sem bump — só a origem dos textos, sem mudança visível). Os textos do
   interruptor e da autorização de envio para fora do Brasil passam a vir do pacote compartilhado, os
   mesmos do app.
+- **Mobile** (`Fixed`, no mesmo pacote `0.34.0` — achados do smoke). O cartão do envio para fora do
+  Brasil em Privacidade e dados carrega na hora (a autorização era lida ~15 vezes por visita) e, se a
+  leitura não voltar em 10 s, mostra "Tentar de novo" em vez de girar sem fim; o interruptor desligado
+  ficou visível no iPhone, alinhado ao texto, e os Termos de uso ganharam separação da versão da
+  política. Quem autoriza pelo pedido antigo de dados de saúde passa a registrar também o aceite dos
+  Termos e da Política, com o aviso "Ao continuar, você aceita os Termos de Uso e a Política de
+  Privacidade". A configuração inicial não consome mais as sessões de cortesia do pedido de
+  autorização. As medições de uso guardadas durante a configuração inicial chegam com a hora em que
+  aconteceram. O relatório em PDF não diz mais "Sua sessão expirou" quando a falha é do servidor.
+- **Shared/Core** (`Fixed`, no mesmo `minor` 0.24.0). A leitura do estado de uma autorização é
+  compartilhada entre as telas por 2 s, refeita depois de qualquer gravação, e falha em 10 s se o
+  servidor não responder.
+- **Web/PWA** (`Fixed`, no mesmo `minor` 4.31.0). Quem autoriza pelo pedido antigo de dados de saúde
+  passa a registrar também o aceite dos Termos e da Política, com o aviso "Ao continuar, você aceita os
+  Termos de Uso e a Política de Privacidade" e os links.
 
 ### Autorização para envio de dados para fora do Brasil e modo sem envio (spec 096 B2)
 

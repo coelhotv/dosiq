@@ -28,6 +28,32 @@ import {
 /** Colunas que o titular pode ler. Espelha o GRANT de coluna — não ampliar sem migração. */
 const CONSENT_COLUMNS = 'id, consent_type, action, policy_version, platform, created_at'
 
+/** Teto de uma leitura da trilha — estourou, LANÇA (vira erro com "tentar de novo", nunca spinner eterno). */
+export const CONSENT_READ_TIMEOUT_MS = 10_000
+/** Janela em que leituras repetidas do mesmo tipo reaproveitam a mesma resposta (096 B3, C-B3-10). */
+const CONSENT_READ_REUSE_MS = 2_000
+
+// Compartilhado entre instâncias do serviço do MESMO client: cada tela/bridge cria a sua, e no
+// smoke B3 uma visita à Privacidade gerava ~15 GETs idênticos em 4 s (gate + 3 bridges de
+// supressão + seção + cartão). Escritas (grant/revoke) limpam o cache do client — leitura depois
+// de gravar sempre vai ao banco.
+type ReadEntry = { promise: Promise<ConsentState>; at: number }
+const readCache = new WeakMap<object, Map<ConsentType, ReadEntry>>()
+
+function cacheFor(client: object): Map<ConsentType, ReadEntry> {
+  let m = readCache.get(client)
+  if (!m) {
+    m = new Map()
+    readCache.set(client, m)
+  }
+  return m
+}
+
+/** Esquece as leituras reaproveitáveis (troca de conta, testes). */
+export function clearConsentReadCache(client: object): void {
+  readCache.delete(client)
+}
+
 /** Formato da intenção de consentimento carregada no `user_metadata` durante o signup. */
 export interface ConsentIntent {
   health_consent?: boolean | null
@@ -62,6 +88,7 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
     consentType: ConsentType,
     platform: ConsentPlatform,
   ): Promise<{ ok: boolean; error?: string }> {
+    cacheFor(client).clear()
     try {
       // AP-216: destructuring defensivo — um mock (ou um client mal configurado) pode devolver
       // undefined, e `const { error } = undefined` estoura antes de qualquer checagem de erro.
@@ -69,6 +96,7 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
         p_consent_type: consentType,
         p_platform: platform,
       })
+      cacheFor(client).clear()
       const error = res?.error
       if (error) return { ok: false, error: error.message }
       return { ok: true }
@@ -90,14 +118,32 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
    * explicitamente. Guard do Slice B: estado indeterminado NÃO libera nem bloqueia por si só;
    * trata-se como falha de carregamento, nunca como "não consentiu".
    */
-  async function getStatus(consentType: ConsentType): Promise<ConsentState> {
+  function getStatus(consentType: ConsentType): Promise<ConsentState> {
+    const cache = cacheFor(client)
+    const hit = cache.get(consentType)
+    if (hit && Date.now() - hit.at < CONSENT_READ_REUSE_MS) return hit.promise
+    const promise = readStatus(consentType)
+    cache.set(consentType, { promise, at: Date.now() })
+    // Falha não fica em cache: o "tentar de novo" precisa ir ao banco.
+    promise.catch(() => {
+      if (cache.get(consentType)?.promise === promise) cache.delete(consentType)
+    })
+    return promise
+  }
+
+  async function readStatus(consentType: ConsentType): Promise<ConsentState> {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Falha ao ler a trilha de consentimento: tempo esgotado')), CONSENT_READ_TIMEOUT_MS)
+    })
     // Sem `.eq('user_id', ...)` — de propósito. Ver cabeçalho (2).
-    const res = await client
+    const query = client
       .from('consent_log')
       .select(CONSENT_COLUMNS)
       .eq('consent_type', consentType)
       .order('created_at', { ascending: false })
       .limit(20)
+    const res = await Promise.race([query, timeout]).finally(() => clearTimeout(timer))
 
     const error = res?.error
     const data = res?.data

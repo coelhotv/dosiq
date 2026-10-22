@@ -20,7 +20,7 @@ import {
   type ReportPeriodDays,
 } from '@dosiq/core/services/report'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
-import { nativeApiBaseUrl } from '@platform/config/nativePublicAppConfig'
+import { nativeApiBaseUrl, nativeApiExtraHeaders } from '@platform/config/nativePublicAppConfig'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
@@ -72,7 +72,7 @@ async function accessToken(): Promise<string | null> {
 export function warmReportEndpoint(): void {
   accessToken()
     .then((token) => {
-      if (token) return fetch(`${ENDPOINT}?warm=1`, { headers: { Authorization: `Bearer ${token}` } })
+      if (token) return fetch(`${ENDPOINT}?warm=1`, { headers: { ...nativeApiExtraHeaders, Authorization: `Bearer ${token}` } })
     })
     .catch(() => {
       // Aquecimento é otimização; falha aqui não aparece para o usuário.
@@ -84,10 +84,12 @@ function filenameFrom(header: string | null, days: ReportPeriodDays, to: string)
   return name && SAFE_FILENAME.test(name) ? name : `dosiq-relatorio-${days}d-${to}.pdf`
 }
 
-function codeForStatus(status: number, serverCode: unknown): ReportDownloadErrorCode {
-  if (status === 401) return 'auth'
+function codeForStatus(status: number, body: { error?: string; error_code?: string } | null): ReportDownloadErrorCode {
+  // "Sessão expirou" só quando É a nossa API negando o token. Proxy/proteção da Vercel (302 → login,
+  // HTML) também chega aqui e não é sessão: vira o erro genérico (smoke B3, 2026-10-21).
+  if (status === 401 && body?.error === 'unauthorized') return 'auth'
   if (status === 429) return 'rate_limited'
-  return serverCode === 'render' ? 'render' : 'collect'
+  return body?.error_code === 'render' ? 'render' : 'collect'
 }
 
 /** Pede o PDF de `days` dias terminando hoje (dia local, R-020) e grava no cache. */
@@ -100,14 +102,14 @@ export async function fetchReportPdf(days: ReportPeriodDays): Promise<ReportPdf>
 
     const res = await fetch(ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { ...nativeApiExtraHeaders, 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ days, to }),
     }).catch((err: unknown) => {
       throw new ReportDownloadError('network', err)
     })
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error_code?: string } | null
-      throw new ReportDownloadError(codeForStatus(res.status, body?.error_code))
+      const body = (await res.json().catch(() => null)) as { error?: string; error_code?: string } | null
+      throw new ReportDownloadError(codeForStatus(res.status, body))
     }
 
     const bytes = new Uint8Array(await res.arrayBuffer())

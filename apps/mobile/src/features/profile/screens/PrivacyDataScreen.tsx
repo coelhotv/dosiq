@@ -88,7 +88,7 @@ function TransparencySection({ onOpenPrivacyPolicy, onOpenTerms }) {
         </Pressable>
         {/* 096 `priv-*`: Termos de Uso em Transparência (o aceite é rodapé do cadastro/reconsentimento). */}
         <Pressable
-          style={styles.linkRow}
+          style={[styles.linkRow, styles.linkRowDivided]}
           onPress={onOpenTerms}
           accessibilityRole="button"
           accessibilityLabel="Termos de uso"
@@ -279,6 +279,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  // Segunda linha do cartão (096 `priv-*`): divisória + respiro — sem isso "Termos de uso" colava na
+  // versão da política (smoke B3, C-B3-09).
+  linkRowDivided: {
+    marginTop: spacing[3],
+    paddingTop: spacing[3],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border.default,
   },
   linkRowTitle: {
     fontSize: 15,

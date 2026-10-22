@@ -13,13 +13,11 @@ import * as LucideIcons from 'lucide-react-native'
 const { ShieldAlert, FileDown, Trash2, RotateCcw } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
-import { HEALTH_CONSENT_COPY, createConsentService } from '@dosiq/core'
+import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import { useConsentGate } from '@platform/consent/useConsentGate'
 import ExportSheet from '@features/export/components/ExportSheet'
 import ConsentPrompt from '@features/consent/components/ConsentPrompt'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
-const consentService = createConsentService({ client: supabase as never })
 
 export default function ConsentResolutionScreen() {
   const navigation = useNavigation()
@@ -38,7 +36,7 @@ export default function ConsentResolutionScreen() {
       <ConsentPrompt
         blocking={false}
         source="resolution_revoked"
-        onGrant={() => consentService.grant('health_data', 'mobile')}
+        onGrant={gate.grant}
         onDismiss={() => setReconsenting(false)}
         onGranted={async () => {
           // DESTRAVA na hora: reavalia o gate compartilhado com o novo estado `granted`. Sem isto o

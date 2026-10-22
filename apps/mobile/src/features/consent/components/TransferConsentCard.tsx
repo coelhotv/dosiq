@@ -91,7 +91,10 @@ export default function TransferConsentCard() {
             value={isOn}
             onValueChange={handleToggle}
             disabled={loadError || saving || confirmOff}
-            trackColor={{ true: colors.brand.primary, false: colors.neutral[300] }}
+            // iOS: `trackColor.false` não pinta o trilho desligado — sem `ios_backgroundColor` ele some
+            // sobre o cartão branco (smoke B3, C-B3-07).
+            trackColor={{ true: colors.brand.primary, false: colors.neutral[400] }}
+            ios_backgroundColor={colors.neutral[400]}
             accessibilityLabel={COPY.toggle}
             accessibilityRole="switch"
             accessibilityState={{ checked: isOn }}
@@ -144,7 +147,9 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     backgroundColor: colors.bg.card,
   },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[3], minHeight: 48 },
+  // Sem minHeight: no iOS o Switch ficava no topo de uma linha de 48pt e o rótulo no meio (smoke B3,
+  // C-B3-08). A linha tem a altura do próprio Switch (alvo do toque é ele).
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[3] },
   toggleLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text.primary },
   meta: { fontSize: 13, lineHeight: 19, color: colors.text.secondary },
   retry: { fontSize: 13, fontWeight: '600', color: colors.brand.primary },

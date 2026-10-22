@@ -16,7 +16,7 @@ import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { posthogApiKey, posthogHost } from '@platform/config/nativePublicAppConfig'
 import { bundleTags } from '@platform/updates/bundleInfo'
-import { resolveTreatmentCountBucket } from '@dosiq/core'
+import { getRawNow, resolveTreatmentCountBucket } from '@dosiq/core'
 
 let client = null
 
@@ -32,18 +32,23 @@ let client = null
 export type AnalyticsConsent = 'pending' | 'allowed' | 'denied'
 export const ANALYTICS_BUFFER_MAX = 200
 let consent: AnalyticsConsent = 'pending'
-let retained: Array<(c: any) => unknown> = []
+// Opções de captura do SDK — só `timestamp` interessa aqui.
+type CaptureOptions = { timestamp?: Date } | undefined
+type AnalyticsOp = (c: any, options: CaptureOptions) => unknown
+// `at` = quando o evento aconteceu. Sem ele, a fila enviada depois do A+B chega toda com a hora do
+// envio e o funil do onboarding colapsa em ~0 s (smoke B3, C-B3-14).
+let retained: Array<{ op: AnalyticsOp; at: Date }> = []
 let identifiedUserId: string | null = null
 
-function dispatch(op: (c: any) => unknown) {
+function dispatch(op: AnalyticsOp) {
   if (consent === 'denied') return
   if (consent === 'pending') {
-    retained.push(op)
+    retained.push({ op, at: getRawNow() })
     if (retained.length > ANALYTICS_BUFFER_MAX) retained = retained.slice(-ANALYTICS_BUFFER_MAX)
     return
   }
   const c = getClient()
-  if (c) return op(c)
+  if (c) return op(c, undefined)
 }
 
 export async function setAnalyticsConsent(next: AnalyticsConsent) {
@@ -62,7 +67,7 @@ export async function setAnalyticsConsent(next: AnalyticsConsent) {
       if (!c) return
       await c.optIn?.()
       if (identifiedUserId) c.identify(identifiedUserId)
-      for (const op of ops) await op(c)
+      for (const { op, at } of ops) await op(c, { timestamp: at })
     }
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] setAnalyticsConsent error:', error.message)
@@ -96,7 +101,7 @@ export function getPostHogClient() {
 
 export async function logEvent(eventName, params = {}) {
   try {
-    await dispatch((c) => c.capture(eventName, params))
+    await dispatch((c, options) => c.capture(eventName, params, options))
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logEvent error:', error.message)
   }
@@ -168,7 +173,7 @@ export async function setUserProperty(name, value) {
 
 export async function logScreenView(screenName, screenClass = screenName) {
   try {
-    await dispatch((c) => c.screen(screenName, { screen_class: screenClass }))
+    await dispatch((c, options) => c.screen(screenName, { screen_class: screenClass }, options))
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logScreenView error:', error.message)
   }

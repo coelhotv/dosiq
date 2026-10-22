@@ -6,7 +6,7 @@
 // só envia `patientContext` (dados) + a mensagem. O endpoint exige JWT (401 sem token).
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { nativeApiBaseUrl } from '../../../platform/config/nativePublicAppConfig'
+import { nativeApiBaseUrl, nativeApiExtraHeaders } from '../../../platform/config/nativePublicAppConfig'
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import { CHATBOT_MAX_HISTORY } from '../config/chatbotConfig'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
@@ -58,6 +58,7 @@ export async function sendChatMessage({ message, history = [], patientContext })
     const res = await fetch(CHATBOT_ENDPOINT, {
       method: 'POST',
       headers: {
+        ...nativeApiExtraHeaders,
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },

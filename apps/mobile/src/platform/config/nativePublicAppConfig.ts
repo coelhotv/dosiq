@@ -30,3 +30,11 @@ export const posthogHost =
 export const nativeApiBaseUrl = (
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://dosiq.app'
 ).replace(/\/+$/, '')
+
+// Preview da Vercel tem Deployment Protection: sem este header o pedido volta 302 → login e o app
+// lê como "sessão expirou". Só no `.env.development` (dev build contra o preview) — NUNCA no
+// ambiente da EAS: `EXPO_PUBLIC_*` é embutido no bundle.
+const vercelBypass = process.env.EXPO_PUBLIC_VERCEL_BYPASS
+export const nativeApiExtraHeaders: Record<string, string> = vercelBypass
+  ? { 'x-vercel-protection-bypass': vercelBypass }
+  : {}

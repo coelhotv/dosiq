@@ -111,6 +111,9 @@ function useAuthSession() {
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
+  // De quem é o `onboardingNeeded` acima: troca de sessão deixa o valor anterior visível por um
+  // render, e o gate de consentimento (filho) roda o efeito ANTES deste hook zerar (C-B3-12).
+  const [onboardingCheckedFor, setOnboardingCheckedFor] = useState<string | null>(null)
   // Spec 091 (FR-009): id para o qual a guarda de dono já rodou. A árvore autenticada só monta
   // quando bate com a sessão — nenhuma tela lê cache antes de o aparelho ser limpo de outra pessoa.
   const [ownerCheckedFor, setOwnerCheckedFor] = useState<string | null>(null)
@@ -202,11 +205,19 @@ function useAuthSession() {
     if (session?.user?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingNeeded(null)
+      setOnboardingCheckedFor(null)
+      const uid = session.user.id
       isOnboardingNeeded().then(({ data }) => {
-        if (active) setOnboardingNeeded(Boolean(data))
+        if (!active) return
+        setOnboardingNeeded(Boolean(data))
+        setOnboardingCheckedFor(uid)
       })
     } else {
       setOnboardingNeeded(false)
+      // Sair e entrar de novo com a MESMA conta: sem isto o `onboardingCheckedFor` antigo casava com
+      // o uid no 1º render da nova sessão e o gate contava sessão de prompt no wizard (smoke B3,
+      // `smoke4@`: C-B3-12 reaberto).
+      setOnboardingCheckedFor(null)
     }
     return () => { active = false }
   }, [session?.user?.id])
@@ -234,6 +245,8 @@ function useAuthSession() {
     isPasswordRecovery,
     setIsPasswordRecovery,
     onboardingNeeded,
+    onboardingDone:
+      Boolean(session?.user?.id) && onboardingCheckedFor === session?.user?.id && onboardingNeeded === false,
     setOnboardingNeeded,
   }
 }
@@ -293,6 +306,7 @@ export default function Navigation() {
       session={auth.session}
       canAutoWrite={auth.canAutoWrite}
       verificationPending={auth.verificationPending}
+      onboardingDone={auth.onboardingDone}
     >
       <NavigationTree {...auth} />
       {/* Kill switch de versão mínima (spec 051-A FR-018) — IRMÃO de NavigationTree, não filho:
