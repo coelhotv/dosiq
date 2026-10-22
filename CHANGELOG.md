@@ -92,6 +92,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   e não vê mais o Perfil (cartão de emergência, consulta, histórico e relatório). Login e cadastro
   mostram os erros de e-mail e senha em português, abaixo de cada campo, em vez do aviso do navegador.
 
+### Política de Privacidade e Termos de Uso v0.4: o dosiq passa a ser operado por uma empresa (spec 096 B1)
+
+- **Web/PWA** (`Changed`, `patch` 4.30.1 → 4.30.2 — texto e rodapé, sem funcionalidade nova; vai ao ar
+  no dia D, antes da migração da v0.4). A Política de Privacidade passa à versão 0.4: o responsável pelos
+  dados é a DOSIQ DIGITAL HEALTH WEB DESIGN LTDA (CNPJ 68.335.606/0001-11), com o fundador como
+  encarregado; as bases legais foram corrigidas; cada empresa que trata dados para o dosiq aparece com o
+  instrumento de proteção de dados que existe com ela, e a Brevo entra na lista; a idade mínima passa a
+  18 anos; e a política explica o novo consentimento, opcional, para que dados ligados à saúde sejam
+  processados fora do Brasil (sem ele, o app funciona e os avisos chegam com texto genérico). Os Termos de
+  Uso ganham a seção "Partes", e a seção de limites do serviço deixa de ser cláusula de exoneração. O
+  rodapé das páginas da política e dos termos passa a identificar a empresa, o endereço e o contato de
+  privacidade.
+
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 
 - **Web/PWA** (`Changed`, `patch` 4.30.0 → 4.30.1 — rodapé, sem funcionalidade nova). O rodapé da página

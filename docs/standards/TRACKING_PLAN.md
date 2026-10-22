@@ -15,7 +15,7 @@ tags:
   - privacy
   - tracking-plan
 created_at: "2026-08-08"
-updated_at: "2026-10-18"
+updated_at: "2026-10-20"
 epic: "analytics-instrumentation"
 ---
 
@@ -499,11 +499,11 @@ superfície.
 - **Fase 1 — mobile completo.** **Todos** os eventos emitidos no mobile, não só "cabear os órfãos":
   inclui `surface` + `treatment_id` (§5.0) + super property `mode`, a migração dos 5 literais
   (§2.2), o ciclo de vida do tratamento (§5.3, `treatment_planned_end` inclusive), `biomarker_logged`,
-  `ai_assistant_*`, `profile_updated`/`mode_changed`. **Independe** da 059/v0.4 — já coberta pelo
-  consentimento vigente (§6.1). **Fora da Fase 1:** `adherence_milestone_reached` (sem gatilho no
+  `ai_assistant_*`, `profile_updated`/`mode_changed`. **Independe** da 059/v0.5 — coberta pelo
+  consentimento vigente (v0.4, sob a caixa B — §6.1). **Fora da Fase 1:** `adherence_milestone_reached` (sem gatilho no
   mobile → Fase 2) e o desmame `weaning_*` (diferido, §5.3.1).
 - **Fase 2 — web + bot.** As mesmas famílias de evento nas superfícies web e bot. **Gated** pela
-  Política v0.4 (§6.1/§6.2). Inclui `adherence_milestone_reached` + a UI de gamificação web
+  Política v0.5 (§6.1/§6.2). Inclui `adherence_milestone_reached` + a UI de gamificação web
   (`BadgeDisplay`/`MilestoneCelebration`) e os eventos server-side do bot.
 - **Fase futura.** Desmame (`weaning_complete`/`weaning_terminal_date`) — pode exigir mudança no
   engine de titulação (dose 0 terminal), §5.3.1.
@@ -554,9 +554,12 @@ superfície.
   acessa o histórico — nenhum evento pode contradizer isso.
 - **CON-021:** o wrapper (`logEvent` e qualquer wrapper novo de web/bot) **nunca lança** e é no-op
   sem chave. Analytics jamais quebra o fluxo do usuário.
-- **Restrição publicada (Política v0.3 §6):** o evento *"não inclui conteúdo de doses/medicamentos"*.
-  Isso é texto legal vigente, não só preferência interna — qualquer propriedade com nome de
-  medicamento ou dose legível viola a política publicada, além do R-042.
+- **Restrição publicada (Política v0.4 §4 e §6):** os eventos *"não incluem nome de medicamento, dose
+  ou valor de biomarcador"*. Isso é texto legal vigente, não só preferência interna — qualquer
+  propriedade com nome de medicamento ou dose legível viola a política publicada, além do R-042.
+- **PostHog sob a caixa B (Política v0.4 §4/§13, art. 33, VIII):** o envio ao PostHog depende do
+  consentimento opcional de transferência internacional. Sem B, o cliente **não envia** eventos
+  (gate no `productAnalytics` — spec 096 B3). A v0.3 cobria o PostHog só pelo aceite de saúde.
 - **Pseudonimização ≠ anonimização.** Um `medicine_id` UUID ligado à conta é **dado pessoal
   pseudonimizado** — o controlador re-identifica por join (`medicine_id → medicines → nome`); LGPD
   art. 5º III só considera anônimo o irreversível. A salvaguarda dos UUIDs é reduzir a **exposição
@@ -579,54 +582,53 @@ superfície.
 
 ### 6.1 Cobertura legal por superfície (o gate real da Fase 2)
 
-A captura de analytics **já está no aceite vigente** — a Política v0.3 (§6) nomeia o PostHog como
-operador. Mas a redação atual **restringe o escopo a "só no app do celular"** (idem para o Sentry).
-O gate da Fase 2 é, portanto, publicar a **Política v0.4** removendo esse escopo — e essa v0.4 é
-**entregue como parte da Fase 2 deste projeto**, não da spec 059 (que não toca nem é tocada por
-esta instrumentação).
+A captura de analytics **está no aceite vigente** — a Política v0.4 (§4/§6) nomeia o PostHog como
+operador, sob a caixa B. A v0.4 (spec 096) **manteve** o escopo "só no app do celular" (idem para o
+Sentry): ela não removeu a restrição. O gate da Fase 2 passa a ser uma **Política v0.5** removendo
+esse escopo.
 
 | Superfície | Situação legal | Ação necessária antes de emitir |
 |---|---|---|
-| **mobile** (Fase 1) | ✅ coberta — Política v0.3 §6 já autoriza PostHog "no app do celular" | nenhuma; pode cabear já |
-| **web** (Fase 2) | ⚠️ a política diz "só no app do celular" → ligar PostHog no web **contradiz o texto publicado** | **amendment da política → v0.4** removendo o escopo "só celular" |
-| **bot / server-side** (Fase 2) | ⚠️ o inventário §6 não cobre analytics de produto originado no bot | v0.4 adiciona a linha ao inventário de operadores |
+| **mobile** (Fase 1) | ✅ coberta — Política v0.4 §4/§6 autoriza PostHog "no app do celular", sob a caixa B | respeitar o gate de B no cliente |
+| **web** (Fase 2) | ⚠️ a política diz "só no app do celular" → ligar PostHog no web **contradiz o texto publicado** | **amendment da política → v0.5** removendo o escopo "só celular" |
+| **bot / server-side** (Fase 2) | ⚠️ o inventário §6 não cobre analytics de produto originado no bot | v0.5 adiciona a linha ao inventário de operadores |
 
 **Regra de merge:** nenhum evento de `surface: web` ou `bot` sobe para produção antes de a Política
-de Privacidade v0.4 estar publicada removendo a restrição "só no celular". Confirmar com o PO (que
-também é o Controlador/DPO — Política §2). Isto **não** bloqueia a Fase 1. **Como** esse aditivo
+de Privacidade v0.5 estar publicada removendo a restrição "só no celular". Confirmar com o PO
+(encarregado/DPO; o controlador é a DOSIQ DIGITAL HEALTH WEB DESIGN LTDA — Política §2). Isto **não** bloqueia a Fase 1. **Como** esse aditivo
 chega ao usuário é governado pela §6.2 — não é re-consent global.
 
 ### 6.2 Consentimento é escopado por superfície (sem re-consent global)
 
-O aditivo v0.4 que habilita analytics de web/bot é **material apenas para quem usa essas
-superfícies**. Forçar re-consentimento no usuário **mobile-only** — que já aceitou a v0.3 — é
+O aditivo v0.5 que habilita analytics de web/bot é **material apenas para quem usa essas
+superfícies**. Forçar re-consentimento no usuário **mobile-only** — que já aceitou a v0.4 — é
 fricção sem contrapartida e **risco ativo de churn/revogação**: o modal reabre a decisão inteira e
 parte dos usuários felizes revoga em vez de ignorar. Num app de saúde onde o consentimento já é
 pesado, o risco é assimétrico.
 
 **O escopo por superfície não é mecanismo novo — a infra já existe.** A trilha de consentimento
-(Política v0.3 §5) já registra **a superfície** ("se foi pelo computador ou pelo celular") e **a
+(Política v0.4 §5) já registra **a superfície** ("se foi pelo computador ou pelo celular") e **a
 versão da política** aceita. Usa-se o que já está lá.
 
 Mecânica:
 
-| Coorte | O que muda para ele na v0.4 | Ação |
+| Coorte | O que muda para ele na v0.5 | Ação |
 |---|---|---|
-| **mobile-only** (aceitou v0.3) | nada — a v0.3 continua descrevendo fielmente a superfície dele | **notificar** a atualização (transparência, Princípio IX); **nunca bloquear** |
-| **usa web** | passa a haver captura na web | **opt-in incremental** no ponto de ativação do analytics web, gravado na trilha com `surface=web` + versão v0.4 |
+| **mobile-only** (aceitou v0.4) | nada — a v0.4 continua descrevendo fielmente a superfície dele | **notificar** a atualização (transparência, Princípio IX); **nunca bloquear** |
+| **usa web** | passa a haver captura na web | **opt-in incremental** no ponto de ativação do analytics web, gravado na trilha com `surface=web` + versão v0.5 |
 | **vincula o bot** | captura server-side no bot | consentimento pega carona no **momento de vínculo do Telegram** (já é ação iniciada pelo usuário — Política §4), mesmo princípio de escopo |
 
 **Contrato de implementação (Fase 2):** o wrapper web/bot é **fail-closed** — no-op até o
 consentimento **daquela superfície** ser concedido, *além* do no-op sem chave (CON-021). Ausência
 de flag de consentimento de superfície ⇒ zero captura, em silêncio, sem quebrar fluxo.
 
-**Base legal (fundamento correto, não reclassificação):** o analytics no **mobile já está coberto**
-— não por "não ser dado de saúde", mas porque a Política §5 (consentimento específico de saúde:
-*"registrar meu histórico e calcular minha adesão"*) **+** §6 (PostHog nomeado como operador que
-recebe *"ações realizadas"*, sem conteúdo clínico) já autorizam esse processamento, com operador e
-limite de conteúdo declarados. **Não** existe categoria nova de "consentimento de analytics": os
+**Base legal (fundamento correto, não reclassificação):** o analytics no **mobile está coberto**
+— não por "não ser dado de saúde", mas porque a Política v0.4 §4 (consentimento específico de saúde,
+art. 11, I) **+** a caixa B (transferência internacional, art. 33, VIII — §13) **+** §6 (PostHog
+nomeado como operador, sem nome de medicamento, dose ou biomarcador) autorizam esse processamento.
+Sem B, o cliente não envia. **Não** existe categoria nova de "consentimento de analytics": os
 eventos de dose/tratamento (art. 11) rodam sob o consentimento de saúde existente; os de uso puro,
-sob a divulgação de operador. Web/bot herdam a **mesma** base, estendida pela v0.4 (remove "só
+sob a divulgação de operador. Web/bot herdam a **mesma** base, estendida pela v0.5 (remove "só
 celular"), escopada por superfície (§6.2). **Tentar apoiar dose/tratamento em "legítimo interesse
 por não ser saúde" é erro** — pseudonimizado ≠ não-saúde (ver §6) — e enfraqueceria a proteção.
 
@@ -661,7 +663,7 @@ gate de saída de `select` (R-295), aplicada à telemetria.
   UUID, mesma falha silenciosa (CON-021), mesma fronteira ADR-090. Considerar extrair o catálogo
   para `packages/core` ou `packages/config` para não viver dentro de `apps/mobile`.
 - **Ampliação de coleta (web + bot, Fase 2):** o gate é a publicação da **Política de Privacidade
-  v0.4** removendo o escopo "só no app do celular" (§6.1), **entregue dentro da própria Fase 2**
+  v0.5** removendo o escopo "só no app do celular" (§6.1), **entregue dentro da própria Fase 2**
   deste projeto — independente da spec 059. **Confirmar com o PO/DPO antes de mergear a Fase 2.**
 
 ---
@@ -675,7 +677,7 @@ gate de saída de `select` (R-295), aplicada à telemetria.
 - **CON-021** — `logEvent` nunca lança.
 - **AP-303** — kill switch boot-blocking/fail-open; PostHog fora dele.
 - **Spec 044** (SC-004) — série de eventos de estoque.
-- **Política de Privacidade v0.3** §6 (`docs/legal/POLITICA_DE_PRIVACIDADE_v0.3.md`) — PostHog como operador, escopo "só no app do celular", cláusula "não inclui conteúdo de doses/medicamentos". A **v0.4** (que remove o escopo "só celular") é entregável da Fase 2 deste projeto.
+- **Política de Privacidade v0.4** §4/§6/§13 (`docs/legal/POLITICA_DE_PRIVACIDADE_v0.4.md`) — PostHog como operador, escopo "só no app do celular", sob a caixa B (art. 33, VIII), sem nome de medicamento, dose ou biomarcador. A **v0.5** (que remove o escopo "só celular") é entregável da Fase 2 deste projeto.
 - **ADR-080** — modelo N2 de titulação (`titrations` + `titration_steps`), base da detecção de desmame.
 - **Spec 050** — infra de fila/scan reusável para o `treatment_ended` server-side.
 - `dosiq-dopamina.md` — base teórica (querer vs. gostar).
