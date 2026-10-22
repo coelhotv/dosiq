@@ -83,6 +83,11 @@ export async function sendChatMessage({ message, history = [], patientData }) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
+      // 096 modo sem B: o servidor recusa quem não tem `international_transfer`. A UI troca o chat pelo
+      // aviso S8b em vez de mostrar o erro técnico genérico.
+      if (response.status === 403 && error.error === 'transfer_consent_required') {
+        return { response: '', blocked: false, rateLimited: false, error: true, transferRequired: true }
+      }
       throw new Error(error.message || `HTTP ${response.status}`)
     }
 

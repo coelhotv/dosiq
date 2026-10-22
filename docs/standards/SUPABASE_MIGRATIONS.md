@@ -13,7 +13,7 @@ tags:
   - sql
   - database
 created_at: "2026-07-18"
-updated_at: "2026-10-03"
+updated_at: "2026-10-21"
 ---
 
 > 🔴 **Migração escrita ≠ migração aplicada.** Quando uma migração (ou uma PARTE dela) fica no repo
@@ -25,14 +25,21 @@ updated_at: "2026-10-03"
 # Migrações Supabase — template e regras obrigatórias
 
 > Extraído do CLAUDE.md em 2026-07-18 (redução do arquivo). Fonte de verdade para
-> qualquer `CREATE TABLE` / função nova. Aplicação em prod: via MCP, após aprovação.
+> qualquer `CREATE TABLE` / função nova. **Toda migração passa pelo QA (`dosiq-qa`) antes de prod**
+> (CON-044 · [`QA_ENVIRONMENT.md`](../architecture/QA_ENVIRONMENT.md) §4). Aplicação em prod: via MCP, após aprovação.
 
 ## Grants obrigatórios
 
-A partir de 30/10/2026, novas tabelas no projeto **não recebem grants automáticos**.
+⚠️ **Corrigido 2026-10-21 (verificado em `pg_default_acl`):** em prod as default privileges do schema
+`public` (donos `postgres` e `supabase_admin`) dão **ALL — inclusive TRUNCATE — a `anon`, `authenticated`
+e `service_role`** em toda tabela/função nova. O texto anterior ("novas tabelas não recebem grants
+automáticos") estava errado. Consequência: toda tabela nova precisa de **REVOKE explícito** do que não
+deve existir (TRUNCATE ignora RLS) + GRANT do mínimo. Endurecer o default é dívida aberta.
+
 Template obrigatório após `CREATE TABLE`:
 
 ```sql
+REVOKE ALL ON public.<tabela> FROM anon, authenticated;  -- default ACL deu ALL (inclui TRUNCATE)
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO service_role;
 -- anon: apenas se a tabela tiver dados verdadeiramente públicos (raro no dosiq)
@@ -89,7 +96,7 @@ vontade de fechar o épico. Essa pressão de fechamento foi ingrediente causal d
 1. `pg_get_constraintdef` / `information_schema` conferidos (R-295 — o banco é a verdade).
 2. Grants + RLS no mesmo arquivo da tabela (nunca "depois").
 3. Assinatura única por função (overload = AP-227; `DROP FUNCTION` da antiga na mesma migração).
-4. Teste `BEGIN..ROLLBACK` contra o banco real antes de aplicar (padrão PO-SEC).
+4. Teste `BEGIN..ROLLBACK` **no QA** antes de aplicar (padrão PO-SEC); depois `apply_migration` no QA + curl R-295 no QA. Prod só no gatilho da spec (CON-044).
 5. `npm run supabase:types` após aplicar (regen `database.types.ts` — R-289).
 6. Varredura de DEFINER aberta (AP-278, emenda 098) — em TODA migração, não só na que cria função:
    `SELECT p.oid::regprocedure FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace

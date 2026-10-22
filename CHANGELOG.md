@@ -9,9 +9,80 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Pedido de peso depois da dose sobe junto com o teclado (spec 069)
 
-- **Mobile** (`Fixed`, sem bump próprio — embarca no build de loja da v0.34 do release train). Ao tocar no
+- **Mobile** (`Fixed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314). Ao tocar no
   campo de peso que aparece depois de registrar a dose, o teclado cobria o campo e os botões. Agora a
   janela sobe junto com o teclado, tanto ao registrar uma dose quanto várias de uma vez.
+
+### Tela inicial do app destaca canetas injetáveis, código de barras e alarme no silencioso (spec 048 B)
+
+- **Mobile** (`Changed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — atualização da
+  proposta de valor na tela inicial não logada). A tela de boas-vindas do app passa a mostrar o título
+  "Nunca mais esqueça uma dose." e um exemplo de aplicação semanal em caneta ("Semaglutida 1,7 mg · Caneta ≈
+  0,75 mL", com o ícone de seringa), mantendo o cartão de adesão do dia ("Hoje · Adesão excelente!"). Os dois
+  destaques da tela passam a apresentar o alarme que toca até no silencioso ("Alarme confiável · toca até no
+  silencioso") e o cadastro pela embalagem ("Código de barras · direto pela embalagem").
+  Store-note: relevante — nova tela inicial destacando canetas injetáveis, leitor de código de barras e
+  alarme no silencioso.
+
+### Autorizações da política v0.4 no app do celular (spec 096 B3)
+
+- **Mobile** (`Added`, `minor` 0.33.51 → 0.34.0; canal: **build de loja**, R-314 — funcionalidade nova;
+  vai às lojas no Dia D da política v0.4). A autorização de uso dos dados de saúde sai do cadastro e passa
+  para o fim da configuração inicial: a tela "Salvar o tratamento" mostra o remédio configurado e duas
+  caixas separadas e desmarcadas — dados de saúde (obrigatória) e envio para fora do Brasil (opcional) —,
+  cada uma com "Detalhes ›". Nada é gravado antes dessa autorização; "Agora não" explica que nada é salvo
+  e oferece voltar, sair da conta ou excluí-la. Quem pula os passos vê "Antes de entrar no app" e entra
+  sem cadastrar remédio. Quem fechar o app antes de autorizar volta à configuração inicial, e não à tela
+  de bloqueio. Quem aceitou a política anterior vê "O dosiq agora é uma empresa", com as mesmas caixas e
+  "O que mudou ›", e precisa confirmar ou tocar em "Não concordo" (leva a Privacidade e dados). Em
+  Privacidade e dados, um interruptor liga e desliga o envio para fora do Brasil (desligar mostra os
+  efeitos; ligar abre a autorização completa), e os Termos de Uso aparecem em Transparência. Sem essa
+  autorização, o assistente mostra "O assistente está desligado" e não envia nenhuma pergunta, e o app
+  não envia medições de uso. Os relatórios de falha deixam de levar endereços de consulta ao banco,
+  mensagens internas do app, e-mail e IP.
+- **Web/PWA** (`Changed`, sem bump — só a origem dos textos, sem mudança visível). Os textos do
+  interruptor e da autorização de envio para fora do Brasil passam a vir do pacote compartilhado, os
+  mesmos do app.
+- **Mobile** (`Fixed`, no mesmo pacote `0.34.0` — achados do smoke). O cartão do envio para fora do
+  Brasil em Privacidade e dados carrega na hora (a autorização era lida ~15 vezes por visita) e, se a
+  leitura não voltar em 10 s, mostra "Tentar de novo" em vez de girar sem fim; o interruptor desligado
+  ficou visível no iPhone, alinhado ao texto, e os Termos de uso ganharam separação da versão da
+  política. Quem autoriza pelo pedido antigo de dados de saúde passa a registrar também o aceite dos
+  Termos e da Política, com o aviso "Ao continuar, você aceita os Termos de Uso e a Política de
+  Privacidade". A configuração inicial não consome mais as sessões de cortesia do pedido de
+  autorização. As medições de uso guardadas durante a configuração inicial chegam com a hora em que
+  aconteceram. O relatório em PDF não diz mais "Sua sessão expirou" quando a falha é do servidor.
+- **Shared/Core** (`Fixed`, no mesmo `minor` 0.24.0). A leitura do estado de uma autorização é
+  compartilhada entre as telas por 2 s, refeita depois de qualquer gravação, e falha em 10 s se o
+  servidor não responder.
+- **Web/PWA** (`Fixed`, no mesmo `minor` 4.31.0). Quem autoriza pelo pedido antigo de dados de saúde
+  passa a registrar também o aceite dos Termos e da Política, com o aviso "Ao continuar, você aceita os
+  Termos de Uso e a Política de Privacidade" e os links.
+
+### Autorização para envio de dados para fora do Brasil e modo sem envio (spec 096 B2)
+
+- **Backend/Infra** (`Added`, `minor` server `4.1.2 → 4.2.0` e core `0.23.0 → 0.24.0` — migração no
+  Supabase e deploy na Vercel no Dia D da política v0.4). A política de privacidade passa à versão 0.4 e
+  ganha uma segunda autorização, opcional: enviar dados de saúde para serviços fora do Brasil (EUA). Quem
+  não der essa autorização continua recebendo todos os avisos, mas com texto genérico — "💊 Hora do seu
+  remédio" no lugar do nome do remédio — no celular, no navegador, na Live Activity do iPhone e no
+  Telegram; o assistente de IA não responde; e o bot do Telegram passa a responder um aviso no lugar das
+  listas de remédios e dos botões. Os alarmes do próprio celular não mudam. Ao entrar no ar, todo mundo
+  começa sem essa autorização até confirmá-la.
+- **Web/PWA** (`Added`, `minor` 4.30.1 → 4.31.0). O cadastro mostra duas caixas separadas e desmarcadas
+  — dados de saúde (obrigatória) e envio para fora do Brasil (opcional) —, cada uma com "Detalhes ›", e o
+  aceite dos Termos e da Política vira rodapé. Quem aceitou a política anterior vê "O dosiq agora é uma
+  empresa", com as mesmas duas caixas e "O que mudou ›", e precisa confirmar ou recusar ("Não concordo"
+  leva à tela de retirada da autorização). Em Perfil › Privacidade e dados, um interruptor liga e desliga
+  o envio para fora do Brasil: desligar pede confirmação mostrando os efeitos; ligar abre a autorização
+  completa. Sem essa autorização, o assistente não abre o chat: mostra "O assistente está desligado", com
+  o atalho para a autorização, e nenhuma pergunta é enviada.
+- **Web/PWA** (`Fixed`, no mesmo `minor` 4.31.0 — achados do smoke). O assistente de primeiro uso não abre
+  mais depois de todo login nem por cima do reconsentimento; com o reconsentimento pendente, os botões do
+  chat e de registro somem. O botão "Retirar consentimento" da segunda confirmação voltou a aparecer
+  (estava branco sobre branco). Quem retira a autorização de dados de saúde vai direto à tela de bloqueio
+  e não vê mais o Perfil (cartão de emergência, consulta, histórico e relatório). Login e cadastro
+  mostram os erros de e-mail e senha em português, abaixo de cada campo, em vez do aviso do navegador.
 
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 

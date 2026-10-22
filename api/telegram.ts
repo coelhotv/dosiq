@@ -11,6 +11,7 @@ import { handlePausar, handleRetomar } from '../server/bot/commands/protocols.js
 import { handleCallbacks } from '../server/bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from '../server/bot/callbacks/conversational.js';
 import { createLogger } from '../server/bot/logger.js';
+import { isChatTransferBlocked, isTransferFreeCommand, TRANSFER_BLOCKED_TEXT, TRANSFER_BLOCKED_ALERT } from '../server/bot/middleware/transferGate.js';
 import { initSentry, captureServerException, flushSentry, withServerIsolation } from '../server/observability/sentry.js';
 
 // --- Configuration ---
@@ -113,6 +114,14 @@ async function _handleTextMessage(bot, msg) {
     isCommand
   });
 
+  // 096 B2 (C-1): sem a caixa B, nenhuma resposta com dado de saúde sai pelo Telegram — só vincular
+  // (/start) e /ajuda seguem; o resto recebe o aviso neutro. Antes de QUALQUER handler (ponto único).
+  if (!isTransferFreeCommand(text) && (await isChatTransferBlocked(chatId))) {
+    logger.info('🔒 Sem autorização de envio p/ fora do Brasil — aviso no lugar da resposta', { chatId, isCommand });
+    await bot.sendMessage(chatId, TRANSFER_BLOCKED_TEXT, { parse_mode: 'MarkdownV2' });
+    return;
+  }
+
   // Try simple command handlers
   for (const [cmd, handler] of Object.entries(_simpleCommandHandlers)) {
     if (text.startsWith(cmd)) {
@@ -162,6 +171,12 @@ async function _handleCallbackQuery(bot, callbackQuery) {
     callbackData: callbackData.substring(0, 50),
     callbackLen: callbackData.length
   });
+  // 096 B2 (C-1): os callbacks editam a mensagem com o nome do remédio ("Dose de *X* registrada").
+  if (chatId != null && (await isChatTransferBlocked(chatId))) {
+    logger.info('🔒 Callback sem autorização de envio p/ fora do Brasil', { chatId });
+    await bot.answerCallbackQuery(callbackQuery.id, { text: TRANSFER_BLOCKED_ALERT, show_alert: true });
+    return;
+  }
   await bot._emit('callback_query', callbackQuery);
 }
 

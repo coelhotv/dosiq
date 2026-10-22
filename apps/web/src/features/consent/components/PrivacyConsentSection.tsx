@@ -7,6 +7,8 @@
 // ⚠️ getStatus() LANÇA em falha de leitura (contrato do Slice A) — vira estado de ERRO
 // explícito aqui, nunca "não informado" (ver useConsentGate.tsx para o mesmo cuidado).
 //
+// 096: abaixo do cartão A, o cartão B (TransferConsentCard) — interruptor sem trava.
+//
 // Montado no hub de Privacidade (Profile). Ao revogar, chama gate.refresh() para reavaliar o
 // guard raiz na hora (paridade com o card mobile) — senão o app seguiria navegável até o próximo
 // ciclo de foreground.
@@ -16,6 +18,7 @@ import { ShieldCheck, ShieldOff, ShieldQuestion } from 'lucide-react'
 import { HEALTH_CONSENT_COPY, createConsentService, parseISO } from '@dosiq/core'
 import type { ConsentState } from '@dosiq/core'
 import { supabase } from '@shared/utils/supabase'
+import TransferConsentCard from './TransferConsentCard'
 import { useConsentGate } from '@shared/hooks/useConsentGate'
 import './PrivacyConsentSection.css'
 
@@ -167,6 +170,8 @@ export default function PrivacyConsentSection() {
           </>
         )}
       </div>
+
+      <TransferConsentCard />
     </div>
   )
 }

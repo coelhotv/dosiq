@@ -2,7 +2,7 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Auth from './views/Auth'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useConsentGate, isConsentAllowedView } from '@shared/hooks/useConsentGate'
@@ -108,14 +108,18 @@ export default function AppViewRouter({
   setDoseModalInitialValues,
   isPasswordRecovery,
   onResetComplete,
+  regularizationDeclined = false,
+  setRegularizationDeclined = (() => {}) as (declined: boolean) => void,
 }) {
   // Spec 044 F3: rota /stock não existe quando o controle de estoque está desligado —
   // redirect SILENCIOSO pro dashboard (decisão do PO, sem tela de erro/toast).
   // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
   const consent = useConsentGate()
-  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
-  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
+  // Reconsentimento v0.4 (096, DQ-1): bloqueante. "Não concordo" leva ao Perfil (revogação) e só lá
+  // o modal sai da frente (Perfil fica fora da allowlist do bloqueio, mas é a saída de quem recusa o
+  // reconsentimento — quem está `stale` não está travado) — em outra view ele volta. O estado
+  // `regularizationDeclined` vem do App (este componente remonta a cada troca de view).
 
   useEffect(() => {
     if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
@@ -214,15 +218,15 @@ export default function AppViewRouter({
     )
   }
 
-  // 5. CONSENTIU numa política ANTIGA (`stale`) — nudge de regularização. NÃO trava (mode 'allow'):
-  //    o app segue livre, o modal é um convite dispensável por cima. Aceitar carimba a versão nova.
+  // 5. CONSENTIU numa política ANTIGA (`stale`) — reconsentimento v0.4, BLOQUEANTE por cima do app
+  //    (096 DQ-1). Confirmar carimba a versão nova; "Não concordo" abre o Perfil, onde fica a revogação.
   return (
     <>
       {content}
       <ConsentRegularizationModal
-        visible={consent.needsRegularization && !regularizationDismissed}
-        onDismiss={() => setRegularizationDismissed(true)}
-        onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+        visible={consent.needsRegularization && !(regularizationDeclined && (currentView === 'profile' || isConsentAllowedView(currentView)))}
+        onDecline={() => { setRegularizationDeclined(true); setCurrentView('profile') }}
+        onConfirmed={() => { setRegularizationDeclined(false); consent.refresh() }}
       />
     </>
   );

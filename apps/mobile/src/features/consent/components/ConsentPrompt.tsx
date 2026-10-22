@@ -17,7 +17,7 @@
  * nada muda. Revogado não passa por aqui (ConsentResolutionScreen).
  */
 import { useState, useEffect } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { HEALTH_CONSENT_COPY, NEVER_CONSENTED_DEADLINE_COPY, renderDeadlineCopy, parseISO, formatDatePtBR } from '@dosiq/core'
 import HealthConsentCheckbox from './HealthConsentCheckbox'
@@ -25,6 +25,7 @@ import ConsentLegalHeader from './ConsentLegalHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import { EXTERNAL_URLS } from '../../../shared/constants'
 import { fetchDeletionNotice, type DeletionNotice } from '@platform/consent/deletionNoticeService'
 
 // 065 PR D / US9 — de onde este prompt foi renderizado (4 call-sites reais, achados no C1.5;
@@ -151,6 +152,19 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
           )}
         </Pressable>
 
+        {/* C-B3-13: autorizar aqui também grava o aceite dos Termos e da Política (gate.grant). */}
+        <Text style={styles.terms}>
+          Ao continuar, você aceita os{' '}
+          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => void Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE).catch(() => {})}>
+            Termos de Uso
+          </Text>{' '}
+          e a{' '}
+          <Text style={styles.termsLink} accessibilityRole="link" onPress={() => void Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY).catch(() => {})}>
+            Política de Privacidade
+          </Text>
+          .
+        </Text>
+
         {deadlineText && onDeleteAccount ? (
           <Pressable style={styles.dismiss} onPress={onDeleteAccount} disabled={saving} accessibilityRole="button">
             <Text style={styles.deleteText}>{NEVER_CONSENTED_DEADLINE_COPY.deleteNow}</Text>
@@ -168,6 +182,8 @@ export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, on
 }
 
 const styles = StyleSheet.create({
+  terms: { fontSize: 12, lineHeight: 18, textAlign: 'center', color: colors.text.muted },
+  termsLink: { color: colors.brand.primary, fontWeight: '600' },
   container: {
     flex: 1,
     backgroundColor: colors.bg.screen,

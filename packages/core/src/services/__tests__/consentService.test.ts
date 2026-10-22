@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { createConsentService } from '../consentService'
+import { createConsentService, CONSENT_READ_TIMEOUT_MS } from '../consentService'
 import { CURRENT_POLICY_VERSION } from '../../schemas/consentSchema'
 
 // 046 Slice A — consentService.
@@ -291,5 +291,161 @@ describe('createConsentService — materializeSignupIntent', () => {
       materialized: false,
     })
     expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+// Spec 096 (T051) — o signup v0.4 grava A + termos (+ B se marcada). Leitura por TIPO: o estado de
+// B é independente do de A, então o mock responde conforme o `consent_type` filtrado.
+function makeTypedClient(byType: Record<string, unknown>) {
+  const rpc = vi.fn(async (_fn: string, _args: Record<string, unknown>) => ({ data: EVENT.id, error: null }))
+  const from = vi.fn((_table: string) => ({
+    select: (_c: string) => ({
+      eq: (_col: string, type: string) => ({
+        order: () => ({ limit: async () => byType[type] ?? { data: [], error: null } }),
+      }),
+    }),
+  }))
+  return { client: { rpc, from } as unknown as SupabaseClient<Database>, rpc }
+}
+
+describe('createConsentService — materializeSignupIntent v0.4 (096)', () => {
+  const grantedTypes = (rpc: ReturnType<typeof makeTypedClient>['rpc']) =>
+    rpc.mock.calls.map((c) => [c[0], c[1].p_consent_type])
+
+  it('A + B marcadas → grava health_data, terms_privacy e international_transfer', async () => {
+    const { client, rpc } = makeTypedClient({})
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+      ['consent_grant', 'international_transfer'],
+    ])
+  })
+
+  it('terms_privacy falha → 1 nova tentativa; A segue materializada (RC6 #898)', async () => {
+    const { client, rpc } = makeTypedClient({})
+    let termsCalls = 0
+    rpc.mockImplementation(async (_fn: string, args: Record<string, unknown>) => {
+      // Cast: o mock tipado só aceita o formato de sucesso; a falha é exatamente o caso deste teste.
+      if (args.p_consent_type === 'terms_privacy' && termsCalls++ === 0) {
+        return { data: null, error: { message: 'net' } } as unknown as { data: string; error: null }
+      }
+      return { data: EVENT.id, error: null }
+    })
+    const result = await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+      ['consent_grant', 'terms_privacy'],
+    ])
+  })
+
+  it('só A → B nunca é gravada (opcional, guarda 4)', async () => {
+    const { client, rpc } = makeTypedClient({})
+    await createConsentService({ client }).materializeSignupIntent({ health_consent: true }, 'web')
+    expect(grantedTypes(rpc)).toEqual([
+      ['consent_grant', 'health_data'],
+      ['consent_grant', 'terms_privacy'],
+    ])
+  })
+
+  it('B já revogada → intenção velha não ressuscita B', async () => {
+    const { client, rpc } = makeTypedClient({
+      international_transfer: { data: [{ ...EVENT, consent_type: 'international_transfer', action: 'revoked' }], error: null },
+    })
+    await createConsentService({ client }).materializeSignupIntent({ health_consent: true, transfer_consent: true }, 'web')
+    expect(grantedTypes(rpc)).not.toContainEqual(['consent_grant', 'international_transfer'])
+  })
+
+  it('leitura de B falha → não grava B, A segue materializada', async () => {
+    const { client, rpc } = makeTypedClient({
+      international_transfer: { data: null, error: { message: 'network timeout' } },
+    })
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: true })
+    expect(grantedTypes(rpc)).not.toContainEqual(['consent_grant', 'international_transfer'])
+  })
+
+  it('grant de A falha → nada mais é gravado', async () => {
+    const { client, rpc } = makeTypedClient({})
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'boom' } } as never)
+    const result = await createConsentService({ client }).materializeSignupIntent(
+      { health_consent: true, transfer_consent: true },
+      'web',
+    )
+    expect(result).toEqual({ materialized: false })
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 096 B3 (C-B3-10): uma visita à Privacidade gerava ~15 GETs idênticos em 4 s — gate, 3 bridges de
+// supressão, seção e cartão, cada um com a sua instância do serviço. E uma leitura presa deixava o
+// spinner girando 1 min.
+describe('createConsentService — leitura reaproveitada e teto de tempo', () => {
+  it('instâncias do MESMO client compartilham a leitura do mesmo tipo', async () => {
+    const { client, from } = makeClient()
+    const a = createConsentService({ client })
+    const b = createConsentService({ client })
+
+    await Promise.all([a.getStatus('health_data'), b.getStatus('health_data'), a.getStatus('health_data')])
+
+    expect(from).toHaveBeenCalledTimes(1)
+  })
+
+  it('tipos diferentes não se misturam', async () => {
+    const { client, from, eq } = makeClient()
+    const service = createConsentService({ client })
+
+    await service.getStatus('health_data')
+    await service.getStatus('international_transfer')
+
+    expect(from).toHaveBeenCalledTimes(2)
+    expect(eq.mock.calls.map((c) => c[1])).toEqual(['health_data', 'international_transfer'])
+  })
+
+  it('escrita invalida: a leitura seguinte vai ao banco', async () => {
+    const { client, from } = makeClient()
+    const service = createConsentService({ client })
+
+    await service.getStatus('international_transfer')
+    await service.grant('international_transfer', 'mobile')
+    await service.getStatus('international_transfer')
+
+    expect(from).toHaveBeenCalledTimes(2)
+  })
+
+  it('falha não fica guardada: "tentar de novo" vai ao banco', async () => {
+    const { client, from } = makeClient({ selectResult: { data: null, error: { message: 'net' } } })
+    const service = createConsentService({ client })
+
+    await expect(service.getStatus('health_data')).rejects.toThrow()
+    await expect(service.getStatus('health_data')).rejects.toThrow()
+
+    expect(from).toHaveBeenCalledTimes(2)
+  })
+
+  it('leitura que não volta LANÇA no teto, em vez de pendurar', async () => {
+    vi.useFakeTimers()
+    try {
+      const { client, from } = makeClient()
+      const limit = vi.fn(() => new Promise(() => {}))
+      from.mockReturnValue({ select: () => ({ eq: () => ({ order: () => ({ limit }) }) }) } as never)
+      const service = createConsentService({ client })
+
+      const pending = service.getStatus('health_data')
+      const assertion = expect(pending).rejects.toThrow('tempo esgotado')
+      await vi.advanceTimersByTimeAsync(CONSENT_READ_TIMEOUT_MS)
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

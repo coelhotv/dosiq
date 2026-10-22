@@ -4,6 +4,7 @@
 import React from 'react'
 import { renderHook, waitFor } from '@testing-library/react-native'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { clearConsentReadCache } from '@dosiq/core'
 import { ConsentGateProvider, useConsentGate } from '../useConsentGate'
 
 jest.mock('@platform/supabase/nativeSupabaseClient', () => {
@@ -27,13 +28,19 @@ const rpc = supabase.rpc as unknown as jest.Mock
 const session = { user: { user_metadata: { health_consent: true } } }
 
 afterEach(() => {
+  clearConsentReadCache(supabase)
   jest.clearAllMocks()
   jest.clearAllTimers()
 })
 
-function wrap(canAutoWrite: boolean, verificationPending = false) {
+function wrap(canAutoWrite: boolean, verificationPending = false, onboardingDone = true) {
   return ({ children }: { children: React.ReactNode }) => (
-    <ConsentGateProvider session={session} canAutoWrite={canAutoWrite} verificationPending={verificationPending}>
+    <ConsentGateProvider
+      session={session}
+      canAutoWrite={canAutoWrite}
+      verificationPending={verificationPending}
+      onboardingDone={onboardingDone}
+    >
       {children}
     </ConsentGateProvider>
   )
@@ -66,4 +73,29 @@ it('RC6: verificação pendente + leitura falhando (offline) ⇒ decide na hora,
   const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(false, true) })
   await waitFor(() => expect(result.current.ready).toBe(true))
   expect(rpc).not.toHaveBeenCalled()
+})
+
+// 096 B3 (C-B3-12): conta nova no wizard chegava ao S1 com `consent_prompt_sessions = 1`.
+it('onboarding em curso ⇒ não conta sessão de prompt (nenhum acesso a user_settings)', async () => {
+  const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(true, false, false) })
+  await waitFor(() => expect(result.current.ready).toBe(true))
+  expect((supabase.from as jest.Mock).mock.calls.map((c) => c[0])).not.toContain('user_settings')
+})
+
+it('onboarding concluído ⇒ conta a sessão (comportamento preservado)', async () => {
+  const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(true) })
+  await waitFor(() => expect(result.current.ready).toBe(true))
+  expect((supabase.from as jest.Mock).mock.calls.map((c) => c[0])).toContain('user_settings')
+})
+
+// 096 B3 (C-B3-13): o pedido legado concedia só A — conta E6 ficava sem aceite dos Termos 0.4.
+it('grant do pedido grava A E o aceite dos Termos (nessa ordem)', async () => {
+  const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(false) })
+  await waitFor(() => expect(result.current.ready).toBe(true))
+  rpc.mockClear()
+  await result.current.grant()
+  const types = rpc.mock.calls
+    .filter((c) => c[0] === 'consent_grant')
+    .map((c) => (c[1] as { p_consent_type: string }).p_consent_type)
+  expect(types).toEqual(['health_data', 'terms_privacy'])
 })

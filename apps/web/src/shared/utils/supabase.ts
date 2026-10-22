@@ -101,7 +101,7 @@ export const signIn = async (email, password) => {
  * trilha é `materializeSignupIntent` no 1º bootstrap autenticado, via RPC — o servidor deriva
  * titular, versão e hash. Nunca gravar o evento "confiando" neste metadata.
  */
-export const signUp = async (email, password, options: { healthConsent?: boolean } = {}) => {
+export const signUp = async (email, password, options: { healthConsent?: boolean; transferConsent?: boolean } = {}) => {
   // Consentimento como CONDIÇÃO DE USO (FR-002): a conta não nasce sem opt-in. O gate de UI já
   // barra o form, mas a trava vive TAMBÉM aqui — paridade com o mobile (authService), fechando o
   // caminho de qualquer caller chegar ao signUp sem consentimento.
@@ -115,6 +115,8 @@ export const signUp = async (email, password, options: { healthConsent?: boolean
     options: {
       data: {
         health_consent: true,
+        // Spec 096: caixa B (opcional). Mesma carona da intenção — quem grava é a RPC no bootstrap.
+        transfer_consent: options.transferConsent === true,
         policy_version: CURRENT_POLICY_VERSION,
       },
     },

@@ -9,12 +9,9 @@
 // gravaria um consentimento que ele nunca leu. Então reusamos a tela completa, com o checkbox.
 
 import { useNavigation } from '@react-navigation/native'
-import { createConsentService } from '@dosiq/core'
 import ConsentPrompt from '@features/consent/components/ConsentPrompt'
 import { useConsentGate } from '@platform/consent/useConsentGate'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
-const consentService = createConsentService({ client: supabase as never })
 
 export default function ConsentPromptScreen() {
   const navigation = useNavigation()
@@ -26,7 +23,7 @@ export default function ConsentPromptScreen() {
     <ConsentPrompt
       blocking={false}
       source="prompt_navigated"
-      onGrant={() => consentService.grant('health_data', 'mobile')}
+      onGrant={gate.grant}
       onDismiss={() => navigation.goBack()}
       onGranted={async () => {
         // Reavalia o gate compartilhado (o card do hub e o guard passam a ver `granted`) e volta.

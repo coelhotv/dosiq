@@ -142,13 +142,66 @@ describe('useConsentGate — estados lidos com sucesso', () => {
 
     expect(mockGrant).toHaveBeenCalledWith('health_data', 'web')
   })
+
+  // 096 B3 (C-B3-13): sem isto a conta legada consentia sem aceite dos Termos 0.4.
+  it('grant do pedido grava A e o aceite dos Termos, nessa ordem', async () => {
+    mockGetStatus.mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false })
+    mockGrant.mockResolvedValue({ ok: true })
+
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    mockGrant.mockClear()
+
+    await result.current.grant()
+
+    expect(mockGrant.mock.calls.map((c) => c[0])).toEqual(['health_data', 'terms_privacy'])
+  })
+
+  it('A falhou ⇒ não tenta os Termos', async () => {
+    mockGetStatus.mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false })
+    mockGrant.mockResolvedValue({ ok: false, error: 'net' })
+
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    mockGrant.mockClear()
+
+    expect(await result.current.grant()).toEqual({ ok: false, error: 'net' })
+    expect(mockGrant).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('isConsentAllowedView — allowlist (R2/F8)', () => {
-  it('rota de produto NÃO passa; a saída da revogação e o export passam', () => {
+  it('rota de produto NÃO passa (Perfil incluso — dado de saúde); a saída da revogação e a conta passam', () => {
     expect(isConsentAllowedView('dashboard')).toBe(false)
     expect(isConsentAllowedView('treatment')).toBe(false)
+    expect(isConsentAllowedView('profile')).toBe(false)
     expect(isConsentAllowedView('consent-resolution')).toBe(true)
-    expect(isConsentAllowedView('profile')).toBe(true)
+    expect(isConsentAllowedView('account-settings')).toBe(true)
   })
 })
+
+describe('useConsentGate — grantV04 (RC6 #898)', () => {
+  const stale = { status: 'granted', policyVersion: '0.3', updatedAt: '2026-07-01T12:00:00-03:00', stale: true }
+  const current = { status: 'granted', policyVersion: '0.4', updatedAt: '2026-10-21T12:00:00-03:00', stale: false }
+
+  it('🔴 falha ao gravar terms_privacy → ok:false (o reconsentimento não fecha)', async () => {
+    mockGetStatus.mockResolvedValue(stale)
+    mockGrant.mockImplementation(async (type: string) => (type === 'terms_privacy' ? { ok: false, error: 'net' } : { ok: true }))
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    const res = await result.current.grantV04({ transfer: false })
+    expect(res.ok).toBe(false)
+  })
+
+  it('nova tentativa com A já vigente na 0.4 → não regrava A (SC-001), só os termos', async () => {
+    mockGetStatus.mockResolvedValue(current)
+    mockGrant.mockResolvedValue({ ok: true })
+    const { result } = renderHook(() => useConsentGate(), { wrapper })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    mockGrant.mockClear()
+    const res = await result.current.grantV04({ transfer: false })
+    expect(res.ok).toBe(true)
+    expect(mockGrant.mock.calls.map((c) => c[0])).toEqual(['terms_privacy'])
+  })
+})
+

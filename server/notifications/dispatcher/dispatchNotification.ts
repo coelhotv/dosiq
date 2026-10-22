@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
 import { resolveChannelsForUser } from '../policies/resolveChannelsForUser.js'
 import { isConsentSuppressed } from '../policies/consentSuppression.js'
+import { isTransferRedacted, redactForNoTransfer } from '../policies/transferRedaction.js'
 import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { 
   getNow, 
@@ -117,6 +118,12 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
 
   isSuppressed = checkGatePolicy({ userId, kind, settings, currentHHMM, correlationId })
 
+  // 096 T052 / ADR-112 — modo sem B: o que vai aos CANAIS (Expo, web push, Telegram) sai genérico
+  // para quem não tem `international_transfer` vigente (ou cuja leitura falhou). Ponto ÚNICO: um
+  // canal novo já nasce coberto. A inbox (`logNotificationEvent`, Supabase no Brasil) guarda o
+  // payload original — só o envio para fora do país é redigido.
+  const channelPayload = isTransferRedacted(settings) ? redactForNoTransfer(finalPayload) : finalPayload
+
   if (validChannels.length === 0 && !isSuppressed) {
     console.info('[dispatchNotification] nenhum canal físico ativo — prosseguindo apenas com log (Inbox-First)', { correlationId, userId, kind })
   }
@@ -132,7 +139,7 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
   let results: ChannelResult[] = []
   if (!isSuppressed && validChannels.length > 0) {
     const settledResults = await Promise.allSettled(
-      validChannels.map((channel) => dispatchChannel({ channel, userId, payload: finalPayload, context: ctx, repositories, bot, expoClient }))
+      validChannels.map((channel) => dispatchChannel({ channel, userId, payload: channelPayload, context: ctx, repositories, bot, expoClient }))
     )
 
     results = settledResults

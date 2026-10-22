@@ -65,9 +65,9 @@ export interface ResolveConsentGateInput {
  */
 export const CONSENT_ALLOWED_WEB_VIEWS = Object.freeze([
   'consent-resolution',
-  // `profile` é onde vive o ExportDialog (o export LGPD do 008 na web). Sem ele na allowlist, o
-  // titular revogado perde o direito de LEVAR os dados embora — que a revogação deveria facilitar.
-  'profile',
+  // `profile` SAIU (smoke 096 B2, 2026-10-21): o export é inline na própria ConsentResolution, e o
+  // Perfil expõe cartão de emergência, consulta, histórico e relatório — dado de saúde à vista de quem
+  // retirou a base para tratá-lo. Ficar no Perfil também segurava a tela de bloqueio até o refresh.
   // Logout e conta. (⚠️ A web NÃO tem exclusão de conta hoje — ela só existe no mobile. Não é um
   // deadlock introduzido pela trava: esse caminho nunca existiu aqui. A tela de resolução web
   // aponta o titular para o app. Se a exclusão nascer na web, ela entra NESTA lista.)

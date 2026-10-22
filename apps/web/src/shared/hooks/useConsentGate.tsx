@@ -48,6 +48,11 @@ type ConsentGateValue = ConsentGateDecision & {
   dismiss: () => void
   /** Grava o consentimento via RPC (`consent_grant`) — nunca INSERT. */
   grant: () => Promise<{ ok: boolean; error?: string }>
+  /**
+   * Reconsentimento v0.4 (096): A + termos (+ B se marcada), num gesto. `ok` = A gravada — B é
+   * opcional e sua falha não desfaz A (o titular liga depois em Privacidade).
+   */
+  grantV04: (opts: { transfer: boolean }) => Promise<{ ok: boolean; transferOk: boolean; error?: string }>
   refresh: () => Promise<void>
 }
 
@@ -60,6 +65,7 @@ const DEFAULT_VALUE: ConsentGateValue = {
   dismissed: false,
   dismiss: () => {},
   grant: async () => ({ ok: false, error: 'ConsentGateProvider ausente' }),
+  grantV04: async () => ({ ok: false, transferOk: false, error: 'ConsentGateProvider ausente' }),
   refresh: async () => {},
 }
 
@@ -91,7 +97,7 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
       // se não conseguiu LER a trilha. O `user_metadata` é só a carona da intenção — quem carimba o
       // evento é o RPC `SECURITY DEFINER`, no servidor.
       await consentService.materializeSignupIntent(
-        session.user_metadata as { health_consent?: boolean; policy_version?: string } | undefined,
+        session.user_metadata as { health_consent?: boolean; transfer_consent?: boolean; policy_version?: string } | undefined,
         'web',
       )
 
@@ -118,8 +124,34 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
 
   const grant = useCallback(async () => {
     const res = await consentService.grant('health_data', 'web')
-    if (res.ok) await refresh()
+    if (!res.ok) return res
+    // 096 B3 (C-B3-13): o pedido legado concedia A sem o aceite dos Termos — e, com A já na versão
+    // vigente, o reconsentimento nunca mais aparecia. O rodapé do ConsentPrompt diz "ao continuar,
+    // você aceita os Termos". Falha aqui não desfaz A: 1 nova tentativa e log (desenho do cadastro).
+    const terms = await consentService.grant('terms_privacy', 'web')
+    if (!terms.ok) {
+      const retry = await consentService.grant('terms_privacy', 'web')
+      if (!retry.ok) console.error('[consent] terms_privacy não gravado no pedido:', retry.error)
+    }
+    await refresh()
     return res
+  }, [refresh])
+
+  const grantV04 = useCallback(async ({ transfer }: { transfer: boolean }) => {
+    // Nova tentativa após falha dos termos: A já vigente na versão atual não é regravado (um 2º
+    // `granted` de A na mesma versão poluiria a trilha — SC-001).
+    const health = await consentService.getStatus('health_data').catch(() => null)
+    if (!(health?.status === 'granted' && !health.stale)) {
+      const res = await consentService.grant('health_data', 'web')
+      if (!res.ok) return { ...res, transferOk: false }
+    }
+    // O rodapé afirma o aceite dos Termos/Política: sem o evento gravado, o reconsentimento não fecha
+    // (RC6 #898) — o modal mostra "Tente de novo".
+    const terms = await consentService.grant('terms_privacy', 'web')
+    if (!terms.ok) return { ok: false, transferOk: false, error: terms.error ?? 'terms_privacy_failed' }
+    const transferOk = transfer ? (await consentService.grant('international_transfer', 'web')).ok : true
+    await refresh()
+    return { ok: true, transferOk }
   }, [refresh])
 
   const dismiss = useCallback(() => setDismissed(true), [])
@@ -134,8 +166,8 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
 
   // eslint-disable-next-line no-restricted-syntax
   const value = useMemo<ConsentGateValue>(
-    () => ({ ...decision, ready, state, dismissed, dismiss, grant, refresh }),
-    [decision, ready, state, dismissed, dismiss, grant, refresh],
+    () => ({ ...decision, ready, state, dismissed, dismiss, grant, grantV04, refresh }),
+    [decision, ready, state, dismissed, dismiss, grant, grantV04, refresh],
   )
 
   useEffect(() => {
