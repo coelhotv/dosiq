@@ -1,8 +1,8 @@
 ---
-title: "Política de Privacidade — v0.3 (vigente)"
+title: "Política de Privacidade — v0.3 (arquivada)"
 description: "Política de privacidade e termos de tratamento de dados pessoais de pacientes em conformidade com a LGPD para o aplicativo dosiq."
 version: "0.3.0"
-status: active
+status: archived
 category: legal
 audience:
   - dev
