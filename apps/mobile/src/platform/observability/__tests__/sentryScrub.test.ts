@@ -46,7 +46,7 @@ describe('scrubBreadcrumb', () => {
   })
 
   it('outros: mensagem redigida, data removida', () => {
-    const out = scrubBreadcrumb({ category: 'ui', message: 'erro eu@dosiq.app', data: { medicine: 'Losartana' } })
+    const out = scrubBreadcrumb({ category: 'ui', message: 'erro paciente@example.com', data: { medicine: 'Losartana' } })
     expect(out?.data).toBeUndefined()
     assertClean(out)
   })
@@ -57,7 +57,7 @@ describe('scrubEvent', () => {
     message: `Falha em ${POSTGREST_URL}`,
     exception: {
       values: [
-        { type: 'ZodError', value: 'name: "Losartana" inválido; contato eu@dosiq.app; filtro id=eq.123', stacktrace: { frames: [{ function: 'save' }] } },
+        { type: 'ZodError', value: 'name: "Losartana" inválido; contato paciente@example.com; filtro id=eq.123', stacktrace: { frames: [{ function: 'save' }] } },
       ],
     },
     request: {
@@ -69,7 +69,7 @@ describe('scrubEvent', () => {
       headers: { Authorization: 'Bearer t', apikey: 'k' },
     },
     extra: { payload: { name: 'Losartana' } },
-    user: { id: 'u-1', email: 'eu@dosiq.app', ip_address: '1.2.3.4', username: 'eu' },
+    user: { id: 'u-1', email: 'paciente@example.com', ip_address: '1.2.3.4', username: 'eu' },
     breadcrumbs: [
       { category: 'console', message: 'Losartana' },
       { type: 'http', category: 'xhr', data: { url: POSTGREST_URL, method: 'GET' } },
