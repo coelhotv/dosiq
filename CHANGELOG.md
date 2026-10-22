@@ -7,6 +7,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Pedido de peso depois da dose sobe junto com o teclado (spec 069)
+
+- **Mobile** (`Fixed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314). Ao tocar no
+  campo de peso que aparece depois de registrar a dose, o teclado cobria o campo e os botões. Agora a
+  janela sobe junto com o teclado, tanto ao registrar uma dose quanto várias de uma vez.
+
 ### Tela inicial do app destaca canetas injetáveis, código de barras e alarme no silencioso (spec 048 B)
 
 - **Mobile** (`Changed`, entra no pacote de loja `0.34.0`; canal: **build de loja**, R-314 — atualização da
