@@ -34,7 +34,7 @@ updated_at: "2026-10-22"
 
 ---
 
-## v0.34.0 — em revisão (liberação manual) — Cadastro pela câmera, alerta crítico no silencioso, canetas e relatório em PDF
+## v0.34.0 — publicada em 2026-10-22 — Cadastro pela câmera, alerta crítico no silencioso, canetas e relatório em PDF
 
 > Cobre tudo desde a `0.30.1` publicada: leitura do código de barras da caixa + busca ANVISA com
 > unidade automática (066), Alertas Críticos no iOS (054) e Live Activity sincronizada na soneca
@@ -44,7 +44,7 @@ updated_at: "2026-10-22"
 > histórico, e a política de privacidade v0.4 sob a PJ (096).
 >
 > **Build:** iOS e Android do mesmo commit `8ac2a321` (`feature/096-b-release`), registrados no
-> ledger em 2026-10-22. Enviados à revisão com **liberação manual** nas duas lojas: pela INV-8 da
+> ledger em 2026-10-22. Aprovados com **liberação manual** e liberados no mesmo dia, depois da migração (14:33Z). Pela INV-8 da
 > spec 096, nenhum app com a política 0.4 pode ficar disponível antes da migração de
 > `consent_policy` — liberar só no Dia D, depois da migração.
 >
