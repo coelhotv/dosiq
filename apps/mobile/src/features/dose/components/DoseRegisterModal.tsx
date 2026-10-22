@@ -34,6 +34,7 @@ import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { buildSiteEventProps, EMPTY_SITE_META } from '../utils/siteEventProps'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
+import { useKeyboardVisible } from '@shared/hooks/useKeyboardVisible'
 
 export default function DoseRegisterModal({
   visible,
@@ -60,6 +61,7 @@ export default function DoseRegisterModal({
   const [fade] = useState(() => new Animated.Value(1))
 
   const { isOnline } = useOnlineStatus()
+  const keyboardVisible = useKeyboardVisible()
 
   // US2: último sítio GLOBAL p/ exibir + alerta de repetição. Best-effort (null em erro).
   // Sem reset síncrono: o picker só renderiza p/ injetável e o fetch sobrescreve.
@@ -185,7 +187,9 @@ export default function DoseRegisterModal({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // Android só com o teclado aberto (C-C7 da 066, AP-288): sob edgeToEdgeEnabled o 'height'
+        // fixo não devolve a altura ao fechar o teclado e o sheet fica suspenso sobre a tab bar.
+        behavior={Platform.OS === 'ios' ? 'padding' : keyboardVisible ? 'height' : undefined}
       >
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <View style={styles.sheet}>

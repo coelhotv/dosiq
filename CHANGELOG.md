@@ -7,6 +7,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Pedido de peso depois da dose sobe junto com o teclado (spec 069)
+
+- **Mobile** (`Fixed`, sem bump próprio — embarca no build de loja da v0.34 do release train). Ao tocar no
+  campo de peso que aparece depois de registrar a dose, o teclado cobria o campo e os botões. Agora a
+  janela sobe junto com o teclado, tanto ao registrar uma dose quanto várias de uma vez.
+
 ### Rodapé da página inicial e dos e-mails identifica a empresa que opera o dosiq (spec 096 B1)
 
 - **Web/PWA** (`Changed`, `patch` 4.30.0 → 4.30.1 — rodapé, sem funcionalidade nova). O rodapé da página
