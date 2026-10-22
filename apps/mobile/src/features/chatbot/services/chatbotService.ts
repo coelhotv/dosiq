@@ -6,7 +6,7 @@
 // só envia `patientContext` (dados) + a mensagem. O endpoint exige JWT (401 sem token).
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { nativeApiBaseUrl } from '../../../platform/config/nativePublicAppConfig'
+import { nativeApiBaseUrl, nativeApiExtraHeaders } from '../../../platform/config/nativePublicAppConfig'
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import { CHATBOT_MAX_HISTORY } from '../config/chatbotConfig'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
@@ -41,7 +41,7 @@ export async function buildMobilePatientContext() {
  * @param {string} params.message
  * @param {Array<{role,content}>} [params.history]
  * @param {string} params.patientContext - contexto já montado (cache de sessão)
- * @returns {Promise<{ response: string, error: boolean }>}
+ * @returns {Promise<{ response: string, error: boolean, transferRequired?: boolean }>}
  */
 export async function sendChatMessage({ message, history = [], patientContext }) {
   const { data } = await supabase.auth.getSession()
@@ -58,6 +58,7 @@ export async function sendChatMessage({ message, history = [], patientContext })
     const res = await fetch(CHATBOT_ENDPOINT, {
       method: 'POST',
       headers: {
+        ...nativeApiExtraHeaders,
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
@@ -71,6 +72,11 @@ export async function sendChatMessage({ message, history = [], patientContext })
     if (!res.ok) {
       errorKind = res.status >= 500 ? 'http_5xx' : 'http_4xx'
       const err = await res.json().catch(() => ({}))
+      // 096: sem a autorização B o servidor recusa (403) antes de chamar a Groq — a tela troca o chat
+      // pelo aviso "O assistente está desligado" em vez de mostrar erro técnico.
+      if (res.status === 403 && err?.error === 'transfer_consent_required') {
+        return { response: '', error: true, transferRequired: true }
+      }
       throw new Error(err.message || `HTTP ${res.status}`)
     }
 

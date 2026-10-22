@@ -14,6 +14,7 @@ import {
   Platform,
   TouchableOpacity,
   Animated,
+  KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
@@ -27,6 +28,7 @@ import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable } from '@dosiq/core'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { useToast } from '@shared/components/feedback/Toast'
+import { useKeyboardVisible } from '@shared/hooks/useKeyboardVisible'
 import { resolvePostDoseStep } from '../services/measurePrompt'
 import DoseWeightPrompt from './DoseWeightPrompt'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
@@ -390,6 +392,7 @@ export default function BulkDoseRegisterModal({
   // 069 A2: passo 2 (pedido de peso) — { step, receipt, successCount }; 1× por lote
   const [weightStep, setWeightStep] = useState(null)
   const promptRef = useRef(null)
+  const keyboardVisible = useKeyboardVisible()
   const [fade] = useState(() => new Animated.Value(1))
 
   const bypassLoad = !!(initialProtocols || instancedItems)
@@ -525,7 +528,12 @@ export default function BulkDoseRegisterModal({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      <View style={styles.overlay}>
+      {/* Sem KAV o campo de peso do passo 2 (spec 069) ficava sob o teclado. Android só com o
+          teclado aberto (C-C7 da 066, AP-288): 'height' fixo não devolve a altura sob edge-to-edge. */}
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : keyboardVisible ? 'height' : undefined}
+      >
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
@@ -592,7 +600,7 @@ export default function BulkDoseRegisterModal({
           onCancel={handleIOSCancel}
           onConfirm={handleIOSConfirm}
         />
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

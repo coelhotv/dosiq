@@ -36,6 +36,7 @@ declare module 'lucide-react-native' {
   export const LogIn: LucideIcon
   export const Bell: LucideIcon
   export const Package: LucideIcon
+  export const ScanBarcode: LucideIcon
   export const ArrowLeft: LucideIcon
   export const Eye: LucideIcon
   export const EyeOff: LucideIcon

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, startTransition } from 'react'
 import { getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
-import { supabase, getUserId } from '@shared/utils/supabase'
+import { supabase, getUserId, onAuthStateChange } from '@shared/utils/supabase'
 import { getNow } from '@utils/dateUtils'
 import { OnboardingContext } from './OnboardingContext'
 
@@ -20,6 +20,14 @@ export function OnboardingProvider({ children }) {
   const checkOnboardingStatus = async () => {
     try {
       setIsLoading(true)
+      // Sem sessão não há o que checar. O provider monta antes do login (envolve a landing); sem este
+      // corte, getUserId() lançava, o catch abria o wizard e ele aparecia logo depois de TODO login,
+      // até por cima do reconsentimento (smoke 096 B2 2.1).
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session) {
+        setIsOpen(false)
+        return
+      }
       const userId = await getUserId()
 
       const { data, error } = await supabase
@@ -51,6 +59,12 @@ export function OnboardingProvider({ children }) {
     startTransition(() => {
       checkOnboardingStatus()
     })
+    // Reavalia no login/logout: o 1º check roda com a landing, ainda sem sessão.
+    const { data } = onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') startTransition(() => { checkOnboardingStatus() })
+      if (event === 'SIGNED_OUT') setIsOpen(false)
+    })
+    return () => data?.subscription?.unsubscribe()
   }, [])
 
   const completeOnboarding = useCallback(async () => {

@@ -12,12 +12,21 @@ tags:
   - supabase
   - postgresql
 created_at: "2026-02-01"
-updated_at: "2026-10-03"
+updated_at: "2026-10-21"
 ---
 
 # 🗄️ Esquema do Banco de Dados
 
 O banco de dados do **Dosiq** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
+
+## Ambientes
+
+| Ambiente | Projeto | Uso |
+|---|---|---|
+| Produção | `dosiq` · `kwqjtdsqkkbebfiaxubb` (sa-east-1) | app real; em dev/teste o agente só lê |
+| QA | `dosiq-qa` · `ikcvwxyohmntncanclze` (us-west-2) | teste de migração, seed, smoke web — schema espelhado, dados sintéticos |
+
+Detalhe, rebuild e paridade: [`QA_ENVIRONMENT.md`](./QA_ENVIRONMENT.md) · regra: CON-044.
 
 ## Visão Geral
 

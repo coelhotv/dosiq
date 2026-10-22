@@ -56,6 +56,7 @@ export const ROUTES = {
   ONBOARDING_MEDICINE_FORM: 'OnboardingMedicineForm',     // 066 E: "Confira" (preenchido) ou fallback em branco
   ONBOARDING_TREATMENT: 'OnboardingTreatment',
   ONBOARDING_STOCK: 'OnboardingStock',
+  ONBOARDING_CONSENT: 'OnboardingConsent', // 096 B3: S1 — consentimento A/B e gravação do setup
   ONBOARDING_STOCK_INITIAL_BALANCE: 'OnboardingStockInitialBalance', // F4b/T017
 
   // Sub-rotas de Medicamentos (Fase 1)

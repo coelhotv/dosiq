@@ -37,6 +37,12 @@ import PrivacyDataScreen from '../features/profile/screens/PrivacyDataScreen'
 import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen'
 import { ConsentGateProvider, useConsentGate } from '../platform/consent/useConsentGate'
 import { isOnboardingNeeded } from '../features/profile/services/profileService'
+import { resolveNavigationState } from './resolveNavigationState'
+import { navigateCrossTab } from './navigateCrossTab'
+
+// 096: com o reconsentimento recusado ("Não concordo"), o sheet some só nestas telas — é onde mora a
+// retirada da autorização (espelho do web, AppViewRouter). Fora delas, volta.
+const REGULARIZATION_DECLINE_ROUTES: readonly string[] = [ROUTES.PRIVACY_DATA, ROUTES.DELETE_ACCOUNT]
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
@@ -105,6 +111,9 @@ function useAuthSession() {
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
+  // De quem é o `onboardingNeeded` acima: troca de sessão deixa o valor anterior visível por um
+  // render, e o gate de consentimento (filho) roda o efeito ANTES deste hook zerar (C-B3-12).
+  const [onboardingCheckedFor, setOnboardingCheckedFor] = useState<string | null>(null)
   // Spec 091 (FR-009): id para o qual a guarda de dono já rodou. A árvore autenticada só monta
   // quando bate com a sessão — nenhuma tela lê cache antes de o aparelho ser limpo de outra pessoa.
   const [ownerCheckedFor, setOwnerCheckedFor] = useState<string | null>(null)
@@ -196,11 +205,19 @@ function useAuthSession() {
     if (session?.user?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingNeeded(null)
+      setOnboardingCheckedFor(null)
+      const uid = session.user.id
       isOnboardingNeeded().then(({ data }) => {
-        if (active) setOnboardingNeeded(Boolean(data))
+        if (!active) return
+        setOnboardingNeeded(Boolean(data))
+        setOnboardingCheckedFor(uid)
       })
     } else {
       setOnboardingNeeded(false)
+      // Sair e entrar de novo com a MESMA conta: sem isto o `onboardingCheckedFor` antigo casava com
+      // o uid no 1º render da nova sessão e o gate contava sessão de prompt no wizard (smoke B3,
+      // `smoke4@`: C-B3-12 reaberto).
+      setOnboardingCheckedFor(null)
     }
     return () => { active = false }
   }, [session?.user?.id])
@@ -228,6 +245,8 @@ function useAuthSession() {
     isPasswordRecovery,
     setIsPasswordRecovery,
     onboardingNeeded,
+    onboardingDone:
+      Boolean(session?.user?.id) && onboardingCheckedFor === session?.user?.id && onboardingNeeded === false,
     setOnboardingNeeded,
   }
 }
@@ -287,6 +306,7 @@ export default function Navigation() {
       session={auth.session}
       canAutoWrite={auth.canAutoWrite}
       verificationPending={auth.verificationPending}
+      onboardingDone={auth.onboardingDone}
     >
       <NavigationTree {...auth} />
       {/* Kill switch de versão mínima (spec 051-A FR-018) — IRMÃO de NavigationTree, não filho:
@@ -299,35 +319,6 @@ export default function Navigation() {
   )
 }
 
-function _resolveNavigationState(
-  session: any,
-  isPasswordRecovery: boolean,
-  onboardingNeeded: boolean | null,
-  consent: any,
-  regularizationDismissed: boolean,
-  ownerReady: boolean
-) {
-  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
-  const isLoading =
-    session === undefined ||
-    !ownerReady ||
-    (session && !isPasswordRecovery && onboardingNeeded === null) ||
-    consentPending
-  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
-  const showDismissiblePrompt =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.mode === 'prompt_dismissible' &&
-    !consent.dismissed
-  const showRegularization =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.needsRegularization &&
-    !regularizationDismissed
-
-  return { isLoading, consentLocked, showDismissiblePrompt, showRegularization }
-}
-
 function NavigationTree({
   session,
   ownerReady,
@@ -337,23 +328,25 @@ function NavigationTree({
   setOnboardingNeeded,
 }: ReturnType<typeof useAuthSession>) {
   const consent = useConsentGate()
-  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
+  const [regularizationDeclined, setRegularizationDeclined] = useState(false)
+  const [currentRoute, setCurrentRoute] = useState<string | null>(null)
 
   const handleNavigationStateChange = () => {
     const routeName = (navigationRef.current as any)?.getCurrentRoute?.()?.name
     if (routeName) {
+      setCurrentRoute(routeName)
       logScreenView(routeName)
     }
   }
 
-  const { isLoading, consentLocked, showDismissiblePrompt, showRegularization } = _resolveNavigationState(
+  const { isLoading, consentLocked, showDismissiblePrompt, showRegularization } = resolveNavigationState({
     session,
     isPasswordRecovery,
     onboardingNeeded,
     consent,
-    regularizationDismissed,
-    ownerReady
-  )
+    regularizationHidden: regularizationDeclined && REGULARIZATION_DECLINE_ROUTES.includes(currentRoute ?? ''),
+    ownerReady,
+  })
 
   // 065 PR D / US9 (PO-12): 1x por ENTRADA na trava, não por render. `gate_mode` diz POR QUE travou
   // (revogou × cortesia esgotada) — dado real do gate, nunca constante (boundary da PO-12). Chave
@@ -469,12 +462,15 @@ function NavigationTree({
       </View>
     )}
 
-    {/* Nudge de política nova (stale): Modal próprio, flutua sobre o app. Aceitar carimba a versão
-        vigente (o Sheet chama grant internamente) → refresh reavalia o gate e some o stale. */}
+    {/* Reconsentimento v0.4 (stale): BLOQUEANTE (DQ-1). Confirmar carimba a versão vigente
+        (grantV04) → refresh some o stale. "Não concordo" leva à retirada em Privacidade e dados. */}
     <ConsentRegularizationSheet
       visible={showRegularization}
-      onDismiss={() => setRegularizationDismissed(true)}
-      onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+      onDecline={() => {
+        setRegularizationDeclined(true)
+        navigateCrossTab(ROUTES.PROFILE, ROUTES.PRIVACY_DATA)
+      }}
+      onConfirmed={() => { setRegularizationDeclined(false) }}
     />
     </View>
     </StockTrackingProvider>

@@ -1,64 +1,74 @@
-// ConsentRegularizationSheet.tsx — nudge de política nova (spec 046, T011).
-// Espelha TzIntentSheet (R-233: statusBarTranslucent + spacer Android).
+// ConsentRegularizationSheet.tsx — reconsentimento da v0.4 (spec 096 `dq1a`; era o nudge da 046 T011).
+// Espelha TzIntentSheet (R-233: statusBarTranslucent + spacer Android) e o ConsentRegularizationModal web.
 //
-// Alvo: titular que CONSENTIU numa versão ANTIGA da política (`stale`). NÃO trava o app — é um
-// convite. "Agora não" dispensa sem escrever nada; aceitar chama consent_grant (nunca insert),
-// que carimba a versão vigente no servidor.
+// Alvo: titular que consentiu numa versão ANTIGA (`stale`). BLOQUEANTE (DQ-1, PO 20/10): sem "Agora
+// não", sem fechar pelo fundo nem pelo voltar do Android — a v0.4 troca o responsável pelos dados e o
+// titular decide: Confirmar (A obrigatória + B opcional, num gesto, + Termos no rodapé) ou Não concordo
+// (→ retirada existente, em Privacidade e dados). Sem o antigo `hasRead`: o detalhe está a 1 toque em
+// "O que mudou ›" e em "Detalhes ›" de cada caixa (guarda 8). Grava via `grantV04` (nunca insert); o
+// servidor carimba a versão vigente.
 
-import { useState } from 'react'
-import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
+import { useEffect, useState } from 'react'
+import { View, Text, Modal, Pressable, ScrollView, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import DocumentViewer from '@shared/components/ui/DocumentViewer'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
-const { ShieldCheck, FileText } = LucideIcons as any
+const { ShieldCheck } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
-import { createConsentService } from '@dosiq/core'
-import { EXTERNAL_URLS } from '../../../shared/constants'
+import { createConsentService, REGULARIZATION_V04_COPY as COPY } from '@dosiq/core'
+import { useConsentGate } from '@platform/consent/useConsentGate'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import ConsentBox, { type ConsentBoxVariant } from './ConsentBox'
+import ConsentDetailsSheet from './ConsentDetailsSheet'
 
 const consentService = createConsentService({ client: supabase as never })
 
 interface ConsentRegularizationSheetProps {
   visible: boolean
-  onDismiss: () => void
   onConfirmed: () => void
+  /** "Não concordo" — leva à retirada existente (Perfil › Privacidade e dados). */
+  onDecline: () => void
 }
 
-export default function ConsentRegularizationSheet({
-  visible,
-  onDismiss,
-  onConfirmed,
-}: ConsentRegularizationSheetProps) {
+export default function ConsentRegularizationSheet({ visible, onConfirmed, onDecline }: ConsentRegularizationSheetProps) {
+  const { grantV04 } = useConsentGate()
+  const [health, setHealth] = useState(false)
+  const [transfer, setTransfer] = useState(false)
+  const [healthError, setHealthError] = useState(false)
+  const [changedOpen, setChangedOpen] = useState(false)
+  const [details, setDetails] = useState<ConsentBoxVariant | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Não se pode pedir novo aceite sem dar como ler a nova política. "Aceitar" fica travado até o
-  // titular ABRIR e FECHAR o visualizador da política (097 B-1: DocumentViewer em overlay dentro
-  // deste Modal) — assim o aceite carimbado no consent_log corresponde a alguém que teve a política
-  // diante dos olhos.
-  const [hasRead, setHasRead] = useState(false)
-  const [policyOpen, setPolicyOpen] = useState(false)
+  // B já vigente na v0.4 ⇒ a caixa B sai (pedir de novo, desmarcada, sugeria desligado — smoke B2 2.6).
+  const [transferAlreadyOn, setTransferAlreadyOn] = useState(false)
+
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
+    consentService
+      .getStatus('international_transfer')
+      .then((s) => { if (!cancelled) setTransferAlreadyOn(s.status === 'granted' && !s.stale) })
+      .catch(() => { if (!cancelled) setTransferAlreadyOn(false) })
+    return () => { cancelled = true }
+  }, [visible])
 
   if (!visible) return null
 
-  const handleOpenPolicy = () => {
-    setError(null)
-    setPolicyOpen(true)
+  const handleHealthChange = (next: boolean) => {
+    setHealth(next)
+    if (next) setHealthError(false)
   }
 
-  // Só destrava se a política carregou de fato: fechar a tela de erro (offline, HTTP) não conta como
-  // leitura (RC6 #858) — mesma garantia do caminho antigo, que só destravava após abrir com sucesso.
-  const handleClosePolicy = ({ loaded }: { loaded: boolean }) => {
-    setPolicyOpen(false)
-    if (loaded) setHasRead(true)
-    else setError('Não foi possível abrir a política agora. Tente de novo.')
-  }
-
-  const handleAccept = async () => {
+  const handleConfirm = async () => {
+    // CTA nunca fica cinza: sem A, o toque leva o foco à caixa com a mensagem (D-8).
+    if (!health) {
+      setHealthError(true)
+      return
+    }
     setSaving(true)
     setError(null)
     try {
-      const res = await consentService.grant('health_data', 'mobile')
+      const res = await grantV04({ transfer: transfer && !transferAlreadyOn })
       if (!res.ok) {
         setError('Não foi possível registrar agora. Tente de novo.')
         return
@@ -72,178 +82,119 @@ export default function ConsentRegularizationSheet({
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onDismiss} statusBarTranslucent>
-      {Platform.OS === 'android' ? (
-        <View style={{ height: StatusBar.currentHeight ?? 0 }} />
-      ) : null}
-      <Pressable style={styles.backdrop} onPress={saving ? undefined : onDismiss} />
+    // Bloqueante: `onRequestClose` sem efeito (voltar do Android não fecha sem decisão).
+    <Modal visible transparent animationType="slide" onRequestClose={() => {}} statusBarTranslucent>
+      {Platform.OS === 'android' ? <View style={{ height: StatusBar.currentHeight ?? 0 }} /> : null}
+      <View style={styles.backdrop} />
       <SafeAreaView edges={['bottom']} style={styles.sheet}>
-        <View style={styles.handle} />
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.iconWrap}>
+            <ShieldCheck size={22} color={colors.brand.primary} strokeWidth={2} />
+          </View>
+          <Text style={styles.title} accessibilityRole="header">{COPY.title}</Text>
+          <Text style={styles.description}>{COPY.body}</Text>
 
-        <View style={styles.iconWrap}>
-          <ShieldCheck size={22} color={colors.primary[600]} strokeWidth={2} />
-        </View>
-        <Text style={styles.title}>A política de privacidade mudou</Text>
-        <Text style={styles.description}>
-          Atualizamos a política de privacidade. Leia a nova versão e, se concordar, confirme seu
-          consentimento de dados de saúde para continuar em dia.
-        </Text>
+          <Pressable
+            onPress={() => setChangedOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: changedOpen }}
+            hitSlop={8}
+          >
+            <Text style={styles.link}>{COPY.changedLink}</Text>
+          </Pressable>
+          {changedOpen ? (
+            <View style={styles.changed}>
+              {COPY.changed.map((item) => (
+                <Text key={item} style={styles.changedItem}>• {item}</Text>
+              ))}
+            </View>
+          ) : null}
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <Pressable
-          onPress={handleOpenPolicy}
-          disabled={saving}
-          style={({ pressed }) => [styles.btnRead, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Ler a nova política de privacidade"
-        >
-          <FileText size={16} color={colors.primary[600]} strokeWidth={2} />
-          <Text style={styles.btnReadText}>
-            {hasRead ? 'Política lida ✓' : 'Ler a nova política'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleAccept}
-          disabled={saving || !hasRead}
-          style={({ pressed }) => [
-            styles.optionPrimary,
-            (pressed || saving) && styles.pressed,
-            !hasRead && styles.optionDisabled,
-          ]}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: saving || !hasRead }}
-          accessibilityLabel="Aceitar a nova versão"
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={colors.text.inverse} />
+          <ConsentBox
+            variant="health"
+            checked={health}
+            onChange={handleHealthChange}
+            onDetails={() => setDetails('health')}
+            disabled={saving}
+            errorMessage={healthError ? COPY.errorNoHealth : null}
+          />
+          {transferAlreadyOn ? (
+            <Text style={styles.transferOn}>{COPY.transferAlreadyOn}</Text>
           ) : (
-            <Text style={styles.optionPrimaryLabel}>Aceitar a nova versão</Text>
+            <ConsentBox
+              variant="transfer"
+              checked={transfer}
+              onChange={setTransfer}
+              onDetails={() => setDetails('transfer')}
+              disabled={saving}
+            />
           )}
-        </Pressable>
 
-        <Pressable
-          onPress={onDismiss}
-          disabled={saving}
-          style={({ pressed }) => [styles.btnDismiss, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Agora não"
-        >
-          <Text style={styles.btnDismissText}>Agora não</Text>
-        </Pressable>
+          <Text style={styles.terms}>{COPY.termsFooter}</Text>
+
+          {error ? <Text style={styles.errorText} accessibilityRole="alert">{error}</Text> : null}
+
+          <Pressable
+            onPress={handleConfirm}
+            disabled={saving}
+            style={({ pressed }) => [styles.primary, (pressed || saving) && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={COPY.confirm}
+          >
+            {saving ? <ActivityIndicator size="small" color={colors.text.inverse} /> : <Text style={styles.primaryLabel}>{COPY.confirm}</Text>}
+          </Pressable>
+
+          {/* Recusa visível, mesmo peso do secundário (guarda 5). */}
+          <Pressable
+            onPress={onDecline}
+            disabled={saving}
+            style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={COPY.decline}
+          >
+            <Text style={styles.secondaryText}>{COPY.decline}</Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
 
       {/* Overlay DENTRO deste Modal (Modal sobre Modal no iOS engole os gestos). */}
-      <DocumentViewer
-        source={policyOpen ? { kind: 'web', url: EXTERNAL_URLS.PRIVACY_POLICY } : null}
-        title="Política de privacidade"
-        onClose={handleClosePolicy}
-        presentation="overlay"
-      />
+      <ConsentDetailsSheet variant={details} onClose={() => setDetails(null)} presentation="overlay" />
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bg.overlay,
-  },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.bg.overlay },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+    maxHeight: '92%',
     backgroundColor: colors.bg.card,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[2],
-    paddingBottom: spacing[6],
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.neutral[300],
-    alignSelf: 'center',
-    marginBottom: spacing[4],
-  },
+  content: { gap: spacing[3], paddingHorizontal: spacing[5], paddingTop: spacing[5], paddingBottom: spacing[6] },
   iconWrap: {
     width: 40,
     height: 40,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[3],
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text.primary,
-    fontFamily: typography.fontFamily.bold,
-    marginBottom: spacing[2],
-  },
-  description: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
-    marginBottom: spacing[4],
-  },
-  errorText: {
-    fontSize: 12,
-    color: colors.status.error,
-    marginBottom: spacing[3],
-  },
-  btnRead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    minHeight: 48,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.primary[200],
-    backgroundColor: colors.primary[50],
-    marginBottom: spacing[3],
-  },
-  btnReadText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.primary[600],
-  },
-  optionPrimary: {
-    minHeight: 52,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[600],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[3],
-  },
-  optionDisabled: {
-    opacity: 0.45,
-  },
-  optionPrimaryLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text.inverse,
-  },
-  btnDismiss: {
-    height: 48,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
+    backgroundColor: colors.brand.mint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnDismissText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: typography.fontFamily.bold },
+  description: { fontSize: 15, color: colors.text.secondary, lineHeight: 22 },
+  link: { fontSize: 15, fontWeight: '600', color: colors.brand.primary },
+  changed: { gap: spacing[1], padding: spacing[3], borderRadius: borderRadius.md, backgroundColor: colors.neutral[100] },
+  changedItem: { fontSize: 14, lineHeight: 20, color: colors.text.primary },
+  transferOn: { fontSize: 14, lineHeight: 20, color: colors.text.secondary },
+  terms: { fontSize: 13, lineHeight: 19, color: colors.text.secondary },
+  errorText: { fontSize: 13, fontWeight: '600', color: colors.status.error },
+  primary: { minHeight: 52, borderRadius: borderRadius.lg, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' },
+  primaryLabel: { fontSize: 16, fontWeight: '700', color: colors.text.inverse },
+  secondary: { minHeight: 48, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.border.default, alignItems: 'center', justifyContent: 'center' },
+  secondaryText: { fontSize: 15, fontWeight: '600', color: colors.text.primary },
+  pressed: { opacity: 0.85 },
 })

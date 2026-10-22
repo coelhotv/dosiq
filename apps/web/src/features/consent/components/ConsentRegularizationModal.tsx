@@ -1,47 +1,72 @@
-// ConsentRegularizationModal.tsx — nudge de política nova (spec 046, T011, espelho web).
+// ConsentRegularizationModal.tsx — reconsentimento da v0.4 (spec 096 `rec-web`; era o nudge da 046).
 //
-// Alvo: titular que CONSENTIU numa versão ANTIGA da política (`stale`). NÃO trava o app — é um
-// convite. "Agora não" dispensa sem escrever nada; aceitar chama consent_grant (via
-// useConsentGate, nunca insert direto), que carimba a versão vigente no servidor.
+// Alvo: titular que consentiu numa versão ANTIGA (`stale`). BLOQUEANTE (DQ-1, PO 20/10): sem "Agora
+// não" e sem fechar fora — a v0.4 troca o responsável pelos dados, e o titular decide: Confirmar
+// (A obrigatória + B opcional, num gesto) ou Não concordo (→ revogação existente, em Privacidade).
+// A caixa A não depende de "abrir a política antes" (o antigo `hasRead`): o detalhe está a 1 toque
+// em "O que mudou ›" e em "Detalhes ›" de cada caixa (guarda 8).
 
-import { useState } from 'react'
-import { ShieldCheck, FileText } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ShieldCheck } from 'lucide-react'
+import { createConsentService, REGULARIZATION_V04_COPY as COPY } from '@dosiq/core'
+import HealthConsentBlock from './HealthConsentBlock'
+import TransferConsentBlock from './TransferConsentBlock'
 import { useConsentGate } from '@shared/hooks/useConsentGate'
+import { supabase } from '@shared/utils/supabase'
 import './ConsentRegularizationModal.css'
 
-const PRIVACY_POLICY_URL = '/politica-de-privacidade.html'
+const consentService = createConsentService({ client: supabase })
 
 interface ConsentRegularizationModalProps {
   visible: boolean
-  onDismiss: () => void
   onConfirmed: () => void
+  /** "Não concordo" — leva à revogação existente (Perfil › Privacidade e dados). */
+  onDecline: () => void
 }
 
 export default function ConsentRegularizationModal({
   visible,
-  onDismiss,
   onConfirmed,
+  onDecline,
 }: ConsentRegularizationModalProps) {
-  const { grant } = useConsentGate()
+  const { grantV04 } = useConsentGate()
+  const [health, setHealth] = useState(false)
+  const [transfer, setTransfer] = useState(false)
+  const [healthError, setHealthError] = useState(false)
+  const [changedOpen, setChangedOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Não se pode pedir novo aceite sem dar como ler a nova política. "Aceitar" fica travado até o
-  // titular abrir a política. Em aba nova o navegador NÃO avisa o fechamento — o proxy honesto é
-  // "abriu para ler" (clicou no link), não "leu e fechou" (indetectável fora de webview embutida).
-  const [hasRead, setHasRead] = useState(false)
+  // B já vigente na v0.4 ⇒ a caixa B sai (pedir de novo, desmarcada, sugeria que estava desligado —
+  // smoke B2 2.6). Leitura que falha mantém a caixa: marcar de novo só regrava o mesmo aceite.
+  const [transferAlreadyOn, setTransferAlreadyOn] = useState(false)
+
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
+    consentService
+      .getStatus('international_transfer')
+      .then((s) => { if (!cancelled) setTransferAlreadyOn(s.status === 'granted' && !s.stale) })
+      .catch(() => { if (!cancelled) setTransferAlreadyOn(false) })
+    return () => { cancelled = true }
+  }, [visible])
 
   if (!visible) return null
 
-  const handleOpenPolicy = () => {
-    window.open(PRIVACY_POLICY_URL, '_blank', 'noopener,noreferrer')
-    setHasRead(true)
+  const handleHealthChange = (next: boolean) => {
+    setHealth(next)
+    if (next) setHealthError(false)
   }
 
-  const handleAccept = async () => {
+  const handleConfirm = async () => {
+    // CTA nunca fica cinza: sem A, o toque leva o foco à caixa com a mensagem (D-8).
+    if (!health) {
+      setHealthError(true)
+      return
+    }
     setSaving(true)
     setError(null)
     try {
-      const res = await grant()
+      const res = await grantV04({ transfer })
       if (!res.ok) {
         setError('Não foi possível registrar agora. Tente de novo.')
         return
@@ -55,45 +80,62 @@ export default function ConsentRegularizationModal({
   }
 
   return (
-    <div className="consent-regularization-modal" role="dialog" aria-modal="true">
+    <div className="consent-regularization-modal" role="dialog" aria-modal="true" aria-labelledby="consent-regularization-title">
       <div className="consent-regularization-modal__card">
         <div className="consent-regularization-modal__icon">
-          <ShieldCheck size={22} />
+          <ShieldCheck size={22} aria-hidden="true" />
         </div>
-        <h2 className="consent-regularization-modal__title">A política de privacidade mudou</h2>
-        <p className="consent-regularization-modal__description">
-          Atualizamos a política de privacidade. Leia a nova versão e, se concordar, confirme seu
-          consentimento de dados de saúde para continuar em dia.
-        </p>
-
-        {error && <p className="consent-regularization-modal__error">{error}</p>}
+        <h2 id="consent-regularization-title" className="consent-regularization-modal__title">{COPY.title}</h2>
+        <p className="consent-regularization-modal__description">{COPY.body}</p>
 
         <button
           type="button"
-          className="consent-regularization-modal__read"
-          onClick={handleOpenPolicy}
-          disabled={saving}
+          className="consent-regularization-modal__changed-toggle"
+          aria-expanded={changedOpen}
+          onClick={() => setChangedOpen((open) => !open)}
         >
-          <FileText size={16} aria-hidden="true" />
-          {hasRead ? 'Política lida ✓' : 'Ler a nova política'}
+          {COPY.changedLink}
         </button>
+        {changedOpen && (
+          <ul className="consent-regularization-modal__changed">
+            {COPY.changed.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        )}
+
+        <div className="consent-regularization-modal__boxes">
+          <HealthConsentBlock
+            checked={health}
+            onChange={handleHealthChange}
+            disabled={saving}
+            errorMessage={healthError ? COPY.errorNoHealth : null}
+          />
+          {transferAlreadyOn ? (
+            <p className="consent-regularization-modal__transfer-on">{COPY.transferAlreadyOn}</p>
+          ) : (
+            <TransferConsentBlock checked={transfer} onChange={setTransfer} disabled={saving} />
+          )}
+        </div>
+
+        <p className="consent-regularization-modal__terms">{COPY.termsFooter}</p>
+
+        {error && <p className="consent-regularization-modal__error" role="alert">{error}</p>}
 
         <button
           type="button"
           className="consent-regularization-modal__accept"
-          onClick={handleAccept}
-          disabled={saving || !hasRead}
+          onClick={handleConfirm}
+          disabled={saving}
         >
-          {saving ? 'Registrando...' : 'Aceitar a nova versão'}
+          {saving ? 'Registrando...' : COPY.confirm}
         </button>
 
         <button
           type="button"
           className="consent-regularization-modal__dismiss"
-          onClick={onDismiss}
+          onClick={onDecline}
           disabled={saving}
         >
-          Agora não
+          {COPY.decline}
         </button>
       </div>
     </div>

@@ -27,6 +27,8 @@ export interface NotificationSettings {
   channel_telegram_enabled?: boolean
   /** Spec 046: instante da revogação do consentimento de saúde. NULL = não revogou. */
   consent_revoked_at?: string | null
+  /** Spec 096 / ADR-112: aceite vigente da caixa B. NULL = sem B ⇒ payload redigido (transferRedaction). */
+  international_transfer_granted_at?: string | null
   /** Spec 046: a leitura desta linha falhou e os defaults entraram — "não sabemos" (ver consentSuppression). */
   _read_failed?: boolean
 }
@@ -100,10 +102,11 @@ export const notificationPreferenceRepository = {
   // Obtém configurações completas de notificação para o gate/dispatcher (Wave N2)
   // 046 T014: `consent_revoked_at` entra NESTE fetch — o estado do consentimento é por usuário e o
   // dispatcher já lê a linha dele. Nenhuma query nova, nenhuma leitura global (ver consentSuppression).
+  // 096: `international_transfer_granted_at` idem — o modo sem B sai do mesmo fetch.
   async getSettingsByUserId(userId: string): Promise<NotificationSettings> {
     const { data, error } = await supabase
       .from('user_settings')
-      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled, consent_revoked_at')
+      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled, consent_revoked_at, international_transfer_granted_at')
       .eq('user_id', userId)
       .single()
 
@@ -124,6 +127,8 @@ export const notificationPreferenceRepository = {
         digest_time: '08:00',
         timezone: 'America/Sao_Paulo',
         consent_revoked_at: null,
+        // Sem B por default; `_read_failed` já força a redação (transferRedaction).
+        international_transfer_granted_at: null,
         _read_failed: true
       }
     }

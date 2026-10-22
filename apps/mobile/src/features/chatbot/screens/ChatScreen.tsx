@@ -4,6 +4,11 @@
 // fixo no topo, chips de sugestão acima do input, loading branded "Iniciando IA do dosiq…"
 // (fetch-on-open, FR-012), offline desabilita envio + banner. Teclado: KeyboardAvoidingView
 // (AP-174/R-233). Segurança server-side (AP-237) — cliente só envia contexto+mensagem.
+//
+// Spec 096 B3 (T068, S8b `chat`): sem a autorização B, a tela mostra "O assistente está desligado" e a
+// conversa NEM MONTA — nada de contexto do paciente, nada de POST. Ponto único: toda entrada do chat
+// (ícone do header em Hoje/Tratamentos/Estoque) chega aqui. Leitura de B falhando = sem B. 403
+// `transfer_consent_required` do servidor (B retirado em outro aparelho) troca para o aviso.
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
@@ -21,6 +26,13 @@ import ChatBubble from '@features/chatbot/components/ChatBubble'
 import { buildMobilePatientContext, sendChatMessage } from '../services/chatbotService'
 import { loadHistory, saveHistory, clearHistory } from '../services/chatHistoryStore'
 import { CHATBOT_DISCLAIMER, CHATBOT_QUICK_SUGGESTIONS, createWelcomeMessage } from '../config/chatbotConfig'
+import { createConsentService } from '@dosiq/core'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { useConsentGate } from '@platform/consent/useConsentGate'
+import ChatTransferGate from '@features/chatbot/components/ChatTransferGate'
+import EnableTransferSheet from '@features/consent/components/EnableTransferSheet'
+
+const consentService = createConsentService({ client: supabase as never })
 
 /** Bolha "digitando" com pontos pulsando (1→2→3→repete). Reusa o estilo do ChatBubble. */
 function TypingBubble() {
@@ -55,7 +67,7 @@ function ChatHeader({ onReset, onClose }) {
   )
 }
 
-export default function ChatScreen({ navigation }) {
+function ChatConversation({ navigation, onTransferRequired }) {
   // 1. States
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -131,16 +143,21 @@ export default function ChatScreen({ navigation }) {
     const history = messages.map((m) => ({ role: m.role, content: m.content }))
     setMessages((prev) => [...prev, userMsg])
     setSending(true)
-    const { response, error } = await sendChatMessage({
+    const { response, error, transferRequired } = await sendChatMessage({
       message,
       history,
       patientContext: contextRef.current ?? '',
     })
+    if (transferRequired) {
+      setSending(false)
+      onTransferRequired()
+      return
+    }
     // isError: exibe a falha na tela mas NÃO persiste no histórico (chatHistoryStore filtra) —
     // evita que "dificuldades técnicas" fique grudado nas próximas aberturas do chat.
     setMessages((prev) => [...prev, { role: 'assistant', content: response, timestamp: Date.now(), isError: error }])
     setSending(false)
-  }, [input, sending, offline, messages])
+  }, [input, sending, offline, messages, onTransferRequired])
 
   // Render
   return (
@@ -227,6 +244,52 @@ export default function ChatScreen({ navigation }) {
 }
 
 const hit = { top: 8, bottom: 8, left: 8, right: 8 }
+
+export default function ChatScreen({ navigation }) {
+  const gate = useConsentGate()
+  const [transfer, setTransfer] = useState<'checking' | 'on' | 'off'>('checking')
+  const [enabling, setEnabling] = useState(false)
+
+  // Lê B ao abrir (não confia no estado do gate: B pode ter mudado em outro aparelho).
+  useEffect(() => {
+    let alive = true
+    consentService
+      .getStatus('international_transfer')
+      .then((s) => { if (alive) setTransfer(s.status === 'granted' ? 'on' : 'off') })
+      .catch(() => { if (alive) setTransfer('off') })
+    return () => { alive = false }
+  }, [])
+
+  const handleClose = useCallback(() => navigation?.goBack(), [navigation])
+  const handleTransferRequired = useCallback(() => setTransfer('off'), [])
+  const handleAuthorize = useCallback(async () => {
+    const res = await consentService.grant('international_transfer', 'mobile')
+    if (!res.ok) return false
+    setEnabling(false)
+    setTransfer('on')
+    await gate.refresh()
+    return true
+  }, [gate])
+
+  if (transfer === 'checking') {
+    return (
+      <SafeAreaView style={[styles.safe, styles.initBox]} edges={['top', 'bottom']}>
+        <ActivityIndicator size="large" color={colors.brand.primary} />
+      </SafeAreaView>
+    )
+  }
+
+  if (transfer === 'off') {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <ChatTransferGate onEnable={() => setEnabling(true)} onClose={handleClose} />
+        {enabling ? <EnableTransferSheet onAuthorize={handleAuthorize} onCancel={() => setEnabling(false)} /> : null}
+      </SafeAreaView>
+    )
+  }
+
+  return <ChatConversation navigation={navigation} onTransferRequired={handleTransferRequired} />
+}
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg.screen },

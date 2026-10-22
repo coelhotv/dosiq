@@ -9,11 +9,12 @@ import {
   Image
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sun, UserPlus, LogIn, Bell, Package } from 'lucide-react-native';
+import { Syringe, UserPlus, LogIn, Bell, ScanBarcode } from 'lucide-react-native';
 import { colors, spacing, typography, shadows } from '@shared/styles/tokens';
 import { ROUTES } from '@navigation/routes';
 import AdherenceRing from '@features/dashboard/components/AdherenceRing';
 import { SESSION_ENDED_REASON_KEY } from '@platform/session/localDataWipe';
+import { formatDose } from '@dosiq/core';
 
 const SESSION_ENDED_MESSAGE = 'Sua sessão terminou. Entre de novo.';
 // Altura da barra antes da primeira medição (barra sem aviso, iOS com home indicator).
@@ -88,15 +89,15 @@ export default function LandingScreen({ navigation }) {
           {/* Next Dose Card */}
           <View style={[styles.card, styles.doseCard]}>
             <View style={styles.doseIconContainer}>
-              <Sun size={32} color={colors.status.warningBright} />
+              <Syringe size={32} color={colors.status.warningBright} />
             </View>
             <View style={styles.doseInfo}>
               <Text style={styles.doseLabel}>PRÓXIMA DOSE</Text>
               <View style={styles.doseTimeRow}>
                 <Text style={styles.doseTimeText}>08:00</Text>
               </View>
-              <Text style={styles.medicationName}>Atorvastatina</Text>
-              <Text style={styles.medicationDetails}>40mg • 1 Comprimido</Text>
+              <Text style={styles.medicationName}>Semaglutida 1,7 mg</Text>
+              <Text style={styles.medicationDetails}>Caneta ≈ {formatDose(0.75, 'ml')}</Text>
             </View>
           </View>
         </View>
@@ -104,13 +105,14 @@ export default function LandingScreen({ navigation }) {
         {/* 3. Headline Section */}
         <View style={styles.textSection}>
           <Text style={styles.headlineContainer}>
-            <Text style={styles.headlineText}>Nunca mais </Text>
-            <Text style={[styles.headlineText, styles.highlightText]}>esqueça</Text>
-            <Text style={styles.headlineText}> um remédio.</Text>
+            <Text style={styles.headlineText}>Nunca mais esqueça uma </Text>
+            <Text style={[styles.headlineText, styles.highlightText]}>dose</Text>
+            <Text style={styles.headlineText}>.</Text>
           </Text>
 
           <Text style={styles.descriptionText}>
-            O Dosiq lembra você dos horários, controla o estoque e funciona offline. Gratuito, sem assinatura.
+            No dosiq você cadastra pela base oficial da ANVISA, recebe alarmes na hora exata e acompanha doses de comprimidos ou canetas injetáveis. 
+            Gratuito, sem anúncios nem assinaturas.
           </Text>
         </View>
 
@@ -120,15 +122,15 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.featureIcon}>
               <Bell size={22} color={colors.brand.primary} strokeWidth={1.75} />
             </View>
-            <Text style={styles.featureTitle}>Lembretes</Text>
-            <Text style={styles.featureCaption}>push + Telegram</Text>
+            <Text style={styles.featureTitle}>Alarme confiável</Text>
+            <Text style={styles.featureCaption}>toca até no silencioso</Text>
           </View>
           <View style={[styles.card, styles.featureChip]}>
             <View style={styles.featureIcon}>
-              <Package size={22} color={colors.brand.primary} strokeWidth={1.75} />
+              <ScanBarcode size={22} color={colors.brand.primary} strokeWidth={1.75} />
             </View>
-            <Text style={styles.featureTitle}>Estoque</Text>
-            <Text style={styles.featureCaption}>avisa antes de acabar</Text>
+            <Text style={styles.featureTitle}>Código de barras</Text>
+            <Text style={styles.featureCaption}>direto pela embalagem</Text>
           </View>
         </View>
 
