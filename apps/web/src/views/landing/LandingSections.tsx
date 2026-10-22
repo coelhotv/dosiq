@@ -10,8 +10,6 @@ import {
   ShieldCheckIcon,
   ActivityIcon,
   SmartphoneIcon,
-  ClockIcon,
-  DownloadIcon,
   CircleCheckIcon,
   BarcodeIcon,
   LayersIcon,
