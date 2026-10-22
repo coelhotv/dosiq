@@ -14,6 +14,7 @@ import { colors, spacing, typography, shadows } from '@shared/styles/tokens';
 import { ROUTES } from '@navigation/routes';
 import AdherenceRing from '@features/dashboard/components/AdherenceRing';
 import { SESSION_ENDED_REASON_KEY } from '@platform/session/localDataWipe';
+import { formatDose } from '@dosiq/core';
 
 const SESSION_ENDED_MESSAGE = 'Sua sessão terminou. Entre de novo.';
 // Altura da barra antes da primeira medição (barra sem aviso, iOS com home indicator).
@@ -96,7 +97,7 @@ export default function LandingScreen({ navigation }) {
                 <Text style={styles.doseTimeText}>08:00</Text>
               </View>
               <Text style={styles.medicationName}>Semaglutida 1,7 mg</Text>
-              <Text style={styles.medicationDetails}>Caneta ≈ 0,75 mL</Text>
+              <Text style={styles.medicationDetails}>Caneta ≈ {formatDose(0.75, 'ml')}</Text>
             </View>
           </View>
         </View>
