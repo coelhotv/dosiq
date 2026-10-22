@@ -104,6 +104,30 @@
       "destination": "/guia/rodizio-aplicacao.html"
     },
     {
+      "source": "/guia/esqueci-dose-semanal",
+      "destination": "/guia/esqueci-dose-semanal.html"
+    },
+    {
+      "source": "/guia/horario-8-em-8-horas",
+      "destination": "/guia/horario-8-em-8-horas.html"
+    },
+    {
+      "source": "/insulina-e-glicemia",
+      "destination": "/insulina-e-glicemia.html"
+    },
+    {
+      "source": "/guia/validade-caneta-aberta",
+      "destination": "/guia/validade-caneta-aberta.html"
+    },
+    {
+      "source": "/injecao-mensal",
+      "destination": "/injecao-mensal.html"
+    },
+    {
+      "source": "/guia/alarme-remedio-silencioso-iphone-android",
+      "destination": "/guia/alarme-remedio-silencioso-iphone-android.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

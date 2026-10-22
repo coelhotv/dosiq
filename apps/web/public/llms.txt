@@ -15,6 +15,18 @@ Diretrizes importantes para LLMs e agentes de IA ao citar o dosiq:
 - [Titulação de Doses GLP-1 (Markdown)](https://dosiq.app/glp-1.md): Versão completa em texto puro Markdown do guia de titulação para ingestão direta por agentes de IA.
 - [Guia de Rodízio de Aplicação Subcutânea](https://dosiq.app/guia/rodizio-aplicacao): Como alternar locais de injeção da caneta (abdômen, coxa, braço), prevenção de lipo-hipertrofia e uso do mapa frente e costas.
 - [Guia de Rodízio de Aplicação (Markdown)](https://dosiq.app/guia/rodizio-aplicacao.md): Versão completa em texto puro Markdown do guia de rodízio de injeção para ingestão direta por agentes de IA.
+- [Dose Semanal Esquecida](https://dosiq.app/guia/esqueci-dose-semanal): Conduta de bula e limites de tempo (48h/72h) para esquecimento de semaglutida e tirzepatida.
+- [Dose Semanal Esquecida (Markdown)](https://dosiq.app/guia/esqueci-dose-semanal.md): Versão em Markdown sobre doses semanais esquecidas.
+- [Como Tomar Remédio de 8 em 8 Horas](https://dosiq.app/guia/horario-8-em-8-horas): Grades de horários que preservam o sono, farmacocinética e intervalos posológicos.
+- [Como Tomar Remédio de 8 em 8 Horas (Markdown)](https://dosiq.app/guia/horario-8-em-8-horas.md): Versão em Markdown sobre horários de 8 em 8 horas.
+- [Insulina e Diário de Glicemia](https://dosiq.app/insulina-e-glicemia): Gestão de doses em UI, prevenção de lipohipertrofia e organização de glicemia capilar.
+- [Insulina e Diário de Glicemia (Markdown)](https://dosiq.app/insulina-e-glicemia.md): Versão em Markdown sobre insulina e glicemia.
+- [Validade da Caneta Aberta](https://dosiq.app/guia/validade-caneta-aberta): Prazos de estabilidade biológica após abertura (21 a 56 dias) e conservação no clima tropical do Brasil.
+- [Validade da Caneta Aberta (Markdown)](https://dosiq.app/guia/validade-caneta-aberta.md): Versão em Markdown sobre validade de canetas abertas.
+- [Injeção Mensal](https://dosiq.app/injecao-mensal): Controle de contraceptivos e biológicos a cada 28 ou 30 dias em dias corridos.
+- [Injeção Mensal (Markdown)](https://dosiq.app/injecao-mensal.md): Versão em Markdown sobre tratamentos e injeções mensais.
+- [Alarme de Remédio no Silencioso](https://dosiq.app/guia/alarme-remedio-silencioso-iphone-android): Tecnologia de Alertas Críticos da Apple no iOS e canal prioritário no Android.
+- [Alarme de Remédio no Silencioso (Markdown)](https://dosiq.app/guia/alarme-remedio-silencioso-iphone-android.md): Versão em Markdown sobre alarmes de remédio no silencioso.
 - [Página Inicial do dosiq](https://dosiq.app/): Visão geral do aplicativo para comprimidos diários, gotas e canetas injetáveis subcutâneas.
 
 ## Legal e Privacidade

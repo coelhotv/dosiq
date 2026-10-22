@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
+
+- **Web** (`Added`, `minor` 4.32.1 → 4.33.0). Publicação de 6 novas páginas estáticas de alta intenção e rigor
+  clínico baseadas em bulas da ANVISA e diretrizes da Sociedade Brasileira de Diabetes (SBD), sem adição de
+  funções de servidor:
+  - **Onda 2 (Dúvidas de Alto Volume):** `/guia/esqueci-dose-semanal` (conduta de bula e limites de corte em semaglutida e tirzepatida) e `/guia/horario-8-em-8-horas` (grades de horário que preservam o sono e tabela prática 8h/12h/6h);
+  - **Onda 3 (Diabetes e Insumos):** `/insulina-e-glicemia` (gestão de doses em UI, prevenção de lipohipertrofia e transparência de escopo DMT2 vs DMT1) e `/guia/validade-caneta-aberta` (estabilidade biológica pós-abertura de 21 a 56 dias e alerta para ondas de calor tropicais no Brasil);
+  - **Onda 4 (Mensais e Confiabilidade):** `/injecao-mensal` (contagem de dias corridos vs dia fixo do mês, antecipação para postos do SUS e prévia de 3 datas) e `/guia/alarme-remedio-silencioso-iphone-android` (tecnologia de Alertas Críticos da Apple e canal de alarme do Android).
+  Inclusão dos respectivos companions em Markdown para ecossistemas de IA (`llmstxt.org`), rotas limpas em `vercel.json` e atualização do `sitemap.xml`.
+
 ### Otimização de meta tags para Bing e motores de busca (spec 048 fix)
 
 - **Web** (`Fixed`, `patch` 4.32.0 → 4.32.1). Otimizados os comprimentos de `<title>` (45–55 caracteres)
@@ -2865,6 +2875,16 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
+
+- **Web** (`Added`, `minor` 4.32.1 → 4.33.0). Publicação de 6 novas páginas estáticas de alta intenção e rigor
+  clínico baseadas em bulas da ANVISA e diretrizes da Sociedade Brasileira de Diabetes (SBD), sem adição de
+  funções de servidor:
+  - **Onda 2 (Dúvidas de Alto Volume):** `/guia/esqueci-dose-semanal` (conduta de bula e limites de corte em semaglutida e tirzepatida) e `/guia/horario-8-em-8-horas` (grades de horário que preservam o sono e tabela prática 8h/12h/6h);
+  - **Onda 3 (Diabetes e Insumos):** `/insulina-e-glicemia` (gestão de doses em UI, prevenção de lipohipertrofia e transparência de escopo DMT2 vs DMT1) e `/guia/validade-caneta-aberta` (estabilidade biológica pós-abertura de 21 a 56 dias e alerta para ondas de calor tropicais no Brasil);
+  - **Onda 4 (Mensais e Confiabilidade):** `/injecao-mensal` (contagem de dias corridos vs dia fixo do mês, antecipação para postos do SUS e prévia de 3 datas) e `/guia/alarme-remedio-silencioso-iphone-android` (tecnologia de Alertas Críticos da Apple e canal de alarme do Android).
+  Inclusão dos respectivos companions em Markdown para ecossistemas de IA (`llmstxt.org`), rotas limpas em `vercel.json` e atualização do `sitemap.xml`.
+
 ### ✨ Adicionado (Chatbot IA — contexto agrupado por plano terapêutico, spec 015 Onda 1b) — web `4.12.0`→**`4.13.0`** (minor) · Telegram · core
 
 - **O contexto enviado ao LLM agora agrupa os medicamentos pelo nome do plano terapêutico** (`treatment_plans.name`): cada plano nomeado ganha um cabeçalho `Plano "<nome>":` com seus itens, fazendo o bot responder pela **intenção** do paciente (os planos que ele nomeou) em vez de inferir por classe terapêutica (US1/FR-002). Vale para as 3 superfícies (web, Telegram e — futuramente — mobile) por consumirem o builder único do core.
@@ -3109,6 +3129,16 @@ Simples para quem mais precisa. 💙
 ---
 
 ## [Unreleased]
+
+### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
+
+- **Web** (`Added`, `minor` 4.32.1 → 4.33.0). Publicação de 6 novas páginas estáticas de alta intenção e rigor
+  clínico baseadas em bulas da ANVISA e diretrizes da Sociedade Brasileira de Diabetes (SBD), sem adição de
+  funções de servidor:
+  - **Onda 2 (Dúvidas de Alto Volume):** `/guia/esqueci-dose-semanal` (conduta de bula e limites de corte em semaglutida e tirzepatida) e `/guia/horario-8-em-8-horas` (grades de horário que preservam o sono e tabela prática 8h/12h/6h);
+  - **Onda 3 (Diabetes e Insumos):** `/insulina-e-glicemia` (gestão de doses em UI, prevenção de lipohipertrofia e transparência de escopo DMT2 vs DMT1) e `/guia/validade-caneta-aberta` (estabilidade biológica pós-abertura de 21 a 56 dias e alerta para ondas de calor tropicais no Brasil);
+  - **Onda 4 (Mensais e Confiabilidade):** `/injecao-mensal` (contagem de dias corridos vs dia fixo do mês, antecipação para postos do SUS e prévia de 3 datas) e `/guia/alarme-remedio-silencioso-iphone-android` (tecnologia de Alertas Críticos da Apple e canal de alarme do Android).
+  Inclusão dos respectivos companions em Markdown para ecossistemas de IA (`llmstxt.org`), rotas limpas em `vercel.json` e atualização do `sitemap.xml`.
 
 ### 030 — Histórico expõe doses avulsas/PRN + fixes de mutação de log (PR #668)
 
