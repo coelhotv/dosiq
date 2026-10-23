@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Prints reais de alta fidelidade para as landings das ondas 2 a 4 (spec 048 visual)
+
+- **Web** (`Changed`, `patch` 4.33.1 → 4.33.2). Substituição das imagens genéricas das 6 novas landings por
+  prints reais e específicos do app iOS (iPhone Pro Max), convertidos para JPEG com qualidade 82% e
+  redimensionados para padrão retina 2x (750px de largura):
+  - `/guia/esqueci-dose-semanal`: tela Hoje com dose pendente e aviso de atraso (`dose-atrasada.jpg`);
+  - `/guia/horario-8-em-8-horas`: tela de tratamento com grade de horários configurada (`horarios-tratamento.jpg`);
+  - `/insulina-e-glicemia`: tela de registro e histórico de medições de glicemia capilar (`medidas-glicemia.jpg`);
+  - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
+  - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
+  - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
+
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
 - **Web** (`Added` e `Changed`, `patch` 4.33.0 → 4.33.1). Unificação do rodapé de todas as páginas públicas
@@ -2883,6 +2896,19 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### Prints reais de alta fidelidade para as landings das ondas 2 a 4 (spec 048 visual)
+
+- **Web** (`Changed`, `patch` 4.33.1 → 4.33.2). Substituição das imagens genéricas das 6 novas landings por
+  prints reais e específicos do app iOS (iPhone Pro Max), convertidos para JPEG com qualidade 82% e
+  redimensionados para padrão retina 2x (750px de largura):
+  - `/guia/esqueci-dose-semanal`: tela Hoje com dose pendente e aviso de atraso (`dose-atrasada.jpg`);
+  - `/guia/horario-8-em-8-horas`: tela de tratamento com grade de horários configurada (`horarios-tratamento.jpg`);
+  - `/insulina-e-glicemia`: tela de registro e histórico de medições de glicemia capilar (`medidas-glicemia.jpg`);
+  - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
+  - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
+  - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
+
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
 - **Web** (`Added` e `Changed`, `patch` 4.33.0 → 4.33.1). Unificação do rodapé de todas as páginas públicas
@@ -3145,6 +3171,19 @@ Simples para quem mais precisa. 💙
 ---
 
 ## [Unreleased]
+
+### Prints reais de alta fidelidade para as landings das ondas 2 a 4 (spec 048 visual)
+
+- **Web** (`Changed`, `patch` 4.33.1 → 4.33.2). Substituição das imagens genéricas das 6 novas landings por
+  prints reais e específicos do app iOS (iPhone Pro Max), convertidos para JPEG com qualidade 82% e
+  redimensionados para padrão retina 2x (750px de largura):
+  - `/guia/esqueci-dose-semanal`: tela Hoje com dose pendente e aviso de atraso (`dose-atrasada.jpg`);
+  - `/guia/horario-8-em-8-horas`: tela de tratamento com grade de horários configurada (`horarios-tratamento.jpg`);
+  - `/insulina-e-glicemia`: tela de registro e histórico de medições de glicemia capilar (`medidas-glicemia.jpg`);
+  - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
+  - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
+  - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
 
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
