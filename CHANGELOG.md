@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Remoção de marcador editorial nos cabeçalhos das landings (spec 048 polish)
+
+- **Web** (`Fixed`, `patch` 4.33.2 → 4.33.3). Remoção do rótulo metodológico em inglês `(Answer-First)`
+  dos títulos `<h2>` visíveis das páginas públicas de posologia e adesão (`/guia/horario-8-em-8-horas`,
+  `/guia/alarme-remedio-silencioso-iphone-android`, `/guia/esqueci-dose-semanal` e `/guia/validade-caneta-aberta`),
+  preservando a redação estritamente em português e mantendo os arquivos `.md` companions para LLMs.
+
 ### Prints reais de alta fidelidade para as landings das ondas 2 a 4 (spec 048 visual)
 
 - **Web** (`Changed`, `patch` 4.33.1 → 4.33.2). Substituição das imagens genéricas das 6 novas landings por
