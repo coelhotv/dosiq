@@ -111,4 +111,16 @@ describe('Landing SPA Web (Spec 048 Slice A / v0.34.0)', () => {
       screen.getByText(/Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo\/SP, CEP 05424-150/),
     ).toBeTruthy()
   })
+
+  it('exibe a matriz de crosslinks temáticos no rodapé da landing', () => {
+    render(<Landing />)
+    expect(screen.getByRole('link', { name: /Titulação de Doses GLP-1/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Rodízio de Aplicação/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Dose Semanal Esquecida/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Validade da Caneta Aberta/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Insulina e Diário de Glicemia/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Remédio de 8 em 8 Horas/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Injeção Mensal \(30 dias\)/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Alarme no Silencioso/i })).toBeTruthy()
+  })
 })
