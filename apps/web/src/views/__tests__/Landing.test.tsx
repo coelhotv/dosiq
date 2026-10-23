@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import React from 'react'
 import Landing from '../landing/Landing'
 
@@ -13,12 +13,12 @@ describe('Landing — rodapé S11 (spec 096)', () => {
     const { container } = render(
       <Landing isAuthenticated={false} onOpenAuth={() => {}} onContinue={() => {}} />
     )
-    const legal = container.querySelector('.lp-footer__legal')
+    const legal = container.querySelector('.lp-footer__legal') as HTMLElement
 
     expect(legal?.textContent).toContain('DOSIQ DIGITAL HEALTH WEB DESIGN LTDA')
     expect(legal?.textContent).toContain('CNPJ 68.335.606/0001-11')
     expect(legal?.textContent).toContain('Rua Pais Leme, 215, cj 1713')
-    expect(screen.getByRole('link', { name: 'privacidade@dosiq.app' })).toHaveAttribute(
+    expect(within(legal).getByRole('link', { name: 'privacidade@dosiq.app' })).toHaveAttribute(
       'href',
       'mailto:privacidade@dosiq.app'
     )
@@ -26,7 +26,7 @@ describe('Landing — rodapé S11 (spec 096)', () => {
       ['Política de Privacidade', '/politica-de-privacidade.html'],
       ['Termos de Uso', '/termos-de-uso.html'],
     ]) {
-      const link = screen.getByRole('link', { name })
+      const link = within(legal).getByRole('link', { name })
       expect(link).toHaveAttribute('href', href)
       expect(link).toHaveAttribute('target', '_blank')
       expect(link).toHaveAttribute('rel', 'noopener noreferrer')

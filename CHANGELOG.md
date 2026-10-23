@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
+
+- **Web** (`Added` e `Changed`, `patch` 4.33.0 → 4.33.1). Unificação do rodapé de todas as páginas públicas
+  do Dosiq (as 8 páginas estáticas em `apps/web/public/`, a landing SPA em `Landing.tsx` e o HTML inicial de
+  crawlers em `index.html`) com uma matriz de navegação em 3 colunas de crosslinks temáticos (Canetas & Injetáveis,
+  Horários & Tratamentos, Dosiq & Transparência). A distribuição otimiza o fluxo de PageRank interno e facilita
+  a descoberta de guias pelos usuários, mantendo intactos os dados legais da PJ e as diretrizes SaMD.
+
 ### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
 
 - **Web** (`Added`, `minor` 4.32.1 → 4.33.0). Publicação de 6 novas páginas estáticas de alta intenção e rigor
@@ -2875,6 +2883,14 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
+
+- **Web** (`Added` e `Changed`, `patch` 4.33.0 → 4.33.1). Unificação do rodapé de todas as páginas públicas
+  do Dosiq (as 8 páginas estáticas em `apps/web/public/`, a landing SPA em `Landing.tsx` e o HTML inicial de
+  crawlers em `index.html`) com uma matriz de navegação em 3 colunas de crosslinks temáticos (Canetas & Injetáveis,
+  Horários & Tratamentos, Dosiq & Transparência). A distribuição otimiza o fluxo de PageRank interno e facilita
+  a descoberta de guias pelos usuários, mantendo intactos os dados legais da PJ e as diretrizes SaMD.
+
 ### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
 
 - **Web** (`Added`, `minor` 4.32.1 → 4.33.0). Publicação de 6 novas páginas estáticas de alta intenção e rigor
@@ -3129,6 +3145,14 @@ Simples para quem mais precisa. 💙
 ---
 
 ## [Unreleased]
+
+### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
+
+- **Web** (`Added` e `Changed`, `patch` 4.33.0 → 4.33.1). Unificação do rodapé de todas as páginas públicas
+  do Dosiq (as 8 páginas estáticas em `apps/web/public/`, a landing SPA em `Landing.tsx` e o HTML inicial de
+  crawlers em `index.html`) com uma matriz de navegação em 3 colunas de crosslinks temáticos (Canetas & Injetáveis,
+  Horários & Tratamentos, Dosiq & Transparência). A distribuição otimiza o fluxo de PageRank interno e facilita
+  a descoberta de guias pelos usuários, mantendo intactos os dados legais da PJ e as diretrizes SaMD.
 
 ### Expansão orgânica estática: Ondas 2 a 4 de SEO e AEO (spec 048 C)
 
