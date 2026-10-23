@@ -9,8 +9,15 @@ import path from 'path'
  */
 function staticHtmlRewritesPlugin() {
   const rewrites = {
+    '/politica-de-privacidade': '/politica-de-privacidade.html',
     '/glp-1': '/glp-1.html',
     '/guia/rodizio-aplicacao': '/guia/rodizio-aplicacao.html',
+    '/guia/esqueci-dose-semanal': '/guia/esqueci-dose-semanal.html',
+    '/guia/horario-8-em-8-horas': '/guia/horario-8-em-8-horas.html',
+    '/insulina-e-glicemia': '/insulina-e-glicemia.html',
+    '/guia/validade-caneta-aberta': '/guia/validade-caneta-aberta.html',
+    '/injecao-mensal': '/injecao-mensal.html',
+    '/guia/alarme-remedio-silencioso-iphone-android': '/guia/alarme-remedio-silencioso-iphone-android.html',
   }
 
   const handler = (req, res, next) => {

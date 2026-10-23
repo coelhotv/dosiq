@@ -18,6 +18,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
   - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
   - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
 
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
@@ -2906,6 +2907,7 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
   - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
   - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
   - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
 
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
@@ -3181,6 +3183,7 @@ Simples para quem mais precisa. 💙
   - `/guia/validade-caneta-aberta`: tela de estoque com contagem regressiva de dias em aberto (`caneta-validade.jpg`);
   - `/injecao-mensal`: tela de tratamento com cadência de 30 dias e próximas datas (`tratamento-mensal.jpg`);
   - `/guia/alarme-remedio-silencioso-iphone-android`: tela de alarme prioritário em tela cheia com Adiar/Tomar (`alarme-silencioso.jpg`).
+  Sincronização de todas as rotas limpas no plugin `staticHtmlRewritesPlugin` de `apps/web/vite.config.js` para suporte idêntico a produção no servidor de desenvolvimento local.
 
 ### Rodapé temático unificado e malha de crosslinks de SEO (spec 048 follow-up)
 
