@@ -150,12 +150,12 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                     <a href="/">Página Inicial</a>
                   </li>
                   <li>
-                    <a href="/politica-de-privacidade.html" target="_blank" rel="noopener noreferrer">
+                    <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer">
                       Política de Privacidade
                     </a>
                   </li>
                   <li>
-                    <a href="/termos-de-uso.html" target="_blank" rel="noopener noreferrer">
+                    <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer">
                       Termos de Uso
                     </a>
                   </li>
@@ -176,11 +176,11 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <span>Rua Pais Leme, 215, cj 1713, Pinheiros, São Paulo/SP, CEP 05424-150</span>
               <span>
                 <a href="mailto:privacidade@dosiq.app">privacidade@dosiq.app</a> ·{' '}
-                <a href="/politica-de-privacidade.html" target="_blank" rel="noopener noreferrer">
+                <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer">
                   Política de Privacidade
                 </a>{' '}
                 ·{' '}
-                <a href="/termos-de-uso.html" target="_blank" rel="noopener noreferrer">
+                <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer">
                   Termos de Uso
                 </a>
               </span>

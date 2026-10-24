@@ -8,7 +8,7 @@ import { X } from 'lucide-react'
 import { HEALTH_CONSENT_COPY, TRANSFER_CONSENT_COPY } from '@dosiq/core'
 import './ConsentDetailsSheet.css'
 
-const PRIVACY_POLICY_URL = '/politica-de-privacidade.html'
+const PRIVACY_POLICY_URL = '/politica-de-privacidade'
 
 interface ConsentDetailsSheetProps {
   variant: 'health' | 'transfer'
