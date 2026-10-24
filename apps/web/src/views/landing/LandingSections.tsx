@@ -168,7 +168,7 @@ export function LandingPrivacidade() {
 
             <a
               className="lp-dark-link"
-              href="/politica-de-privacidade.html"
+              href="/politica-de-privacidade"
               target="_blank"
               rel="noopener noreferrer"
             >

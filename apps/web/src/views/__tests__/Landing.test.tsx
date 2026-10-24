@@ -23,8 +23,8 @@ describe('Landing — rodapé S11 (spec 096)', () => {
       'mailto:privacidade@dosiq.app'
     )
     for (const [name, href] of [
-      ['Política de Privacidade', '/politica-de-privacidade.html'],
-      ['Termos de Uso', '/termos-de-uso.html'],
+      ['Política de Privacidade', '/politica-de-privacidade'],
+      ['Termos de Uso', '/termos-de-uso'],
     ]) {
       const link = within(legal).getByRole('link', { name })
       expect(link).toHaveAttribute('href', href)

@@ -3,29 +3,25 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+import fs from 'fs'
+
 /**
- * Plugin de desenvolvimento local: espelha os rewrites de rotas limpas do vercel.json
- * para que arquivos HTML estáticos em public/ funcionem tanto em dev quanto em preview.
+ * Plugin de desenvolvimento local: espelha o comportamento cleanUrls do vercel.json
+ * resolvendo rotas limpas (/x) para seus arquivos HTML (/x.html) em public/.
  */
 function staticHtmlRewritesPlugin() {
-  const rewrites = {
-    '/politica-de-privacidade': '/politica-de-privacidade.html',
-    '/glp-1': '/glp-1.html',
-    '/guia/rodizio-aplicacao': '/guia/rodizio-aplicacao.html',
-    '/guia/esqueci-dose-semanal': '/guia/esqueci-dose-semanal.html',
-    '/guia/horario-8-em-8-horas': '/guia/horario-8-em-8-horas.html',
-    '/insulina-e-glicemia': '/insulina-e-glicemia.html',
-    '/guia/validade-caneta-aberta': '/guia/validade-caneta-aberta.html',
-    '/injecao-mensal': '/injecao-mensal.html',
-    '/guia/alarme-remedio-silencioso-iphone-android': '/guia/alarme-remedio-silencioso-iphone-android.html',
-  }
+  const publicDir = path.resolve(__dirname, 'public')
 
   const handler = (req, res, next) => {
     const rawUrl = req.url || ''
     const pathname = rawUrl.split('?')[0]
-    if (rewrites[pathname]) {
-      const query = rawUrl.includes('?') ? '?' + rawUrl.split('?')[1] : ''
-      req.url = rewrites[pathname] + query
+    if (pathname && pathname !== '/' && !path.extname(pathname)) {
+      const relPath = pathname.replace(/^\//, '')
+      const candidate = path.join(publicDir, relPath + '.html')
+      if (fs.existsSync(candidate)) {
+        const query = rawUrl.includes('?') ? '?' + rawUrl.split('?')[1] : ''
+        req.url = '/' + relPath + '.html' + query
+      }
     }
     next()
   }
@@ -106,23 +102,20 @@ export default defineConfig(({ mode }) => {
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendors grandes — isolados para cache duradouro
-          'vendor-framer': ['framer-motion'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-virtuoso': ['react-virtuoso'],
-
-          // Feature chunks — carregados apenas quando a view é acessada
-          'feature-history': [
-            './src/views/HealthHistory.tsx',
-            './src/features/adherence/components/AdherenceHeatmap.jsx',
-            './src/features/adherence/services/adherencePatternService.js',
-          ],
-          'feature-stock': ['./src/views/Stock.tsx'],
-          'feature-landing': ['./src/views/landing/Landing.tsx'],
-
-          // Base ANVISA (037): movida p/ on-demand via @dosiq/core + Cache Storage.
-          // JSON não entra mais no bundle — manualChunk removido.
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('/react/') ||
+              id.includes('/react-dom/') ||
+              id.includes('/scheduler/') ||
+              id.includes('/jsx-runtime')
+            ) {
+              return 'vendor-react'
+            }
+            if (id.includes('framer-motion')) return 'vendor-framer'
+            if (id.includes('@supabase')) return 'vendor-supabase'
+            if (id.includes('react-virtuoso')) return 'vendor-virtuoso'
+          }
         },
       },
     },
@@ -136,37 +129,24 @@ export default defineConfig(({ mode }) => {
       srcDir: 'src',
       filename: 'service-worker.js',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: false,
+      manifest: false,
+      injectManifest: {
+        globIgnores: [
+          '**/spike-097/**',
+          '**/*Admin*',
+          '**/guia/**',
+          '**/glp-1.html',
+          '**/insulina-e-glicemia.html',
+          '**/injecao-mensal.html',
+          '**/politica-de-privacidade.html',
+          '**/termos-de-uso.html',
+        ],
+      },
       devOptions: {
         enabled: true,
         type: 'module',
       },
-      manifest: {
-        name: 'dosiq',
-        short_name: 'dosiq',
-        description: 'inteligência em doses',
-        theme_color: '#006a5e',
-        background_color: '#F0FDFB',
-        display: 'standalone',
-        icons: [
-          {
-            src: 'app-icons/web/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'app-icons/web/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'app-icons/web/icon-512-maskable.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
     })
   ]
   }

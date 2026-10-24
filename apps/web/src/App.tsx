@@ -1,27 +1,11 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supabase'
-import { useNotificationLog } from '@shared/hooks/useNotificationLog'
-import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
-import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
-import { ConsentGateProvider, useConsentGate } from '@shared/hooks/useConsentGate'
 import '@shared/styles/index.css'
 import Loading from '@shared/components/ui/Loading'
-import AppViewRouter from './AppViewRouter'
-import AppAuthOverlays from './AppAuthOverlays'
-import TestConnection from '@shared/components/TestConnection'
-import { OnboardingProvider } from '@shared/components/onboarding'
-import { DashboardProvider } from '@dashboard/hooks/useDashboardContext'
-import InstallPrompt from '@shared/components/pwa/InstallPrompt'
-import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
-import MobileAppBanner from '@shared/components/MobileAppBanner'
-import { SpeedInsights } from '@vercel/speed-insights/react'
-import { useDoseModalQueue } from '@shared/hooks/useDoseModalQueue'
-import MeasureLogModal from '@features/measures/components/MeasureLogModal'
-import { measuresRepo } from '@features/measures/services/measuresRepo'
 
-const BottomNav = lazy(() => import('@shared/components/ui/BottomNav'))
-const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
+const AuthenticatedShell = lazy(() => import('./AuthenticatedShell'))
+const Landing = lazy(() => import('./views/landing/Landing'))
+const Auth = lazy(() => import('./views/Auth'))
 
 function AppLoading() {
   return (
@@ -31,139 +15,82 @@ function AppLoading() {
   )
 }
 
-function AppShell({
-  isAuthenticated,
-  isPasswordRecovery,
-  currentView,
-  setCurrentView,
-  unreadCount,
-  setIsDoseModalOpen,
-  setIsMeasureModalOpen,
-  session,
+function PublicShell({
   showAuth,
   setShowAuth,
-  onResetComplete,
-  initialStockParams,
-  initialTreatmentMedicineId,
-  setInitialStockParams,
-  setInitialTreatmentMedicineId,
-  isDoseModalOpen,
-  doseModalInitialValues,
-  setDoseModalInitialValues,
-  closeDoseModal,
-  isMeasureModalOpen,
-  handleSaveMeasure,
-  isChatOpen,
-  setIsChatOpen,
-  shouldReduceMotion
+  onAuthSuccess,
+}: {
+  showAuth: boolean
+  setShowAuth: (show: boolean) => void
+  onAuthSuccess: () => void
 }) {
-  // 046: com o consentimento revogado (ou prompt bloqueante), some tudo que é acesso a PRODUTO fora
-  // do fluxo de resolução — o speeddial de registro, o FAB do chatbot, a bottom nav. Sem isto, a
-  // trava do AppViewRouter cobre só o CONTEÚDO da view, e esses atalhos (que vivem no shell, fora do
-  // router) seguiriam disparando registro de dose e chat com dado de saúde de quem pediu para parar.
-  const { locked: consentLocked, needsRegularization } = useConsentGate()
-  // 096: "Não concordo" no reconsentimento vive AQUI, não no AppViewRouter — o router fica dentro do
-  // motion.div com key={currentView} e remonta a cada troca de tela, o que zerava a escolha e trazia o
-  // modal de volta no próprio Perfil (smoke B2 2.5).
-  const [regularizationDeclined, setRegularizationDeclined] = useState(false)
+  const [authDefaultLogin, setAuthDefaultLogin] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const params = new URLSearchParams(window.location.search)
+      return params.has('login') || params.get('auth') === 'login'
+    } catch {
+      return false
+    }
+  })
+
+  // Limpeza de parâmetros de autenticação vindos das páginas estáticas (/glp-1, guias)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('login') || params.has('signup') || params.has('auth')) {
+          const url = new URL(window.location.href)
+          url.searchParams.delete('login')
+          url.searchParams.delete('signup')
+          url.searchParams.delete('auth')
+          const newSearch = url.searchParams.toString()
+          window.history.replaceState({}, '', url.pathname + (newSearch ? `?${newSearch}` : '') + url.hash)
+        }
+      } catch {
+        // Fallback silencioso em ambientes de teste
+      }
+    }
+  }, [])
+
+  const handleOpenAuth = (mode?: 'login' | 'signup' | boolean) => {
+    setAuthDefaultLogin(mode === 'login' || mode === true)
+    setShowAuth(true)
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0)
+    }
+  }
 
   return (
-    <OnboardingProvider>
-      <DashboardProvider>
-        <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
-
-        <div className="app-container">
-          <MobileAppBanner />
-
-          {isAuthenticated && (
-            <Suspense fallback={null}>
-              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} consentLocked={consentLocked} />
+    <>
+      <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
+      <div className="app-container">
+        <main id="main-content" className="app-main">
+          {showAuth ? (
+            <Suspense fallback={<AppLoading />}>
+              <Auth
+                defaultLogin={authDefaultLogin}
+                onAuthSuccess={onAuthSuccess}
+                onClose={() => setShowAuth(false)}
+              />
+            </Suspense>
+          ) : (
+            <Suspense fallback={<AppLoading />}>
+              <Landing isAuthenticated={false} onOpenAuth={handleOpenAuth} />
             </Suspense>
           )}
-
-          <main id="main-content" className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={currentView}
-                initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
-              >
-                <AppViewRouter
-                  session={session}
-                  currentView={currentView}
-                  showAuth={showAuth}
-                  isPasswordRecovery={isPasswordRecovery}
-                  onResetComplete={onResetComplete}
-                  initialStockParams={initialStockParams}
-                  initialTreatmentMedicineId={initialTreatmentMedicineId}
-                  setShowAuth={setShowAuth}
-                  setCurrentView={setCurrentView}
-                  setInitialStockParams={setInitialStockParams}
-                  setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
-                  setIsDoseModalOpen={setIsDoseModalOpen}
-                  setDoseModalInitialValues={setDoseModalInitialValues}
-                  regularizationDeclined={regularizationDeclined}
-                  setRegularizationDeclined={setRegularizationDeclined}
-                />
-              </motion.div>
-            </AnimatePresence>
-            <footer style={{ textAlign: 'center', marginTop: 'var(--space-8)', paddingBottom: 'var(--space-8)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              {' '}
-            </footer>
-          </main>
-
-          <OfflineBanner />
-
-          {isAuthenticated && !isPasswordRecovery && !consentLocked && (
-            <Suspense fallback={null}>
-              <BottomNav currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
-            </Suspense>
-          )}
-
-          {isMeasureModalOpen && (
-            <MeasureLogModal
-              isOpen={isMeasureModalOpen}
-              onClose={() => setIsMeasureModalOpen(false)}
-              onSaved={handleSaveMeasure}
-            />
-          )}
-
-          {/* Reconsentimento pendente: nada de produto por cima/ao lado do modal — FAB do chat, speed-dial,
-              onboarding (smoke B2 2.1/2.2). */}
-          {isAuthenticated && !isPasswordRecovery && !consentLocked && !needsRegularization && (
-            <AppAuthOverlays
-              isChatOpen={isChatOpen}
-              setIsChatOpen={setIsChatOpen}
-              isDoseModalOpen={isDoseModalOpen}
-              setIsDoseModalOpen={setIsDoseModalOpen}
-              doseModalInitialValues={doseModalInitialValues}
-              setDoseModalInitialValues={setDoseModalInitialValues}
-              closeDoseModal={closeDoseModal}
-              onRegisterMeasure={() => setIsMeasureModalOpen(true)}
-            />
-          )}
-
-          <InstallPrompt />
-          {import.meta.env.PROD && <SpeedInsights />}
-        </div>
-      </DashboardProvider>
-    </OnboardingProvider>
+          <footer style={{ textAlign: 'center', marginTop: 'var(--space-8)', paddingBottom: 'var(--space-8)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+            {' '}
+          </footer>
+        </main>
+      </div>
+    </>
   )
 }
 
 function AppInner() {
-  const shouldReduceMotion = useReducedMotion()
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentView, setCurrentView] = useState('dashboard')
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
-  const [doseModalInitialValues, setDoseModalInitialValues] = useState(null)
-  const [isMeasureModalOpen, setIsMeasureModalOpen] = useState(false)
-  const [initialStockParams, setInitialStockParams] = useState(null)
-  const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -174,27 +101,6 @@ function AppInner() {
     }
   })
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
-
-  // 012 Fase C / FR-010: registro de medida pelo speed-dial global. Salva e avisa as
-  // superfícies (dashboard/histórico) via evento — mesmo padrão de 'mr:dose-saved'.
-  const handleSaveMeasure = async (payload) => {
-    const saved = await measuresRepo.create(payload)
-    window.dispatchEvent(new CustomEvent('mr:measure-saved'))
-    return saved
-  }
-
-  // Nudge "Registre a primeira" (card vazio do dashboard) abre o modal global de medida.
-  useEffect(() => {
-    const open = () => setIsMeasureModalOpen(true)
-    window.addEventListener('mr:open-measure-log', open)
-    return () => window.removeEventListener('mr:open-measure-log', open)
-  }, [])
-
-  // Insight cards e o "Tomar" de dose injetável (071) abrem o modal global via evento.
-  const closeDoseModal = useDoseModalQueue(setIsDoseModalOpen, setDoseModalInitialValues)
-
-  const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
-  const { unreadCount } = useUnreadNotificationCount(notifData)
 
   useEffect(() => {
     getCurrentUser()
@@ -222,7 +128,6 @@ function AppInner() {
           setIsPasswordRecovery(true)
           setSession(session?.user ?? null)
 
-          // Limpar o hash da URL para evitar re-gatilhos do fluxo de recuperação em reloads/signouts
           if (window.history && window.history.replaceState) {
             window.history.replaceState(null, null, window.location.pathname + window.location.search)
           }
@@ -247,95 +152,28 @@ function AppInner() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Tratar navegação profunda via URL (clique em push notificações PWA)
-  // Justificativa: Precisamos de setState no useEffect para ler queries da URL no mount/auth e navegar a view
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (!session?.id) return
-
-    const path = window.location.pathname
-    const params = new URLSearchParams(window.location.search)
-
-    if (path === '/stock') {
-      setCurrentView('stock')
-    } else if (path === '/history' || path === '/health-history') {
-      setCurrentView('history')
-    } else if (path === '/settings') {
-      setCurrentView('settings')
-    } else if (path === '/notifications') {
-      setCurrentView('notifications')
-    } else if (path === '/admin-dlq') {
-      setCurrentView('admin-dlq')
-    } else if (path === '/admin-nudges') {
-      setCurrentView('admin-nudges')
-    } else if (path === '/today' || path === '/') {
-      setCurrentView('dashboard')
-
-      const protocolId = params.get('protocolId')
-      if (protocolId) {
-        setDoseModalInitialValues({ protocol_id: protocolId, type: 'protocol' })
-        setIsDoseModalOpen(true)
-      } else if (params.get('bulkMode') === 'plan') {
-        const planId = params.get('planId')
-        if (planId) {
-          setDoseModalInitialValues({ treatment_plan_id: planId, type: 'plan' })
-          setIsDoseModalOpen(true)
-        }
-      } else if (params.get('bulkMode') === 'misc') {
-        const pids = params.get('protocolIds')
-        const protocolIds = pids ? pids.split(',') : []
-        if (protocolIds.length > 0) {
-          setDoseModalInitialValues({ protocol_id: protocolIds[0], type: 'protocol' })
-          setIsDoseModalOpen(true)
-        }
-      }
-    }
-
-    // Limpar o caminho e query params da URL para evitar reprocessamento ou inconsistências de estado
-    if (path !== '/' || params.toString() !== '') {
-      window.history.replaceState({}, document.title, '/')
-    }
-    // Gatear por session?.id (não pelo objeto session): token refresh no refocus cria
-    // novo objeto com o MESMO user.id, que re-disparava o effect e resetava a view (AP-192).
-    // Login/confirmação de email/reset de senha são transições null→id → seguem disparando.
-  }, [session?.id])
-  /* eslint-enable react-hooks/set-state-in-effect */
-
   if (isLoading) {
     return <AppLoading />
   }
 
+  if (!session) {
+    return (
+      <PublicShell
+        showAuth={showAuth}
+        setShowAuth={setShowAuth}
+        onAuthSuccess={() => setShowAuth(false)}
+      />
+    )
+  }
+
   return (
-    <ConsentGateProvider session={session}>
-    <StockTrackingProvider session={session}>
-    <AppShell
-      isAuthenticated={!!session}
-      isPasswordRecovery={isPasswordRecovery}
-      currentView={currentView}
-      setCurrentView={setCurrentView}
-      unreadCount={unreadCount}
-      setIsDoseModalOpen={setIsDoseModalOpen}
-      setIsMeasureModalOpen={setIsMeasureModalOpen}
-      session={session}
-      showAuth={showAuth}
-      setShowAuth={setShowAuth}
-      onResetComplete={() => { setIsPasswordRecovery(false); setCurrentView('dashboard') }}
-      initialStockParams={initialStockParams}
-      initialTreatmentMedicineId={initialTreatmentMedicineId}
-      setInitialStockParams={setInitialStockParams}
-      setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
-      isDoseModalOpen={isDoseModalOpen}
-      doseModalInitialValues={doseModalInitialValues}
-      setDoseModalInitialValues={setDoseModalInitialValues}
-      closeDoseModal={closeDoseModal}
-      isMeasureModalOpen={isMeasureModalOpen}
-      handleSaveMeasure={handleSaveMeasure}
-      isChatOpen={isChatOpen}
-      setIsChatOpen={setIsChatOpen}
-      shouldReduceMotion={shouldReduceMotion}
-    />
-    </StockTrackingProvider>
-    </ConsentGateProvider>
+    <Suspense fallback={<AppLoading />}>
+      <AuthenticatedShell
+        session={session}
+        isPasswordRecovery={isPasswordRecovery}
+        onResetComplete={() => setIsPasswordRecovery(false)}
+      />
+    </Suspense>
   )
 }
 

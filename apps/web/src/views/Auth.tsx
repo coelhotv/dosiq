@@ -461,8 +461,8 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
               />
               <p className="auth-terms-footer">
                 Ao criar a conta, você aceita os{' '}
-                <a href="/termos-de-uso.html" target="_blank" rel="noreferrer">Termos de Uso</a> e a{' '}
-                <a href="/politica-de-privacidade.html" target="_blank" rel="noreferrer">Política de Privacidade</a>{' '}
+                <a href="/termos-de-uso" target="_blank" rel="noreferrer">Termos de Uso</a> e a{' '}
+                <a href="/politica-de-privacidade" target="_blank" rel="noreferrer">Política de Privacidade</a>{' '}
                 (v{CURRENT_POLICY_VERSION}).
               </p>
             </>

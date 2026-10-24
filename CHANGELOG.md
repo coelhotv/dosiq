@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Primeira Visita Leve: dosiq.app em Celular Pré-Pago (spec 110)
+
+- **Web** (`Changed` e `Fixed`, `patch` 4.33.3 → 4.33.4). Otimização radical do caminho crítico da landing do Dosiq para celulares pré-pago (corte de 356 kB gz para 163 kB gz, −54% vs baseline, teto ≤ 172 kB gz):
+  - **Isolamento de Shell Autenticado:** Extração do `AuthenticatedShell` lazy em `AuthenticatedShell.tsx`, contendo providers de domínio (`DashboardProvider`, `OnboardingProvider`), modais, overlays e navegação logada; visitante anônimo baixa apenas `PublicShell` (`Landing` ou `Auth`).
+  - **PWA e SW Exclusivos com Sessão (ADR-116):** Desativação do auto-registro do SW no HTML inicial (`injectRegister: false`, `manifest: false`); injeção dinâmica de `<link rel="manifest">` e registro de SW disparados via `virtual:pwa-register` apenas após login/sessão autenticada. Precache do SW filtrado via `globIgnores` para ignorar páginas SEO/legais, spikes e views admin (`**/*Admin*`).
+  - **Code-Splitting e Vendors:** Remoção de feature chunks hardcoded de `manualChunks` e desacoplamento explícito de `vendor-react` dos vendors autenticados (`framer-motion`, `react-virtuoso`), mantendo as bibliotecas de animação e virtualização fora da landing.
+  - **Fontes Não Bloqueantes:** Carregamento assíncrono do Google Fonts via `<link rel="preload" as="style">` com fallback `<noscript>`, reduzindo o inventário de pesos de 11 para 8 pesos efetivamente utilizados pelas telas públicas.
+  - **Recuperação de Chunks Pós-Deploy:** Implementação do listener `vite:preloadError` com reload único protegido por timestamp de 60s em `sessionStorage` contra telas brancas pós-deploy.
+  - **Roteamento Edge e Cache na Vercel:** Ativação de `cleanUrls: true` no `vercel.json` (e dev server dinâmico), fallback SPA restrito a rotas sem extensão fora de `/api/` (retornando 404 real da CDN para assets inexistentes) e headers de cache imutável (1 ano) em `/assets/*` com revalidação estrita para SW, manifesto e HTML.
+
 ### Remoção de marcador editorial nos cabeçalhos das landings (spec 048 polish)
 
 - **Web** (`Fixed`, `patch` 4.33.2 → 4.33.3). Remoção do rótulo metodológico em inglês `(Answer-First)`

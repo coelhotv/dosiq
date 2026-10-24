@@ -11,17 +11,41 @@
     "api/generate-doses.ts": { "maxDuration": 60 },
     "api/report.ts": { "maxDuration": 30, "memory": 2048, "includeFiles": "node_modules/@sparticuz/chromium/bin/**" }
   },
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
       "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(service-worker.js|registerSW.js|manifest.webmanifest)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/politica-de-privacidade",
-      "destination": "/politica-de-privacidade.html"
-    },
     {
       "source": "/api/dlq/:id/retry",
       "destination": "/api/admin.ts?resource=dlq&action=retry&id=:id"
@@ -82,7 +106,6 @@
       "source": "/api/users/beta-signup",
       "destination": "/api/users.ts?action=beta-signup"
     },
-
     {
       "source": "/api/report",
       "destination": "/api/report.ts"
@@ -96,39 +119,7 @@
       "destination": "/api/users.ts?action=register-webpush"
     },
     {
-      "source": "/glp-1",
-      "destination": "/glp-1.html"
-    },
-    {
-      "source": "/guia/rodizio-aplicacao",
-      "destination": "/guia/rodizio-aplicacao.html"
-    },
-    {
-      "source": "/guia/esqueci-dose-semanal",
-      "destination": "/guia/esqueci-dose-semanal.html"
-    },
-    {
-      "source": "/guia/horario-8-em-8-horas",
-      "destination": "/guia/horario-8-em-8-horas.html"
-    },
-    {
-      "source": "/insulina-e-glicemia",
-      "destination": "/insulina-e-glicemia.html"
-    },
-    {
-      "source": "/guia/validade-caneta-aberta",
-      "destination": "/guia/validade-caneta-aberta.html"
-    },
-    {
-      "source": "/injecao-mensal",
-      "destination": "/injecao-mensal.html"
-    },
-    {
-      "source": "/guia/alarme-remedio-silencioso-iphone-android",
-      "destination": "/guia/alarme-remedio-silencioso-iphone-android.html"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/)(?!.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]
