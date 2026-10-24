@@ -43,7 +43,7 @@ assert_status() {
 
   local url="${BASE_URL}${path}"
   local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" "${HEADER_ARGS[@]}" "$url")
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" ${HEADER_ARGS[@]+"${HEADER_ARGS[@]}"} "$url")
 
   if [ "$http_code" = "$expected_status" ]; then
     echo "  [PASS] $description: $path -> $http_code (esperado: $expected_status)"
@@ -63,7 +63,7 @@ assert_static_html() {
   local http_code
   local content_type
 
-  response=$(curl -s -i "${HEADER_ARGS[@]}" "$url")
+  response=$(curl -s -i ${HEADER_ARGS[@]+"${HEADER_ARGS[@]}"} "$url")
   http_code=$(echo "$response" | grep -i "^HTTP" | tail -n 1 | awk '{print $2}')
   content_type=$(echo "$response" | grep -i "^content-type:" | tr -d '\r' | awk '{print $2}')
 
@@ -84,7 +84,7 @@ assert_spa_fallback() {
   local http_code
   local content_type
 
-  response=$(curl -s -i "${HEADER_ARGS[@]}" "$url")
+  response=$(curl -s -i ${HEADER_ARGS[@]+"${HEADER_ARGS[@]}"} "$url")
   http_code=$(echo "$response" | grep -i "^HTTP" | tail -n 1 | awk '{print $2}')
   content_type=$(echo "$response" | grep -i "^content-type:" | tr -d '\r' | awk '{print $2}')
 
@@ -104,7 +104,7 @@ assert_api_route() {
   local response
   local content_type
 
-  response=$(curl -s -i "${HEADER_ARGS[@]}" "$url")
+  response=$(curl -s -i ${HEADER_ARGS[@]+"${HEADER_ARGS[@]}"} "$url")
   content_type=$(echo "$response" | grep -i "^content-type:" | tr -d '\r' | awk '{print $2}')
 
   # Rota de API não deve retornar o HTML da SPA
@@ -123,7 +123,7 @@ assert_cache_header() {
 
   local url="${BASE_URL}${path}"
   local cache_control
-  cache_control=$(curl -s -I "${HEADER_ARGS[@]}" "$url" | grep -i "^cache-control:" | tr -d '\r' || true)
+  cache_control=$(curl -s -I ${HEADER_ARGS[@]+"${HEADER_ARGS[@]}"} "$url" | grep -i "^cache-control:" | tr -d '\r' || true)
 
   if [ "$expect_immutable" = "true" ]; then
     if echo "$cache_control" | grep -q "immutable" && echo "$cache_control" | grep -q "31536000"; then
