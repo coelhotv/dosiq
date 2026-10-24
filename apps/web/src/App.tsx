@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supabase'
 import '@shared/styles/index.css'
 import Loading from '@shared/components/ui/Loading'
+import AppErrorBoundary from '@shared/components/ui/AppErrorBoundary'
 
 const AuthenticatedShell = lazy(() => import('./AuthenticatedShell'))
 const Landing = lazy(() => import('./views/landing/Landing'))
@@ -178,7 +179,11 @@ function AppInner() {
 }
 
 function App() {
-  return <AppInner />
+  return (
+    <AppErrorBoundary>
+      <AppInner />
+    </AppErrorBoundary>
+  )
 }
 
 export default App

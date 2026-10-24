@@ -184,6 +184,7 @@ else
 fi
 
 assert_cache_header "/service-worker.js" "false" "Service Worker"
+assert_cache_header "/registerSW.js" "false" "Register SW"
 assert_cache_header "/manifest.webmanifest" "false" "Web Manifest"
 assert_cache_header "/" "false" "HTML Raiz"
 echo ""

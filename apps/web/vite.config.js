@@ -105,10 +105,9 @@ export default defineConfig(({ mode }) => {
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (
-              id.includes('/react/') ||
-              id.includes('/react-dom/') ||
-              id.includes('/scheduler/') ||
-              id.includes('/jsx-runtime')
+              /[\\/]node_modules[\\/]react[\\/]/.test(id) ||
+              /[\\/]node_modules[\\/]react-dom[\\/]/.test(id) ||
+              /[\\/]node_modules[\\/]scheduler[\\/]/.test(id)
             ) {
               return 'vendor-react'
             }

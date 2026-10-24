@@ -26,14 +26,19 @@ const INDEX_HTML = path.join(DIST_DIR, 'index.html')
 const BUDGET_CEILING_KB = 172
 const BASELINE_KB = 356
 
-// Marcadores de código de domínio restrito que NUNCA devem estar no caminho crítico anônimo
+// Marcadores de domínio restrito que sobrevivem à minificação e NUNCA devem estar no caminho crítico anônimo
 const FORBIDDEN_MARKERS = [
   'feature-stock',
   'feature-history',
-  'DashboardProvider',
-  'OnboardingProvider',
-  'HealthHistory',
-  'StockTrackingProvider',
+  'Registrar medida',
+  'Sistólica',
+  'Diastólica',
+  'mr:open-measure-log',
+  'mr:measure-saved',
+  'admin-dlq',
+  'admin-nudges',
+  'health_measures',
+  'dose_logs',
 ]
 
 function formatBytes(bytes) {

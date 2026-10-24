@@ -1,0 +1,74 @@
+.app-error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-6, 24px);
+  background-color: var(--lp-mint-50, #f0fdfb);
+  font-family: var(--font-body, 'Lexend', system-ui, sans-serif);
+  color: var(--text-primary, #0f172a);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.app-error-boundary__card {
+  max-width: 420px;
+  width: 100%;
+  background-color: var(--bg-surface, #ffffff);
+  border-radius: var(--radius-xl, 16px);
+  padding: var(--space-8, 32px) var(--space-6, 24px);
+  box-shadow: 0 4px 20px rgba(0, 106, 94, 0.08);
+  border: 1px solid var(--border-subtle, #ccfbf1);
+}
+
+.app-error-boundary__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--color-danger-subtle, #fef2f2);
+  color: var(--color-danger, #dc2626);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4, 16px);
+  font-size: 24px;
+}
+
+.app-error-boundary__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 var(--space-2, 8px);
+}
+
+.app-error-boundary__message {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 var(--space-6, 24px);
+}
+
+.app-error-boundary__btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 999px;
+  background-color: var(--lp-green-600, #006a5e);
+  color: #ffffff;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 106, 94, 0.2);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease;
+}
+
+.app-error-boundary__btn:hover {
+  transform: translateY(-1px);
+}
+
+.app-error-boundary__btn:active {
+  transform: scale(0.98);
+}
