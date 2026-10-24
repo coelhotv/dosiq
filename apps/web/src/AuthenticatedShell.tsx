@@ -125,6 +125,11 @@ function AuthenticatedShellContent({
     registerPwa()
   }, [])
 
+  const handleResetComplete = () => {
+    onResetComplete?.()
+    setCurrentView('dashboard')
+  }
+
   return (
     <OnboardingProvider>
       <DashboardProvider>
@@ -158,7 +163,7 @@ function AuthenticatedShellContent({
                   currentView={currentView}
                   showAuth={false}
                   isPasswordRecovery={isPasswordRecovery}
-                  onResetComplete={onResetComplete}
+                  onResetComplete={handleResetComplete}
                   initialStockParams={initialStockParams}
                   initialTreatmentMedicineId={initialTreatmentMedicineId}
                   setShowAuth={() => {}}

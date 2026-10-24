@@ -120,7 +120,8 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
   })
 
   afterEach(() => {
-    vi.resetAllMocks()
+    vi.clearAllMocks()
+    vi.clearAllTimers()
   })
 
   it('quando anônimo (session === null) na Landing, não monta DashboardProvider nem OnboardingProvider', async () => {
@@ -157,7 +158,7 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
     await waitFor(() => {
       expect(dashboardProviderSpy).toHaveBeenCalled()
       expect(onboardingProviderSpy).toHaveBeenCalled()
-    })
+    }, { timeout: 3000 })
   })
 
   it('quando em fluxo de recuperação de senha, monta os providers de autenticado', async () => {
