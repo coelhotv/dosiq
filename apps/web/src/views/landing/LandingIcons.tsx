@@ -189,24 +189,27 @@ export function CheckIcon({ className = '', size = 16 }) {
 export function BarcodeIcon({ className = '', size = 20 }) {
   return (
     <PrototypeIcon className={className} size={size}>
-      <path d="M3 5v14" />
-      <path d="M8 5v14" />
-      <path d="M12 5v14" />
-      <path d="M17 5v14" />
-      <path d="M21 5v14" />
+      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <path d="M3 17v2a2 2 0 0 0 2 2h2" />
+      <path d="M17 21h2a2 2 0 0 0 2-2v-2" />
+      <path d="M7 8v8" />
+      <path d="M10 8v8" />
+      <path d="M14 8v8" />
+      <path d="M17 8v8" />
     </PrototypeIcon>
   )
 }
 
-export function LayersIcon({ className = '', size = 20 }) {
+export function TitrationLadderIcon({ className = '', size = 20 }) {
   return (
     <PrototypeIcon className={className} size={size}>
-      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
-      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
-      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+      <path d="M4 19h4v-4h4v-4h4v-4h4" />
     </PrototypeIcon>
   )
 }
+
+export const LayersIcon = TitrationLadderIcon
 
 export function TargetIcon({ className = '', size = 20 }) {
   return (

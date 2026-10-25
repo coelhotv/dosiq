@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import Landing from '../Landing'
 
 afterEach(() => {
@@ -53,16 +53,35 @@ describe('Landing SPA Web (Spec 048 Slice A / v0.34.0)', () => {
     expect(screen.getByText('Privacidade & Portabilidade')).toBeTruthy()
   })
 
-  it('exibe os links oficiais ativos para App Store e Google Play com UTM de atribuição', () => {
-    render(<Landing />)
-    const iosLink = screen.getByRole('link', { name: /Baixar na App Store/i })
-    const androidLink = screen.getByRole('link', { name: /Disponível no Google Play/i })
+  it('exibe os links oficiais ativos para App Store e Google Play no formato D4', () => {
+    const { container } = render(<Landing />)
+    const iosLinks = screen.getAllByRole('link', { name: /Baixar na App Store/i })
+    const androidLinks = screen.getAllByRole('link', { name: /Disponível no Google Play/i })
 
-    expect(iosLink.getAttribute('href')).toContain('apps.apple.com')
-    expect(iosLink.getAttribute('href')).toContain('utm_source=landing_home')
-    expect(androidLink.getAttribute('href')).toBe(
-      'https://play.google.com/store/apps/details?id=com.coelhotv.dosiq&utm_source=landing_home',
-    )
+    expect(iosLinks.length).toBeGreaterThanOrEqual(1)
+    expect(androidLinks.length).toBeGreaterThanOrEqual(1)
+
+    // Todos os links da Apple devem ter pt=128807500 e ct=landing_home_...
+    for (const link of iosLinks) {
+      const href = link.getAttribute('href') || ''
+      expect(href).toContain('apps.apple.com/br/app/id6762740948')
+      expect(href).toContain('pt=128807500')
+      expect(href).toMatch(/ct=landing_home_(atf|section|final|header|sticky|qr)/)
+      expect(href).not.toContain('utm_source=')
+    }
+
+    // Todos os links da Play devem ter referrer codificado com landing_home e utm_campaign
+    for (const link of androidLinks) {
+      const href = link.getAttribute('href') || ''
+      expect(href).toContain('play.google.com/store/apps/details?id=com.coelhotv.dosiq')
+      expect(href).toContain('referrer=utm_source%3Dlanding_home%26utm_campaign%3D')
+      expect(href).not.toMatch(/[?&]utm_source=/)
+    }
+
+    // Rodapé legal intacto (INV-1 / US3)
+    const text = container.textContent || ''
+    expect(text).toContain('68.335.606/0001-11')
+    expect(text).toContain('DOSIQ DIGITAL HEALTH WEB DESIGN LTDA')
   })
 
   it('não contém strings legadas (WhatsApp, Telegram Bot, Android em breve ou Quero testar)', () => {
@@ -75,21 +94,99 @@ describe('Landing SPA Web (Spec 048 Slice A / v0.34.0)', () => {
     expect(text).not.toMatch(/Quero testar/i)
   })
 
-  it('dispara onOpenAuth com "signup" ou "login" contextualmente ao clicar nos CTAs', () => {
+  it('dispara onOpenAuth com "login" contextualmente ao clicar em Acessar Web ou no fallback web', () => {
     const onOpenAuth = vi.fn()
     render(<Landing isAuthenticated={false} onOpenAuth={onOpenAuth} />)
 
-    const loginBtn = screen.getByRole('button', { name: /^Entrar$/i })
-    fireEvent.click(loginBtn)
+    const accessWebBtn = screen.getByRole('button', { name: /Acessar Web/i })
+    fireEvent.click(accessWebBtn)
     expect(onOpenAuth).toHaveBeenCalledWith('login')
 
-    const existingAccountBtn = screen.getByRole('button', { name: /Já tenho conta — entrar/i })
-    fireEvent.click(existingAccountBtn)
+    const webFallbackBtn = screen.getByRole('button', { name: /Acesse a versão web →/i })
+    fireEvent.click(webFallbackBtn)
     expect(onOpenAuth).toHaveBeenCalledWith('login')
+  })
 
-    const signupBtn = screen.getByRole('button', { name: /^Criar conta$/i })
-    fireEvent.click(signupBtn)
-    expect(onOpenAuth).toHaveBeenCalledWith('signup')
+  it('renderiza os links do botão Instalar App no header para desktop e mobile', () => {
+    render(<Landing isAuthenticated={false} />)
+    const installLinks = screen.getAllByRole('link', { name: /Instalar App/i })
+    expect(installLinks.length).toBe(2)
+
+    const desktopLink = installLinks.find((l) =>
+      l.classList.contains('lp-btn--header-install-desktop'),
+    )
+    const mobileLink = installLinks.find((l) =>
+      l.classList.contains('lp-btn--header-install-mobile'),
+    )
+
+    expect(desktopLink?.getAttribute('href')).toBe('#app')
+    expect(mobileLink?.getAttribute('href')).toBe('/baixar?ct=header')
+  })
+
+  it('controla a visibilidade da sticky bar mobile através do IntersectionObserver com cleanup', () => {
+    let observerCallback: (entries: { isIntersecting: boolean }[]) => void = () => {}
+    const disconnectMock = vi.fn()
+    const observeMock = vi.fn()
+
+    class MockIntersectionObserver {
+      constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+        observerCallback = callback
+      }
+      observe = observeMock
+      disconnect = disconnectMock
+      unobserve = vi.fn()
+    }
+
+    const originalIO = window.IntersectionObserver
+    window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
+
+    try {
+      const { container, unmount } = render(<Landing isAuthenticated={false} />)
+      const sticky = container.querySelector('.lp-mobile-sticky-bar')
+      expect(sticky).toBeTruthy()
+
+      // Inicialmente oculta
+      expect(sticky?.classList.contains('lp-mobile-sticky-bar--visible')).toBe(false)
+      expect(sticky?.getAttribute('aria-hidden')).toBe('true')
+
+      // Quando o Hero sai da tela (isIntersecting: false), a sticky aparece
+      act(() => {
+        observerCallback([{ isIntersecting: false }])
+      })
+      expect(sticky?.classList.contains('lp-mobile-sticky-bar--visible')).toBe(true)
+      expect(sticky?.getAttribute('aria-hidden')).toBe('false')
+
+      // Quando o Hero volta (isIntersecting: true), a sticky oculta
+      act(() => {
+        observerCallback([{ isIntersecting: true }])
+      })
+      expect(sticky?.classList.contains('lp-mobile-sticky-bar--visible')).toBe(false)
+      expect(sticky?.getAttribute('aria-hidden')).toBe('true')
+
+      // Link da sticky aponta para /baixar?ct=sticky
+      const stickyBtn = sticky?.querySelector('a')
+      expect(stickyBtn?.getAttribute('href')).toBe('/baixar?ct=sticky')
+
+      // Cleanup no unmount (R-078)
+      unmount()
+      expect(disconnectMock).toHaveBeenCalled()
+    } finally {
+      window.IntersectionObserver = originalIO
+    }
+  })
+
+  it('mantém a sticky bar oculta (fail-closed) quando IntersectionObserver é indefinido (RC3 E-5)', () => {
+    const originalIO = window.IntersectionObserver
+    ;(window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = undefined
+
+    try {
+      const { container } = render(<Landing isAuthenticated={false} />)
+      const sticky = container.querySelector('.lp-mobile-sticky-bar')
+      expect(sticky?.classList.contains('lp-mobile-sticky-bar--visible')).toBe(false)
+      expect(sticky?.getAttribute('aria-hidden')).toBe('true')
+    } finally {
+      window.IntersectionObserver = originalIO
+    }
   })
 
   it('dispara onContinue ao clicar nos CTAs quando autenticado', () => {

@@ -8,9 +8,28 @@ import {
   LandingApp,
 } from './LandingSections'
 import { LogoMark, CircleCheckIcon } from './LandingIcons'
+import { appStoreUrl, playStoreUrl, baixarUrl } from './storeLinks'
 import './LandingPrototype.css'
 
 function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
+  const [isStickyVisible, setIsStickyVisible] = React.useState(false)
+
+  React.useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    const heroEl = document.querySelector('.lp-hero')
+    if (!heroEl) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsStickyVisible(!entry.isIntersecting)
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(heroEl)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="landing-prototype-root">
       <div className="lp-page">
@@ -36,12 +55,25 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
               <span className="lp-header__free">100% Gratuito</span>
               {!isAuthenticated ? (
                 <>
-                  <button className="lp-btn lp-btn--outline" onClick={() => onOpenAuth?.('login')}>
-                    Entrar
+                  <button
+                    type="button"
+                    className="lp-btn--web-link"
+                    onClick={() => onOpenAuth?.('login')}
+                  >
+                    Acessar Web
                   </button>
-                  <button className="lp-btn lp-btn--header" onClick={() => onOpenAuth?.('signup')}>
-                    Criar conta
-                  </button>
+                  <a
+                    className="lp-btn--header-install lp-btn--header-install-desktop"
+                    href="#app"
+                  >
+                    Instalar App
+                  </a>
+                  <a
+                    className="lp-btn--header-install lp-btn--header-install-mobile"
+                    href={baixarUrl('header')}
+                  >
+                    Instalar App
+                  </a>
                 </>
               ) : (
                 <button className="lp-btn lp-btn--header" onClick={onContinue}>
@@ -72,24 +104,52 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                 <p>Gratuito para sempre. Sem pegadinhas. Sem anúncios.</p>
                 <div className="lp-final-cta__actions">
                   {!isAuthenticated ? (
-                    <button
-                      className="lp-btn lp-btn--white lp-btn--xl"
-                      onClick={() => onOpenAuth?.('signup')}
-                    >
-                      Criar conta grátis
-                    </button>
+                    <>
+                      <div className="lp-final-cta__badges">
+                        <a
+                          href={appStoreUrl('final')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="lp-store-badge-btn"
+                          aria-label="Baixar na App Store"
+                        >
+                          <img
+                            src="/badges/app-store-pt.svg"
+                            alt="Baixar na App Store"
+                            width={168}
+                            height={50}
+                          />
+                        </a>
+                        <a
+                          href={playStoreUrl('final')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="lp-store-badge-btn"
+                          aria-label="Disponível no Google Play"
+                        >
+                          <img
+                            src="/badges/google-play-pt.svg"
+                            alt="Disponível no Google Play"
+                            width={168}
+                            height={50}
+                          />
+                        </a>
+                      </div>
+                      <div className="lp-final-cta__fallback">
+                        <button
+                          type="button"
+                          className="lp-link-subtle"
+                          onClick={() => onOpenAuth?.('login')}
+                        >
+                          Quer acessar no computador? Entrar na versão web →
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     <button className="lp-btn lp-btn--white lp-btn--xl" onClick={onContinue}>
                       Abrir painel
                     </button>
                   )}
-                  <div className="lp-final-proof">
-                    <div className="lp-final-proof__line">
-                      <CircleCheckIcon size={16} />
-                      <span>App nativo + PWA</span>
-                    </div>
-                    <p>App na App Store (iOS) · Google Play (Android) · no Computador</p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -187,6 +247,29 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
             </p>
           </div>
         </footer>
+
+        {/* Mobile Sticky Bar (spec 111 US1-AC3) */}
+        <aside
+          className={`lp-mobile-sticky-bar ${isStickyVisible ? 'lp-mobile-sticky-bar--visible' : ''}`}
+          aria-hidden={!isStickyVisible}
+          inert={!isStickyVisible}
+        >
+          <div className="lp-mobile-sticky-bar__inner">
+            <div className="lp-mobile-sticky-bar__brand">
+              <div className="lp-brand__mark lp-brand__mark--tiny">
+                <LogoMark size={20} />
+              </div>
+              <span className="lp-mobile-sticky-bar__copy">dosiq · 100% gratuito</span>
+            </div>
+            <a
+              href={baixarUrl('sticky')}
+              className="lp-mobile-sticky-bar__btn"
+              aria-label="Instalar aplicativo"
+            >
+              Instalar
+            </a>
+          </div>
+        </aside>
       </div>
     </div>
   )
