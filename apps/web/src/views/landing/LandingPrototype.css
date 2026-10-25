@@ -802,7 +802,7 @@
 }
 
 .lp-section__intro {
-  margin-bottom: 20px;
+  margin-bottom: 80px;
 }
 
 .lp-section__intro--center {
@@ -1388,6 +1388,14 @@
   .lp-section {
     padding-top: 32px;
     padding-bottom: 32px;
+  }
+
+  .lp-section__intro {
+    margin-bottom: 20px;
+  }
+
+  .lp-section__intro--center {
+    margin-bottom: 40px;
   }
 
   .lp-info-card {
