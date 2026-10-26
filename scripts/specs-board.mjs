@@ -16,7 +16,7 @@ const STRATEGY = join(ROOT, 'plans/strategy-2026')
 const STRATEGY_DOCS = ['BACKLOG_ORDER_2026H2.md', 'PLANO_EXECUCAO_TESE_2026_v2.md', 'TESE_PLAYBOOK_v2.md']
 
 const STATUSES = ['draft', 'specified', 'planned', 'in-progress', 'delivered', 'superseded']
-const TRAVAS = ['loja-0.34', 'adoção', 'gate-LGPD', 'PO', 'congelada']
+const TRAVAS = ['loja-0.35', 'adoção', 'gate-LGPD', 'PO', 'congelada']
 const TRAVA_DEP = /^dep:[\w.-]+$/
 const EMPTY = '—'
 
