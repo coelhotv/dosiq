@@ -48,75 +48,75 @@
   "rewrites": [
     {
       "source": "/api/dlq/:id/retry",
-      "destination": "/api/admin.ts?resource=dlq&action=retry&id=:id"
+      "destination": "/api/admin?resource=dlq&action=retry&id=:id"
     },
     {
       "source": "/api/dlq/:id/discard",
-      "destination": "/api/admin.ts?resource=dlq&action=discard&id=:id"
+      "destination": "/api/admin?resource=dlq&action=discard&id=:id"
     },
     {
       "source": "/api/dlq",
-      "destination": "/api/admin.ts?resource=dlq"
+      "destination": "/api/admin?resource=dlq"
     },
     {
       "source": "/api/feedbacks/:id/resolve",
-      "destination": "/api/admin.ts?resource=feedbacks&action=resolve&id=:id"
+      "destination": "/api/admin?resource=feedbacks&action=resolve&id=:id"
     },
     {
       "source": "/api/feedbacks",
-      "destination": "/api/admin.ts?resource=feedbacks"
+      "destination": "/api/admin?resource=feedbacks"
     },
     {
       "source": "/api/admin/nudges/:id",
-      "destination": "/api/admin.ts?resource=nudges&id=:id"
+      "destination": "/api/admin?resource=nudges&id=:id"
     },
     {
       "source": "/api/admin/nudges",
-      "destination": "/api/admin.ts?resource=nudges"
+      "destination": "/api/admin?resource=nudges"
     },
     {
       "source": "/api/admin/prune/:action",
-      "destination": "/api/admin.ts?resource=prune&action=:action"
+      "destination": "/api/admin?resource=prune&action=:action"
     },
     {
       "source": "/api/admin/prune",
-      "destination": "/api/admin.ts?resource=prune&action=list"
+      "destination": "/api/admin?resource=prune&action=list"
     },
     {
       "source": "/api/ops/:job",
-      "destination": "/api/ops.ts?job=:job"
+      "destination": "/api/ops?job=:job"
     },
     {
       "source": "/api/health/notifications",
-      "destination": "/api/admin.ts?resource=health&scope=notifications"
+      "destination": "/api/admin?resource=health&scope=notifications"
     },
     {
       "source": "/api/telegram",
-      "destination": "/api/telegram.ts"
+      "destination": "/api/telegram"
     },
     {
       "source": "/api/notify",
-      "destination": "/api/notify.ts"
+      "destination": "/api/notify"
     },
     {
       "source": "/api/generate-doses",
-      "destination": "/api/generate-doses.ts"
+      "destination": "/api/generate-doses"
     },
     {
       "source": "/api/users/beta-signup",
-      "destination": "/api/users.ts?action=beta-signup"
+      "destination": "/api/users?action=beta-signup"
     },
     {
       "source": "/api/report",
-      "destination": "/api/report.ts"
+      "destination": "/api/report"
     },
     {
       "source": "/api/chatbot",
-      "destination": "/api/chatbot.ts"
+      "destination": "/api/chatbot"
     },
     {
       "source": "/api/users/register-webpush",
-      "destination": "/api/users.ts?action=register-webpush"
+      "destination": "/api/users?action=register-webpush"
     },
     {
       "source": "/((?!api/|.*\\.[^/]+$).*)",
