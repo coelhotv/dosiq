@@ -11,7 +11,7 @@ import { appStoreUrl, playStoreUrl } from './storeLinks'
 
 interface LandingHeroProps {
   isAuthenticated?: boolean
-  onOpenAuth?: (mode: 'login' | 'register') => void
+  onOpenAuth?: (mode: 'login' | 'signup') => void
   onContinue?: () => void
 }
 
