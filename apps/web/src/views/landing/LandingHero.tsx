@@ -84,7 +84,7 @@ export default function LandingHero({
                       className="lp-link-subtle"
                       onClick={() => onOpenAuth?.('login')}
                     >
-                      Acesse a versão web →
+                      Acesso o dosiq web →
                     </button>
                   </div>
                 </div>

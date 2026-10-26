@@ -25,7 +25,7 @@ describe('LandingHero — App-First (Spec 111 PO-111-1 / PO-111-4)', () => {
     expect(androidLink.getAttribute('href')).not.toMatch(/[?&]utm_source=/)
 
     // Link secundário para versão web chama onOpenAuth('login')
-    const webFallbackBtn = screen.getByRole('button', { name: /Acesse a versão web →/i })
+    const webFallbackBtn = screen.getByRole('button', { name: /Acesso o dosiq web →/i })
     fireEvent.click(webFallbackBtn)
     expect(onOpenAuth).toHaveBeenCalledWith('login')
   })

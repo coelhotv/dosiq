@@ -102,7 +102,7 @@ describe('Landing SPA Web (Spec 048 Slice A / v0.34.0)', () => {
     fireEvent.click(accessWebBtn)
     expect(onOpenAuth).toHaveBeenCalledWith('login')
 
-    const webFallbackBtn = screen.getByRole('button', { name: /Acesse a versão web →/i })
+    const webFallbackBtn = screen.getByRole('button', { name: /Acesso o dosiq web →/i })
     fireEvent.click(webFallbackBtn)
     expect(onOpenAuth).toHaveBeenCalledWith('login')
   })

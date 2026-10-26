@@ -219,6 +219,14 @@
 .landing-prototype-root a.lp-btn--header-install-mobile,
 .lp-btn--header-install-mobile {
   display: none !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
+.landing-prototype-root a.lp-btn--header-install.lp-btn--header-install-mobile,
+.lp-btn--header-install.lp-btn--header-install-mobile {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .lp-btn--secondary {
@@ -287,7 +295,7 @@
 .lp-hero {
   position: relative;
   overflow: hidden;
-  padding: 80px 0 128px;
+  padding: 20px 0 128px;
 }
 
 .lp-hero__orb {
@@ -401,7 +409,8 @@
     transform 150ms ease,
     opacity 150ms ease;
   flex: 0 0 auto;
-  height: 40px;
+  height: 50px;
+  min-height: 50px;
 }
 
 .lp-store-badge-btn:hover {
@@ -416,10 +425,11 @@
 .lp-store-badge-btn img,
 .lp-store-badges-row img,
 .lp-app-badge-img {
-  height: 40px !important;
-  max-height: 40px !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: none !important;
   width: auto !important;
-  max-width: 145px !important;
+  max-width: none !important;
   object-fit: contain !important;
   display: block !important;
 }
@@ -1312,6 +1322,18 @@
   .landing-prototype-root a.lp-btn--header-install-mobile,
   .lp-btn--header-install-mobile {
     display: inline-flex !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .landing-prototype-root a.lp-btn--header-install.lp-btn--header-install-mobile,
+  .lp-btn--header-install.lp-btn--header-install-mobile {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .lp-main {
+    padding-top: 40px;
   }
 
   /* Hero ATF Mobile ritmo vertical (spec 111 FR-004, PO-111-1) */
@@ -1342,18 +1364,20 @@
     align-items: center !important;
     gap: 12px !important;
     width: 100% !important;
-    max-width: 340px !important;
+    max-width: 100% !important;
   }
 
   .lp-store-badges-row .lp-store-badge-btn {
     flex: 0 0 auto !important;
-    height: 40px !important;
+    height: 50px !important;
+    min-height: 50px !important;
   }
 
   .lp-store-badges-row img {
-    height: 40px !important;
+    height: 50px !important;
+    min-height: 50px !important;
     width: auto !important;
-    max-width: 135px !important;
+    max-width: none !important;
     object-fit: contain !important;
   }
 
