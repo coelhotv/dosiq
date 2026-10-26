@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Funil Nativo da Landing Principal (App-First) & Ritmo Vertical Mobile (spec 111)
+
+- **Web** (`Added` e `Changed`, `minor` 4.33.4 → 4.34.0). Transformação da landing principal (`dosiq.app`) em funil de conversão focado em download dos aplicativos nativos (iOS e Android), reposicionando o acesso web como rota secundária:
+  - **Hero App-First:** Substituição dos botões de cadastro web por badges oficiais em vetor SVG da App Store e Google Play com links parametrizados por ponto de clique; link de fallback secundário direcionando para o login web.
+  - **QR Code Bridge para Desktop (≥ 1024px):** Card flutuante sobre o mockup com QR Code estático (`/badges/qr-baixar.svg`) gerado via script com checksum para direcionamento em `https://dosiq.app/baixar?ct=qr`.
+  - **Header e Barra Fixa Mobile (≤ 767px):** Botão "Instalar App" no header e barra fixa inferior (`.lp-mobile-sticky-bar`) acionada de forma reativa por `IntersectionObserver` assim que o hero sai do viewport, com padding para safe area (`env(safe-area-inset-bottom)`).
+  - **Página de Redirecionamento `/baixar`:** Criação da página estática leve `apps/web/public/baixar.html` com detecção de sistema operacional (iOS/Android) no cliente via JavaScript vanilla, suporte a `<noscript>` e whitelist estrita de parâmetros de atribuição (`ct`).
+  - **Padronização e Atribuição de Lojas:** Centralização dos links das lojas em `storeLinks.ts` (App Store com `pt=128807500` e Google Play com `referrer=`) e atualização dos links das 8 páginas públicas de SEO para atribuição oficial (`ct=landing-guias`).
+  - **Ritmo Vertical Mobile:** Ajuste de tipografia fluida com `clamp`, alinhamento das badges em grid duplo e mockup compacto sem rolagem excessiva.
+
 ### Primeira Visita Leve: dosiq.app em Celular Pré-Pago (spec 110)
 
 - **Web** (`Changed` e `Fixed`, `patch` 4.33.3 → 4.33.4). Otimização radical do caminho crítico da landing do Dosiq para celulares pré-pago (corte de 356 kB gz para 163 kB gz, −54% vs baseline, teto ≤ 172 kB gz):

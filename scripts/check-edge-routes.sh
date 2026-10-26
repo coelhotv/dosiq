@@ -154,6 +154,7 @@ assert_static_html "/termos-de-uso" "Termos de Uso" "Página de Termos de Uso"
 assert_static_html "/politica-de-privacidade" "Política de Privacidade" "Página de Privacidade"
 assert_static_html "/glp-1" "Titulação" "Página GLP-1"
 assert_static_html "/guia/rodizio-aplicacao" "Rodízio" "Guia de Rodízio"
+assert_static_html "/baixar" "dosiq" "Página /baixar"
 echo ""
 
 echo "3. GRUPO C: 200 SPA fallback para rotas profundas sem extensão"

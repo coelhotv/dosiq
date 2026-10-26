@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baixar o dosiq | App Gratuito para iPhone e Android</title>
+    <meta name="description" content="Baixe o app dosiq para controle e acompanhamento de doses de medicamentos." />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <style>
+      :root {
+        --lp-green-700: #1b4332;
+        --lp-green-800: #143527;
+        --lp-green-600: #2d6a4f;
+        --lp-green-500: #40916c;
+        --lp-slate-900: #0f172a;
+        --lp-slate-700: #334155;
+        --lp-slate-500: #64748b;
+        --lp-slate-200: #e2e8f0;
+        --lp-slate-50: #f8fafc;
+        --lp-white: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--lp-slate-50);
+        color: var(--lp-slate-900);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+      }
+
+      .card {
+        background: var(--lp-white);
+        border: 1px solid var(--lp-slate-200);
+        border-radius: 28px;
+        box-shadow: 0 20px 48px -12px rgba(15, 23, 42, 0.08);
+        padding: 40px 28px;
+        max-width: 440px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo-mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-mark img {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--lp-slate-900);
+        margin-bottom: 8px;
+      }
+
+      p.subtitle {
+        font-size: 0.95rem;
+        color: var(--lp-slate-500);
+        line-height: 1.5;
+        margin-bottom: 28px;
+      }
+
+      .badges-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 28px;
+      }
+
+      @media (min-width: 380px) {
+        .badges-row {
+          flex-direction: row;
+        }
+      }
+
+      .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 150ms ease, opacity 150ms ease;
+        text-decoration: none;
+      }
+
+      .badge-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .badge-btn:active {
+        transform: scale(0.98);
+      }
+
+      .badge-btn img {
+        height: 44px;
+        width: auto;
+        display: block;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--lp-slate-200);
+        margin: 0 auto 24px;
+        width: 100%;
+      }
+
+      .web-link {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--lp-green-700);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 150ms ease;
+      }
+
+      .web-link:hover {
+        color: var(--lp-green-800);
+        text-decoration: underline;
+      }
+
+      .footer-legal {
+        margin-top: 24px;
+        font-size: 0.75rem;
+        color: var(--lp-slate-500);
+        text-align: center;
+      }
+    </style>
+
+    <script>
+      /**
+       * Resolução de loja cliente por SO (spec 111 FR-010, PO-111-5)
+       * URLs sincronizadas com storeLinks.ts (D4).
+       */
+      (function () {
+        var ALLOWED_POINTS = ['atf', 'header', 'sticky', 'section', 'final', 'qr'];
+        var params = new URLSearchParams(window.location.search);
+        var rawCt = params.get('ct');
+        var ct = (rawCt && ALLOWED_POINTS.indexOf(rawCt) !== -1) ? rawCt : 'baixar';
+
+        var appStoreUrl = 'https://apps.apple.com/br/app/id6762740948?pt=128807500&ct=landing_home_' + ct + '&mt=8';
+        var playStoreUrl = 'https://play.google.com/store/apps/details?id=com.coelhotv.dosiq&referrer=utm_source%3Dlanding_home%26utm_campaign%3D' + ct;
+
+        var ua = navigator.userAgent || '';
+        var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var isAndroid = /Android/i.test(ua);
+
+        if (isIOS) {
+          window.location.replace(appStoreUrl);
+        } else if (isAndroid) {
+          window.location.replace(playStoreUrl);
+        } else {
+          // No desktop, atualiza os hrefs dos badges estáticos com o ct resolvido
+          window.addEventListener('DOMContentLoaded', function () {
+            var iosLink = document.getElementById('ios-badge-link');
+            var androidLink = document.getElementById('android-badge-link');
+            if (iosLink) iosLink.href = appStoreUrl;
+            if (androidLink) androidLink.href = playStoreUrl;
+          });
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <main class="card">
+      <div class="logo-mark" aria-hidden="true">
+        <img src="/dosiq-logo-verde.svg" alt="dosiq" width="56" height="56" />
+      </div>
+
+      <h1>Baixar o dosiq</h1>
+      <p class="subtitle">100% gratuito • Disponível para iPhone e Android</p>
+
+      <div class="badges-row">
+        <a
+          id="ios-badge-link"
+          href="https://apps.apple.com/br/app/id6762740948?pt=128807500&ct=landing_home_baixar&mt=8"
+          class="badge-btn"
+          aria-label="Baixar na App Store"
+        >
+          <img src="/badges/app-store-pt.svg" alt="Baixar na App Store" width="135" height="40" />
+        </a>
+        <a
+          id="android-badge-link"
+          href="https://play.google.com/store/apps/details?id=com.coelhotv.dosiq&referrer=utm_source%3Dlanding_home%26utm_campaign%3Dbaixar"
+          class="badge-btn"
+          aria-label="Disponível no Google Play"
+        >
+          <img src="/badges/google-play-pt.svg" alt="Disponível no Google Play" width="168" height="50" />
+        </a>
+      </div>
+
+      <div class="divider"></div>
+
+      <a href="/" class="web-link">
+        Prefere usar no computador? Acesse a versão web →
+      </a>
+    </main>
+
+    <footer class="footer-legal">
+      <p>dosiq · Saúde Digital e Acompanhamento de Doses</p>
+    </footer>
+
+    <noscript>
+      <div style="margin-top: 16px; font-size: 0.8125rem; color: #64748b; text-align: center;">
+        JavaScript desativado. Use os botões acima para baixar direto na loja do seu aparelho.
+      </div>
+    </noscript>
+  </body>
+</html>

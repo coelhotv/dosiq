@@ -198,11 +198,7 @@ export function LandingPrivacidade() {
   )
 }
 
-// Links parametrizados com UTM para atribuição das lojas
-const APP_STORE_URL =
-  'https://apps.apple.com/br/app/dosiq-intelig%C3%AAncia-em-doses/id6762740948?utm_source=landing_home'
-const GOOGLE_PLAY_URL =
-  'https://play.google.com/store/apps/details?id=com.coelhotv.dosiq&utm_source=landing_home'
+import { appStoreUrl, playStoreUrl } from './storeLinks'
 
 /**
  * LandingApp — promove os apps nativos (iOS e Android ambos publicados).
@@ -231,12 +227,12 @@ export function LandingApp() {
             <div className="lp-app-card__cta">
               <a
                 className="lp-app-badge"
-                href={APP_STORE_URL}
+                href={appStoreUrl('section')}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Baixar na App Store"
               >
-                <img src="/download-ios.png" alt="Disponível na App Store" />
+                <img src="/badges/app-store-pt.svg" alt="Baixar na App Store" />
               </a>
             </div>
           </div>
@@ -251,13 +247,13 @@ export function LandingApp() {
             <div className="lp-app-card__cta">
               <a
                 className="lp-app-badge"
-                href={GOOGLE_PLAY_URL}
+                href={playStoreUrl('section')}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Disponível no Google Play"
               >
                 <img
-                  src="/download-android.png"
+                  src="/badges/google-play-pt.svg"
                   alt="Disponível no Google Play"
                   className="lp-app-badge-img"
                 />

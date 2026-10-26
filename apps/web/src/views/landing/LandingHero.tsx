@@ -7,8 +7,19 @@ import {
   BellIcon,
   ShieldCheckIcon,
 } from './LandingIcons'
+import { appStoreUrl, playStoreUrl } from './storeLinks'
 
-export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue }) {
+interface LandingHeroProps {
+  isAuthenticated?: boolean
+  onOpenAuth?: (mode: 'login' | 'signup') => void
+  onContinue?: () => void
+}
+
+export default function LandingHero({
+  isAuthenticated = false,
+  onOpenAuth = () => {},
+  onContinue = () => {},
+}: LandingHeroProps) {
   return (
     <section className="lp-hero">
       <div className="lp-hero__orb lp-hero__orb--blue" />
@@ -32,21 +43,51 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
 
             <div className="lp-hero__cta">
               {!isAuthenticated ? (
-                <>
-                  <button
-                    className="lp-btn lp-btn--primary lp-btn--large"
-                    onClick={() => onOpenAuth?.('signup')}
-                  >
-                    Criar conta grátis
-                    <ArrowRightIcon size={20} />
-                  </button>
-                  <button
-                    className="lp-btn lp-btn--secondary lp-btn--large"
-                    onClick={() => onOpenAuth?.('login')}
-                  >
-                    Já tenho conta — entrar
-                  </button>
-                </>
+                <div className="lp-hero__cta-app">
+                  <div className="lp-store-badges-row">
+                    <a
+                      className="lp-store-badge-btn"
+                      href={appStoreUrl('atf')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Baixar na App Store"
+                    >
+                      <img
+                        src="/badges/app-store-pt.svg"
+                        alt="Baixar na App Store"
+                        width={135}
+                        height={40}
+                        className="lp-store-badge-img"
+                      />
+                    </a>
+                    <a
+                      className="lp-store-badge-btn"
+                      href={playStoreUrl('atf')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Disponível no Google Play"
+                    >
+                      <img
+                        src="/badges/google-play-pt.svg"
+                        alt="Disponível no Google Play"
+                        width={135}
+                        height={40}
+                        className="lp-store-badge-img"
+                      />
+                    </a>
+                  </div>
+
+                  <div className="lp-hero__web-fallback">
+                    <span>Prefere usar no computador?</span>{' '}
+                    <button
+                      type="button"
+                      className="lp-link-subtle"
+                      onClick={() => onOpenAuth?.('login')}
+                    >
+                      Acesso o dosiq web →
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button className="lp-btn lp-btn--primary lp-btn--large" onClick={onContinue}>
                   Abrir meu painel
@@ -73,83 +114,105 @@ export default function LandingHero({ isAuthenticated, onOpenAuth, onContinue })
           </div>
 
           <div className="lp-hero__visual">
-            <div className="lp-phone-card">
-              <div className="lp-phone-card__screen">
-                <div className="lp-app-header">
-                  <div className="lp-app-header__identity">
-                    <div className="lp-avatar">M</div>
-                    <div>
-                      <p className="lp-caption">Adesão hoje</p>
-                      <p className="lp-app-header__score">91% • Excelente!</p>
-                    </div>
-                  </div>
-                  <div className="lp-icon-circle">
-                    <BellIcon size={20} />
-                  </div>
-                </div>
-
-                <div className="lp-alert-card">
-                  <div className="lp-alert-card__header">
-                    <p>Próxima aplicação</p>
-                    <span className="lp-badge lp-badge--blue">Semanal</span>
-                  </div>
-                  <div className="lp-alert-card__row">
-                    <p>Semaglutida 1,7 mg</p>
-                    <p className="lp-text-green">quinta, 20:00</p>
-                  </div>
-                  <div className="lp-progress">
-                    <div className="lp-progress__fill" style={{ width: '72%', background: 'var(--lp-green-500)' }} />
-                  </div>
-                  <p className="lp-dose-item__meta" style={{ marginTop: '8px' }}>
-                    Degrau 4 de 5 · sobe em 2 semanas
-                  </p>
-                </div>
-
-                <div className="lp-dose-list">
-                  <div className="lp-dose-list__header">
-                    <p>Hoje</p>
-                  </div>
-
-                  <div className="lp-dose-item">
-                    <div className="lp-dose-item__info">
-                      <div className="lp-dose-item__time">12:00</div>
+            <div className="lp-visual-wrap">
+              <div className="lp-phone-card">
+                <div className="lp-phone-card__screen">
+                  <div className="lp-app-header">
+                    <div className="lp-app-header__identity">
+                      <div className="lp-avatar">M</div>
                       <div>
-                        <div className="lp-dose-item__name">Losartana 50 mg</div>
-                        <div className="lp-dose-item__meta">1 comp</div>
+                        <p className="lp-caption">Adesão hoje</p>
+                        <p className="lp-app-header__score">91% • Excelente!</p>
                       </div>
                     </div>
-                    <div className="lp-badge lp-badge--blue">Hipertensão</div>
+                    <div className="lp-icon-circle">
+                      <BellIcon size={20} />
+                    </div>
                   </div>
 
-                  <div className="lp-dose-item">
-                    <div className="lp-dose-item__info">
-                      <div className="lp-dose-item__time">14:00</div>
-                      <div>
-                        <div className="lp-dose-item__name">Metformina 850 mg</div>
-                        <div className="lp-dose-item__meta">1 comp</div>
-                      </div>
+                  <div className="lp-alert-card">
+                    <div className="lp-alert-card__header">
+                      <p>Próxima aplicação</p>
+                      <span className="lp-badge lp-badge--blue">Semanal</span>
                     </div>
-                    <div className="lp-badge lp-badge--purple">Diabetes</div>
+                    <div className="lp-alert-card__row">
+                      <p>Semaglutida 1,7 mg</p>
+                      <p className="lp-text-green">quinta, 20:00</p>
+                    </div>
+                    <div className="lp-progress">
+                      <div className="lp-progress__fill" style={{ width: '72%', background: 'var(--lp-green-500)' }} />
+                    </div>
+                    <p className="lp-dose-item__meta" style={{ marginTop: '8px' }}>
+                      Degrau 4 de 5 · sobe em 2 semanas
+                    </p>
                   </div>
 
-                  <div className="lp-dose-item">
-                    <div className="lp-dose-item__info">
-                      <div className="lp-dose-item__time">20:00</div>
-                      <div>
-                        <div className="lp-dose-item__name">Sinvastatina 20 mg</div>
-                        <div className="lp-dose-item__meta">2 comp</div>
-                      </div>
+                  <div className="lp-dose-list">
+                    <div className="lp-dose-list__header">
+                      <p>Hoje</p>
                     </div>
-                    <div className="lp-badge lp-badge--orange">Colesterol</div>
+
+                    <div className="lp-dose-item">
+                      <div className="lp-dose-item__info">
+                        <div className="lp-dose-item__time">12:00</div>
+                        <div>
+                          <div className="lp-dose-item__name">Losartana 50 mg</div>
+                          <div className="lp-dose-item__meta">1 comp</div>
+                        </div>
+                      </div>
+                      <div className="lp-badge lp-badge--blue">Hipertensão</div>
+                    </div>
+
+                    <div className="lp-dose-item">
+                      <div className="lp-dose-item__info">
+                        <div className="lp-dose-item__time">14:00</div>
+                        <div>
+                          <div className="lp-dose-item__name">Metformina 850 mg</div>
+                          <div className="lp-dose-item__meta">1 comp</div>
+                        </div>
+                      </div>
+                      <div className="lp-badge lp-badge--purple">Diabetes</div>
+                    </div>
+
+                    <div className="lp-dose-item">
+                      <div className="lp-dose-item__info">
+                        <div className="lp-dose-item__time">20:00</div>
+                        <div>
+                          <div className="lp-dose-item__name">Sinvastatina 20 mg</div>
+                          <div className="lp-dose-item__meta">2 comp</div>
+                        </div>
+                      </div>
+                      <div className="lp-badge lp-badge--orange">Colesterol</div>
+                    </div>
+                  </div>
+
+                  <div className="lp-emergency-card">
+                    <div className="lp-emergency-card__title">
+                      <ShieldCheckIcon className="lp-text-green" size={16} />
+                      <p>Cartão de Emergência Ativo</p>
+                    </div>
+                    <p>Disponível offline para socorristas e médicos em caso de urgência.</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="lp-emergency-card">
-                  <div className="lp-emergency-card__title">
-                    <ShieldCheckIcon className="lp-text-green" size={16} />
-                    <p>Cartão de Emergência Ativo</p>
-                  </div>
-                  <p>Disponível offline para socorristas e médicos em caso de urgência.</p>
+              {/* QR Code Floating Bridge (Desktop) */}
+              <div
+                className="lp-qr-bridge"
+                aria-label="Instale no celular. Aponte a câmera para baixar direto no iPhone ou Android."
+              >
+                <div className="lp-qr-bridge__box">
+                  <img
+                    src="/badges/qr-baixar.svg"
+                    alt="QR Code para baixar o Dosiq no celular"
+                    width={60}
+                    height={60}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="lp-qr-bridge__text">
+                  <b>Instale no celular</b>
+                  <span>Aponte a câmera para baixar o app.</span>
                 </div>
               </div>
             </div>
