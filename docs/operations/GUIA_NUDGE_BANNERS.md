@@ -33,7 +33,7 @@ updated_at: "2026-10-26"
 
 ### 1. Abrir o Painel Admin
 
-1. Acesse a aplicação web dosiq como **administrador** (detectado via `VITE_ADMIN_CHAT_ID`)
+1. Acesse a aplicação web dosiq como **administrador** (detectado via `VITE_ADMIN_USER_ID` = seu `auth.users.id` no banco do ambiente)
 2. Vá para **Perfil → Configurações** (ícone ⚙️)
 3. Desça até **Administração** → clique em **"Nudges (In-App)"**
 

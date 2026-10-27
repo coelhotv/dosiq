@@ -14,6 +14,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Destinos de "Navegar":** a lista de telas passa a vir de uma fonte única no `@dosiq/core` (`NUDGE_DESTINATIONS`), com rótulos em português. Entram Lista de medicamentos, Novo medicamento, Relatório clínico, Privacidade e dados e Chat IA. Saem as telas que exigem um medicamento escolhido (`PurchaseForm`, que gerava botão quebrado) e o vínculo com o Telegram.
   - **Validação:** o servidor recusa destino fora da lista canônica. O handler `api/admin/_handlers/nudges.ts` deixou de manter uma cópia do schema e importa do core.
   - Dica no formulário: os limites de versão do app (mín./máx.) são inclusivos.
+  - **Detecção de admin na web:** a seção Administração passa a aparecer pelo mesmo critério do servidor, o `auth.users.id` igual a `VITE_ADMIN_USER_ID`. Antes ela dependia do `telegram_chat_id` bater com `VITE_ADMIN_CHAT_ID`, e conta de admin sem Telegram vinculado (como a do banco de QA no preview) nunca via a seção. ⚠️ Deploy exige `VITE_ADMIN_USER_ID` em cada ambiente da Vercel; sem ela, a seção some.
 - **Mobile** (`Fixed`, sem bump de `APP_VERSION`; canal: OTA ou carona no próximo build de loja). O app só segue nudges de navegação cujo destino está na lista canônica, e esconde os que levam ao Estoque de quem está com o controle de estoque desligado (antes, tocar no botão derrubava o app).
 
 ### Hotfix: rewrites de `/api/*` quebradas pelo `cleanUrls` (regressão da spec 110)

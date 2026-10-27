@@ -48,8 +48,11 @@ export function useSettingsState() {
       if (settings) {
         setIsTelegramConnected(!!settings.telegram_chat_id)
 
-        const adminChatId = import.meta.env.VITE_ADMIN_CHAT_ID
-        if (adminChatId && String(settings.telegram_chat_id) === String(adminChatId)) {
+        // Mesmo critério do servidor (`verifyAdminAccess`: auth.users.id === ADMIN_USER_ID, ADR-091 D10).
+        // Antes comparava telegram_chat_id com VITE_ADMIN_CHAT_ID — conta sem Telegram (ex.: admin no
+        // banco de QA) nunca via a seção. Isto só mostra/esconde a UI; quem autoriza é o servidor.
+        const adminUserId = import.meta.env.VITE_ADMIN_USER_ID
+        if (adminUserId && user.id === adminUserId) {
           setIsAdmin(true)
           const { count } = await supabase.from('failed_notification_queue').select('*', { count: 'exact', head: true })
           setDlqCount(count || 0)
