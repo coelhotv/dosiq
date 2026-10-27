@@ -132,7 +132,7 @@
   display: none;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--lp-emerald-600);
+  color: var(--lp-emerald-700);
 }
 
 .lp-btn {
@@ -484,7 +484,7 @@
 
 .lp-proof__icon--green,
 .lp-text-green {
-  color: var(--lp-emerald-600);
+  color: var(--lp-emerald-700);
 }
 
 .lp-text-red {
@@ -634,7 +634,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--lp-slate-400);
+  color: var(--lp-slate-600);
 }
 
 .lp-app-header__score {
@@ -651,7 +651,7 @@
   justify-content: center;
   border-radius: 999px;
   background: var(--lp-slate-100);
-  color: var(--lp-slate-400);
+  color: var(--lp-slate-500);
 }
 
 .lp-alert-card,
@@ -733,7 +733,7 @@
 .lp-quote-card__subtitle {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--lp-slate-400);
+  color: var(--lp-slate-600);
 }
 
 .lp-badge {
@@ -860,14 +860,20 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lp-slate-400);
+  color: var(--lp-slate-600);
 }
 
 .lp-card h3,
-.lp-feature h4 {
+.lp-feature h3 {
   margin: 0 0 12px;
   font-weight: 800;
   color: var(--lp-slate-900);
+}
+
+/* h4 → h3 (heading-order, spec 112): mantém o tamanho que o h4 tinha */
+.lp-feature h3,
+.lp-app-card h3 {
+  font-size: var(--text-xl);
 }
 
 .lp-card p {
@@ -961,6 +967,10 @@
 
 .lp-section--dark h2 {
   color: var(--lp-white);
+}
+
+.lp-section--dark .lp-text-green {
+  color: var(--lp-emerald-600); /* ícones sobre slate-900: 4.74:1 */
 }
 
 .lp-dark-copy {
@@ -1644,7 +1654,7 @@
   justify-content: center;
 }
 
-.lp-app-card h4 {
+.lp-app-card h3 {
   margin: 4px 0 8px;
   font-weight: 800;
   color: var(--lp-slate-900);
