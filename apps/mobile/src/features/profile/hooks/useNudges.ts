@@ -6,6 +6,7 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { buildNudgeList, dismissKey } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 import { navigationRef } from '@navigation/navigationRef'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import Constants from 'expo-constants'
 
 const APP_VERSION = Constants.expoConfig?.version || '0.15.0'
@@ -62,6 +63,10 @@ export function useNudges(targetView) {
   const navigation = useNavigation()
   const [nudge, setNudge] = useState(null)
   const [fetchKey, setFetchKey] = useState(0)
+  const { enabled: stockEnabled, ready: stockReady } = useStockTracking()
+  // Enquanto a preferência não carregou, trata como desligado: esconder um nudge é inócuo,
+  // navegar para o Estoque desligado derruba o app (mesma guarda da NotificationInbox).
+  const stockTrackingEnabled = stockReady && stockEnabled
 
   const refresh = useCallback(() => setFetchKey((k) => k + 1), [])
 
@@ -96,6 +101,7 @@ export function useNudges(targetView) {
         platform: CURRENT_PLATFORM,
         appVersion: APP_VERSION,
         dismissed: savedDismissed,
+        stockTrackingEnabled,
       })
 
       setNudge(list[0] ?? null)
@@ -103,7 +109,7 @@ export function useNudges(targetView) {
 
     load()
     return () => { active = false }
-  }, [targetView, fetchKey])
+  }, [targetView, fetchKey, stockTrackingEnabled])
 
   const dismiss = useCallback(async (n) => {
     setNudge(null)

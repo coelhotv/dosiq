@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Nudges: versão no admin e destinos canônicos de navegação (spec 028, emenda)
+
+- **Web** (`Added` e `Fixed`, `minor` 4.34.1 → 4.35.0). Admin de nudges:
+  - **Versão do nudge:** a edição mostra a versão atual e oferece "Reexibir para quem já dispensou" (sobe de N para N+1 ao salvar). O app grava o dispensado como `id:versão`, então a nova versão volta a aparecer para quem já tinha fechado o nudge. A lista exibe a versão de cada nudge.
+  - **Destinos de "Navegar":** a lista de telas passa a vir de uma fonte única no `@dosiq/core` (`NUDGE_DESTINATIONS`), com rótulos em português. Entram Lista de medicamentos, Novo medicamento, Relatório clínico, Privacidade e dados e Chat IA. Saem as telas que exigem um medicamento escolhido (`PurchaseForm`, que gerava botão quebrado) e o vínculo com o Telegram.
+  - **Validação:** o servidor recusa destino fora da lista canônica. O handler `api/admin/_handlers/nudges.ts` deixou de manter uma cópia do schema e importa do core.
+  - Dica no formulário: os limites de versão do app (mín./máx.) são inclusivos.
+- **Mobile** (`Fixed`, sem bump de `APP_VERSION`; canal: OTA ou carona no próximo build de loja). O app só segue nudges de navegação cujo destino está na lista canônica, e esconde os que levam ao Estoque de quem está com o controle de estoque desligado (antes, tocar no botão derrubava o app).
+
 ### Hotfix: rewrites de `/api/*` quebradas pelo `cleanUrls` (regressão da spec 110)
 
 - **Web/Backend** (`Fixed`, `patch` 4.34.0 → 4.34.1). Com `cleanUrls: true` (spec 110, #911), a Vercel passou a redirecionar (308) os destinos de rewrite `/api/<função>.ts?query`, resultando em 404 em produção desde 24/10. Afetava o admin web (DLQ, feedbacks, nudges, prune, saúde de notificações), o registro de web push (`/api/users/register-webpush`), o `beta-signup` e os jobs de `/api/ops/:job`. Os destinos das rewrites no `vercel.json` agora apontam para a função sem extensão (`/api/admin?…`, `/api/users?…`, `/api/ops?…`).

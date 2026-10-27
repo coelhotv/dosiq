@@ -293,6 +293,13 @@ export {
   dismissKey,
   buildNudgeList,
 } from './nudgeScheduler'
+export {
+  NUDGE_DESTINATIONS,
+  NUDGE_TABS,
+  resolveNudgeDestination,
+  buildNudgeNavigatePayload,
+} from './nudgeDestinations'
+export type { NudgeDestination, NudgeTab, NudgeNavigatePayload } from './nudgeDestinations'
 
 // Formatação de biomarcador — valor composto (PA "S por D") + label de contexto (032)
 export {

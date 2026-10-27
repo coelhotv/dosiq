@@ -2,6 +2,7 @@
 // Schema de validação para nudges (in-app banners)
 
 import { z } from 'zod'
+import { resolveNudgeDestination } from '../utils/nudgeDestinations'
 
 // Enums (Portuguese labels)
 export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any'] as const
@@ -93,6 +94,14 @@ const nudgeBaseSchema = z.object({
     .record(z.string(), z.any())
     .nullable()
     .optional(),
+
+  // `in_app_nudges.version` (integer NOT NULL DEFAULT 1). O app grava o dispensado como `id:version`:
+  // subir a versão reexibe o nudge para quem já dispensou. Omitido no insert ⇒ DEFAULT 1 do banco.
+  version: z
+    .number()
+    .int('Versão deve ser número inteiro')
+    .min(1, 'Versão mínima é 1')
+    .optional(),
 })
 
 const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
@@ -102,6 +111,13 @@ const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Tela ou rota obrigatória para navegação',
+        path: ['action_payload'],
+      })
+    } else if (!resolveNudgeDestination(payload)) {
+      // O app só segue destinos canônicos (`NUDGE_DESTINATIONS`) — gravar outro = botão morto.
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Destino de navegação fora da lista suportada pelo app',
         path: ['action_payload'],
       })
     }
@@ -146,9 +162,18 @@ export function validateNudgeCreate(data: unknown) {
   }
 }
 
+const nudgeUpdateSchema = nudgeBaseSchema.partial().superRefine((data, ctx) => {
+  if (data.action_type === 'navigate' && data.action_payload && !resolveNudgeDestination(data.action_payload)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Destino de navegação fora da lista suportada pelo app',
+      path: ['action_payload'],
+    })
+  }
+})
+
 export function validateNudgeUpdate(data: unknown) {
-  const partialSchema = nudgeBaseSchema.partial()
-  const result = partialSchema.safeParse(data)
+  const result = nudgeUpdateSchema.safeParse(data)
 
   if (!result.success) {
     return {
