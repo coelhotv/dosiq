@@ -23,6 +23,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Logo em SVG e selos com tamanho fixo:** o logo do topo usa o SVG (mais nítido e menor), e os selos da App Store e do Google Play têm largura e altura declaradas, sem pulo de layout ao carregar.
   - **Contraste e títulos:** textos cinza-claro e verde da Landing sobre fundo claro ficam mais escuros (contraste WCAG AA ≥ 4.5:1). Os títulos dos cards de funcionalidades e de apps passam de `h4` para `h3`, sem salto na hierarquia; no celular, os títulos dos cards de funcionalidades ficam no tamanho compacto que o CSS já previa.
   - **Cache de imagens:** selos, telas, ícones dos apps e imagens da raiz ficam 1 dia em cache no navegador (com revalidação em segundo plano por 7 dias). HTML, service worker e manifesto seguem sem cache.
+  - **Sem scroll lateral no celular:** o botão do banner GLP-1 alargava a página além da tela, e o topo não comportava logo, "Acessar Web" e "Instalar App" em celulares de até 430px. O banner passa a quebrar a linha do botão e, nessas telas, o topo mostra só "Instalar App"; o acesso à versão web continua logo abaixo do texto principal.
 
 ### Web: fim do rosa legado, do tema escuro morto e paridade de cores com o app (spec 112, PR-A)
 

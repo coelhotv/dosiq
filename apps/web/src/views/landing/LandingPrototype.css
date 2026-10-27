@@ -1873,6 +1873,24 @@
   }
 }
 
+/* Coluna única: sem minmax(0,1fr) o CTA nowrap alarga o grid além da tela (scroll lateral) */
+@media (max-width: 899px) {
+  .lp-wedge__in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-prototype-root a.lp-wedge__cta {
+    white-space: normal;
+  }
+}
+
+/* Celular estreito: logo + "Acessar Web" + "Instalar App" não cabem; o acesso web segue no hero */
+@media (max-width: 430px) {
+  .lp-header .lp-btn--web-link {
+    display: none;
+  }
+}
+
 /* Card de injeção semanal / Phone mockup */
 .lp-inj-card {
   border: 1px solid var(--lp-slate-200);
