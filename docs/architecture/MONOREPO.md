@@ -49,7 +49,6 @@ graph TD
     %% Nós de Pacotes Internos
     subgraph Packages["Pacotes Internos (Providers)"]
         Core["@dosiq/core\n(Regras Puras)"]
-        Design["@dosiq/design-tokens"]
         SharedData["@dosiq/shared-data"]
         Storage["@dosiq/storage"]
         Config["@dosiq/config"]
@@ -57,9 +56,7 @@ graph TD
 
     %% Arestas
     Web --> Core
-    Web --> Design
     Mobile --> Core
-    Mobile --> Design
     Bot --> Core
     Bot --> SharedData
     API --> Core
@@ -91,7 +88,6 @@ A estrutura suporta oito áreas principais isoladas:
 | `apps/mobile/` | `@dosiq/mobile` | Aplicativo nativo (React Native via Expo) | iOS / Android |
 | `packages/core/` | `@dosiq/core` | Validação Zod, schemas e regras de negócio pura | Node / Browser |
 | `packages/config/` | `@dosiq/config` | Configurações compartilhadas entre projetos | Build Time |
-| `packages/design-tokens/` | `@dosiq/design-tokens` | Constantes visuais e temas unificados | Browser / Native |
 | `packages/shared-data/` | `@dosiq/shared-data` | Tipos tipados exportados do Supabase | Node / Browser |
 | `packages/storage/` | `@dosiq/storage` | Interfaces comuns de persistência local | Node / Browser |
 | `server/` | (raiz interna) | Bot resiliente de notificações (Node.js) | Node.js |
@@ -112,7 +108,6 @@ O `@dosiq/web` declara o `@dosiq/core` como dependência. O Vite resolve caminho
     "paths": {
       "@dosiq/core": ["../../packages/core/src"],
       "@dosiq/core/*": ["../../packages/core/src/*"],
-      "@design-tokens/*": ["../../packages/design-tokens/src/*"]
     }
   }
 }

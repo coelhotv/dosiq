@@ -26,10 +26,9 @@
 
 /* ============================================
    THEMES
-   Import theme overrides (dark theme responds to [data-theme="dark"])
+   Tema único (claro) — ADR-117
    ============================================ */
 @import './themes/light.css';
-@import './themes/dark.css';
 
 /* ============================================
    UTILITIES
@@ -216,12 +215,6 @@ body {
     --text-tertiary: #333;
   }
 
-  [data-theme='dark'] {
-    --border-default: #fff;
-    --text-secondary: #fff;
-    --text-tertiary: #ccc;
-  }
-
   :focus-visible {
     outline-width: 3px;
     outline-offset: 3px;
@@ -237,10 +230,6 @@ body {
     --bg-glass-dark: var(--bg-primary);
     --opacity-overlay: 1;
     --opacity-backdrop: 1;
-  }
-
-  [data-theme='dark'] body::before {
-    display: none;
   }
 }
 
@@ -482,7 +471,6 @@ body {
   .container {
     padding: 0 var(--space-3);
   }
-
 }
 
 /* ============================================

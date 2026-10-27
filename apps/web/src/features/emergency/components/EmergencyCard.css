@@ -19,21 +19,6 @@
   --emergency-error: #dc2626;
 }
 
-/* Dark mode support */
-[data-theme='dark'] {
-  --emergency-bg: #1f1415;
-  --emergency-border: #f87171;
-  --emergency-text: #f9fafb;
-  --emergency-accent: #fca5a5;
-  --emergency-success: #34d399;
-  --emergency-warning: #fbbf24;
-  --emergency-muted: #9ca3af;
-  --emergency-card-bg: #292524;
-  --emergency-input-bg: #374151;
-  --emergency-input-border: #4b5563;
-  --emergency-error: #f87171;
-}
-
 /* ===== EMERGENCY CARD FORM ===== */
 .emergency-card-form {
   max-width: 600px;
@@ -285,7 +270,10 @@
   gap: 0.375rem;
   padding: 0.5rem 1rem;
   font-size: 0.9375rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 .btn-emergency:hover:not(:disabled) {
@@ -311,7 +299,10 @@
   gap: 0.375rem;
   padding: 0.5rem 1rem;
   font-size: 0.9375rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 .btn-emergency-outline:hover:not(:disabled) {

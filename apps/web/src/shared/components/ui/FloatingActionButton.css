@@ -17,8 +17,8 @@
   padding: var(--space-3) var(--space-6); /* 12px 24px */
   min-height: 48px;
   min-width: 200px;
-  background: rgba(236, 72, 153, 0.2); /* Magenta semi-transparente */
-  border: var(--border-width-thin) solid rgba(236, 72, 153, 0.5); /* Borda translúcida */
+  background: rgba(var(--color-primary-rgb), 0.2); /* Verde da marca semi-transparente */
+  border: var(--border-width-thin) solid rgba(var(--color-primary-rgb), 0.5); /* Borda translúcida */
   border-radius: var(--radius-button);
   color: #fff; /* Texto branco */
   font-size: var(--font-size-sm);
@@ -28,17 +28,17 @@
   cursor: pointer;
   transition: var(--transition-hover);
   box-shadow:
-    0 4px 16px rgba(236, 72, 153, 0.25),
+    0 4px 16px rgba(var(--color-primary-rgb), 0.25),
     0 8px 24px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(8px); /* Efeito glass */
   -webkit-backdrop-filter: blur(8px);
 }
 
 .fab-button:hover {
-  background: rgba(236, 72, 153, 0.35); /* Mais opaco no hover */
-  border-color: rgba(236, 72, 153, 0.7);
+  background: rgba(var(--color-primary-rgb), 0.35); /* Mais opaco no hover */
+  border-color: rgba(var(--color-primary-rgb), 0.7);
   box-shadow:
-    0 6px 20px rgba(236, 72, 153, 0.35),
+    0 6px 20px rgba(var(--color-primary-rgb), 0.35),
     0 10px 30px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }

@@ -117,7 +117,7 @@ Documentação de referência interna do Dosiq — APIs, schemas, services, hook
 | [`reference/CORE_SCHEMAS.md`](reference/CORE_SCHEMAS.md) | ⭐ Catálogo dos 20+ schemas Zod do `@dosiq/core`, validação e locale PT-BR |
 | [`reference/CORE_REPOSITORIES.md`](reference/CORE_REPOSITORIES.md) | ⭐ 9 repositories, factory pattern, contratos I/O, syncInstancesOnWrite |
 | [`reference/API_ENDPOINTS.md`](reference/API_ENDPOINTS.md) | ⭐ Catálogo de endpoints Vercel serverless, roteadores e autenticação |
-| [`reference/PACKAGES_MINOR.md`](reference/PACKAGES_MINOR.md) | ⭐ `@dosiq/design-tokens`, `@dosiq/storage`, `@dosiq/shared-data`, `@dosiq/config` |
+| [`reference/PACKAGES_MINOR.md`](reference/PACKAGES_MINOR.md) | ⭐ `@dosiq/storage`, `@dosiq/shared-data`, `@dosiq/config` |
 | [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services (camada de dados do web e mobile) |
 | [`reference/HOOKS.md`](reference/HOOKS.md) | Catálogo de hooks customizados e wrappers SWR |
 | [`reference/SCHEMAS.md`](reference/SCHEMAS.md) | Schemas de validação Zod para persistência e runtime |

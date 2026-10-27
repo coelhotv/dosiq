@@ -4,7 +4,7 @@
  * This file contains all transition and animation tokens
  * for the Dosiq design system.
  * 
- * Note: See index.css for prefers-reduced-motion overrides.
+ * Note: See shared/styles/index.css for prefers-reduced-motion overrides.
  */
 
 /* ============================================
@@ -393,7 +393,7 @@ html.theme-transitioning * {
    GLOW TRANSITIONS
    ============================================ */
 :root {
-  --glow-hover: 0 0 20px rgba(236, 72, 153, 0.3);
+  --glow-hover: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
   --glow-focus: 0 0 15px rgba(6, 182, 212, 0.4);
   --glow-active: 0 0 10px rgba(16, 185, 129, 0.3);
   --glow-critical: 0 0 25px rgba(239, 68, 68, 0.4);

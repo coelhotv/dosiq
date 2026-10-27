@@ -131,7 +131,7 @@
   --border-color-success: var(--color-success);
   --border-color-warning: var(--color-warning);
   --border-color-error: var(--color-error);
-  --border-color-focus: var(--color-primary-focus, rgba(236, 72, 153, 0.5));
+  --border-color-focus: rgba(var(--color-primary-rgb), 0.5);
 }
 
 /* ============================================
@@ -146,7 +146,7 @@
   --focus-ring-spread: 0;
 
   /* Focus ring with blur */
-  --focus-ring-blurred-color: rgba(236, 72, 153, 0.4);
+  --focus-ring-blurred-color: rgba(var(--color-primary-rgb), 0.4);
   --focus-ring-blurred-width: 4px;
   --focus-ring-blurred-blur: 4px;
 

@@ -22,6 +22,7 @@
      BRAND COLORS — Verde Saúde (Primary)
      ============================================ */
   --color-primary: #006a5e;
+  --color-primary-rgb: 0, 106, 94; /* canais RGB do primary p/ rgba() */
   --color-primary-container: #008577;
   --color-primary-fixed: #90f4e3;
   --color-on-primary: #ffffff;
@@ -62,17 +63,17 @@
      ============================================ */
   --color-surface: #f8fafb;
   --color-surface-container: #eceeef;
-  --color-surface-container-low: #f2f4f5;
+  --color-surface-container-low: #f1f4f9; /* = mobile border.light */
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-high: #e6e8e9;
   --color-surface-container-highest: #e1e3e4;
 
   /* ============================================
      TEXT & OUTLINE
-     REGRA: Nunca usar #000000 puro. Usar --color-on-surface (#191c1d).
+     REGRA: Nunca usar #000000 puro. Usar --color-on-surface (#1a1c1e).
      ============================================ */
-  --color-on-surface: #191c1d;
-  --color-on-surface-variant: #3e4946;
+  --color-on-surface: #1a1c1e; /* = mobile text.primary (ADR-117) */
+  --color-on-surface-variant: #44474e; /* = mobile text.secondary */
   --color-outline: #6d7a76;
   --color-outline-variant: #bdc9c5;
   --color-outline-ghost: rgba(25, 28, 29, 0.15);

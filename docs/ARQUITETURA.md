@@ -276,7 +276,6 @@ resolve: {
     '@protocols': path.resolve(__dirname, './src/features/protocols'),
     '@stock': path.resolve(__dirname, './src/features/stock'),
     '@adherence': path.resolve(__dirname, './src/features/adherence'),
-    '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
   }
 }
 ```

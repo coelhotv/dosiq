@@ -339,7 +339,6 @@ import { Button } from '../../../shared/components/ui/Button'
 - `@shared` → `apps/web/src/shared/`
 - `@schemas` → `apps/web/src/schemas/`
 - `@dashboard`, `@medications`, `@protocols`, `@stock`, `@adherence`
-- `@design-tokens` → `packages/design-tokens/src/`
 
 ### 6. Scripts Obrigatórios
 

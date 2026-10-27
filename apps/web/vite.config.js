@@ -93,7 +93,6 @@ export default defineConfig(({ mode }) => {
       '@settings': path.resolve(__dirname, './src/views/settings'),
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
       '@dosiq/core': path.resolve(__dirname, '../../packages/core/src'),
     },
   },

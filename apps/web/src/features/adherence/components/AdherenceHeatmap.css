@@ -303,14 +303,6 @@
   min-height: 44px;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .adherence-heatmap__tooltip {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-}
-
 /* Print styles */
 @media print {
   .adherence-heatmap__tooltip,

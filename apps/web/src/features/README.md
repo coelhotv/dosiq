@@ -95,7 +95,6 @@ src/shared/
 | `src/hooks/useCachedQuery.js`          | `src/shared/hooks/`                    |
 | `src/hooks/useHapticFeedback.js`       | `src/shared/hooks/`                    |
 | `src/hooks/useShake.js`                | `src/shared/hooks/`                    |
-| `src/hooks/useTheme.js`                | `src/shared/hooks/`                    |
 | `src/lib/*`                            | `src/shared/utils/`                    |
 | `src/services/api/cachedServices.js`   | `src/shared/services/`                 |
 | `src/services/api/index.js`            | `src/shared/services/`                 |

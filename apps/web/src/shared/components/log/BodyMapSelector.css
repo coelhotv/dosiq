@@ -1,4 +1,4 @@
-/* BodyMapSelector (071) — cor das CSS vars do index.css (paridade estrutural, não cromática — SC-007).
+/* BodyMapSelector (071) — cor das CSS vars de shared/styles (tokens) (paridade estrutural, não cromática — SC-007).
    Estados distintos por FORMA, não só cor: selecionado = chapado + ✓; última = hachura + tracejado. */
 
 .body-map {
