@@ -325,22 +325,6 @@
   outline-offset: 2px;
 }
 
-/* Modo escuro (se suportado) */
-@media (prefers-color-scheme: dark) {
-  .dose-calendar {
-    --bg-primary: #1f2937;
-    --bg-secondary: #374151;
-    --bg-tertiary: #4b5563;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border-color: #4b5563;
-  }
-
-  .dose-calendar__panel {
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
-  }
-}
-
 /* Redução de movimento para acessibilidade */
 @media (prefers-reduced-motion: reduce) {
   .dose-calendar__panel {

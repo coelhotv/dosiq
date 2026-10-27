@@ -11,7 +11,6 @@ tags:
   - config
   - storage
   - shared-data
-  - design-tokens
 created_at: "2026-07-17"
 updated_at: "2026-07-17"
 epic: "049"
@@ -35,20 +34,17 @@ graph TD
     %% Pacotes Menores
     Config[📦 @dosiq/config]
     Storage[📦 @dosiq/storage]
-    DesignTokens[📦 @dosiq/design-tokens]
     SharedData[📦 @dosiq/shared-data]
     Core[📦 @dosiq/core]
 
     %% Dependencias
     Web --> Config
     Web --> Storage
-    Web --> DesignTokens
     Web --> SharedData
     Web --> Core
 
     Mobile --> Config
     Mobile --> Storage
-    Mobile --> DesignTokens
     Mobile --> SharedData
     Mobile --> Core
 
@@ -62,118 +58,15 @@ graph TD
     classDef package fill:#1e293b,stroke:#cbd5e1,stroke-width:1px,color:#f8fafc;
     classDef app fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#f8fafc;
     
-    class Config,Storage,DesignTokens,SharedData,Core package;
+    class Config,Storage,SharedData,Core package;
     class Web,Mobile,Server app;
 ```
 
-Por que mantê-los separados do `@dosiq/core`? O core contém as regras de negócios da saúde (aderência, estoque, esquemas). Um pacote como `@dosiq/storage` precisa tratar exclusivamente de abstração de I/O, enquanto `@dosiq/design-tokens` é puramente estrutural de UI. Manter as responsabilidades distintas evita vazamento de escopo e ciclos de dependência.
+Por que mantê-los separados do `@dosiq/core`? O core contém as regras de negócios da saúde (aderência, estoque, esquemas). Um pacote como `@dosiq/storage` precisa tratar exclusivamente de abstração de I/O. Manter as responsabilidades distintas evita vazamento de escopo e ciclos de dependência.
 
-## @dosiq/design-tokens
+## @dosiq/design-tokens (removido)
 
-O pacote de design tokens é a base visual do projeto. Seu propósito é codificar o *Sanctuary Design System* como estruturas de dados JavaScript puras (zero CSS, zero componentes React), garantindo que tanto a web quanto o aplicativo mobile consumam os exatos mesmos valores de cores, espaçamentos, tipografia e bordas.
-
-### Paleta de Cores (`colors.ts`)
-
-A paleta de cores é estruturada em torno de valores HSL convertidos para hex ou rgba nativos, organizados semanticamente por uso (brand, status, background, glow effects).
-
-```typescript
-// packages/design-tokens/src/colors.ts
-
-const brandColors = {
-  primary: '#ec4899',
-  primaryLight: '#f472b6',
-  primaryDark: '#db2777',
-  primaryBg: '#fdf2f8',
-  primaryHover: '#be185d',
-}
-
-const statusColors = {
-  success: '#10b981',
-  successLight: '#34d399',
-  successBg: '#ecfdf5',
-  // ... (restante do arquivo)
-}
-```
-
-A distinção crítica aqui são os efeitos de glow (brilho) e glassmorphism. Valores como `glow.cyan` (`0 0 10px rgba(6, 182, 212, 0.5)`) usam a sintaxe CSS de `box-shadow` e são lidos nativamente pela web. O cliente mobile deve mapear essas opacidades e cores para as APIs nativas de sombra, convertendo o formato.
-
-| Token Object | Exemplo de Valor | Uso Típico |
-|---|---|---|
-| `colors.brand` | `#ec4899` (primary) | Botões principais, indicadores de ação. |
-| `colors.status` | `#10b981` (success) | Banners, badges de medicamento tomado. |
-| `colors.glow` | `0 0 10px rgba(...)` | Efeitos de neon e elevação na interface web. |
-| `colors.state` | `rgba(236, 72, 153, 0.1)` | Fundo para botões em estado `:hover` ou `:active`. |
-
-### Spacing (`spacing.ts`)
-
-O sistema de espaçamento adota uma escala baseada em uma grade de `4px` (mapeada em unidades `rem`), derivando da escala clássica do Tailwind.
-
-```typescript
-// packages/design-tokens/src/spacing.ts
-
-const spaceScale = {
-  0: '0',
-  px: '1px',
-  '0.5': '0.125rem', // 2px
-  1: '0.25rem',      // 4px
-  '1.5': '0.375rem', // 6px
-  2: '0.5rem',       // 8px
-  // ... (restante do arquivo)
-}
-
-const componentSpacing = {
-  card: {
-    padding: '0.75rem',
-    paddingSm: '0.5rem',
-    paddingLg: '1rem',
-    gap: '0.5rem',
-    borderRadius: '0.75rem',
-  },
-  // ... (restante do arquivo)
-}
-```
-
-O consumo nativo mobile requer a conversão de `rem` para pixels no próprio cliente. Um token de `0.5rem` é traduzido multiplicando o valor numérico pelo tamanho base (16), resultando em `8px`.
-
-### Tipografia (`typography.ts`)
-
-Define famílias tipográficas, escalas de tamanho (`rem`), alturas de linha (line-heights) e pesos para a interface de usuário.
-
-```typescript
-// packages/design-tokens/src/typography.ts
-
-const fontFamilies = {
-  primary:
-    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-  mono: "'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-}
-
-const fontSizes = {
-  xs: '0.75rem',
-  sm: '0.875rem',
-  base: '1rem',
-  lg: '1.125rem',
-  // ... (restante do arquivo)
-}
-```
-
-### Radii (`radii.ts`)
-
-Define os limites visuais (border-radius, larguras de borda, stroke para SVGs).
-
-```typescript
-// packages/design-tokens/src/radii.ts
-
-const radiusScale = {
-  none: '0',
-  sm: '0.125rem',
-  md: '0.375rem',
-  lg: '0.5rem',
-  full: '9999px',
-  circle: '50%',
-  // ... (restante do arquivo)
-}
-```
+> **Removido (spec 112, ADR-117, 2026-10-26):** `@dosiq/design-tokens` (paleta rosa pré-Sanctuary, zero consumidores) foi apagado. Tokens de cor: mobile `apps/mobile/src/shared/styles/tokens.ts` é a referência; web espelha em `apps/web/src/shared/styles/tokens/*.css`, com paridade testada.
 
 ## @dosiq/storage
 
@@ -370,7 +263,6 @@ A matriz abaixo exibe o propósito e o consumo da infraestrutura agnóstica dos 
 
 | Pacote | Arquivos | Runtime Alvo | Consumidores | Função Principal |
 |---|---|---|---|---|
-| `@dosiq/design-tokens` | 7 | Web, Mobile | PWA, App Nativo | Fonte única de verdade para variáveis de design. |
 | `@dosiq/storage` | 6 | Universal | PWA, Shared-Data | Abstração injetável de persistência de chave e valor. |
 | `@dosiq/shared-data` | ~12 | Universal | PWA, Mobile, Bot | Tipos do BD, motor unificado de Query Cache e Auth. |
 | `@dosiq/config` | 5 | Universal | PWA, Mobile, Bot | Definição rigorosa e parser de chaves injetáveis. |

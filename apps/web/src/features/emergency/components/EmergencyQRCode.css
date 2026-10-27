@@ -111,7 +111,6 @@
   gap: 0.5rem;
 }
 
-
 /* Info section */
 .qr-info {
   background: var(--info-bg, #eff6ff);
@@ -126,28 +125,6 @@
   color: var(--info-text, #1e40af);
   margin: 0;
   line-height: 1.5;
-}
-
-/* Modo escuro (dark mode) */
-@media (prefers-color-scheme: dark) {
-  .emergency-qr-code {
-    background: var(--surface-color-dark, #1f2937);
-    border-color: var(--border-color-dark, #374151);
-  }
-
-  .qr-hint {
-    color: var(--text-secondary-dark, #9ca3af);
-  }
-
-
-  .qr-info {
-    background: var(--info-bg-dark, #1e3a5f);
-    border-color: var(--info-border-dark, #3b82f6);
-  }
-
-  .qr-info-text {
-    color: var(--info-text-dark, #93c5fd);
-  }
 }
 
 /* Print styles - oculta botões quando imprimir */

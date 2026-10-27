@@ -24,7 +24,7 @@ apps/web/src/      features/ schemas/(Zod, único local) services/api/ shared/ u
                    views/(composição, todas lazy exceto Dashboard — R-117;
                           lógica de domínio desce p/ @dosiq/core ou features/)
 apps/mobile/       Expo; configs Expo ficam .js (app.config.js, eas.json, metro, babel)
-packages/          core/(compartilhado web↔mobile) config/ design-tokens/ shared-data/ storage/
+packages/          core/(compartilhado web↔mobile) config/ shared-data/ storage/
 api/               Vercel serverless (máx 12 — R-090; ver api/CLAUDE.md)
 server/bot/        Telegram bot
 .agent/            DEVFLOW — rules/APs/ADRs/journal
@@ -35,7 +35,7 @@ server/bot/        Telegram bot
 ```
 @ @features @shared @services @schemas @utils @dashboard @medications @protocols
 @stock @adherence @calendar @emergency @prescriptions @settings(→views/settings)
-@design-tokens(→packages/design-tokens/src) @dosiq/core(→packages/core/src)
+@dosiq/core(→packages/core/src)
 ```
 
 SEMPRE aliases, NUNCA relativo longo. Aliases vivem em 3 configs que DEVEM espelhar: `vite.config.js` + `apps/web/tsconfig.json` + `eslint.config.js` (AP-238).

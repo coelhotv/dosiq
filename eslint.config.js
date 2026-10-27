@@ -70,7 +70,6 @@ export default [
             ['@settings', './apps/web/src/views/settings'],
             ['@schemas', './apps/web/src/schemas'],
             ['@utils', './apps/web/src/utils'],
-            ['@design-tokens', './packages/design-tokens/src'],
             ['@dosiq/core', './packages/core/src']
           ],
           extensions: ['.js', '.jsx', '.ts', '.tsx']

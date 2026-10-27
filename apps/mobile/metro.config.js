@@ -29,7 +29,7 @@ config.resolver.blockList = [
 config.resolver.disableHierarchicalLookup = false
 
 // Resolve imports com extensão .js apontando para fontes .ts/.tsx (R-282).
-// Packages src-cru (@dosiq/config, storage, shared-data, design-tokens) usam
+// Packages src-cru (@dosiq/config, storage, shared-data) usam
 // `./x.js` em código de bundler — Vite resolve nativamente, Metro não.
 // Espelha esse comportamento fazendo o strip do .js quando existe o .ts/.tsx.
 const defaultResolveRequest = config.resolver.resolveRequest

@@ -268,7 +268,6 @@ Por exemplo, o PWA React possui dezenas de atalhos de diretório que não fazem 
       "@services/*": ["./src/services/*"],
       "@schemas/*": ["./src/schemas/*"],
       "@utils/*": ["./src/utils/*"],
-      "@design-tokens/*": ["../../packages/design-tokens/src/*"],
       "@dosiq/core/*": ["../../packages/core/src/*"]
     }
   },

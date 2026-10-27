@@ -13,7 +13,6 @@ Este documento contém as diretrizes e convenções de código que o Gemini Code
 | `@dosiq/web` | React 19 + Vite 7 + Supabase + Zod 4 + Vitest 4 | `apps/web/` |
 | `@dosiq/mobile` | **Expo 53 + React Native 0.79 + Hermes** + React Navigation 7 + Firebase + AsyncStorage + Zod 4 + Jest + jest-expo | `apps/mobile/` |
 | `@dosiq/core` | Código puro compartilhado: schemas Zod, utils puros, repositories factory CRUD | `packages/core/` |
-| `@design-tokens` | Tokens CSS/JS | `packages/design-tokens/` |
 | `api/` | Vercel serverless funcs (≤12 Hobby) | `api/` |
 | `server/bot/` | Telegram bot | `server/bot/` |
 
@@ -82,7 +81,7 @@ Não bloqueia review. Explica autoria: Opus arquiteta + escreve features complex
 
 - **Vitest 4** (`vi.mock`, `vi.fn`). `afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório.
 - **Cache**: `useCachedQuery` (SWR customizado) em `apps/web/src/shared/hooks/`. Invalidar após mutações.
-- **Path aliases** (`apps/web/vite.config.js`): `@features @shared @services @schemas @utils @dashboard @medications @protocols @stock @adherence @calendar @emergency @prescriptions @settings @design-tokens @dosiq/core`. Sempre usar aliases.
+- **Path aliases** (`apps/web/vite.config.js`): `@features @shared @services @schemas @utils @dashboard @medications @protocols @stock @adherence @calendar @emergency @prescriptions @settings @dosiq/core`. Sempre usar aliases.
 - **Lazy loading** (R-117): views (exceto Dashboard) DEVEM ser `React.lazy()` + `Suspense` com fallback `ViewSkeleton`. Bundle crítico ≤310 kB gzip.
 
 ---

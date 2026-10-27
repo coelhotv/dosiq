@@ -64,7 +64,6 @@ graph TD
         CORE["@dosiq/core<br/>(Regras de Negócio e Schemas)"]
         SHARED_DATA["@dosiq/shared-data<br/>(Database Types e Supabase)"]
         STORAGE["@dosiq/storage<br/>(Contratos e Adaptadores de Persistência)"]
-        TOKENS["@dosiq/design-tokens<br/>(Tokens de Design Sanctuary)"]
         CONFIG["@dosiq/config<br/>(Configurações de Tooling)"]
     end
 
@@ -72,7 +71,6 @@ graph TD
     WEB -->|TS Alias / @dosiq/core| CORE
     WEB -->|TS Alias / @dosiq/shared-data| SHARED_DATA
     WEB -->|TS Alias / @dosiq/storage| STORAGE
-    WEB -->|TS Alias / @design-tokens| TOKENS
     WEB -->|TS Alias / @dosiq/config| CONFIG
 
     MOBILE -->|TS Alias / @dosiq/core| CORE
@@ -97,7 +95,7 @@ graph TD
 
     class WEB,MOBILE appNode;
     class SERVER,API serverNode;
-    class CORE,SHARED_DATA,STORAGE,TOKENS,CONFIG pkgNode;
+    class CORE,SHARED_DATA,STORAGE,CONFIG pkgNode;
 ```
 
 ### Legenda do Grafo
@@ -216,13 +214,13 @@ export async function handleVersionGateUpdate(req: Request) {
 
 A tabela a seguir resume as dependências internas consumidas por cada workspace do monorepo:
 
-| Workspace | Depende de `@dosiq/core` | Depende de `@dosiq/shared-data` | Depende de `@dosiq/storage` | Depende de `@dosiq/design-tokens` | Depende de `@dosiq/config` |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| `apps/web` | Sim | Sim | Sim | Sim | Sim |
-| `apps/mobile` | Sim | Sim | Sim | Não | Sim |
-| `server` | Sim | Sim | Não | Não | Não |
-| `api` | Sim | Não | Não | Não | Não |
-| `packages/shared-data` | Sim (Tipos) | Não | Não | Não | Não |
+| Workspace | Depende de `@dosiq/core` | Depende de `@dosiq/shared-data` | Depende de `@dosiq/storage` | Depende de `@dosiq/config` |
+| :--- | :---: | :---: | :---: | :---: |
+| `apps/web` | Sim | Sim | Sim | Sim |
+| `apps/mobile` | Sim | Sim | Sim | Sim |
+| `server` | Sim | Sim | Não | Não |
+| `api` | Sim | Não | Não | Não |
+| `packages/shared-data` | Sim (Tipos) | Não | Não | Não |
 
 ### Detalhamento dos Workspaces
 
@@ -231,7 +229,6 @@ O PWA em React 19 é o maior consumidor do monorepo. Ele utiliza:
 - `@dosiq/core`: Lógica de timeline, formatação de doses, cálculo de titulação, validação Zod e utilitários de timezone.
 - `@dosiq/shared-data`: Constantes `CACHE_KEYS`, utilitário `generateCacheKey` e fábrica `createSupabaseClient`.
 - `@dosiq/storage`: Adaptador `createWebStorageAdapter` para persistência em `localStorage`.
-- `@dosiq/design-tokens`: Variáveis de cores HSL, espaçamentos e tipografia da linguagem Sanctuary.
 - `@dosiq/config`: Configurações compartilhadas de linter e compilação.
 
 #### `apps/mobile`
@@ -263,7 +260,7 @@ graph TD
     L3["Camada 3: Aplicações & Servidores<br/>(apps/web, apps/mobile, server, api)"]
     L2["Camada 2: Dados Compartilhados<br/>(packages/shared-data)"]
     L1["Camada 1: Lógica Core & Persistência<br/>(packages/core, packages/storage)"]
-    L0["Camada 0: Fundamentos<br/>(packages/design-tokens, packages/config)"]
+    L0["Camada 0: Fundamentos<br/>(packages/config)"]
 
     L3 -->|Permitido| L2
     L3 -->|Permitido| L1
@@ -361,7 +358,6 @@ A tabela abaixo detalha a matriz de impacto quando um determinado workspace é m
 | **`packages/core`** | `apps/web`, `apps/mobile`, `server`, `api` | **CRÍTICO** | `npm run validate:agent` e `npm run test:critical` |
 | **`packages/shared-data`** | `apps/web`, `apps/mobile`, `server` | **ALTO** | `npm run test:services` |
 | **`packages/storage`** | `apps/web`, `apps/mobile` | **MÉDIO** | `npm run test:unit` |
-| **`packages/design-tokens`** | `apps/web`, `apps/mobile` | **MÉDIO** | `npm run build` |
 | **`packages/config`** | Todos (Tooling & Linting) | **MÉDIO** | `npm run lint` |
 | **`server`** | Bot Telegram & Push Notifications | **MÉDIO** | `cd server && npm run test` |
 | **`api`** | Vercel Serverless Functions | **BAIXO** | `npm run test:smoke-server` |

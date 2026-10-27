@@ -41,7 +41,7 @@
   height: 48px;
   background: linear-gradient(
     135deg,
-    var(--color-primary, #ec4899),
+    var(--color-primary, #006a5e),
     var(--color-secondary, #06b6d4)
   );
   border-radius: var(--border-radius-lg, 12px);
@@ -84,8 +84,8 @@
 .install-prompt__install-btn {
   background: linear-gradient(
     135deg,
-    var(--color-primary, #ec4899),
-    var(--color-primary-dark, #db2777)
+    var(--color-primary, #006a5e),
+    var(--color-primary-dark, #005047)
   );
   color: white;
   border: none;
@@ -106,8 +106,8 @@
   box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.4));
   background: linear-gradient(
     135deg,
-    var(--color-primary-light, #f472b6),
-    var(--color-primary, #ec4899)
+    var(--color-primary-light, #008577),
+    var(--color-primary, #006a5e)
   );
 }
 
@@ -232,7 +232,7 @@
   height: 28px;
   background: linear-gradient(
     135deg,
-    var(--color-primary, #ec4899),
+    var(--color-primary, #006a5e),
     var(--color-secondary, #06b6d4)
   );
   border-radius: 50%;
@@ -284,7 +284,7 @@
   width: 100%;
   background: linear-gradient(
     135deg,
-    var(--color-primary, #ec4899),
+    var(--color-primary, #006a5e),
     var(--color-secondary, #06b6d4)
   );
   color: white;

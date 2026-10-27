@@ -19,7 +19,6 @@
       "@schemas": ["./src/schemas"],
       "@schemas/*": ["./src/schemas/*"],
       "@utils/*": ["./src/utils/*"],
-      "@design-tokens/*": ["../../packages/design-tokens/src/*"],
       "@dosiq/core": ["../../packages/core/src"],
       "@dosiq/core/*": ["../../packages/core/src/*"]
     }

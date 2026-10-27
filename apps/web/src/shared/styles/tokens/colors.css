@@ -2,9 +2,7 @@
  * Colors Token - Design System Color Variables
  * 
  * This file contains all color tokens for the Dosiq design system.
- * Colors are organized by category and support both light and dark themes.
- * 
- * Theme Override: [data-theme="dark"]
+ * Colors are organized by category. Tema único (claro) — ADR-117.
  */
 
 /* ============================================
@@ -202,18 +200,10 @@
   );
 
   /* Gradiente sutil - Para cards de insight */
-  --gradient-insight: linear-gradient(
-    135deg,
-    rgba(0, 93, 182, 0.1) 0%,
-    rgba(0, 106, 94, 0.1) 100%
-  );
+  --gradient-insight: linear-gradient(135deg, rgba(0, 93, 182, 0.1) 0%, rgba(0, 106, 94, 0.1) 100%);
 
   /* Gradiente hero - Para seções principais */
-  --gradient-hero: linear-gradient(
-    135deg,
-    rgba(0, 106, 94, 0.15) 0%,
-    rgba(0, 93, 182, 0.15) 100%
-  );
+  --gradient-hero: linear-gradient(135deg, rgba(0, 106, 94, 0.15) 0%, rgba(0, 93, 182, 0.15) 100%);
 
   /* Gradiente alert - Para alertas críticos */
   --gradient-alert-critical: linear-gradient(
@@ -227,75 +217,5 @@
     135deg,
     rgba(16, 185, 129, 0.1) 0%,
     rgba(16, 185, 129, 0.05) 100%
-  );
-}
-
-/* ============================================
-   DARK THEME OVERRIDES
-   ============================================ */
-[data-theme='dark'] {
-  /* Background Colors */
-  --bg-primary: #191c1d;
-  --bg-secondary: #202425;
-  --bg-tertiary: #2a2e2f;
-  --bg-card: #202425;
-  --bg-overlay: rgba(0, 0, 0, 0.7);
-
-  /* Aliases */
-  --color-bg-primary: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-tertiary: var(--bg-tertiary);
-  --color-bg-card: var(--bg-card);
-
-  /* Text Colors - Enhanced Contrast for Dark Mode */
-  --text-primary: #e0e3e3;
-  --text-secondary: #bfc8c9;
-  --text-tertiary: #899394;
-  --text-muted: #6f797a;
-  --text-link: #90f4e3;
-
-  /* Aliases */
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-  --color-text-inverse: var(--text-primary);
-  --color-text-link: var(--text-link);
-
-  /* Border Colors */
-  --border-light: #202425;
-  --border-default: #3f484a;
-  --border-dark: #6f797a;
-
-  /* Aliases */
-  --color-border-light: var(--border-light);
-  --color-border-default: var(--border-default);
-  --color-border-dark: var(--border-dark);
-  --border: var(--border-default);
-  --border-color: var(--border);
-
-  /* State Colors - Brighter in dark mode */
-  --state-hover: rgba(144, 244, 227, 0.15);
-  --state-active: rgba(144, 244, 227, 0.25);
-  --state-focus: rgba(144, 244, 227, 0.35);
-  --state-disabled: rgba(255, 255, 255, 0.1);
-  --state-loading: rgba(144, 244, 227, 0.7);
-
-  /* Gradient Backgrounds - Dark Mode */
-  --gradient-primary: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-container) 100%
-  );
-
-  --gradient-insight: linear-gradient(
-    135deg,
-    rgba(214, 227, 255, 0.15) 0%,
-    rgba(144, 244, 227, 0.15) 100%
-  );
-
-  --gradient-hero: linear-gradient(
-    135deg,
-    rgba(144, 244, 227, 0.2) 0%,
-    rgba(214, 227, 255, 0.2) 100%
   );
 }
