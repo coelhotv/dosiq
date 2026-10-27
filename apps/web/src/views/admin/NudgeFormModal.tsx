@@ -428,6 +428,33 @@ function NudgeVersionFields({ formData, handleChange }) {
           />
         </div>
       </div>
+      <small>Limites inclusivos: com máxima 0.34.0, quem está na 0.34.0 ainda vê o nudge.</small>
+    </fieldset>
+  )
+}
+
+// `in_app_nudges.version`: o app grava o dispensado como `id:version` — subir a versão reexibe o
+// nudge para quem já dispensou. Sem campo livre: só N → N+1, para não reusar um número antigo.
+function NudgeDismissVersionField({ currentVersion, bumpVersion, setBumpVersion }) {
+  return (
+    <fieldset className="nudges-admin__form-section">
+      <legend>Versão do Nudge</legend>
+      <div className="form-group">
+        <p>
+          Versão atual: <strong>v{currentVersion}</strong>
+          {bumpVersion && <> → <strong>v{currentVersion + 1}</strong> ao salvar</>}
+        </p>
+        <label htmlFor="bump_version">
+          <input
+            type="checkbox"
+            id="bump_version"
+            checked={bumpVersion}
+            onChange={(e) => setBumpVersion(e.target.checked)}
+          />{' '}
+          Reexibir para quem já dispensou
+        </label>
+        <small>Quem dispensou a versão atual volta a ver o nudge na próxima abertura do app.</small>
+      </div>
     </fieldset>
   )
 }
@@ -450,7 +477,9 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
   )
 
   const [errors, setErrors] = useState<Record<string, any>>({})
+  const [bumpVersion, setBumpVersion] = useState(false)
   const isEditMode = !!nudge
+  const currentVersion = Number(nudge?.version) || 1
 
   const handleChange = useCallback((field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -483,6 +512,8 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
       ...formData,
       start_at: formData.start_at ? parseLocalDatetime(formData.start_at).toISOString() : null,
       end_at: formData.end_at ? parseLocalDatetime(formData.end_at).toISOString() : null,
+      // Criação: omitido ⇒ DEFAULT 1 do banco. Edição: só muda se o admin pediu a reexibição.
+      version: isEditMode && bumpVersion ? currentVersion + 1 : undefined,
     }
 
     try {
@@ -545,6 +576,14 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
             formData={formData}
             handleChange={handleChange}
           />
+
+          {isEditMode && (
+            <NudgeDismissVersionField
+              currentVersion={currentVersion}
+              bumpVersion={bumpVersion}
+              setBumpVersion={setBumpVersion}
+            />
+          )}
 
           <div className="nudges-admin__form-actions">
             <Button onClick={onClose} variant="secondary">

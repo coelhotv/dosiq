@@ -1,7 +1,7 @@
 ---
 title: "Guia de Nudges"
 description: "Guia prático para criação, controle de dismiss e exibição contextual de banners (nudges) via painel administrativo no Dosiq."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: operation
 audience:
@@ -12,7 +12,7 @@ tags:
   - banners
   - remote-config
 created_at: "2026-07-08"
-updated_at: "2026-07-08"
+updated_at: "2026-10-26"
 ---
 
 # Guia — Nudges (In-App Banners)
@@ -33,7 +33,7 @@ updated_at: "2026-07-08"
 
 ### 1. Abrir o Painel Admin
 
-1. Acesse a aplicação web dosiq como **administrador** (detectado via `VITE_ADMIN_CHAT_ID`)
+1. Acesse a aplicação web dosiq como **administrador** (detectado via `VITE_ADMIN_USER_ID` = seu `auth.users.id` no banco do ambiente)
 2. Vá para **Perfil → Configurações** (ícone ⚙️)
 3. Desça até **Administração** → clique em **"Nudges (In-App)"**
 
@@ -60,8 +60,11 @@ Clique em **"+ Novo Nudge"** (botão verde, topo)
 #### Ação Específica (depende de **Tipo**)
 
 **Navegar:**
-- Dropdown de telas do app (ex: Tratamentos, Estoque, Perfil)
-- Payload gerado: `{ screen: "Treatments" }`
+- Dropdown com os destinos canônicos de `NUDGE_DESTINATIONS` (`packages/core/src/utils/nudgeDestinations.ts`) — fonte única com o app mobile
+- Só telas que abrem **sem parâmetro**: detalhe de tratamento/estoque/medicamento depende do dado de cada usuário e não pode ser destino de nudge global
+- Payload gerado: aba ou tela raiz → `{ route: "Hoje" }`; sub-tela → `{ tab: "Perfil", screen: "Measures" }`
+- Destinos de Estoque ("só p/ quem usa estoque"): o app esconde o nudge de quem está com estoque desligado
+- O servidor recusa destino fora da lista. Tela nova no app? Acrescente em `NUDGE_DESTINATIONS` (o teste `nudgeDestinationsRoutes.test.ts` do mobile confere a pilha)
 
 **Abrir URL:**
 - URL obrigatória (ex: `https://dosiq.app/blog/novo-recurso`)
@@ -81,7 +84,8 @@ Clique em **"+ Novo Nudge"** (botão verde, topo)
 
 #### Compatibilidade de Versão (opcional)
 - **Versão Mínima**: ex `1.0.0` — nudge só aparece em app ≥ 1.0.0
-- **Versão Máxima**: ex `2.0.0` — nudge só aparece em app < 2.0.0
+- **Versão Máxima**: ex `2.0.0` — nudge só aparece em app ≤ 2.0.0 (**inclusivo**: quem está na 2.0.0 vê)
+- Para "só até antes da 0.34", use a última versão publicada da 0.33 como máxima
 - **Vazio** = sem restrição
 
 ### 4. Preview e Validação
@@ -124,6 +128,13 @@ Após criar, o painel exibe:
 2. Modal abre com valores atuais pré-preenchidos
 3. Modifique e clique **"Atualizar"**
 
+#### Versão do nudge (reexibir para quem dispensou)
+
+- O app grava o dispensado como `id:versão` (`dismissKey`, `@dosiq/core`)
+- Na edição, marque **"Reexibir para quem já dispensou"**: a versão sobe de N para N+1 ao salvar e quem tinha fechado o nudge volta a vê-lo
+- Sem a caixa marcada, a edição não reexibe (ajuste de texto não incomoda quem já dispensou)
+- Criação sempre nasce na versão 1 (DEFAULT do banco); a lista mostra a versão de cada nudge
+
 ### Toggle Ativo/Inativo
 
 - Clique no ícone **toggle** (esquerda do card)
@@ -136,21 +147,14 @@ Após criar, o painel exibe:
 
 ### Web
 
-1. App carrega nudges ao montar `DashboardProvider`
-2. `useNudges('dashboard' | 'profile')` busca do Supabase
-3. Filtra por plataforma=web, datas, versão, dismissals locais
-4. Renderiza em `NudgeCard` (card ou banner, conforme contexto)
-5. Ao descartar: salva ID em `localStorage['dosiq_dismissed_nudges']`
-6. Próximo carregamento: oculta nudges já dismissidos
+A web **não exibe** nudges remotos (`in_app_nudges`) — só o admin escreve na tabela.
 
 ### Mobile
 
-1. App carrega nudges ao montar `RootNavigator`
-2. `useNudges('dashboard' | 'profile')` busca do Supabase
-3. Filtra por plataforma (iOS/Android), datas, versão, dismissals locais
-4. Renderiza em `NudgeBanner` full-width (Dashboard, Profile)
-5. Ao descartar: salva ID em `AsyncStorage['dosiq_dismissed_nudges']`
-6. Próximo carregamento: oculta nudges já dismissidos
+1. `useNudges('dashboard' | 'profile')` busca os ativos do Supabase (fallback: cache offline por tela)
+2. `buildNudgeList` (`@dosiq/core`) filtra por plataforma, datas, versão do app, dispensados e destino (navegar só para destino canônico; Estoque só com estoque ligado)
+3. Exibe o de maior prioridade
+4. Ao descartar: grava a chave `id:versão` no `AsyncStorage` — nova versão do nudge = nova chave = reexibe
 
 ---
 

@@ -6,10 +6,12 @@
 
 import { satisfiesSemver } from './semver'
 import { getNow, parseISO } from './dateUtils'
+import { resolveNudgeDestination, type NudgeNavigatePayload } from './nudgeDestinations'
 
 export interface Nudge {
   id: string
-  version?: string
+  /** `in_app_nudges.version` (integer NOT NULL DEFAULT 1) — subir reexibe para quem dispensou. */
+  version?: number | string
   platform?: 'ios' | 'android' | 'web' | 'all'
   start_at?: string | null
   end_at?: string | null
@@ -24,6 +26,8 @@ interface BuildNudgeListOpts {
   appVersion?: string | null
   dismissed?: Set<string>
   now?: Date
+  /** `false` esconde nudges cujo destino exige estoque. Omitido = não filtra. */
+  stockTrackingEnabled?: boolean
 }
 
 /**
@@ -80,6 +84,19 @@ function filterDismissed(nudges: Nudge[], dismissed: Set<string>): Nudge[] {
 }
 
 /**
+ * Remove nudges `navigate` cujo payload não é um destino canônico (o app não segue rota arbitrária
+ * vinda do banco) e, com estoque desligado, os que levam ao Estoque — navegar para lá derruba o app.
+ */
+function filterByDestination(nudges: Nudge[], stockTrackingEnabled: boolean | undefined): Nudge[] {
+  return nudges.filter((n) => {
+    if (n.action_type !== 'navigate') return true
+    const dest = resolveNudgeDestination(n.action_payload as NudgeNavigatePayload | null | undefined)
+    if (!dest) return false
+    return !(dest.requiresStock && stockTrackingEnabled === false)
+  })
+}
+
+/**
  * Ordena por prioridade decrescente; empate mantém ordem original.
  */
 function sortByPriority(nudges: Nudge[]): Nudge[] {
@@ -96,6 +113,7 @@ function sortByPriority(nudges: Nudge[]): Nudge[] {
  * @param {string}   [opts.appVersion]  versão atual do app (ex: "0.3.4")
  * @param {Set<string>} opts.dismissed  chaves de dismiss já lidas do storage
  * @param {Date}     [opts.now]         override de "agora" para testes
+ * @param {boolean}  [opts.stockTrackingEnabled]  `false` esconde nudges que levam ao Estoque
  *
  * @returns {object[]} nudges ordenados por prioridade, prontos para exibição
  */
@@ -105,6 +123,7 @@ export function buildNudgeList(remoteNudges: Nudge[] | null | undefined, localNu
     appVersion = null,
     dismissed = new Set<string>(),
     now = getNow(),
+    stockTrackingEnabled,
   } = opts ?? {}
 
   const all = [...(remoteNudges ?? []), ...(localNudges ?? [])]
@@ -114,6 +133,7 @@ export function buildNudgeList(remoteNudges: Nudge[] | null | undefined, localNu
     (n) => filterByDates(n, now),
     (n) => filterByVersion(n, appVersion),
     (n) => filterDismissed(n, dismissed),
+    (n) => filterByDestination(n, stockTrackingEnabled),
     sortByPriority,
   ]
 

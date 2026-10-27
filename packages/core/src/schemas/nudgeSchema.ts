@@ -2,6 +2,7 @@
 // Schema de validação para nudges (in-app banners)
 
 import { z } from 'zod'
+import { resolveNudgeDestination } from '../utils/nudgeDestinations'
 
 // Enums (Portuguese labels)
 export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any'] as const
@@ -93,6 +94,14 @@ const nudgeBaseSchema = z.object({
     .record(z.string(), z.any())
     .nullable()
     .optional(),
+
+  // `in_app_nudges.version` (integer NOT NULL DEFAULT 1). O app grava o dispensado como `id:version`:
+  // subir a versão reexibe o nudge para quem já dispensou. Omitido no insert ⇒ DEFAULT 1 do banco.
+  version: z
+    .number()
+    .int('Versão deve ser número inteiro')
+    .min(1, 'Versão mínima é 1')
+    .optional(),
 })
 
 const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
@@ -102,6 +111,13 @@ const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Tela ou rota obrigatória para navegação',
+        path: ['action_payload'],
+      })
+    } else if (!resolveNudgeDestination(payload)) {
+      // O app só segue destinos canônicos (`NUDGE_DESTINATIONS`) — gravar outro = botão morto.
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Destino de navegação fora da lista suportada pelo app',
         path: ['action_payload'],
       })
     }
@@ -146,9 +162,25 @@ export function validateNudgeCreate(data: unknown) {
   }
 }
 
+// Payload com cara de navegação é validado mesmo sem `action_type` no corpo: um PATCH parcial só
+// com `action_payload` sobre uma linha `navigate` não pode furar a lista canônica (RC6 #914).
+const looksLikeNavigate = (payload: Record<string, unknown>) =>
+  'route' in payload || 'screen' in payload || 'tab' in payload
+
+const nudgeUpdateSchema = nudgeBaseSchema.partial().superRefine((data, ctx) => {
+  const payload = data.action_payload
+  const isNavigate = data.action_type === 'navigate' || (payload && looksLikeNavigate(payload))
+  if (isNavigate && payload && !resolveNudgeDestination(payload)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Destino de navegação fora da lista suportada pelo app',
+      path: ['action_payload'],
+    })
+  }
+})
+
 export function validateNudgeUpdate(data: unknown) {
-  const partialSchema = nudgeBaseSchema.partial()
-  const result = partialSchema.safeParse(data)
+  const result = nudgeUpdateSchema.safeParse(data)
 
   if (!result.success) {
     return {
@@ -160,9 +192,16 @@ export function validateNudgeUpdate(data: unknown) {
     }
   }
 
+  // AP-304: `.partial()` não desliga o `.default(0)` de `priority` — sem este recorte, um update
+  // parcial (ex.: só `title`) devolveria `priority: 0` e o handler zeraria a prioridade gravada.
+  const sent = data && typeof data === 'object' ? Object.keys(data) : []
+  const picked = Object.fromEntries(
+    Object.entries(result.data).filter(([key]) => sent.includes(key)),
+  ) as typeof result.data
+
   return {
     success: true,
-    data: result.data,
+    data: picked,
   }
 }
 

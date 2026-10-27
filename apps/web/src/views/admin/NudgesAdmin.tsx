@@ -89,6 +89,7 @@ function NudgeCard({ nudge, actionLoading, handleToggleActive, handleOpenEdit })
           <span className="nudges-admin__priority">
             Prioridade: {nudge.priority}
           </span>
+          <span className="nudges-admin__priority">v{nudge.version ?? 1}</span>
         </div>
       </div>
 

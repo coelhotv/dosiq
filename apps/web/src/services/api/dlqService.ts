@@ -14,7 +14,7 @@ import { parseISO } from '@utils/dateUtils'
  *
  * Autenticação:
  * - Usa o token de sessão do Supabase Auth
- * - Usuário deve ter telegram_chat_id igual ao ADMIN_CHAT_ID
+ * - Usuário deve ser o admin: auth.users.id === ADMIN_USER_ID (server/utils/auth.ts)
  */
 export const dlqService = {
   /**

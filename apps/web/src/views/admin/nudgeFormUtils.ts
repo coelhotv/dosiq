@@ -1,86 +1,19 @@
-// apps/web/src/views/admin/nudgeFormUtils.js
-// Utilitários para construção inteligente de payloads de nudge
+// apps/web/src/views/admin/nudgeFormUtils.ts
+// Utilitários do formulário de nudge — destinos e payload `navigate` vêm do core
+// (`NUDGE_DESTINATIONS`, fonte única com o app mobile; 028 emenda 2026-10).
 
-// Mapeamento de rotas para suas abas e níveis
-const TAB_ROUTES = {
-  Hoje: ['Hoje'],
-  Tratamentos: ['Tratamentos', 'TreatmentsList', 'ProtocolForm'],
-  Estoque: ['Estoque', 'StockMain', 'PurchaseForm'],
-  Perfil: [
-    'Perfil',
-    'ProfileMain',
-    'ProfileEdit',
-    'Settings',
-    'ChangePassword',
-    'TelegramLink',
-    'NotificationPreferences',
-    'NotificationInbox',
-    'Feedback',
-    'DoseHistory',
-    'Measures'
-  ],
+import { NUDGE_DESTINATIONS, buildNudgeNavigatePayload } from '@dosiq/core'
+
+// Opções do dropdown "Tela para Navegar": valor = nome da rota no app, rótulo em PT-BR
+export function getRouteOptions() {
+  return NUDGE_DESTINATIONS.map((d) => ({
+    value: d.screen,
+    label: d.requiresStock ? `${d.label} — só p/ quem usa estoque` : d.label,
+  }))
 }
 
-// Construir lista de rotas com metadata
-export function getRoutesWithMetadata() {
-  const routes = []
-
-  Object.entries(TAB_ROUTES).forEach(([tab, screenList]) => {
-    screenList.forEach((screen) => {
-      routes.push({
-        value: screen,
-        label: screen === tab ? `${screen} (aba)` : screen,
-        tab: tab === screen ? null : tab,
-        isTabRoute: tab === screen,
-      })
-    })
-  })
-
-  return routes
-}
-
-// Obter aba para uma rota
-export function getTabForRoute(routeName) {
-  for (const [tab, routes] of Object.entries(TAB_ROUTES)) {
-    if (routes.includes(routeName)) {
-      return tab === routeName ? null : tab
-    }
-  }
-  return null
-}
-
-// Montar payload navigate conforme tipo
+// Montar payload navigate conforme o destino canônico
 export function buildNavigatePayload({ selectedRoute, label, emoji }) {
   if (!selectedRoute) return {}
-
-  const tab = getTabForRoute(selectedRoute)
-
-  const payload = {
-    emoji: emoji || undefined,
-    label: label || 'Ver mais',
-  }
-
-  // Remove campos vazios
-  if (!payload.emoji) delete payload.emoji
-  if (!payload.label) delete payload.label
-
-  // Se rota requer cross-tab, usar tab+screen
-  if (tab) {
-    return {
-      ...payload,
-      tab,
-      screen: selectedRoute,
-    }
-  }
-
-  // Senão, usar route direto (1º nível = aba)
-  return {
-    ...payload,
-    route: selectedRoute,
-  }
-}
-
-// Exportar lista simples para dropdown
-export function getRouteOptions() {
-  return getRoutesWithMetadata()
+  return buildNudgeNavigatePayload(selectedRoute, { label, emoji })
 }
