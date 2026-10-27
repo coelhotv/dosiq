@@ -391,7 +391,8 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
 }
 
 /** Busca instâncias pendentes críticas na janela [windowStart, windowEnd] sem start disparado. */
-async function _fetchPendingCriticalInstances(
+// Exportada p/ a paridade gate × job no QA (109 E-3, scripts/qa/109-tick-gate-parity.ts).
+export async function _fetchPendingCriticalInstances(
   supabase: any,
   logger: Logger | undefined,
   windowStart: string,

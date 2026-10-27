@@ -74,6 +74,27 @@ flowchart TD
 
 ---
 
+## Gate do Tick (spec 109 · ADR-115)
+
+Com `TICK_GATE=on`, cada tick começa por **uma** chamada a `public.notify_tick_work(p_now, p_la_lead_minutes)`,
+que devolve `reminders_due`, `la_start_due`, `la_active`, `outbox_pending` e os perfis distintos
+`(timezone, notification_mode, digest_time)` de `user_settings`, sem `user_id`. `planTick`
+(`server/notifications/tick/tickGate.ts`, puro) traduz isso nos jobs por minuto que rodam:
+
+| Job | Roda quando |
+|---|---|
+| `checkReminders` (lembretes, LA start, LA lifecycle) | `reminders_due` (janela de 2 min: o job recalcula o minuto depois do gate) ∨ `la_start_due` ∨ `la_active`; cada parte só com o seu sinal. Ramo legado (`REMINDER_SOURCE≠instances`): sempre |
+| ciclo da outbox | `outbox_pending` ∨ janela de relatório/digest ∨ janela de estoque |
+| enqueue de relatórios / estoque | algum perfil na janela (`server/notifications/windows.ts`, as mesmas regras dos jobs) |
+| digest legado | `daily_digest` fora de `OUTBOX_KINDS` e algum perfil no minuto exato do `digest_time` |
+| hora fixa (05h, 08h, 10h, domingo, dia 1) e legados de relatório | fora do gate: como antes |
+
+Invariantes: falha do gate (erro, timeout de 3 s, resposta malformada) ⇒ **todos** os jobs rodam
++ Sentry (INV-1); o gate decide SE um job roda, nunca O QUE ele envia (INV-4). Os predicados da RPC
+espelham os filtros dos jobs, com guarda estrutural (`api/__tests__/notifyTickGate.test.ts`) e
+paridade no QA (`scripts/qa/109-tick-gate-parity.ts`). Rede permanente contra falso-negativo: a
+apuração crítica das 05h (`criticalDeliveryAudit`). Log por tick: `[tick_gate] plano`, só booleanos.
+
 ## Arquitetura de 3 Camadas
 
 O pipeline de entrega de notificações divide a responsabilidade em três níveis funcionais:

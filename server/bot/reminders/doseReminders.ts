@@ -101,7 +101,8 @@ async function _processUserReminderBlock(userId: string, currentHHMM: string, cu
   }
 }
 
-async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
+// Exportada p/ a paridade gate × job no QA (109 E-3, scripts/qa/109-tick-gate-parity.ts).
+export async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
   // 052 Slice B: `medicine_id` + embed DIRETO da ocorrência (FK `dose_instances_medicine_id_fkey`).
@@ -619,32 +620,54 @@ async function _dispatchUserReminderBlocks(
   }
 }
 
-async function _checkRemindersFromInstances(dispatcher, correlationId) {
-  try {
-    const { data: users, error: userError } = await supabase
-      .from('user_settings')
-      .select('user_id, timezone, notification_mode');
-    if (userError) throw userError;
-
-    // Spec 041: push-to-start da Live Activity (iOS) — janela PRÓPRIA (now + lead), independente das
-    // doses devidas-agora. Best-effort + fail-open (não pode derrubar o reminder nem o alarme).
-    // Roda antes do early-return das doses-devidas (janela diferente). Critical-only + opt-in (só
-    // dispara se o device registrou token apns_liveactivity).
+/**
+ * Live Activity (spec 041) no tick: push-to-start e ciclo de vida, cada um best-effort + fail-open.
+ * 109: com o gate do tick, cada parte só roda se o minuto tem trabalho dela.
+ * @private
+ */
+async function _runLiveActivityJobs(gate, correlationId) {
+  // Spec 041: push-to-start da Live Activity (iOS) — janela PRÓPRIA (now + lead), independente das
+  // doses devidas-agora. Best-effort + fail-open (não pode derrubar o reminder nem o alarme).
+  // Roda antes do early-return das doses-devidas (janela diferente). Critical-only + opt-in (só
+  // dispara se o device registrou token apns_liveactivity).
+  if (!gate || gate.laStart) {
     try {
       const la = await dispatchLiveActivityStarts({ supabase, logger });
       if (la.sent > 0) logger.info('push-to-start LA disparado', { ...la, correlationId });
     } catch (laErr) {
       logger.error('push-to-start LA falhou (fail-open, ignorado)', laErr, { correlationId });
     }
+  }
 
-    // Spec 041 Fase 2 (fix-up): ciclo de vida da LA (update de estado + end na resolução) via push,
-    // p/ as LAs iOS ativas (la_push_token). Independente da janela do reminder. Best-effort + fail-open.
+  // Spec 041 Fase 2 (fix-up): ciclo de vida da LA (update de estado + end na resolução) via push,
+  // p/ as LAs iOS ativas (la_push_token). Independente da janela do reminder. Best-effort + fail-open.
+  if (!gate || gate.laLifecycle) {
     try {
       const laLife = await dispatchLiveActivityLifecycle({ supabase, logger });
       if (laLife.updated > 0 || laLife.ended > 0) logger.info('ciclo LA (update/end) disparado', { ...laLife, correlationId });
     } catch (laErr) {
       logger.error('ciclo LA falhou (fail-open, ignorado)', laErr, { correlationId });
     }
+  }
+}
+
+async function _checkRemindersFromInstances(dispatcher, correlationId, gate = null) {
+  try {
+    // 109: com o gate do tick, cada parte só roda se o minuto tem trabalho dela. Sem gate = tudo,
+    // na ordem de sempre. As queries e o envio não mudam (INV-4).
+    const runReminders = !gate || gate.reminders;
+    let users = [];
+    if (runReminders) {
+      const { data, error: userError } = await supabase
+        .from('user_settings')
+        .select('user_id, timezone, notification_mode');
+      if (userError) throw userError;
+      users = data;
+    }
+
+    await _runLiveActivityJobs(gate, correlationId);
+
+    if (!runReminders) return;
 
     const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');
     if (eligibleUsers.length === 0) {
@@ -747,9 +770,9 @@ async function _dispatchLegacyRemindersForUser(
 /**
  * Check reminders via dispatcher com agrupamento por treatment_plan (Wave N1).
  */
-export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
+export async function checkRemindersViaDispatcher(dispatcher, correlationId, gate = null) {
   if (process.env.REMINDER_SOURCE === 'instances') {
-    return _checkRemindersFromInstances(dispatcher, correlationId);
+    return _checkRemindersFromInstances(dispatcher, correlationId, gate);
   }
 
   try {

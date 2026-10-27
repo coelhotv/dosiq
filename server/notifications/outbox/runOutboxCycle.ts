@@ -15,7 +15,7 @@ export interface OutboxCycleResult {
 }
 
 export async function runOutboxCycle(
-  { supabase, dispatcher, outboxKinds, contentBuilders, dispatchKind, correlationId, logger }:
+  { supabase, dispatcher, outboxKinds, contentBuilders, dispatchKind, correlationId, logger, skipReportEnqueue = false }:
   {
     supabase: any;
     dispatcher: { dispatch(input: any): Promise<any> };
@@ -26,12 +26,17 @@ export async function runOutboxCycle(
     dispatchKind?: Record<string, string>;
     correlationId?: string;
     logger?: { info: (...a: any[]) => void; error: (...a: any[]) => void };
+    // 109: o gate do tick sabe que nenhum perfil está em janela de relatório ⇒ pula a varredura de
+    // user_settings do enqueue; o drain roda igual (linhas já pendentes).
+    skipReportEnqueue?: boolean;
   }
 ): Promise<OutboxCycleResult> {
   const repo = createOutboxRepository({ client: supabase });
 
   // 1. Enqueue por range dos kinds migrados (no-op se OUTBOX_KINDS vazio).
-  const { enqueuedByKind } = await enqueueEligibleReports({ repo, supabase, kinds: outboxKinds });
+  const { enqueuedByKind } = skipReportEnqueue
+    ? { enqueuedByKind: {} as Record<string, number> }
+    : await enqueueEligibleReports({ repo, supabase, kinds: outboxKinds });
 
   // 2. Drain: constrói conteúdo no envio, pool limitado, deadline, channel_results sem tokens.
   const drain = await drainOutbox({

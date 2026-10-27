@@ -25,30 +25,10 @@ import {
   _computeStockAlertPayload,
   _biologicalExpiryDaysLeft,
 } from '../reminders/stockAlerts.js';
+import { isInStockAlertWindow as isInAlertWindow } from '../../notifications/windows.js';
 
-// Âncora do alerta de volume: 10:00–10:09 na TZ DO USUÁRIO.
-// - `minute < 10` em vez de `minute === 0` (o do legado): família AP-259 — um tick que pule o
-//   minuto exato perde o dia inteiro. A UNIQUE dá a idempotência dentro da janela.
-// - Janela estreita (e não "todo tick"): a fila resolve idempotência, não CUSTO — varrer
-//   protocols+stock 1440×/dia seriam duas queries pesadas por minuto.
-const ALERT_HOUR = 10;
-const WINDOW_MINUTES = 10;
-
-/** Hora/minuto locais do usuário para um instante absoluto (Intl — DST-safe, R-254). */
-function localHourMinute(now: Date, tz: string): { hour: number; minute: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(now);
-  const val = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-  let hour = parseInt(val('hour'), 10);
-  if (hour === 24) hour = 0; // en-US hour12:false pode emitir '24' à meia-noite
-  return { hour, minute: parseInt(val('minute'), 10) || 0 };
-}
-
-function isInAlertWindow(now: Date, tz: string): boolean {
-  const { hour, minute } = localHourMinute(now, tz);
-  return hour === ALERT_HOUR && minute < WINDOW_MINUTES;
-}
+// Janela do alerta (10:00–10:09 na TZ do usuário) vive em fonte única (109/E-2): o gate do tick
+// usa a MESMA regra para decidir se este enqueue roda.
 
 /** Eixo VOLUME: 1 linha por MEDICAMENTO com saldo baixo (assunto = `medicine_id`). */
 function buildVolumeEntries(
