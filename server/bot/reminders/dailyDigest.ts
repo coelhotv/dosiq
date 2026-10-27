@@ -3,6 +3,8 @@ import { createLogger } from '../logger.js';
 import { shouldSendNotification } from '../../services/notificationDeduplicator.js';
 import { getCurrentTimeInTimezone, getProtocolPeriodPrefilter } from '../../utils/dateUtils.js';
 import { isProtocolActiveOnDate, getTodayLocal as getTodayLocalInTz } from '@dosiq/core';
+// 109 (E-2): regra do minuto exato em fonte única — o gate do tick usa a MESMA.
+import { isLegacyDigestMinute } from '../../notifications/windows.js';
 
 const logger = createLogger('DailyDigest');
 
@@ -19,7 +21,7 @@ async function _getEligibleUsersForDigest(users, correlationId) {
         timezone, digestTime, currentHHMM, match: currentHHMM === digestTime, correlationId 
       });
 
-      if (currentHHMM !== digestTime) continue;
+      if (!isLegacyDigestMinute(currentHHMM, digestTime)) continue;
 
       const shouldSend = await shouldSendNotification(userId, null, 'daily_digest');
       if (!shouldSend) {

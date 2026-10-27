@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Cron de notificação: minuto sem trabalho deixa de consumir a cota de logs do Supabase (spec 109, Slice A)
+
+- **Backend/Infra** (`Changed`, `no-user-impact` — lembretes, Live Activities, alertas e relatórios saem no mesmo horário e para as mesmas pessoas; muda só quantas requisições o cron faz). O cron por minuto fazia ~9 requisições ao Supabase mesmo sem nada a enviar, e esse piso sozinho já passava da cota gratuita de Log Ingestion.
+  - **Gate do tick:** com `TICK_GATE=on`, o `api/notify.ts` faz 1 chamada (`rpc/notify_tick_work`) que diz, por categoria, se o minuto tem dose devida, Live Activity a iniciar ou ativa, linha pendente na outbox ou algum perfil em janela de relatório, digest ou estoque. Só os jobs com trabalho rodam; minuto ocioso = 1 requisição. Os jobs de hora fixa (05h, 08h, 10h, domingo, dia 1) seguem pelo relógio, como antes.
+  - **Falha aberta:** erro, timeout de 3 s ou resposta inválida da RPC faz o tick rodar todos os jobs, como hoje, e o erro vai ao Sentry.
+  - **Regras de janela em fonte única:** as janelas de relatório, digest e estoque saíram dos jobs para `server/notifications/windows.ts`, e o gate usa exatamente as mesmas.
+  - **Banco:** função `public.notify_tick_work` (só `service_role`, `SECURITY INVOKER`) e 3 índices parciais em `dose_instances` (`docs/migrations/20261023_109_notify_tick_work.sql`). Sem a env, o deploy é inerte; rollback = remover `TICK_GATE`.
+
 ### Web: fim do rosa legado, do tema escuro morto e paridade de cores com o app (spec 112, PR-A)
 
 - **Web** (`Fixed`, `patch` 4.35.0 → 4.35.1). Limpeza dos resíduos da identidade pré-redesign:

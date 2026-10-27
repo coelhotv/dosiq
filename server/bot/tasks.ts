@@ -80,7 +80,15 @@ export async function sendDLQDigest(notificationDispatcher: any, options: { corr
 /**
  * Check reminders for ALL users (cron job)
  */
-export async function checkReminders(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
+export async function checkReminders(
+  bot: any,
+  options: {
+    correlationId?: string;
+    notificationDispatcher?: any;
+    // 109: plano do gate do tick — pula as partes sem trabalho; ausente = roda tudo (como antes).
+    gate?: { reminders: boolean; laStart: boolean; laLifecycle: boolean };
+  } = {}
+) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -90,7 +98,7 @@ export async function checkReminders(bot: any, options: { correlationId?: string
   }
 
   logger.info('Iniciando verificação de lembretes via Dispatcher (ADR-030)', { correlationId });
-  return checkRemindersViaDispatcher(notificationDispatcher, correlationId);
+  return checkRemindersViaDispatcher(notificationDispatcher, correlationId, options.gate);
 }
 
 /**

@@ -38,6 +38,13 @@ import {
 } from '../server/observability/sentry.js';
 import { runCriticalDeliveryAudit } from '../server/observability/criticalDeliveryAudit.js';
 import { runAccessLogHealth } from '../server/observability/accessLogHealth.js';
+import {
+  fetchTickWork,
+  planTick,
+  summarizeTick,
+  resolveLaLeadMinutes,
+  FAIL_OPEN_PLAN,
+} from '../server/notifications/tick/tickGate.js';
 
 const logger = createLogger('CronNotify');
 
@@ -151,14 +158,88 @@ async function retryPendingDlq(notificationDispatcher, correlationId) {
   return { attempted: (pendingEntries || []).length, resolved, failed: failedCount };
 }
 
+// === HELPER: _runOutboxCycleJob ===
+// Ciclo da outbox do tick (ADR-078). 109: o plano do gate pula os enqueues sem janela aberta; o drain
+// roda sempre que o ciclo roda (linhas já pendentes).
+async function _runOutboxCycleJob(notificationDispatcher, correlationId, plan) {
+  // 050 PR 1b/2: enqueue dos alertas de estoque ANTES do ciclo — fan-out (1 linha por medicamento) que o
+  // enqueue por range de relatórios não expressa. 🔴 `kinds: OUTBOX_KINDS` NÃO é decorativo: o
+  // claim não filtra kind e o guard do legado (abaixo) segue ligado até o cutover (PR 2), então
+  // enfileirar sem esse gate faria legado + outbox entregarem o MESMO alerta.
+  // Isolado do resto do ciclo (R-245): uma falha transitória do PostgREST na varredura de
+  // estoque não pode impedir o enqueue dos relatórios NEM o DRAIN das linhas já enfileiradas —
+  // seria trocar "um alerta atrasado" por "nenhuma notificação neste tick".
+  let stockEnqueue = null;
+  if (!plan || plan.stockEnqueue) {
+    try {
+      stockEnqueue = await enqueueStockAlerts({
+        repo: createOutboxRepository({ client: supabase }),
+        kinds: OUTBOX_KINDS,
+        correlationId,
+        logger,
+      });
+    } catch (err) {
+      logger.error('[outbox] enqueue dos alertas de estoque falhou (isolado — ciclo segue)', err, { correlationId });
+    }
+  }
+
+  const outcome = await runOutboxCycle({
+    supabase,
+    dispatcher: notificationDispatcher,
+    outboxKinds: OUTBOX_KINDS,
+    contentBuilders: OUTBOX_CONTENT_BUILDERS,
+    dispatchKind: OUTBOX_DISPATCH_KIND,
+    correlationId,
+    logger,
+    skipReportEnqueue: !!plan && !plan.reportEnqueue,
+  });
+  logger.info('[outbox] ciclo concluído', { correlationId, stockEnqueue, ...outcome });
+}
+
+// === HELPER: resolveTickPlan (spec 109 · ADR-115) ===
+// TICK_GATE=on ⇒ 1 RPC diz se o minuto tem trabalho por categoria e só os jobs apontados rodam.
+// Desligado ⇒ null = caminho de sempre (deploy inerte; rollback = tirar a env).
+// Falha (erro/timeout/malformada) ⇒ FAIL_OPEN_PLAN + Sentry: em dúvida roda tudo (INV-1, AP-325).
+export async function resolveTickPlan(now, correlationId) {
+  if (process.env.TICK_GATE !== 'on') return null;
+  let work = null;
+  let plan;
+  try {
+    work = await fetchTickWork({
+      supabase,
+      now,
+      laLeadMinutes: resolveLaLeadMinutes(process.env.LA_PUSH_LEAD_MINUTES),
+    });
+    plan = planTick(work, { now, outboxKinds: OUTBOX_KINDS, reminderSource: process.env.REMINDER_SOURCE });
+  } catch (err) {
+    logger.error('[tick_gate] gate falhou — falha aberta, todos os jobs rodam', err, { correlationId });
+    captureServerException(err, { correlationId, job: 'tick_gate' });
+    plan = FAIL_OPEN_PLAN;
+  }
+  // E-5: 1 linha por tick, no log da Vercel. Só booleanos/contagens (RC-SEC S-3).
+  logger.info('[tick_gate] plano', { correlationId, ...summarizeTick(plan, work) });
+  return plan;
+}
+
+// Sem plano (gate desligado) = tudo roda, como antes.
+function _gatedJobs(plan) {
+  return {
+    reminders: !plan || plan.reminders || plan.laStart || plan.laLifecycle,
+    outboxCycle: !plan || plan.outboxCycle,
+    // digest legado só existe enquanto `daily_digest` não é servido pela outbox
+    legacyDigest: !OUTBOX_KINDS.has('daily_digest') && (!plan || plan.legacyDigest),
+  };
+}
+
 // === HELPER: executeCronJobs ===
 
-async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDate) {
+async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan = null) {
   const currentHour = spDate.getHours();
   const currentMinute = spDate.getMinutes();
   const currentDay = spDate.getDate();
   const currentWeekDay = spDate.getDay();
   const results = [];
+  const gated = _gatedJobs(plan);
 
   // Isolamento por job (PO-1/FR-001): a falha de um relatório NÃO propaga — reminders (que já
   // rodou) e os demais jobs seguem. Cada job vira um registro discreto ('<job>' ou '<job>:failed').
@@ -176,47 +257,24 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   };
 
   // 1. Reminders — SEMPRE primeiro (ADR-057 intocado), isolado de qualquer relatório.
-  await runJob('reminders', 'reminders',
-    (context) => checkReminders(bot, { ...context, notificationDispatcher }));
+  //    109: com gate, só roda se há lembrete/LA no minuto; o plano pula as partes sem trabalho.
+  if (gated.reminders) {
+    await runJob('reminders', 'reminders',
+      (context) => checkReminders(bot, { ...context, notificationDispatcher, gate: plan || undefined }));
+  }
 
   // 2. Ciclo da outbox (ADR-078): enqueue por range + drain dos kinds migrados. Isolado.
   //    No-op quando OUTBOX_KINDS vazio (deploy neutro). Falha aqui não afeta reminders/legado.
-  await runJob('outbox_cycle', 'outbox_cycle', async () => {
-    // 050 PR 1b/2: enqueue dos alertas de estoque ANTES do ciclo — fan-out (1 linha por medicamento) que o
-    // enqueue por range de relatórios não expressa. 🔴 `kinds: OUTBOX_KINDS` NÃO é decorativo: o
-    // claim não filtra kind e o guard do legado (abaixo) segue ligado até o cutover (PR 2), então
-    // enfileirar sem esse gate faria legado + outbox entregarem o MESMO alerta.
-    // Isolado do resto do ciclo (R-245): uma falha transitória do PostgREST na varredura de
-    // estoque não pode impedir o enqueue dos relatórios NEM o DRAIN das linhas já enfileiradas —
-    // seria trocar "um alerta atrasado" por "nenhuma notificação neste tick".
-    let stockEnqueue = null;
-    try {
-      stockEnqueue = await enqueueStockAlerts({
-        repo: createOutboxRepository({ client: supabase }),
-        kinds: OUTBOX_KINDS,
-        correlationId,
-        logger,
-      });
-    } catch (err) {
-      logger.error('[outbox] enqueue dos alertas de estoque falhou (isolado — ciclo segue)', err, { correlationId });
-    }
-
-    const outcome = await runOutboxCycle({
-      supabase,
-      dispatcher: notificationDispatcher,
-      outboxKinds: OUTBOX_KINDS,
-      contentBuilders: OUTBOX_CONTENT_BUILDERS,
-      dispatchKind: OUTBOX_DISPATCH_KIND,
-      correlationId,
-      logger,
-    });
-    logger.info('[outbox] ciclo concluído', { correlationId, stockEnqueue, ...outcome });
-  });
+  //    109: com gate, só roda com linha pendente ou janela de enqueue aberta (FR-006/FR-007).
+  if (gated.outboxCycle) {
+    await runJob('outbox_cycle', 'outbox_cycle',
+      () => _runOutboxCycleJob(notificationDispatcher, correlationId, plan));
+  }
 
   // --- Jobs LEGADOS: pulados quando o kind já é servido pela outbox (evita envio duplo). ---
 
-  // Daily Digest
-  if (!OUTBOX_KINDS.has('daily_digest')) {
+  // Daily Digest (legado: minuto exato). 109: com gate, só no minuto de algum digest_time.
+  if (gated.legacyDigest) {
     await runJob('daily_digest', 'daily_digest',
       (context) => runDailyDigest(bot, { ...context, notificationDispatcher }));
   }
@@ -368,9 +426,10 @@ export default async function handler(req, res) {
   });
 
   try {
-    const results = await withServerIsolation(() =>
-      _executeCronJobs(notificationDispatcher, bot, correlationId, spDate)
-    );
+    const results = await withServerIsolation(async () => {
+      const plan = await resolveTickPlan(now, correlationId);
+      return _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan);
+    });
 
     logger.info('Cron jobs completed', {
       correlationId,

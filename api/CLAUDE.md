@@ -203,6 +203,14 @@ if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
 
 O cron principal está em `api/notify.ts`, acionado de forma segura por autenticação baseada em segredo cron (`CRON_SECRET`).
 
+> **Gate do tick (spec 109, ADR-115):** com `TICK_GATE=on`, o tick começa por 1 RPC
+> (`notify_tick_work`, só `service_role`) que diz por categoria se o minuto tem trabalho; só os jobs
+> por minuto apontados rodam (`server/notifications/tick/tickGate.ts`). Hora fixa fica fora. Erro,
+> timeout (3 s) ou resposta inválida ⇒ falha aberta (roda tudo) + Sentry. Os predicados da RPC são
+> espelho dos filtros dos jobs (INV-4): mudou filtro de lembrete, LA ou claim da outbox ⇒ mude a RPC
+> junto — `api/__tests__/notifyTickGate.test.ts` acusa a divergência. Regras de janela: só em
+> `server/notifications/windows.ts`. Paridade no QA: `scripts/qa/109-tick-gate-parity.ts`.
+
 Schedule (fuso horário: America/Sao_Paulo):
 - A cada minuto: dose reminders (envio de lembretes imediatos)
 - 05:00 diário: apuração de entrega crítica (082) + saúde do registro de acesso Marco Civil (106)
@@ -244,4 +252,4 @@ api/
 
 ---
 
-*Última atualização: 2026-10-20*
+*Última atualização: 2026-10-27*
