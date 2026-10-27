@@ -122,4 +122,16 @@ describe('nudgeSchema — version e destino', () => {
     const r = validateNudgeUpdate({ action_type: 'navigate', action_payload: { route: 'DeleteAccount' } })
     expect(r.success).toBe(false)
   })
+
+  it('update sem action_type também valida payload de navegação (RC6 #914)', () => {
+    expect(validateNudgeUpdate({ action_payload: { route: 'DeleteAccount' } }).success).toBe(false)
+    expect(validateNudgeUpdate({ action_payload: { tab: 'Perfil', screen: 'Measures' } }).success).toBe(true)
+    expect(validateNudgeUpdate({ action_payload: { url: 'https://dosiq.app' } }).success).toBe(true)
+  })
+
+  it('update devolve só as chaves enviadas — não injeta priority 0 (AP-304)', () => {
+    const r = validateNudgeUpdate({ title: 'Novo título' })
+    expect(r.success).toBe(true)
+    expect(r.data).toEqual({ title: 'Novo título' })
+  })
 })

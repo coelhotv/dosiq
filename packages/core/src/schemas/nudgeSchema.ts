@@ -162,8 +162,15 @@ export function validateNudgeCreate(data: unknown) {
   }
 }
 
+// Payload com cara de navegação é validado mesmo sem `action_type` no corpo: um PATCH parcial só
+// com `action_payload` sobre uma linha `navigate` não pode furar a lista canônica (RC6 #914).
+const looksLikeNavigate = (payload: Record<string, unknown>) =>
+  'route' in payload || 'screen' in payload || 'tab' in payload
+
 const nudgeUpdateSchema = nudgeBaseSchema.partial().superRefine((data, ctx) => {
-  if (data.action_type === 'navigate' && data.action_payload && !resolveNudgeDestination(data.action_payload)) {
+  const payload = data.action_payload
+  const isNavigate = data.action_type === 'navigate' || (payload && looksLikeNavigate(payload))
+  if (isNavigate && payload && !resolveNudgeDestination(payload)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Destino de navegação fora da lista suportada pelo app',
@@ -185,9 +192,16 @@ export function validateNudgeUpdate(data: unknown) {
     }
   }
 
+  // AP-304: `.partial()` não desliga o `.default(0)` de `priority` — sem este recorte, um update
+  // parcial (ex.: só `title`) devolveria `priority: 0` e o handler zeraria a prioridade gravada.
+  const sent = data && typeof data === 'object' ? Object.keys(data) : []
+  const picked = Object.fromEntries(
+    Object.entries(result.data).filter(([key]) => sent.includes(key)),
+  ) as typeof result.data
+
   return {
     success: true,
-    data: result.data,
+    data: picked,
   }
 }
 
