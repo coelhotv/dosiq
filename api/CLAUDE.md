@@ -126,8 +126,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 **Exemplo de config no vercel.json para roteadores:**
 ```json
-{ "source": "/api/domain/:id/action1", "destination": "/api/domain.ts?action=action1&id=:id" }
+{ "source": "/api/domain/:id/action1", "destination": "/api/domain?action=action1&id=:id" }
 ```
+
+> ⚠️ Destino SEM `.ts`: com `cleanUrls: true` no `vercel.json`, `/api/<função>.ts?query` vira 308 → 404 em produção (incidente 2026-10-24; guardado por `api/__tests__/vercelRewrites.test.ts`).
 
 ---
 

@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Hotfix: rewrites de `/api/*` quebradas pelo `cleanUrls` (regressão da spec 110)
+
+- **Web/Backend** (`Fixed`, `patch` 4.34.0 → 4.34.1). Com `cleanUrls: true` (spec 110, #911), a Vercel passou a redirecionar (308) os destinos de rewrite `/api/<função>.ts?query`, resultando em 404 em produção desde 24/10. Afetava o admin web (DLQ, feedbacks, nudges, prune, saúde de notificações), o registro de web push (`/api/users/register-webpush`), o `beta-signup` e os jobs de `/api/ops/:job`. Os destinos das rewrites no `vercel.json` agora apontam para a função sem extensão (`/api/admin?…`, `/api/users?…`, `/api/ops?…`).
+
 ### Funil Nativo da Landing Principal (App-First) & Ritmo Vertical Mobile (spec 111)
 
 - **Web** (`Added` e `Changed`, `minor` 4.33.4 → 4.34.0). Transformação da landing principal (`dosiq.app`) em funil de conversão focado em download dos aplicativos nativos (iOS e Android), reposicionando o acesso web como rota secundária:
