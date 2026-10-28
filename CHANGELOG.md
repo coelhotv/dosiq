@@ -15,12 +15,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Regras de janela em fonte única:** as janelas de relatório, digest e estoque saíram dos jobs para `server/notifications/windows.ts`, e o gate usa exatamente as mesmas.
   - **Banco:** função `public.notify_tick_work` (só `service_role`, `SECURITY INVOKER`) e 3 índices parciais em `dose_instances` (`docs/migrations/20261023_109_notify_tick_work.sql`). Sem a env, o deploy é inerte; rollback = remover `TICK_GATE`.
 
-### Web: logout volta ao topo, erro claro na troca de senha e schema da página GLP-1 (spec 112, smoke B)
+### Web: logout volta ao topo, erro claro na troca de senha e FAQ das páginas de conteúdo (spec 112, smoke B)
 
-- **Web** (`Fixed`, `patch` 4.35.2 → 4.35.3). Ajustes achados no smoke da Landing e na validação de schema.org:
+- **Web** (`Fixed`, `patch` 4.35.2 → 4.35.3). Ajustes achados no smoke da Landing e na auditoria de schema.org das páginas de conteúdo:
   - **Sair da conta abre a Landing no topo:** o logout recarregava a página e o navegador restaurava a rolagem da tela de perfil, então a Landing aparecia já no rodapé. Agora o logout navega para o início e a página abre no topo.
   - **Mensagem certa ao redefinir a senha:** repetir a senha atual mostrava "Erro ao atualizar senha. Tente solicitar um novo link de recuperação.", como se o link tivesse vencido. Agora a mensagem diz o que houve: senha igual à atual, senha fraca ou link expirado. Erro desconhecido mostra "Não foi possível atualizar a senha. Tente de novo."
   - **Dados estruturados da página GLP-1:** a especialidade médica declarada para buscadores (`specialty`) usava `Endocrinology`, valor que o schema.org rejeita; passa a `https://schema.org/Endocrine`.
+  - **Perguntas frequentes visíveis nas páginas de conteúdo:** as páginas de injeção mensal e de insulina, e os guias de alarme no silencioso, dose semanal esquecida, horário de 8 em 8 horas e validade da caneta aberta, declaravam perguntas e respostas para buscadores (FAQ do schema.org) que, em parte, não apareciam na página. Cada uma ganha uma seção "Perguntas frequentes" com o mesmo texto do schema, como já faziam a página GLP-1 e o guia de rodízio. No guia de rodízio, duas perguntas do schema passam a ter o mesmo texto do título visível.
+  - **Correção no guia de alarme:** a resposta sobre bateria dizia "APNs locais no iOS"; APNs é o serviço de push remoto da Apple. Passa a "notificações locais agendadas no iOS".
+  - **Sem scroll lateral no guia de 8 em 8 horas:** o bloco de perguntas e respostas dos guias deixava uma tabela larga esticar a página além da tela no celular; a tabela passa a rolar dentro do próprio quadro.
 
 ### Web: Landing mais leve e acessível no celular (spec 112, PR-B)
 

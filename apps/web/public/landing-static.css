@@ -327,12 +327,15 @@ img {
 /* blocos answer-first */
 .qa {
   display: grid;
+  /* minmax(0,1fr): sem isso, tabela larga dentro de um item estica a coluna além da tela */
+  grid-template-columns: minmax(0, 1fr);
   gap: 44px;
 }
 .qa__item {
   max-width: 52rem;
 }
-.qa__item h2 {
+.qa__item h2,
+.qa__item h3 {
   font-size: clamp(1.4rem, 2.6vw, 1.85rem);
   font-weight: 800;
   margin-bottom: 14px;
