@@ -15,6 +15,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Regras de janela em fonte única:** as janelas de relatório, digest e estoque saíram dos jobs para `server/notifications/windows.ts`, e o gate usa exatamente as mesmas.
   - **Banco:** função `public.notify_tick_work` (só `service_role`, `SECURITY INVOKER`) e 3 índices parciais em `dose_instances` (`docs/migrations/20261023_109_notify_tick_work.sql`). Sem a env, o deploy é inerte; rollback = remover `TICK_GATE`.
 
+### Web: Landing mais leve e acessível no celular (spec 112, PR-B)
+
+- **Web** (`Fixed`, `patch` 4.35.1 → 4.35.2). A página inicial carrega menos coisa antes de aparecer:
+  - **Sem SDK do Supabase para quem só visita:** quem abre `dosiq.app` sem sessão salva não baixa mais o código de login e vê a Landing direto, sem o "Carregando...". O código de login carrega quando há sessão salva, quando a pessoa volta por um link de e-mail (magic link, recuperação de senha, confirmação) ou quando clica em entrar ou criar conta. Se esse código não carregar (deploy novo, rede caiu), o app recarrega uma vez e, se falhar de novo, mostra a Landing em vez de travar no carregamento.
+  - **Fontes sem bloquear a tela:** sai o `@import` do Google Fonts que atrasava o primeiro desenho. Fica uma URL só, assíncrona, com os pesos usados (Comfortaa 700, Lexend 400–900, Public Sans 400–900); saem os pesos de Comfortaa sem uso.
+  - **Logo em SVG e selos com tamanho fixo:** o logo do topo usa o SVG (mais nítido e menor), e os selos da App Store e do Google Play têm largura e altura declaradas, sem pulo de layout ao carregar.
+  - **Contraste e títulos:** textos cinza-claro e verde da Landing sobre fundo claro ficam mais escuros (contraste WCAG AA ≥ 4.5:1). Os títulos dos cards de funcionalidades e de apps passam de `h4` para `h3`, sem salto na hierarquia; no celular, os títulos dos cards de funcionalidades ficam no tamanho compacto que o CSS já previa.
+  - **Cache de imagens:** selos, telas, ícones dos apps e imagens da raiz ficam 1 dia em cache no navegador (com revalidação em segundo plano por 7 dias). HTML, service worker e manifesto seguem sem cache.
+  - **Sem scroll lateral no celular:** o botão do banner GLP-1 alargava a página além da tela, e o topo não comportava logo, "Acessar Web" e "Instalar App" em celulares de até 430px. O banner passa a quebrar a linha do botão e, nessas telas, o topo mostra só "Instalar App"; o acesso à versão web continua logo abaixo do texto principal.
+
 ### Web: fim do rosa legado, do tema escuro morto e paridade de cores com o app (spec 112, PR-A)
 
 - **Web** (`Fixed`, `patch` 4.35.0 → 4.35.1). Limpeza dos resíduos da identidade pré-redesign:

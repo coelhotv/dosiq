@@ -27,6 +27,24 @@
       ]
     },
     {
+      "source": "/(badges|screens|app-icons)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/([^/]+\\.(?:png|svg|ico|jpg|webp))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/(service-worker.js|registerSW.js|manifest.webmanifest)",
       "headers": [
         {

@@ -26,12 +26,11 @@ function PrototypeIcon({ children, className = '', size = 20, viewBox = '0 0 24 
 export function LogoMark({ className = '', size = 24 }) {
   return (
     <img
-      src="/dosiq-logo-verde.png"
+      src="/dosiq-logo-verde.svg"
       width={size}
       height={size}
       className={className}
-      alt="dosiq"
-      aria-hidden="true"
+      alt=""
       style={{ display: 'block' }}
     />
   )

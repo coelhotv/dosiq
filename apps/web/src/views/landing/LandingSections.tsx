@@ -96,42 +96,42 @@ export function LandingFuncionalidades() {
         <div className="lp-feature-grid">
           <div className="lp-feature">
             <div className="lp-feature__icon"><BarcodeIcon size={20} /></div>
-            <h4>Código de Barras ANVISA</h4>
+            <h3>Código de Barras ANVISA</h3>
             <p>Aponte a câmera para a caixa no app ou busque na lista oficial da ANVISA sem digitar nada à mão.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><LayersIcon size={20} /></div>
-            <h4>Titulação de Doses</h4>
+            <h3>Titulação de Doses</h3>
             <p>Escada de aumento gradual com o degrau atual e peso médio por etapa, mesmo ao trocar de caneta.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><TargetIcon size={20} /></div>
-            <h4>Mapa do Corpo (Rodízio)</h4>
+            <h3>Mapa do Corpo (Rodízio)</h3>
             <p>Toque no desenho do corpo (frente e costas) para registrar onde aplicou e não repetir o local.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><BellIcon size={20} /></div>
-            <h4>Alarme Crítico no Silencioso</h4>
+            <h3>Alarme Crítico no Silencioso</h3>
             <p>Alertas Críticos no iPhone e canal de alarme no Android para doses que não podem atrasar.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><FileTextIcon size={20} /></div>
-            <h4>PDF Clínico para o Médico</h4>
+            <h3>PDF Clínico para o Médico</h3>
             <p>Relatório de 7, 30 ou 90 dias com tomadas, escada de doses, locais de injeção e medidas.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><ActivityIcon size={20} /></div>
-            <h4>Biomarcadores Integrados</h4>
+            <h3>Biomarcadores Integrados</h3>
             <p>Registre seu peso logo após a dose semanal e acompanhe glicemia e pressão ao lado da adesão.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><PackageIcon size={20} /></div>
-            <h4>Estoque Opcional pela Caixa</h4>
+            <h3>Estoque Opcional pela Caixa</h3>
             <p>Escaneie a caixa ao comprar para atualizar o estoque — ou desligue se só quiser lembretes.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><LockIcon size={20} /></div>
-            <h4>Privacidade & Portabilidade</h4>
+            <h3>Privacidade & Portabilidade</h3>
             <p>Código aberto (AGPL-3.0), sem anúncios, sem venda de dados e exportação CSV/JSON (LGPD).</p>
           </div>
         </div>
@@ -221,7 +221,7 @@ export function LandingApp() {
           <div className="lp-app-card">
             <div className="lp-app-card__body">
               <div className="lp-card__eyebrow">iPhone (iOS)</div>
-              <h4>Disponível na App Store</h4>
+              <h3>Disponível na App Store</h3>
               <p>Alertas Críticos que tocam no Silencioso e Live Activities na Ilha Dinâmica.</p>
             </div>
             <div className="lp-app-card__cta">
@@ -232,7 +232,7 @@ export function LandingApp() {
                 rel="noopener noreferrer"
                 aria-label="Baixar na App Store"
               >
-                <img src="/badges/app-store-pt.svg" alt="Baixar na App Store" />
+                <img src="/badges/app-store-pt.svg" alt="Baixar na App Store" width={135} height={40} />
               </a>
             </div>
           </div>
@@ -241,7 +241,7 @@ export function LandingApp() {
           <div className="lp-app-card">
             <div className="lp-app-card__body">
               <div className="lp-card__eyebrow">Android</div>
-              <h4>Disponível no Google Play</h4>
+              <h3>Disponível no Google Play</h3>
               <p>Canal de alarme sonoro dedicado e leitura de código de barras pela câmera.</p>
             </div>
             <div className="lp-app-card__cta">
@@ -255,6 +255,8 @@ export function LandingApp() {
                 <img
                   src="/badges/google-play-pt.svg"
                   alt="Disponível no Google Play"
+                  width={135}
+                  height={44}
                   className="lp-app-badge-img"
                 />
               </a>

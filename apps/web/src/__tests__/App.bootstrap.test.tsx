@@ -4,8 +4,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 let mockUser: any = null
 let authStateCallback: any = null
+const SESSION_KEY = 'sb-testref-auth-token'
 
-vi.mock('@shared/utils/supabase', () => ({
+vi.mock('@shared/utils/supabase', () => {
+  return {
   supabase: {
     auth: {
       getSession: vi.fn(() => Promise.resolve({ data: { session: mockUser ? { user: mockUser } : null } })),
@@ -19,7 +21,8 @@ vi.mock('@shared/utils/supabase', () => ({
     authStateCallback = cb
     return { data: { subscription: { unsubscribe: vi.fn() } } }
   }),
-}))
+  }
+})
 
 const dashboardProviderSpy = vi.fn(({ children }: { children: React.ReactNode }) => (
   <div data-testid="dashboard-provider-mock">{children}</div>
@@ -99,6 +102,7 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
     vi.clearAllMocks()
     mockUser = null
     authStateCallback = null
+    window.localStorage.clear()
     window.history.replaceState({}, '', '/')
 
     Object.defineProperty(window, 'matchMedia', {
@@ -153,6 +157,7 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
 
   it('quando autenticado (session válida), monta a árvore protegida com DashboardProvider e OnboardingProvider', async () => {
     mockUser = { id: 'test-user-uuid', email: 'test@dosiq.app' }
+    window.localStorage.setItem(SESSION_KEY, '{}')
     render(<App />)
 
     await waitFor(() => {
@@ -163,6 +168,7 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
 
   it('quando em fluxo de recuperação de senha, monta os providers de autenticado', async () => {
     mockUser = { id: 'test-user-uuid', email: 'test@dosiq.app' }
+    window.localStorage.setItem(SESSION_KEY, '{}')
     render(<App />)
 
     await waitFor(() => {
@@ -195,6 +201,7 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
 
   it('quando autenticado (session válida), monta InstallPrompt e chama registro do SW [PO-110-7]', async () => {
     mockUser = { id: 'test-user-uuid', email: 'test@dosiq.app' }
+    window.localStorage.setItem(SESSION_KEY, '{}')
     render(<App />)
 
     await waitFor(() => {
@@ -202,5 +209,40 @@ describe('App Bootstrap & Gating (Spec 110 / PO-110-3)', () => {
     })
 
     expect(registerPwaSpy).toHaveBeenCalledTimes(1)
+  })
+
+  // A ausência do chunk no bundle é provada no build (PO-112-2a); aqui, o comportamento.
+  it('anônimo sem sinal: Landing sem spinner e sem getCurrentUser/onAuthStateChange [PO-112-2]', async () => {
+    mockUser = null
+    const sb = await import('@shared/utils/supabase')
+    vi.mocked(sb.onAuthStateChange).mockClear()
+    render(<App />)
+
+    expect(screen.queryByText('Carregando...')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText(/Nunca mais erre uma/i)).toBeInTheDocument()
+    })
+    expect(sb.getCurrentUser).not.toHaveBeenCalled()
+    expect(sb.onAuthStateChange).not.toHaveBeenCalled()
+  })
+
+  it('retorno de magic link (#access_token) com storage vazio restaura a sessão [PO-112-2]', async () => {
+    mockUser = { id: 'test-user-uuid', email: 'test@dosiq.app' }
+    window.history.replaceState({}, '', '/#access_token=abc&type=magiclink')
+    render(<App />)
+
+    await waitFor(() => {
+      expect(dashboardProviderSpy).toHaveBeenCalled()
+    })
+  })
+
+  it('desmontar antes do import resolver não deixa listener registrado [E2]', async () => {
+    window.localStorage.setItem(SESSION_KEY, '{}')
+    const { onAuthStateChange } = await import('@shared/utils/supabase')
+    vi.mocked(onAuthStateChange).mockClear()
+    const { unmount } = render(<App />)
+    unmount()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onAuthStateChange).not.toHaveBeenCalled()
   })
 })
