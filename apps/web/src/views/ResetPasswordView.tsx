@@ -1,6 +1,23 @@
 import { useState, type CSSProperties } from 'react'
 import { supabase } from '@shared/utils/supabase'
 
+// Mensagem por código do Supabase Auth (AuthApiError.code); desconhecido cai no genérico
+export function resetPasswordErrorMessage(error: { code?: string } | null | undefined): string {
+  switch (error?.code) {
+    case 'same_password':
+      return 'A nova senha precisa ser diferente da senha atual.'
+    case 'weak_password':
+      return 'Senha fraca. Use uma senha mais longa, misturando letras, números e símbolos.'
+    case 'session_not_found':
+    case 'session_expired':
+    case 'refresh_token_not_found':
+    case 'otp_expired':
+      return 'Seu link de recuperação expirou. Solicite um novo link.'
+    default:
+      return 'Não foi possível atualizar a senha. Tente de novo.'
+  }
+}
+
 export default function ResetPasswordView({ onComplete }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,7 +43,7 @@ export default function ResetPasswordView({ onComplete }) {
     setLoading(false)
 
     if (updateError) {
-      setError('Erro ao atualizar senha. Tente solicitar um novo link de recuperação.')
+      setError(resetPasswordErrorMessage(updateError))
       return
     }
 

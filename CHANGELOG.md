@@ -15,6 +15,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Regras de janela em fonte única:** as janelas de relatório, digest e estoque saíram dos jobs para `server/notifications/windows.ts`, e o gate usa exatamente as mesmas.
   - **Banco:** função `public.notify_tick_work` (só `service_role`, `SECURITY INVOKER`) e 3 índices parciais em `dose_instances` (`docs/migrations/20261023_109_notify_tick_work.sql`). Sem a env, o deploy é inerte; rollback = remover `TICK_GATE`.
 
+### Web: logout volta ao topo e erro claro na troca de senha (spec 112, smoke B)
+
+- **Web** (`Fixed`, `patch` 4.35.2 → 4.35.3). Dois ajustes achados no smoke da Landing:
+  - **Sair da conta abre a Landing no topo:** o logout recarregava a página e o navegador restaurava a rolagem da tela de perfil, então a Landing aparecia já no rodapé. Agora o logout navega para o início e a página abre no topo.
+  - **Mensagem certa ao redefinir a senha:** repetir a senha atual mostrava "Erro ao atualizar senha. Tente solicitar um novo link de recuperação.", como se o link tivesse vencido. Agora a mensagem diz o que houve: senha igual à atual, senha fraca ou link expirado. Erro desconhecido mostra "Não foi possível atualizar a senha. Tente de novo."
+
 ### Web: Landing mais leve e acessível no celular (spec 112, PR-B)
 
 - **Web** (`Fixed`, `patch` 4.35.1 → 4.35.2). A página inicial carrega menos coisa antes de aparecer:

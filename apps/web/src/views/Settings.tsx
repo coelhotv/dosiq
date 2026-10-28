@@ -32,7 +32,8 @@ export default function Settings({ onNavigate, mode }) {
     Object.keys(localStorage)
       .filter((k) => k.startsWith('sb-') || k.startsWith(STORAGE_KEY_PREFIX))
       .forEach((k) => localStorage.removeItem(k))
-    window.location.reload()
+    // Navegação nova (não reload): o reload restaurava o scroll do perfil e a Landing abria no rodapé
+    window.location.replace('/')
   }
 
   const currentMessage = message.text ? message : msg
