@@ -104,7 +104,7 @@ trabalhosa…" na B).
 |---|---|---|
 | **B1** | instalou e cadastrou tratamento, sem dose | Você chegou a cadastrar seu tratamento no dosiq, mas ainda não registrou nenhuma dose. |
 | **B2** | instalou e não cadastrou nada | Você instalou o dosiq, mas não chegou a cadastrar seu tratamento. |
-| **B3** | criou a conta pelo site, nunca instalou o app | Você criou sua conta no dosiq pelo site. Desde então ele virou um app de verdade para iPhone e Android, com alarme e tudo. |
+| **B3** | conta antiga sem rastro de app (pré-telemetria: alpha/TestFlight ou site) | Você criou sua conta no dosiq há alguns meses, quando ele ainda estava no começo. De lá para cá ele virou um app de verdade para iPhone e Android, com alarme no horário de cada dose. |
 | **B4** | conta recente (set/out) | Você criou sua conta no dosiq há poucas semanas e ainda não registrou nenhuma dose. |
 
 ---
