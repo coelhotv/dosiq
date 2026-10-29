@@ -1775,6 +1775,7 @@ export type Database = {
           display_name: string | null
           emergency_card: Json | null
           id: string
+          international_transfer_granted_at: string | null
           notification_mode: string | null
           notification_preference: string | null
           onboarding_completed: boolean | null
@@ -1807,6 +1808,7 @@ export type Database = {
           display_name?: string | null
           emergency_card?: Json | null
           id?: string
+          international_transfer_granted_at?: string | null
           notification_mode?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
@@ -1839,6 +1841,7 @@ export type Database = {
           display_name?: string | null
           emergency_card?: Json | null
           id?: string
+          international_transfer_granted_at?: string | null
           notification_mode?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
@@ -2137,6 +2140,10 @@ export type Database = {
         }[]
       }
       get_my_deletion_notice: { Args: never; Returns: string }
+      notify_tick_work: {
+        Args: { p_la_lead_minutes?: number; p_now?: string }
+        Returns: Json
+      }
       prune_account_emails: {
         Args: { p_user_ids: string[] }
         Returns: {
