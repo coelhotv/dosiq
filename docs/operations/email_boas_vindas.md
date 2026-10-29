@@ -1,7 +1,7 @@
 ---
 title: "Template de E-mail de Boas-vindas (conta nova)"
-description: "2 variantes HTML/CSS inline para quem acabou de criar conta no dosiq (A: criou pelo app · B: criou pelo site). Envio manual por contato@dosiq.app."
-version: "2.0.0"
+description: "2 variantes HTML/CSS inline para quem acabou de criar conta no dosiq (A: criou pelo app · B: criou pelo site). Envio automático pelo workflow da Brevo (spec 026 2A); runbook em §Operação."
+version: "2.1.0"
 status: active
 category: operation
 audience:
@@ -12,7 +12,7 @@ tags:
   - onboarding
   - boas-vindas
 created_at: "2026-07-22"
-updated_at: "2026-10-28"
+updated_at: "2026-10-29"
 ---
 
 # Template de E-mail de Boas-vindas — conta nova
@@ -49,8 +49,46 @@ autorizar nas configurações de privacidade. Se o escopo do assistente mudar, e
 > 4. No inspetor, botão direito no elemento → **Edit as HTML** e troque `INSERIR_AQUI` pelo fragmento.
 > 5. `Esc` para fechar o inspetor. O preheader já vai embutido no topo do fragmento (div oculto).
 
-**Pendência de produto:** com cadastros crescendo, este envio deveria ser automático (Auth hook ou
-job pós-cadastro) — candidato ao backlog, não feito aqui.
+## Operação — envio automático (spec 026 Slice 2A, ADR-118)
+
+O dosiq **não envia** este e-mail: o job `api/ops.ts?job=brevo_contacts_sync` (ping **horário** no
+cron-job.org) coloca a conta nova na lista **New users** (id 5) da Brevo, e o workflow da Brevo
+(cópia destes templates no editor da Brevo — este arquivo é a fonte versionada) dispara a boas-vindas
+ao contato entrar na lista, ramificando **A/B por `HAS_APP`**. O envio manual pelo Gmail acima fica só
+como contingência.
+
+- **Quem entra:** e-mail confirmado há ≥ 1 h e conta criada a partir de `BREVO_SYNC_START`. A base
+  antiga não entra. Fila de exclusão viva (`prune_queue`) fica de fora.
+- **O que vai à Brevo:** só e-mail, `ext_id` (= uid) e os atributos `HAS_APP` e `SIGNUP_DATE`. Nada de
+  nome nem dado de saúde. Os templates **não** usam `{{ contact.* }}` hoje; se passarem a usar o nome,
+  o atributo da conta pt-BR é `NOME` (não `FNAME`) e incluí-lo exige mudar o teste do payload.
+- **`HAS_APP` é medido em +1 h:** quem cria pelo site e instala o app depois recebe a variante B — por
+  desenho; o atributo não é atualizado depois.
+- **Base legal:** e-mail de conta (execução do contrato; política v0.4 §6 já lista a Brevo). Manter o
+  texto como "conta", não promoção — virar marketing muda a base para consentimento.
+- **Opt-out:** descadastro nativo da Brevo (link do workflow + blocklist). Upsert do job não remove
+  contato da blocklist (verificado na API, 2026-10-29).
+
+**Configuração (Vercel, só servidor — nunca `VITE_`):** `BREVO_API_KEY` (chave dedicada, permissão
+**só de contatos**, IP allowlist desligada — a Vercel sai de IPs variáveis) · `BREVO_LIST_NEW_USERS=5`
+· `BREVO_SYNC_START` em ISO com fuso (ex.: `2026-10-29T00:00:00-03:00`).
+**Ordem:** env → deploy → migração em prod → **só então** o ping. Faltou env ⇒ o job responde 500 a
+cada hora.
+
+**Exclusão espelhada:** toda rodada apaga na Brevo (por `ext_id`) as contas excluídas nas últimas
+48 h (lápide `private.account_tombstone`). Cobre exclusão pelo app, pela fila de prune e pelo
+atendimento a privacidade@. **Remoção manual** na Brevo (Contatos → buscar o e-mail → excluir) quando:
+- a conta foi apagada direto no painel do Supabase (não passa pela lápide);
+- a Brevo ficou fora > 48 h — após o incidente, conferir no Sentry os erros `etapa: delete` do
+  período e remover à mão cada contato. Prazo da política §7: 15 dias.
+
+**Rotação da `BREVO_API_KEY`:** criar chave nova (só contatos) → trocar na Vercel → redeploy →
+desativar a antiga na Brevo. Vazou? Desativar primeiro (o job falha com 401 até a troca, sem perda:
+inclusão retenta, exclusão tem 48 h).
+
+**Erros no Sentry:** `{job: brevo_contacts_sync, etapa, status, code}` — etapas `candidates`,
+`include`, `mark`, `deleted_since`, `delete`. 429 ou 45 s encerram a rodada (`stoppedBy`); a próxima
+hora continua.
 
 ---
 

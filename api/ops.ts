@@ -14,6 +14,7 @@ import { initSentry, captureServerException, flushSentry } from '../server/obser
 import { isCronAuthorized } from './_ops/auth.js';
 import { runPruneEnqueue } from './_ops/pruneEnqueue.js';
 import { runPruneExecute } from './_ops/pruneExecute.js';
+import { runBrevoContactsSync } from './_ops/brevoContactsSync.js';
 import { createCronDispatcher, createNotifyBotAdapter } from './_shared/cronDispatcher.js';
 
 const logger = createLogger('Ops');
@@ -44,6 +45,11 @@ export const OPS_JOBS: Record<string, Job> = {
     capture: (error, context) => captureServerException(error, context as any),
   }),
   prune_execute: (correlationId) => runPruneExecute({ supabase: supabase as any, correlationId }),
+  brevo_contacts_sync: (correlationId) => runBrevoContactsSync({
+    supabase: supabase as any,
+    correlationId,
+    capture: (error, context) => captureServerException(error, context as any),
+  }),
 };
 
 export default async function handler(req, res) {

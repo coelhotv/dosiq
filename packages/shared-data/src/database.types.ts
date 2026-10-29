@@ -1761,6 +1761,7 @@ export type Database = {
       user_settings: {
         Row: {
           birth_date: string | null
+          brevo_synced_at: string | null
           channel_mobile_push_enabled: boolean
           channel_telegram_enabled: boolean
           channel_web_push_enabled: boolean
@@ -1792,6 +1793,7 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          brevo_synced_at?: string | null
           channel_mobile_push_enabled?: boolean
           channel_telegram_enabled?: boolean
           channel_web_push_enabled?: boolean
@@ -1823,6 +1825,7 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          brevo_synced_at?: string | null
           channel_mobile_push_enabled?: boolean
           channel_telegram_enabled?: boolean
           channel_web_push_enabled?: boolean
@@ -2009,6 +2012,22 @@ export type Database = {
           review_ids: string[]
         }
         Returns: number
+      }
+      brevo_deleted_since: {
+        Args: { p_since: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      brevo_mark_synced: { Args: { p_user_id: string }; Returns: number }
+      brevo_sync_candidates: {
+        Args: { p_limit: number; p_since: string }
+        Returns: {
+          created_at: string
+          email: string
+          has_app: boolean
+          user_id: string
+        }[]
       }
       claim_notification_outbox: {
         Args: { batch_limit?: number }
