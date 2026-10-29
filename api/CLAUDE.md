@@ -19,7 +19,7 @@ Cada arquivo `.ts` (ou `.js` legado) na raiz do diretório `api/` conta como uma
 | 5 | `api/notify.ts` | Cron orchestrator (reminders, digests, reports) | 60s |
 | 6 | `api/report.ts` | Relatório clínico em PDF (Chromium headless, JWT do usuário — spec 097) | 30s · 2 GB |
 | 7 | `api/telegram.ts` | Telegram webhook | 10s |
-| 8 | `api/ops.ts` | Jobs operacionais (não-notificação) por `?job=`: `prune_enqueue`, `prune_execute` (spec 107) | 60s |
+| 8 | `api/ops.ts` | Jobs operacionais (não-notificação) por `?job=`: `prune_enqueue`, `prune_execute` (spec 107), `brevo_contacts_sync` (spec 026 2A) | 60s |
 
 **Total: 8/12 funções → 4 slots livres**
 
@@ -200,6 +200,14 @@ if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
 > **Jobs operacionais (spec 107, CON-043):** o que NÃO é notificação mora em `api/ops.ts?job=<nome>`,
 > um ping por job no cron-job.org, allowlist + segredo em tempo constante + 5xx em erro. O prune saiu
 > do `notify.ts` (ver `docs/operations/RUNBOOK_PRUNE_APPROVAL.md`).
+>
+> **`brevo_contacts_sync` (spec 026 Slice 2A, ADR-118) — ping horário.** Inclui conta nova (e-mail
+> confirmado há ≥ 1 h, criada a partir de `BREVO_SYNC_START`) na lista da Brevo e apaga lá quem foi
+> excluído (lápide, janela 48 h); o workflow da Brevo envia as boas-vindas. Env (só servidor, nunca
+> `VITE_`): `BREVO_API_KEY` (permissão só de contatos), `BREVO_LIST_NEW_USERS` (id numérico),
+> `BREVO_SYNC_START` (ISO com fuso). Faltou env ⇒ 500 — criar o ping só depois das env. Payload fechado
+> em `HAS_APP`/`SIGNUP_DATE` (teste acusa atributo novo); nenhum e-mail em resultado/log/Sentry.
+> Runbook: `docs/operations/email_boas_vindas.md` §Operação.
 
 O cron principal está em `api/notify.ts`, acionado de forma segura por autenticação baseada em segredo cron (`CRON_SECRET`).
 
@@ -252,4 +260,4 @@ api/
 
 ---
 
-*Última atualização: 2026-10-27*
+*Última atualização: 2026-10-29*
