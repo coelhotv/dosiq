@@ -51,8 +51,8 @@ autorizar nas configurações de privacidade. Se o escopo do assistente mudar, e
 
 ## Operação — envio automático (spec 026 Slice 2A, ADR-118)
 
-O dosiq **não envia** este e-mail: o job `api/ops.ts?job=brevo_contacts_sync` (ping **horário** no
-cron-job.org) coloca a conta nova na lista **New users** (id 5) da Brevo, e o workflow da Brevo
+O dosiq **não envia** este e-mail: o job `api/ops.ts?job=brevo_contacts_sync` (ping **a cada 15 min** no
+cron-job.org; conta entra na lista entre 1 h e 1 h 15 após confirmar o e-mail) coloca a conta nova na lista **New users** (id 5) da Brevo, e o workflow da Brevo
 (cópia destes templates no editor da Brevo — este arquivo é a fonte versionada) dispara a boas-vindas
 ao contato entrar na lista, ramificando **A/B por `HAS_APP`**. O envio manual pelo Gmail acima fica só
 como contingência.
@@ -73,7 +73,7 @@ como contingência.
 **só de contatos**, IP allowlist desligada — a Vercel sai de IPs variáveis) · `BREVO_LIST_NEW_USERS=5`
 · `BREVO_SYNC_START` em ISO com fuso (ex.: `2026-10-29T00:00:00-03:00`).
 **Ordem:** env → deploy → migração em prod → **só então** o ping. Faltou env ⇒ o job responde 500 a
-cada hora.
+cada rodada (a cada 15 min).
 
 **Exclusão espelhada:** toda rodada apaga na Brevo (por `ext_id`) as contas excluídas nas últimas
 48 h (lápide `private.account_tombstone`). Cobre exclusão pelo app, pela fila de prune e pelo
@@ -88,7 +88,7 @@ inclusão retenta, exclusão tem 48 h).
 
 **Erros no Sentry:** `{job: brevo_contacts_sync, etapa, status, code}` — etapas `candidates`,
 `include`, `mark`, `deleted_since`, `delete`. 429 ou 45 s encerram a rodada (`stoppedBy`); a próxima
-hora continua.
+rodada continua.
 
 ---
 

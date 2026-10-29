@@ -201,7 +201,7 @@ if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
 > um ping por job no cron-job.org, allowlist + segredo em tempo constante + 5xx em erro. O prune saiu
 > do `notify.ts` (ver `docs/operations/RUNBOOK_PRUNE_APPROVAL.md`).
 >
-> **`brevo_contacts_sync` (spec 026 Slice 2A, ADR-118) — ping horário.** Inclui conta nova (e-mail
+> **`brevo_contacts_sync` (spec 026 Slice 2A, ADR-118) — ping a cada 15 min.** Inclui conta nova (e-mail
 > confirmado há ≥ 1 h, criada a partir de `BREVO_SYNC_START`) na lista da Brevo e apaga lá quem foi
 > excluído (lápide, janela 48 h); o workflow da Brevo envia as boas-vindas. Env (só servidor, nunca
 > `VITE_`): `BREVO_API_KEY` (permissão só de contatos), `BREVO_LIST_NEW_USERS` (id numérico),

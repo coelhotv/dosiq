@@ -10,10 +10,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Boas-vindas automáticas para conta nova via Brevo (spec 026, Slice 2A)
 
 - **Backend/Infra** (`Added`; sem *version source* de app — nada muda no app, na web ou por OTA; o efeito visível é o e-mail de boas-vindas, que sai pela Brevo). Até aqui a boas-vindas era enviada à mão.
-  - **Job `brevo_contacts_sync`** no `api/ops.ts` (ping horário, zero função nova): inclui na lista "New users" da Brevo cada conta com e-mail confirmado há pelo menos 1 h e criada a partir de `BREVO_SYNC_START`; o workflow da Brevo envia a variante A (tem o app) ou B (criou pelo site) por `HAS_APP`. A base antiga não entra.
+  - **Job `brevo_contacts_sync`** no `api/ops.ts` (ping a cada 15 min, zero função nova): inclui na lista "New users" da Brevo cada conta com e-mail confirmado há pelo menos 1 h e criada a partir de `BREVO_SYNC_START`; o workflow da Brevo envia a variante A (tem o app) ou B (criou pelo site) por `HAS_APP`. A base antiga não entra.
   - **Dado mínimo:** vão à Brevo só o e-mail, o id da conta e os atributos `HAS_APP` e `SIGNUP_DATE` — nada de nome nem de saúde; um teste trava a lista.
   - **Exclusão espelhada:** conta excluída pelo app, pela fila de exclusão ou por pedido a privacidade@ some da Brevo na rodada seguinte (lápide, janela de 48 h). Exclusão direta no painel do Supabase ou Brevo fora por mais de 48 h ⇒ remoção manual (runbook em `docs/operations/email_boas_vindas.md`).
-  - **Falha da Brevo não trava nada:** a inclusão tenta de novo na hora seguinte; erros vão ao Sentry sem e-mail; limite de taxa ou 45 s encerram a rodada.
+  - **Falha da Brevo não trava nada:** a inclusão tenta de novo na rodada seguinte; erros vão ao Sentry sem e-mail; limite de taxa ou 45 s encerram a rodada.
   - **Banco:** `user_settings.brevo_synced_at` (só o servidor grava — gatilho barra o titular) e as RPCs `brevo_sync_candidates`, `brevo_mark_synced`, `brevo_deleted_since`, todas só `service_role` (`docs/migrations/20261029_026_brevo_contacts_sync.sql`).
 
 ### Cron de notificação: minuto sem trabalho deixa de consumir a cota de logs do Supabase (spec 109, Slice A)
