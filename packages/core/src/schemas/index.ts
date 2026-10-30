@@ -29,6 +29,7 @@ export {
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
   normalizeRegulatoryCategory,
+  THERAPEUTIC_CLASS_CODE_REGEX,
 } from './medicineSchema'
 
 export {
@@ -64,7 +65,9 @@ export {
   INTAKE_UNIT_LABELS,
   WEEKDAYS,
   WEEKDAY_LABELS,
+  TRACKED_MEASURES,
 } from './protocolSchema'
+export type { TrackedMeasure } from './protocolSchema'
 
 export {
   stockSchema,

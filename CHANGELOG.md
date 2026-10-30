@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Medida acompanhada por tratamento: banco e regra no core (spec 100, Slice A)
+
+- **Shared/Core + Backend/Infra** (`Added`, `no-user-impact` — nenhuma tela, job ou select lê as colunas novas ainda; app e web seguem pedindo peso só a tratamento semanal, como hoje). Fundação para o tratamento dizer qual medida acompanha (peso, glicemia ou pressão), entregue no Slice B.
+  - **Banco:** `protocols.tracked_measure` (`peso`/`glicemia`/`pressao_arterial`/`nenhum`; NULL = não decidido, segue a regra da 069) e `medicines.therapeutic_class_code` (código EphMRA da CMED), ambas sem default e com CHECK (`docs/migrations/20261030_100_tracked_measure.sql`). Aplicado em QA e prod em 2026-10-30.
+  - **Backfill curado:** 184 dos 196 medicamentos de prod receberam o código da classe a partir de planilha revisada pelo PO, por (descrição, nome) — a descrição sozinha juntava GLP-1 e insulina (`docs/migrations/20261030_100_class_code_backfill.sql`).
+  - **Core:** `inferMeasure` (matriz classe → medida, prefixo mais longo vence: GLP-1/antiobesidade → peso, demais antidiabéticos → glicemia, anti-hipertensivos → pressão) e `effectiveMeasure` (chave ausente falha fechado, nunca cai no fallback). O rascunho de cadastro pela CMED passa a carregar o código normalizado; código fora do formato vira `null`.
+
 ### Boas-vindas automáticas para conta nova via Brevo (spec 026, Slice 2A)
 
 - **Backend/Infra** (`Added`; sem *version source* de app — nada muda no app, na web ou por OTA; o efeito visível é o e-mail de boas-vindas, que sai pela Brevo). Até aqui a boas-vindas era enviada à mão.

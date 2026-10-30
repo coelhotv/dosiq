@@ -825,6 +825,7 @@ export type Database = {
           regulatory_category: string | null
           shelf_life_days: number | null
           therapeutic_class: string | null
+          therapeutic_class_code: string | null
           type: string | null
           units_per_ml: number | null
           user_id: string
@@ -845,6 +846,7 @@ export type Database = {
           regulatory_category?: string | null
           shelf_life_days?: number | null
           therapeutic_class?: string | null
+          therapeutic_class_code?: string | null
           type?: string | null
           units_per_ml?: number | null
           user_id?: string
@@ -865,6 +867,7 @@ export type Database = {
           regulatory_category?: string | null
           shelf_life_days?: number | null
           therapeutic_class?: string | null
+          therapeutic_class_code?: string | null
           type?: string | null
           units_per_ml?: number | null
           user_id?: string
@@ -1092,6 +1095,7 @@ export type Database = {
           time_schedule: Json | null
           titration_schedule: Json | null
           titration_status: string | null
+          tracked_measure: string | null
           treatment_plan_id: string | null
           user_id: string
           weekdays: string[] | null
@@ -1122,6 +1126,7 @@ export type Database = {
           time_schedule?: Json | null
           titration_schedule?: Json | null
           titration_status?: string | null
+          tracked_measure?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -1152,6 +1157,7 @@ export type Database = {
           time_schedule?: Json | null
           titration_schedule?: Json | null
           titration_status?: string | null
+          tracked_measure?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null

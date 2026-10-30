@@ -25,6 +25,9 @@ export const DOSAGE_UNIT_LABELS = {
 }
 
 // Tipos de medicamento
+// Spec 100: formato EphMRA do código de classe CMED. Espelha `medicines_therapeutic_class_code_check`.
+export const THERAPEUTIC_CLASS_CODE_REGEX = /^[A-Z][0-9A-Z]{1,5}$/
+
 export const MEDICINE_TYPES = ['medicamento', 'suplemento']
 
 // Labels de tipo para exibição
@@ -235,6 +238,14 @@ const medicineObject = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  // Spec 100: SEM transform/default — `update()` de medicamento grava `validation.data` cru, então
+  // um transform materializaria `null` num update parcial e apagaria o código (FM-6).
+  therapeutic_class_code: z
+    .string()
+    .regex(THERAPEUTIC_CLASS_CODE_REGEX, 'Código de classe terapêutica inválido')
+    .nullable()
+    .optional(),
 
   regulatory_category: z
     .enum(REGULATORY_CATEGORIES)
