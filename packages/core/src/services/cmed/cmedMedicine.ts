@@ -9,6 +9,7 @@
 
 import { DOSAGE_UNITS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
 import { formatStrength } from '../../utils/doseUnit'
+import { normalizeClassCode } from '../trackedMeasure'
 import type { CmedRow } from './cmedIndex'
 import { packageFromText, presentationFromRow, type InjectionContainer } from './cmedPackage'
 import { intakeUnitFromPresentation } from './cmedIntakeUnit'
@@ -23,6 +24,8 @@ export interface CmedMedicineDraft {
   anvisa_registration: string | null
   regulatory_category: string | null
   therapeutic_class: string | null
+  /** Spec 100: código CMED normalizado; `null` se ausente ou fora do formato (nunca quebra o cadastro). */
+  therapeutic_class_code: string | null
   /** Exibição: força completa ("500 mg + 125 mg"). */
   strengthLabel: string | null
   /** Exibição: laboratório da caixa, inclusive de genérico. */
@@ -86,6 +89,7 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
     anvisa_registration: !isGeneric && /^[0-9]{9}$/.test(row.r) ? row.r : null,
     regulatory_category: normalizeRegulatoryCategory(row.k),
     therapeutic_class: row.cn,
+    therapeutic_class_code: normalizeClassCode(row.c),
     strengthLabel: formatStrength(row.ds, dose, unit),
     displayLaboratory: row.l,
     boxQuantity: row.q,

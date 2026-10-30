@@ -19,6 +19,21 @@ const index = decodeFixture()
 const rowByName = (name: string): CmedRow => index.rows[findRowsByProductName(index, name)[0]]
 
 describe('medicineDraftFromRow', () => {
+  it('spec 100 PO-9: o rascunho carrega o código da classe junto da descrição', () => {
+    const row = rowByName('Amoxicilina + Clavulanato de Potassio')
+    expect(row.c).toBe('J1C1')
+    const draft = medicineDraftFromRow(row)
+    expect(draft.therapeutic_class_code).toBe('J1C1')
+    expect(draft.therapeutic_class).toBe(row.cn)
+  })
+
+  it('spec 100 FM-3/FM-4: código ausente ou fora do formato vira null (cadastro nunca quebra no CHECK)', () => {
+    const row = rowByName('Amoxicilina + Clavulanato de Potassio')
+    expect(medicineDraftFromRow({ ...row, c: null }).therapeutic_class_code).toBeNull()
+    expect(medicineDraftFromRow({ ...row, c: ' c7a ' }).therapeutic_class_code).toBe('C7A')
+    expect(medicineDraftFromRow({ ...row, c: 'C02-X' }).therapeutic_class_code).toBeNull()
+  })
+
   it('SC-005 / PO-2: amoxi+clav EMS genérico', () => {
     const draft = medicineDraftFromRow(rowByName('Amoxicilina + Clavulanato de Potassio'))
     expect(draft).toMatchObject({
