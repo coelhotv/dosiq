@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mounjaro pela busca ou pela caixa aparece como na embalagem: "2,5 mg / 0,5 mL" (spec 113)
+
+- **Mobile + Shared/Core** (`Fixed`, **patch**, sem bump de `APP_VERSION` — fica **0.34.0**; canal: **OTA** junto da spec 100 `[0.34.0+ota.1]`, R-314: 100% JS, sem permissão nem mudança de propósito). A busca e o código de barras mostravam e preenchiam o Mounjaro como "5 mg/mL", número que não está na caixa.
+  - **Busca e scan:** remédios rotulados pelo conteúdo da seringa (lista curada na base da ANVISA; hoje só o Mounjaro de dose única) aparecem como "2,5 mg / 0,5 mL" … "15 mg / 0,5 mL" e abrem o cadastro com a concentração e o volume da caixa. O que é gravado continua o mesmo (5 mg por mL + volume 0,5); Mounjaro já cadastrado como "5 mg/mL" segue reconhecido como o mesmo remédio. Os demais remédios não mudam.
+  - **Primeiro remédio (onboarding):** ganha o campo "Volume da concentração" para remédio líquido, como o cadastro completo. Corrige um erro antigo: Mounjaro digitado à mão como "2,5" mg/mL era gravado com metade da concentração quando a caixa diz "por 0,5 mL".
+  - **Base da ANVISA:** coluna nova opcional `lv` (volume do rótulo); app sem esta versão ou base sem a coluna seguem funcionando como antes.
+
 ### `packages/core` volta a compilar sem erros de tipo, e o gate passa a cobrir o pacote inteiro
 
 - **Shared/Core** (`Fixed`, `no-user-impact`, sem bump — só testes e script de gate; nenhum código de runtime muda). `tsc -p packages/core` acumulava 53 erros, todos em fixtures de `utils/__tests__` que ficaram para trás quando os tipos de runtime apertaram (union de `platform` dos nudges, escada de titulação N2, `AdherenceProtocol`). Fixtures tipadas; testes de entrada inválida marcados com `@ts-expect-error`.

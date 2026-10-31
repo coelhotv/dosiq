@@ -29,6 +29,7 @@ import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
 import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
+import { ConcentrationVolumeField } from '@medications/components/ConcentrationVolumeField'
 import { valuesFromDraft, draftExtras, baseFromScan, scanDoseEdited } from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
 import { logEvent } from '@platform/analytics/productAnalytics'
@@ -184,13 +185,14 @@ export default function OnboardingMedicineStep() {
     [form],
   )
 
-  const handleDoseChange = useCallback(
-    (_name, value) => {
+  // Concentração e volume do rótulo (spec 113): só número decimal, vírgula vira ponto.
+  const handleDecimalChange = useCallback(
+    (name, value) => {
       const cleaned = String(value ?? '')
         .replace(',', '.')
         .replace(/[^\d.]/g, '')
         .replace(/^(\d*\.\d*).*$/, '$1')
-      form.handleChange('dosage_per_pill', cleaned)
+      form.handleChange(name, cleaned)
     },
     [form],
   )
@@ -288,7 +290,7 @@ export default function OnboardingMedicineStep() {
                 keyboardType="decimal-pad"
                 {...formProps(form, 'dosage_per_pill')}
                 {...(doseChoiceError && askStrength ? { error: 'Escolha a concentração abaixo' } : null)}
-                onChange={handleDoseChange}
+                onChange={handleDecimalChange}
               />
             </View>
             <View style={styles.rowUnit}>
@@ -302,6 +304,11 @@ export default function OnboardingMedicineStep() {
               />
             </View>
           </View>
+          {/* Spec 113 (FR-005): mesmo campo e condição do form completo; razão só na gravação. */}
+          <ConcentrationVolumeField
+            dosageUnit={form.values.dosage_unit as string | undefined}
+            inputProps={{ ...formProps(form, 'concentration_volume_ml'), onChange: handleDecimalChange }}
+          />
           <StrengthChoiceCard
             askStrength={askStrength}
             strengthLabel={strengthLabel}

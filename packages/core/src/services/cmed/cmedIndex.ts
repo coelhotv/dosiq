@@ -34,6 +34,8 @@ export interface CmedRow {
   f: string | null
   q: number | null
   amb: boolean
+  /** Spec 113: volume do RÓTULO (mL), só em registros curados pelo pipeline; nunca o do recipiente. */
+  lv: number | null
 }
 
 export interface CmedIndex {
@@ -64,6 +66,17 @@ function numberOrNull(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+/** Coluna aditiva opcional (CON-038): ausente ou de tamanho ≠ `n` ⇒ vazia (todo `null`), nunca `shape`. */
+function optionalColumn(cols: Raw, key: string, n: number): unknown[] {
+  const col = cols[key]
+  return Array.isArray(col) && col.length === n ? col : []
+}
+
+function positiveOrNull(value: unknown): number | null {
+  const num = numberOrNull(value)
+  return num !== null && num > 0 ? num : null
+}
+
 /**
  * Decodifica o `cmedIndex.json` colunar. Nunca lança: `v` desconhecido ⇒ `version`
  * (o app cai no manual com motivo); qualquer coluna ausente ou de tamanho ≠ `n` ⇒ `shape`.
@@ -90,6 +103,7 @@ export function decodeCmedIndex(raw: unknown): CmedDecodeResult {
   }
 
   const col = (key: string) => cols[key] as unknown[]
+  const lvCol = optionalColumn(cols, 'lv', n)
   const rows: CmedRow[] = new Array(n)
   const productKeys: string[] = new Array(n)
   const substanceKeys: string[] = new Array(n)
@@ -114,6 +128,7 @@ export function decodeCmedIndex(raw: unknown): CmedDecodeResult {
       q: numberOrNull(col('q')[i]),
       ds: typeof col('ds')[i] === 'string' ? (col('ds')[i] as string) : null,
       amb: col('amb')[i] === 1 || col('amb')[i] === true,
+      lv: positiveOrNull(lvCol[i]),
     }
     rows[i] = row
     productKeys[i] = normalizeText(row.p)
@@ -297,6 +312,8 @@ export interface PickerConcentration {
   dose: number | null
   unit: string | null
   form: string | null
+  /** Spec 113: volume do rótulo (`lv`); a UI passa a `formatStrength`. */
+  volumeMl?: number | null
   /** Linha representativa (1ª da concentração) — usada quando não há escolha de laboratório. */
   rowIdx: number
   /** 2+ fabricantes de marca na mesma concentração ⇒ o registro muda, a pessoa escolhe. Senão []. */
@@ -315,9 +332,17 @@ export function groupByConcentration(index: CmedIndex, rowIdxs: number[]): Picke
   for (const idx of rowIdxs) {
     const row = index.rows[idx]
     if (!row) continue
-    const key = JSON.stringify([row.ds, row.d, row.u, row.f])
+    const key = JSON.stringify([row.ds, row.d, row.u, row.f, row.lv])
     if (!groups.has(key)) {
-      groups.set(key, { strength: row.ds, dose: row.d, unit: row.u, form: row.f, rowIdx: idx, laboratories: [] })
+      groups.set(key, {
+        strength: row.ds,
+        dose: row.d,
+        unit: row.u,
+        form: row.f,
+        volumeMl: row.lv,
+        rowIdx: idx,
+        laboratories: [],
+      })
       labs.set(key, new Map())
     }
     if (row.k === 'generico') continue

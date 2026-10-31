@@ -24,6 +24,8 @@ import ConsentBox, { type ConsentBoxVariant } from '@features/consent/components
 import ConsentDetailsSheet from '@features/consent/components/ConsentDetailsSheet'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import OnboardingRefuseSheet from '@features/onboarding/components/OnboardingRefuseSheet'
+import { formatConcentration } from '@dosiq/core'
+import { withNormalizedConcentration } from '@medications/utils/medicineDraftValues'
 import { useOnboarding } from '../OnboardingContext'
 import { timed } from '@features/onboarding/hooks/useOnboardingSetupWrites'
 import { ONBOARDING_CONSENT_COPY as COPY } from '../onboardingConsentCopy'
@@ -31,7 +33,13 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 
 function summaryLines(medicine, treatment): { name: string; detail: string | null } | null {
   if (!medicine?.name) return null
-  const strength = medicine.dosage_per_pill ? ` ${medicine.dosage_per_pill} ${medicine.dosage_unit ?? ''}`.trimEnd() : ''
+  // Spec 113: com volume do rótulo, a leitura da caixa ("2,5 mg / 0,5 mL"); sem ele, como antes.
+  const saved = withNormalizedConcentration(medicine)
+  const strength = !medicine.dosage_per_pill
+    ? ''
+    : saved.concentration_volume_ml
+      ? ` ${formatConcentration(saved.dosage_per_pill, saved.dosage_unit, saved.concentration_volume_ml)}`
+      : ` ${medicine.dosage_per_pill} ${medicine.dosage_unit ?? ''}`.trimEnd()
   const times = Array.isArray(treatment?.time_schedule) ? treatment.time_schedule.join(', ') : ''
   const dose = treatment?.dosage_per_intake ? `${treatment.dosage_per_intake} por dose` : ''
   const detail = [dose, times].filter(Boolean).join(' · ')

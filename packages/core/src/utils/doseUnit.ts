@@ -45,13 +45,30 @@ function parseNumber(val: number | string | null | undefined): number {
 }
 
 /**
+ * Valor da caixa a partir da razão salva (ADR-066, spec 113): `razão × volume do rótulo`.
+ * Volume ausente, ≤ 0 ou inválido = 1 mL (devolve a própria razão). Razão inválida ⇒ null.
+ * Regra única para exibição (`formatConcentration`), form (`initialValues`) e rascunho CMED.
+ * @example labelAmount(5, 0.5) → 2.5 · labelAmount(5, null) → 5 · labelAmount(null, 0.5) → null
+ */
+export function labelAmount(
+  ratio: number | string | null | undefined,
+  volumeMl: number | string | null | undefined = null
+): number | null {
+  if (ratio === null || ratio === undefined || ratio === '') return null
+  const r = parseNumber(ratio)
+  if (!Number.isFinite(r)) return null
+  const v = volumeMl === null || volumeMl === undefined || volumeMl === '' ? NaN : parseNumber(volumeMl)
+  return Number.isFinite(v) && v > 0 ? cleanFloat(r * v) : r
+}
+
+/**
  * Formata a parte líquida quando volumeMl não é nulo/1.
  * @private
  */
 function formatLiquidConcentration(ratio: number, vol: number, unit: string | null | undefined): string {
   const baseUnit = (unit || 'mg/ml').split('/')[0]
   const baseLabel = DOSAGE_UNIT_LABELS[baseUnit as keyof typeof DOSAGE_UNIT_LABELS] || baseUnit
-  return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)} ${INTAKE_UNIT_LABELS.ml}`
+  return `${formatNumberPtBR(labelAmount(ratio, vol) as number)} ${baseLabel} / ${formatNumberPtBR(vol)} ${INTAKE_UNIT_LABELS.ml}`
 }
 
 /**
@@ -236,7 +253,7 @@ export function formatConcentrationLabel(mgPerMl: number | string | null, volume
   if (!Number.isFinite(ratio) || ratio <= 0) return ''
   const volNum = Number(typeof volumeMl === 'string' ? volumeMl.replace(',', '.') : volumeMl)
   const vol = Number.isFinite(volNum) && volNum > 0 ? volNum : 1
-  const amount = cleanFloat(ratio * vol)
+  const amount = labelAmount(ratio, vol) as number
   return `${formatNumberPtBR(amount)} mg em ${formatNumberPtBR(vol)} mL`
 }
 
@@ -726,13 +743,21 @@ export function formatStockDoses(
  * enum a unidade fica como na caixa, só com `ml`→`mL` e `ui`→`UI` (AP-306). Componente que não
  * segue o padrão volta com `.`→`,`, nunca é descartado. Sem `ds`, usa a dose escalar.
  *
+ * Spec 113: com `volumeMl` (volume do rótulo, `lv` curado) e dose definida, o rótulo da caixa vence
+ * o `ds` em razão — `formatConcentration(dose, unit, volumeMl)` ("2,5 mg / 0,5 mL"). Sem volume, idêntico.
+ *
  * @returns ex: '500 mg + 125 mg' · '0,8 mg/mL + 0,12 mg/mL' · '1 mg/g + 25 mg/g' · null
  */
 export function formatStrength(
   ds: string | null | undefined,
   dose: number | null | undefined = null,
-  unit: string | null | undefined = null
+  unit: string | null | undefined = null,
+  volumeMl: number | null | undefined = null
 ): string | null {
+  if (dose !== null && dose !== undefined && typeof volumeMl === 'number' && volumeMl > 0) {
+    const label = formatConcentration(dose, unit, volumeMl)
+    if (label) return label
+  }
   if (typeof ds === 'string' && ds.trim()) {
     return ds
       .split(' + ')
