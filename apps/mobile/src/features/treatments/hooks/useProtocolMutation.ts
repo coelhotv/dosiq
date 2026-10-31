@@ -88,9 +88,9 @@ export function useProtocolMutation() {
   })
 
   const create = useCallback(
-    async (payload, { goBack = false } = {}) => {
+    async (payload, { goBack = false, measureSource = null } = {}) => {
       const result = await mutationCreate.mutate(() =>
-        protocolService.create(payload, { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.TREATMENT_FORM })
+        protocolService.create(payload, { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.TREATMENT_FORM, measureSource })
       )
       if (result && goBack) navigation.goBack()
       return result
@@ -99,9 +99,9 @@ export function useProtocolMutation() {
   )
 
   const update = useCallback(
-    async (id, payload, { goBack = false, previous = null } = {}) => {
+    async (id, payload, { goBack = false, previous = null, measureSource = null } = {}) => {
       const result = await mutationUpdate.mutate(() =>
-        protocolService.update(id, payload, { surface: SURFACES.MOBILE, previous })
+        protocolService.update(id, payload, { surface: SURFACES.MOBILE, previous, measureSource })
       )
       if (result && goBack) navigation.goBack()
       return result

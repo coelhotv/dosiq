@@ -22,7 +22,7 @@ import {
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
   normalizeRegulatoryCategory,
-  cleanFloat,
+  labelAmount,
   isLiquidDosageUnit,
   type CmedStrengthChoice,
 } from '@dosiq/core'
@@ -36,7 +36,14 @@ import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { MedicineAnvisaSheet } from '@medications/components/MedicineAnvisaSheet'
 import { MedicineCandidatesSheet } from '@medications/scan/MedicineCandidatesSheet'
 import { StrengthChoiceCard } from '@medications/components/StrengthChoiceCard'
-import { valuesFromDraft, draftExtras, baseFromScan, scanDoseEdited } from '@medications/utils/medicineDraftValues'
+import { ConcentrationVolumeField } from '@medications/components/ConcentrationVolumeField'
+import {
+  valuesFromDraft,
+  draftExtras,
+  baseFromScan,
+  scanDoseEdited,
+  normalizeConcentration,
+} from '@medications/utils/medicineDraftValues'
 import { ROUTES } from '@navigation/routes'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -151,11 +158,9 @@ export default function MedicineFormScreen() {
     if (!medicine) return DEFAULT_INITIAL
     // FR-031 (ADR-066): o campo exibe o `amount` do rótulo = razão × volume; transforma só
     // quando há denominador salvo (≠ null). Senão exibe a razão crua (volume 1).
-    const denom = Number(medicine.concentration_volume_ml)
-    const ratio = Number(medicine.dosage_per_pill)
     const amountStr =
       medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
-        ? String(denom > 0 ? cleanFloat(ratio * denom) : medicine.dosage_per_pill)
+        ? String(labelAmount(medicine.dosage_per_pill, medicine.concentration_volume_ml) ?? medicine.dosage_per_pill)
         : ''
     return {
       ...medicine,
@@ -269,6 +274,8 @@ export default function MedicineFormScreen() {
         name: item.name ?? form.values.name,
         active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
         therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
+        // 100 B (C-B3): busca sem caixa não traz código; zera o de uma caixa escolhida antes (merge).
+        therapeutic_class_code: null,
         // Base ANVISA traz a categoria sem acento/normalização ('Biologico'); o Picker
         // (esp. iOS, match estrito) só casa o valor canônico acentuado ('Biológico').
         // normalizeRegulatoryCategory mapeia p/ o enum canônico — mesma correção da web.
@@ -393,19 +400,7 @@ export default function MedicineFormScreen() {
     }
     // FR-031 (ADR-066): normaliza amount→razão. Líquido c/ denominador ≠ 1 → dosage_per_pill =
     // amount ÷ denominador + grava concentration_volume_ml; senão passthrough (coluna null).
-    const isLiquid = isLiquidUnit(form.values.dosage_unit as string | undefined)
-    const rawDenom = isLiquid ? Number(String(form.values.concentration_volume_ml ?? '').replace(',', '.')) : NaN
-    const denom = rawDenom > 0 ? rawDenom : 1
-    // Gemini #661: dosage_per_pill vazio (permitido p/ suplemento) → Number('')=0 salvaria 0
-    // em vez de null, corrompendo o dado. Só converte quando há valor preenchido.
-    const rawAmount = form.values.dosage_per_pill
-    const hasAmount = rawAmount !== '' && rawAmount !== null && rawAmount !== undefined
-    const amount = hasAmount ? Number(String(rawAmount).replace(',', '.')) : NaN
-    const payload = {
-      ...form.values,
-      dosage_per_pill: hasAmount && Number.isFinite(amount) ? cleanFloat(amount / denom) : null,
-      concentration_volume_ml: denom !== 1 ? denom : null,
-    }
+    const payload = { ...form.values, ...normalizeConcentration(form.values) }
     if (isEditing) {
       await update(medicine.id, payload, { goBack: true })
     } else {
@@ -521,17 +516,10 @@ export default function MedicineFormScreen() {
             onChoose={handleStrengthChoice}
           />
           {/* FR-031 (ADR-066): denominador do rótulo. Default 1 mL; muda só p/ Mounjaro etc. */}
-          {isLiquidUnit(form.values.dosage_unit as string | undefined) && (
-            <FormInput
-              name="concentration_volume_ml"
-              label="Volume da concentração (mL no rótulo)"
-              keyboardType="decimal-pad"
-              placeholder="1"
-              helperText='Padrão é 1 mL (ou só mL). Mude se o rótulo trouxer outro volume, ex.: "Mounjaro 2,5 mg / 0,5 mL" — preencha 0,5.' /* unit-label-gate: ok — copy estática de ajuda (053/PO-5) */
-              {...formProps(form, 'concentration_volume_ml')}
-              onChange={handleDoseChange}
-            />
-          )}
+          <ConcentrationVolumeField
+            dosageUnit={form.values.dosage_unit as string | undefined}
+            inputProps={{ ...formProps(form, 'concentration_volume_ml'), onChange: handleDoseChange }}
+          />
           {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>

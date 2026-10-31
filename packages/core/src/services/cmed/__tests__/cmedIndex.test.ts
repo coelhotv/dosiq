@@ -285,3 +285,57 @@ describe('groupByConcentration (C5.1 R-4 · só concentração)', () => {
     expect(countConcentrationChoices([])).toBe(0)
   })
 })
+
+describe('coluna opcional lv (spec 113, FR-001 · INV-3)', () => {
+  const withLv = (lv: unknown) => {
+    const raw = structuredClone(fixture) as Record<string, any>
+    raw.cols.lv = lv
+    return decodeCmedIndex(raw)
+  }
+
+  it('fixture sem cols.lv ⇒ ok, todo lv null', () => {
+    const index = decodeFixture()
+    expect(index.rows.every((r) => r.lv === null)).toBe(true)
+  })
+
+  it('lv de tamanho errado ou não-array ⇒ ok, todo lv null (nunca shape)', () => {
+    for (const bad of [[0.5], 'x', null, {}]) {
+      const result = withLv(bad)
+      expect(result.ok).toBe(true)
+      if (result.ok) expect(result.index.rows.every((r) => r.lv === null)).toBe(true)
+    }
+  })
+
+  it('lv válido é lido; não numérico, ≤ 0 ou não finito ⇒ null', () => {
+    const n = fixture.n
+    const lv: unknown[] = new Array(n).fill(null)
+    lv[0] = 0.5
+    lv[1] = 0
+    lv[2] = -1
+    lv[3] = '0.5'
+    const result = withLv(lv)
+    expect(result.ok).toBe(true)
+    if (result.ok === false) return
+    expect(result.index.rows.map((r) => r.lv).slice(0, 5)).toEqual([0.5, null, null, null, null])
+  })
+
+  it('v continua 1: v 2 segue version, com ou sem lv', () => {
+    const raw = structuredClone(fixture) as Record<string, any>
+    raw.cols.lv = new Array(fixture.n).fill(null)
+    raw.v = 2
+    expect(decodeCmedIndex(raw)).toEqual({ ok: false, reason: 'version' })
+  })
+})
+
+describe('groupByConcentration com lv (spec 113, FR-004 · E4)', () => {
+  it('volumeMl vem de lv; mesma d com e sem lv viram grupos distintos', () => {
+    const index = decodeFixture()
+    const idxs = findRowsByProductName(index, 'Clopidogrel')
+    expect(idxs).toHaveLength(2)
+    const base = groupByConcentration(index, idxs)
+    expect(base.every((g) => g.volumeMl === null)).toBe(true)
+    const rows = index.rows.map((r, i) => (i === idxs[1] ? { ...r, lv: 0.5 } : r))
+    const groups = groupByConcentration({ ...index, rows }, idxs)
+    expect(groups.map((g) => g.volumeMl).sort()).toEqual([0.5, null])
+  })
+})

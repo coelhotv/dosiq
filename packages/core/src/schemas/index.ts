@@ -29,6 +29,7 @@ export {
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
   normalizeRegulatoryCategory,
+  THERAPEUTIC_CLASS_CODE_REGEX,
 } from './medicineSchema'
 
 export {
@@ -64,7 +65,9 @@ export {
   INTAKE_UNIT_LABELS,
   WEEKDAYS,
   WEEKDAY_LABELS,
+  TRACKED_MEASURES,
 } from './protocolSchema'
+export type { TrackedMeasure } from './protocolSchema'
 
 export {
   stockSchema,
@@ -278,3 +281,12 @@ export type {
   VersionGatePlatform,
   VersionGateUpdateInput,
 } from './versionGateSchema'
+
+// Nudges in-app (028) — handler admin e admin web consomem esta definição, nunca uma cópia.
+export {
+  validateNudgeCreate,
+  validateNudgeUpdate,
+  TARGET_VIEW_OPTIONS as NUDGE_TARGET_VIEW_OPTIONS,
+  ACTION_TYPE_OPTIONS as NUDGE_ACTION_TYPE_OPTIONS,
+  PLATFORM_OPTIONS as NUDGE_PLATFORM_OPTIONS,
+} from './nudgeSchema'

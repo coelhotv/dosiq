@@ -169,3 +169,31 @@ describe('classifySameMedicine', () => {
     expect(classifySameMedicine(clopidogrelEms, { ...cadastroClopidogrel, name: 'Plagrel', active_ingredient: null })).toBe('outro')
   })
 })
+
+describe('spec 113 FR-006 (regressão): rascunho com volume do rótulo segue em razão', () => {
+  const draftMounjaro: CandidateDraftLike = {
+    name: 'Mounjaro',
+    active_ingredient: 'Tirzepatida',
+    dosage_per_pill: 5,
+    dosage_unit: 'mg/ml',
+    presentation: 'injetavel',
+    anvisa_registration: null,
+  }
+  const salvoAntes: CandidateMedicineLike = {
+    id: 'm9',
+    name: 'Mounjaro',
+    active_ingredient: 'Tirzepatida',
+    dosage_per_pill: '5',
+    dosage_unit: 'mg/ml',
+    presentation: 'injetavel',
+  }
+  it("salvo '5 mg/mL' (vol null) × scan '2,5 mg / 0,5 mL' (razão 5, vol 0,5) ⇒ identico", () => {
+    const draft = { ...draftMounjaro, concentration_volume_ml: 0.5 }
+    const saved = { ...salvoAntes, concentration_volume_ml: null }
+    expect(classifySameMedicine(draft, saved)).toBe('identico')
+  })
+  it("5 mg/mL × '10 mg / 0,5 mL' (razão 20) ⇒ outro", () => {
+    const draft = { ...draftMounjaro, dosage_per_pill: 20, concentration_volume_ml: 0.5 }
+    expect(classifySameMedicine(draft, salvoAntes)).toBe('outro')
+  })
+})

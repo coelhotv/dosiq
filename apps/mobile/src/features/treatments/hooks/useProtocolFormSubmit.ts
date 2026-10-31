@@ -12,6 +12,7 @@ import { medicineService } from '@medications/services/medicineService'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { resolveTrackedMeasure } from '../utils/trackedMeasureField'
 
 // Densidade (units_per_ml) é física do medicamento, capturada no tratamento quando
 // a dose é em gotas/UI (022 Fase C). Persiste no medicamento (RPC lê de lá; fallback 20).
@@ -50,7 +51,7 @@ async function resolveInlinePlan(planField, show) {
   return { ok: true, planId: (created as any)?.id ?? null, useInline: true }
 }
 
-export function useProtocolFormSubmit({ editId, existing = null, form, planField, mutation, show, onValidateFail }) {
+export function useProtocolFormSubmit({ editId, existing = null, form, medicine = null, planField, mutation, show, onValidateFail }) {
   // States
   const [submitting, setSubmitting] = useState(false)
 
@@ -89,17 +90,20 @@ export function useProtocolFormSubmit({ editId, existing = null, form, planField
         ? resolved.planId
         : (form.values.treatment_plan_id || null)
 
+      // FR-005: gravar a medida é ato do usuário — o save grava o que o campo mostra (escolha ou inferência).
+      const measure = resolveTrackedMeasure(form.values, medicine)
       const payload = {
         ...form.values,
         dosage_per_intake: currentDose,
         treatment_plan_id: planId,
+        tracked_measure: measure.value,
       }
 
       await persistDensity(form)
 
       const result = editId
-        ? await mutation.update(editId, payload, { goBack: !onSaved, previous: existing })
-        : await mutation.create(payload, { goBack: !onSaved })
+        ? await mutation.update(editId, payload, { goBack: !onSaved, previous: existing, measureSource: measure.source })
+        : await mutation.create(payload, { goBack: !onSaved, measureSource: measure.source })
 
       // Ponto de intenção #2: ao criar tratamento manualmente, se NUNCA pedimos
       // push (status undetermined), pede agora — é o momento em que lembretes de
@@ -124,7 +128,7 @@ export function useProtocolFormSubmit({ editId, existing = null, form, planField
       const verb = editId ? 'atualizar' : 'criar'
       show(err?.message ?? `Erro ao ${verb} tratamento`, { variant: 'error' })
     }
-  }, [editId, existing, form, planField, mutation, show, submitting, onValidateFail])
+  }, [editId, existing, form, medicine, planField, mutation, show, submitting, onValidateFail])
 
   return { submit, submitting }
 }

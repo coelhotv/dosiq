@@ -40,6 +40,8 @@ import PlanSelectField from '@treatments/components/PlanSelectField'
 import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { colors, spacing } from '@shared/styles/tokens'
 import CriticalAlarmCard from '@treatments/components/CriticalAlarmCard'
+import TrackedMeasureField from '@treatments/components/TrackedMeasureField'
+import { displayedTrackedMeasure } from '@treatments/utils/trackedMeasureField'
 import CriticalAlertPrimerSheet from '@treatments/components/CriticalAlertPrimerSheet'
 import { useCriticalAlarmToggle } from '@treatments/hooks/useCriticalAlarmToggle'
 import {
@@ -539,6 +541,7 @@ export default function ProtocolFormBody({
   } = useProtocolFormDerived(form, medicine)
 
   const setCritical = useCallback((value: boolean) => form.handleChange('critical_alarm', value), [form])
+  const setTrackedMeasure = useCallback((value) => form.handleChange('tracked_measure', value), [form])
   const showFullScreenGuide = useCallback(() => {
     // Checar se precisa de acesso especial de alarme em tela cheia (Android 14+ / Xiaomi)
     if (!needsFullScreenIntentAccess()) return
@@ -605,6 +608,10 @@ export default function ProtocolFormBody({
         onContinue={criticalToggle.onPrimerContinue}
         onDismiss={criticalToggle.onPrimerDismiss}
       />
+
+      <Section title="Acompanhar nas doses">
+        <TrackedMeasureField value={displayedTrackedMeasure(form.values, medicine)} onChange={setTrackedMeasure} />
+      </Section>
 
       {onOpenTitration ? (
         <TitrationSection

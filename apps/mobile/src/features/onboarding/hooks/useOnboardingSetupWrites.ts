@@ -9,13 +9,19 @@
 // novo), senão o retry criaria um 2º remédio/tratamento (classe do AP-283).
 
 import { useCallback, useRef } from 'react'
+import { inferMeasure } from '@dosiq/core'
 import { chooseStockModeInOnboarding } from '@profile/services/stockPreferenceService'
 import { protocolService } from '@treatments/services/protocolService'
 import { medicineService } from '@medications/services/medicineService'
+import { withNormalizedConcentration } from '@medications/utils/medicineDraftValues'
 import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { withTimeout } from '@shared/utils/withTimeout'
 
 // 066 E (C-4, smoke 2026-10-18): cada escrita tem prazo; estourado, a pessoa vê o motivo e tenta de novo.
+
+// Os dados do onboarding chegam como Record<string, unknown>; a matriz só lê string.
+const asText = (value: unknown): string | null => (typeof value === 'string' ? value : null)
+
 export const WRITE_TIMEOUT_MS = 20_000
 const TIMEOUT_MESSAGE = 'A conexão está demorando. Verifique a internet e toque em Salvar de novo.'
 
@@ -60,29 +66,40 @@ export function useOnboardingSetupWrites() {
       throw new Error('Dados do onboarding não encontrados. Volte e revise os passos.')
     }
 
+    // Spec 113: o contexto guarda o valor da CAIXA (voltar ao passo reabre o form igual); a razão
+    // (÷ volume do rótulo) só nasce aqui, na gravação — mesma regra do form completo (FR-005).
     let medicineId = createdMedicineId.current
     if (!medicineId) {
       // 066 E: `source` diz se o 1º remédio veio da caixa, da busca ou digitado (TRACKING_PLAN §5.3).
       const createdMedicine = await timed(
         inFlight(pendingMedicine, () =>
-          medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource }),
+          medicineService.create(withNormalizedConcentration(medicine), { surface: SURFACES.MOBILE, source: medicineSource }),
         ),
       )
       medicineId = createdMedicine.id
       createdMedicineId.current = medicineId
       writtenMedicine.current = medicine
     } else if (writtenMedicine.current !== medicine) {
-      await timed(medicineService.update(medicineId, medicine, { surface: SURFACES.MOBILE }))
+      await timed(medicineService.update(medicineId, withNormalizedConcentration(medicine), { surface: SURFACES.MOBILE }))
       writtenMedicine.current = medicine
     }
 
-    const { _remind, ...protocolData } = treatment
+    const { _remind, ...rawProtocolData } = treatment
+    // 100 B · D-11 (PO 2026-10-30): o passo mínimo do onboarding não mostra "Acompanhar nas doses";
+    // a medida nasce da inferência (classe da caixa × frequência) e a pessoa troca/desliga depois, na
+    // edição do tratamento. Gravar aqui é decisão do PO, não exceção ao FR-005 (que vale para legado).
+    const protocolData = {
+      ...rawProtocolData,
+      tracked_measure:
+        rawProtocolData.tracked_measure ??
+        inferMeasure({ classCode: asText(medicine.therapeutic_class_code), frequency: asText(rawProtocolData.frequency) }),
+    }
     if (!protocolCreated.current) {
       const createdProtocol = await timed(
         inFlight(pendingProtocol, () =>
           protocolService.create(
             { ...protocolData, medicine_id: medicineId },
-            { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING },
+            { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING, measureSource: 'inferred' },
           ),
         ),
       )

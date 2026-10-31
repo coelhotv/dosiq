@@ -8,7 +8,8 @@
 //   C-C10 `amb` ⇒ os valores distintos da força viram escolhas de 1 toque (dose + unidade de cada)
 
 import { DOSAGE_UNITS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
-import { formatStrength } from '../../utils/doseUnit'
+import { formatStrength, isLiquidDosageUnit } from '../../utils/doseUnit'
+import { normalizeClassCode } from '../trackedMeasure'
 import type { CmedRow } from './cmedIndex'
 import { packageFromText, presentationFromRow, type InjectionContainer } from './cmedPackage'
 import { intakeUnitFromPresentation } from './cmedIntakeUnit'
@@ -18,11 +19,15 @@ export interface CmedMedicineDraft {
   active_ingredient: string
   dosage_per_pill: number | null
   dosage_unit: string | null
+  /** Spec 113: volume do rótulo (`lv`) com a dose em razão — mesmo formato de um `medicine` salvo (ADR-066). */
+  concentration_volume_ml: number | null
   presentation: string
   laboratory: string | null
   anvisa_registration: string | null
   regulatory_category: string | null
   therapeutic_class: string | null
+  /** Spec 100: código CMED normalizado; `null` se ausente ou fora do formato (nunca quebra o cadastro). */
+  therapeutic_class_code: string | null
   /** Exibição: força completa ("500 mg + 125 mg"). */
   strengthLabel: string | null
   /** Exibição: laboratório da caixa, inclusive de genérico. */
@@ -73,6 +78,9 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
   const isGeneric = row.k === 'generico'
   const unit = row.u !== null && UNIT_SET.has(row.u) ? row.u : null
   const dose = row.amb || unit === null ? null : row.d
+  // INV-2: sem dose (amb/unidade estranha) o volume do rótulo não tem o que acompanhar; e só unidade
+  // `/ml` tem denominador — o pipeline garante (G30), o app não confia (RC6 #924).
+  const volume = dose !== null && isLiquidDosageUnit(unit) ? row.lv : null
   const presentation = presentationFromRow(row.f, row.a)
   const pack = packageFromText(row.a, presentation)
   return {
@@ -80,13 +88,15 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
     active_ingredient: row.s,
     dosage_per_pill: dose,
     dosage_unit: unit,
+    concentration_volume_ml: volume,
     // C-11: o pipeline marca líquido oral com seringa dosadora como `injetavel`; o texto separa a via.
     presentation,
     laboratory: isGeneric ? null : row.l,
     anvisa_registration: !isGeneric && /^[0-9]{9}$/.test(row.r) ? row.r : null,
     regulatory_category: normalizeRegulatoryCategory(row.k),
     therapeutic_class: row.cn,
-    strengthLabel: formatStrength(row.ds, dose, unit),
+    therapeutic_class_code: normalizeClassCode(row.c),
+    strengthLabel: formatStrength(row.ds, dose, unit, volume),
     displayLaboratory: row.l,
     boxQuantity: row.q,
     boxVolumeMl: pack.volumeMl,

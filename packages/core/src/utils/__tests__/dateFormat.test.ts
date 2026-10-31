@@ -24,8 +24,11 @@ describe('formatDatePtBR', () => {
   })
 
   it('retorna vazio para tipo não-Date (number, object)', () => {
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(formatDatePtBR(12345)).toBe('')
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(formatDatePtBR({})).toBe('')
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(formatDatePtBR(true)).toBe('')
   })
 })

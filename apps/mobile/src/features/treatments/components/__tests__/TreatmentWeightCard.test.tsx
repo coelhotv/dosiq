@@ -131,11 +131,11 @@ describe('TreatmentWeightCard', () => {
 
   it('PO-18: só semanal monta o card (mesmo predicado da Fase A); não elegível ⇒ nada', () => {
     const appliesTo = MEASURE_PROMPT_POLICIES.peso.appliesTo
-    expect(appliesTo({ protocol: { frequency: 'diário', medicine: { presentation: 'comprimido', dosage_unit: 'mg' } } })).toBe(false)
-    expect(appliesTo({ protocol: { frequency: 'semanal', medicine: { presentation: 'comprimido', dosage_unit: 'mg' } } })).toBe(true)
+    expect(appliesTo({ protocol: { frequency: 'diário', tracked_measure: null, medicine: { presentation: 'comprimido', dosage_unit: 'mg' } } })).toBe(false)
+    expect(appliesTo({ protocol: { frequency: 'semanal', tracked_measure: null, medicine: { presentation: 'comprimido', dosage_unit: 'mg' } } })).toBe(true)
     // R-11 emendada (2026-10-05): injetável não basta — mensal e diário ficam sem card.
-    expect(appliesTo({ protocol: { frequency: 'diário', medicine: { presentation: 'injetavel', dosage_unit: 'mg/ml' } } })).toBe(false)
-    expect(appliesTo({ protocol: { frequency: 'intervalo_dias', medicine: { presentation: 'injetavel', dosage_unit: 'mg/ml' } } })).toBe(false)
+    expect(appliesTo({ protocol: { frequency: 'diário', tracked_measure: null, medicine: { presentation: 'injetavel', dosage_unit: 'mg/ml' } } })).toBe(false)
+    expect(appliesTo({ protocol: { frequency: 'intervalo_dias', tracked_measure: null, medicine: { presentation: 'injetavel', dosage_unit: 'mg/ml' } } })).toBe(false)
     mockHook = { ...ready(null) }
     const utils = render(<TreatmentWeightCard protocol={PROTO as any} />)
     expect(utils.toJSON()).toBeNull()

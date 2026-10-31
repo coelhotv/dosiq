@@ -27,6 +27,14 @@ export const INTERVAL_DAYS_MIN = 2
 export const INTERVAL_DAYS_MAX = 180
 
 /**
+ * Spec 100 (ADR-121): medida acompanhada por tratamento. Espelha `protocols_tracked_measure_check`;
+ * as medidas são os mesmos valores de `BIOMARKER_TYPES` (teste garante o subconjunto).
+ * NULL = não decidido (regra da 069) · `nenhum` = desligado.
+ */
+export const TRACKED_MEASURES = ['peso', 'glicemia', 'pressao_arterial', 'nenhum'] as const
+export type TrackedMeasure = (typeof TRACKED_MEASURES)[number]
+
+/**
  * Lê o N digitado no formulário (085 C2). `''`/nulo ⇒ `null` (campo limpo não vira 0 — R-270);
  * vírgula decimal normalizada antes do `Number()`. Não arredonda: "30,5" volta 30.5 e o validador
  * recusa, em vez de gravar um N que a usuária não digitou.
@@ -344,6 +352,10 @@ export const protocolSchema = z.object({
     .default([]),
 
   critical_alarm: z.boolean().default(false),
+
+  // Spec 100: SEM default (INV-2) — update parcial que não envia a chave não a materializa, e o
+  // repositório só grava chaves enviadas. Só o form mobile escreve; a web nunca envia (FR-010).
+  tracked_measure: z.enum(TRACKED_MEASURES).nullable().optional(),
 
   // Unidade física da tomada (gotas/ml/UI) — só p/ líquidos; NULL p/ sólidos (022).
   intake_unit: z.enum(INTAKE_UNITS).nullable().optional(),

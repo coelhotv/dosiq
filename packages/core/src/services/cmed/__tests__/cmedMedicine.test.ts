@@ -19,6 +19,21 @@ const index = decodeFixture()
 const rowByName = (name: string): CmedRow => index.rows[findRowsByProductName(index, name)[0]]
 
 describe('medicineDraftFromRow', () => {
+  it('spec 100 PO-9: o rascunho carrega o código da classe junto da descrição', () => {
+    const row = rowByName('Amoxicilina + Clavulanato de Potassio')
+    expect(row.c).toBe('J1C1')
+    const draft = medicineDraftFromRow(row)
+    expect(draft.therapeutic_class_code).toBe('J1C1')
+    expect(draft.therapeutic_class).toBe(row.cn)
+  })
+
+  it('spec 100 FM-3/FM-4: código ausente ou fora do formato vira null (cadastro nunca quebra no CHECK)', () => {
+    const row = rowByName('Amoxicilina + Clavulanato de Potassio')
+    expect(medicineDraftFromRow({ ...row, c: null }).therapeutic_class_code).toBeNull()
+    expect(medicineDraftFromRow({ ...row, c: ' c7a ' }).therapeutic_class_code).toBe('C7A')
+    expect(medicineDraftFromRow({ ...row, c: 'C02-X' }).therapeutic_class_code).toBeNull()
+  })
+
   it('SC-005 / PO-2: amoxi+clav EMS genérico', () => {
     const draft = medicineDraftFromRow(rowByName('Amoxicilina + Clavulanato de Potassio'))
     expect(draft).toMatchObject({
@@ -120,5 +135,52 @@ describe('medicineDraftFromRow', () => {
   })
   it('sólido: sem volume, unidades nem embalagem', () => {
     expect(medicineDraftFromRow(rowByName('Clopidogrel'))).toMatchObject({ boxVolumeMl: null, boxUnits: null, boxContainer: null })
+  })
+})
+
+describe('volume do rótulo no rascunho (spec 113, FR-003 · INV-1/INV-2)', () => {
+  const mounjaro = (over: Partial<CmedRow> = {}): CmedRow => ({
+    ...rowByName('Clopidogrel'),
+    p: 'Mounjaro',
+    s: 'Tirzepatida',
+    a: '5 MG/ML SOL INJ SC CT 2 SER PREENC VD TRANS X 0,5 ML + 2 CAN APLIC',
+    f: 'injetavel',
+    u: 'mg/ml',
+    d: 5,
+    ds: '5 mg/ml',
+    amb: false,
+    lv: 0.5,
+    ...over,
+  })
+
+  it('Mounjaro (d 5, lv 0,5) ⇒ razão 5 + volume 0,5, rótulo da caixa', () => {
+    const draft = medicineDraftFromRow(mounjaro())
+    expect(draft.dosage_per_pill).toBe(5)
+    expect(draft.concentration_volume_ml).toBe(0.5)
+    expect(draft.strengthLabel).toBe('2,5 mg / 0,5 mL')
+  })
+
+  it('sem lv (Multidose) ⇒ idêntico a hoje, volume null', () => {
+    const draft = medicineDraftFromRow(mounjaro({ lv: null, d: 4.17, ds: '4.17 mg/ml' }))
+    expect(draft.dosage_per_pill).toBe(4.17)
+    expect(draft.concentration_volume_ml).toBeNull()
+    expect(draft.strengthLabel).toBe('4,17 mg/mL')
+  })
+
+  it('amb + lv ⇒ dose vazia e volume null (INV-2)', () => {
+    const draft = medicineDraftFromRow(mounjaro({ amb: true }))
+    expect(draft.dosage_per_pill).toBeNull()
+    expect(draft.concentration_volume_ml).toBeNull()
+  })
+
+  it('unidade fora do enum + lv ⇒ volume null', () => {
+    expect(medicineDraftFromRow(mounjaro({ u: 'meq/l' })).concentration_volume_ml).toBeNull()
+  })
+
+  it('unidade sólida + lv ⇒ volume ignorado, dose e rótulo como hoje (RC6 #924)', () => {
+    const draft = medicineDraftFromRow(mounjaro({ u: 'mg', ds: '5 mg' }))
+    expect(draft.dosage_per_pill).toBe(5)
+    expect(draft.concentration_volume_ml).toBeNull()
+    expect(draft.strengthLabel).toBe('5 mg')
   })
 })

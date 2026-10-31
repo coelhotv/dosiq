@@ -18,6 +18,7 @@ describe('formatBiomarkerDisplay', () => {
   })
   it('item inválido → string vazia (sem crash)', () => {
     expect(formatBiomarkerDisplay(null)).toBe('')
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(formatBiomarkerDisplay({ unit: 'mmHg' })).toBe('')
   })
 })

@@ -825,6 +825,7 @@ export type Database = {
           regulatory_category: string | null
           shelf_life_days: number | null
           therapeutic_class: string | null
+          therapeutic_class_code: string | null
           type: string | null
           units_per_ml: number | null
           user_id: string
@@ -845,6 +846,7 @@ export type Database = {
           regulatory_category?: string | null
           shelf_life_days?: number | null
           therapeutic_class?: string | null
+          therapeutic_class_code?: string | null
           type?: string | null
           units_per_ml?: number | null
           user_id?: string
@@ -865,6 +867,7 @@ export type Database = {
           regulatory_category?: string | null
           shelf_life_days?: number | null
           therapeutic_class?: string | null
+          therapeutic_class_code?: string | null
           type?: string | null
           units_per_ml?: number | null
           user_id?: string
@@ -1092,6 +1095,7 @@ export type Database = {
           time_schedule: Json | null
           titration_schedule: Json | null
           titration_status: string | null
+          tracked_measure: string | null
           treatment_plan_id: string | null
           user_id: string
           weekdays: string[] | null
@@ -1122,6 +1126,7 @@ export type Database = {
           time_schedule?: Json | null
           titration_schedule?: Json | null
           titration_status?: string | null
+          tracked_measure?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -1152,6 +1157,7 @@ export type Database = {
           time_schedule?: Json | null
           titration_schedule?: Json | null
           titration_status?: string | null
+          tracked_measure?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -1761,6 +1767,7 @@ export type Database = {
       user_settings: {
         Row: {
           birth_date: string | null
+          brevo_synced_at: string | null
           channel_mobile_push_enabled: boolean
           channel_telegram_enabled: boolean
           channel_web_push_enabled: boolean
@@ -1774,6 +1781,7 @@ export type Database = {
           display_name: string | null
           emergency_card: Json | null
           id: string
+          international_transfer_granted_at: string | null
           notification_mode: string | null
           notification_preference: string | null
           onboarding_completed: boolean | null
@@ -1792,6 +1800,7 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          brevo_synced_at?: string | null
           channel_mobile_push_enabled?: boolean
           channel_telegram_enabled?: boolean
           channel_web_push_enabled?: boolean
@@ -1805,6 +1814,7 @@ export type Database = {
           display_name?: string | null
           emergency_card?: Json | null
           id?: string
+          international_transfer_granted_at?: string | null
           notification_mode?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
@@ -1823,6 +1833,7 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          brevo_synced_at?: string | null
           channel_mobile_push_enabled?: boolean
           channel_telegram_enabled?: boolean
           channel_web_push_enabled?: boolean
@@ -1836,6 +1847,7 @@ export type Database = {
           display_name?: string | null
           emergency_card?: Json | null
           id?: string
+          international_transfer_granted_at?: string | null
           notification_mode?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
@@ -2010,6 +2022,22 @@ export type Database = {
         }
         Returns: number
       }
+      brevo_deleted_since: {
+        Args: { p_since: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      brevo_mark_synced: { Args: { p_user_id: string }; Returns: number }
+      brevo_sync_candidates: {
+        Args: { p_limit: number; p_since: string }
+        Returns: {
+          created_at: string
+          email: string
+          has_app: boolean
+          user_id: string
+        }[]
+      }
       claim_notification_outbox: {
         Args: { batch_limit?: number }
         Returns: {
@@ -2118,6 +2146,10 @@ export type Database = {
         }[]
       }
       get_my_deletion_notice: { Args: never; Returns: string }
+      notify_tick_work: {
+        Args: { p_la_lead_minutes?: number; p_now?: string }
+        Returns: Json
+      }
       prune_account_emails: {
         Args: { p_user_ids: string[] }
         Returns: {

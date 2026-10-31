@@ -55,9 +55,18 @@ describe('useOnboardingSetupWrites', () => {
     let out
     await act(async () => { out = await result.current.writeSetup(INPUT) })
     expect(mockMedicineCreate).toHaveBeenCalledWith(INPUT.medicine, { surface: 'mobile', source: 'scan' })
-    expect(mockProtocolCreate.mock.calls[0][0]).toEqual({ frequency: 'diário', medicine_id: 'med-1' })
+    // 100 B · D-11: medida inferida gravada sem campo na tela (Losartana sem código, diário ⇒ 'nenhum')
+    expect(mockProtocolCreate.mock.calls[0][0]).toEqual({ frequency: 'diário', medicine_id: 'med-1', tracked_measure: 'nenhum' })
+    expect(mockProtocolCreate.mock.calls[0][1]).toMatchObject({ measureSource: 'inferred' })
     expect(mockChooseStockMode).toHaveBeenCalledWith(false)
     expect(out).toEqual({ remind: true })
+  })
+
+  it('100 B · D-11: caixa com classe CMED infere pela matriz (insulina ⇒ glicemia)', async () => {
+    const { result } = renderHook(() => useOnboardingSetupWrites())
+    const insulina = { ...INPUT, medicine: { ...INPUT.medicine, therapeutic_class_code: 'A10C5' } }
+    await act(async () => { await result.current.writeSetup(insulina) })
+    expect(mockProtocolCreate.mock.calls[0][0]).toMatchObject({ tracked_measure: 'glicemia' })
   })
 
   it('2ª escrita falha: o retry reaproveita o id da 1ª (1 remédio só)', async () => {
@@ -88,7 +97,7 @@ describe('useOnboardingSetupWrites', () => {
     const edited = { ...INPUT, treatment: { frequency: 'semanal', _remind: false } }
     await act(async () => { await result.current.writeSetup(edited) })
     expect(mockProtocolCreate).toHaveBeenCalledTimes(1)
-    expect(mockProtocolUpdate).toHaveBeenCalledWith('prot-1', { frequency: 'semanal' }, { surface: 'mobile' })
+    expect(mockProtocolUpdate).toHaveBeenCalledWith('prot-1', { frequency: 'semanal', tracked_measure: 'peso' }, { surface: 'mobile' })
     expect(mockMedicineUpdate).not.toHaveBeenCalled()
   })
 
@@ -128,5 +137,13 @@ describe('useOnboardingSetupWrites', () => {
       await expect(result.current.writeSetup({ ...INPUT, medicine: null })).rejects.toThrow()
     })
     expect(mockMedicineCreate).not.toHaveBeenCalled()
+  })
+
+  it('spec 113: Mounjaro na caixa (2,5 · 0,5 mL) grava a razão 5 + volume; o contexto fica na caixa', async () => {
+    const medicine = { name: 'Mounjaro', dosage_per_pill: '2.5', dosage_unit: 'mg/ml', concentration_volume_ml: '0.5' }
+    const { result } = renderHook(() => useOnboardingSetupWrites())
+    await act(async () => { await result.current.writeSetup({ ...INPUT, medicine }) })
+    expect(mockMedicineCreate.mock.calls[0][0]).toMatchObject({ dosage_per_pill: 5, concentration_volume_ml: 0.5 })
+    expect(medicine.dosage_per_pill).toBe('2.5')
   })
 })
