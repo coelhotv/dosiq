@@ -8,7 +8,7 @@
 //   C-C10 `amb` ⇒ os valores distintos da força viram escolhas de 1 toque (dose + unidade de cada)
 
 import { DOSAGE_UNITS, normalizeRegulatoryCategory } from '../../schemas/medicineSchema'
-import { formatStrength } from '../../utils/doseUnit'
+import { formatStrength, isLiquidDosageUnit } from '../../utils/doseUnit'
 import { normalizeClassCode } from '../trackedMeasure'
 import type { CmedRow } from './cmedIndex'
 import { packageFromText, presentationFromRow, type InjectionContainer } from './cmedPackage'
@@ -78,8 +78,9 @@ export function medicineDraftFromRow(row: CmedRow): CmedMedicineDraft {
   const isGeneric = row.k === 'generico'
   const unit = row.u !== null && UNIT_SET.has(row.u) ? row.u : null
   const dose = row.amb || unit === null ? null : row.d
-  // INV-2: sem dose (amb/unidade estranha) o volume do rótulo não tem o que acompanhar.
-  const volume = dose !== null ? row.lv : null
+  // INV-2: sem dose (amb/unidade estranha) o volume do rótulo não tem o que acompanhar; e só unidade
+  // `/ml` tem denominador — o pipeline garante (G30), o app não confia (RC6 #924).
+  const volume = dose !== null && isLiquidDosageUnit(unit) ? row.lv : null
   const presentation = presentationFromRow(row.f, row.a)
   const pack = packageFromText(row.a, presentation)
   return {

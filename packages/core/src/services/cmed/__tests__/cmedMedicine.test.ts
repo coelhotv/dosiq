@@ -176,4 +176,11 @@ describe('volume do rótulo no rascunho (spec 113, FR-003 · INV-1/INV-2)', () =
   it('unidade fora do enum + lv ⇒ volume null', () => {
     expect(medicineDraftFromRow(mounjaro({ u: 'meq/l' })).concentration_volume_ml).toBeNull()
   })
+
+  it('unidade sólida + lv ⇒ volume ignorado, dose e rótulo como hoje (RC6 #924)', () => {
+    const draft = medicineDraftFromRow(mounjaro({ u: 'mg', ds: '5 mg' }))
+    expect(draft.dosage_per_pill).toBe(5)
+    expect(draft.concentration_volume_ml).toBeNull()
+    expect(draft.strengthLabel).toBe('5 mg')
+  })
 })
