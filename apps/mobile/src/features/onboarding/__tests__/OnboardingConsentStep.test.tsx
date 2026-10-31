@@ -65,6 +65,11 @@ afterEach(() => {
 })
 
 describe('OnboardingConsentStep (S1)', () => {
+  it('spec 113: resumo com volume do rótulo mostra o valor da caixa (contexto guarda a caixa)', () => {
+    renderStep({ medicine: { name: 'Mounjaro', dosage_per_pill: '2.5', dosage_unit: 'mg/ml', concentration_volume_ml: '0.5' } })
+    expect(screen.getByText('Mounjaro 2,5 mg / 0,5 mL')).toBeTruthy()
+  })
+
   it('caixas A e B desmarcadas; resumo do remédio', () => {
     renderStep()
     expect(screen.getByText(COPY.title)).toBeTruthy()

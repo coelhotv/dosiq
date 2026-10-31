@@ -138,4 +138,12 @@ describe('useOnboardingSetupWrites', () => {
     })
     expect(mockMedicineCreate).not.toHaveBeenCalled()
   })
+
+  it('spec 113: Mounjaro na caixa (2,5 · 0,5 mL) grava a razão 5 + volume; o contexto fica na caixa', async () => {
+    const medicine = { name: 'Mounjaro', dosage_per_pill: '2.5', dosage_unit: 'mg/ml', concentration_volume_ml: '0.5' }
+    const { result } = renderHook(() => useOnboardingSetupWrites())
+    await act(async () => { await result.current.writeSetup({ ...INPUT, medicine }) })
+    expect(mockMedicineCreate.mock.calls[0][0]).toMatchObject({ dosage_per_pill: 5, concentration_volume_ml: 0.5 })
+    expect(medicine.dosage_per_pill).toBe('2.5')
+  })
 })

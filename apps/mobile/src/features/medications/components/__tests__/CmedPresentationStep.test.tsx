@@ -70,4 +70,9 @@ describe('CmedPresentationStep', () => {
     expect(formLabel('xpto')).toBeNull()
     expect(formLabel(null)).toBeNull()
   })
+
+  it('spec 113: com volume do rótulo lista a leitura da caixa; sem volume, igual a hoje', () => {
+    expect(concentrationLabel({ strength: '5 mg/ml', dose: 5, unit: 'mg/ml', volumeMl: 0.5 })).toBe('2,5 mg / 0,5 mL')
+    expect(concentrationLabel({ strength: '5 mg/ml', dose: 5, unit: 'mg/ml', volumeMl: null })).toBe('5 mg/mL')
+  })
 })

@@ -13,6 +13,7 @@ import { inferMeasure } from '@dosiq/core'
 import { chooseStockModeInOnboarding } from '@profile/services/stockPreferenceService'
 import { protocolService } from '@treatments/services/protocolService'
 import { medicineService } from '@medications/services/medicineService'
+import { withNormalizedConcentration } from '@medications/utils/medicineDraftValues'
 import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { withTimeout } from '@shared/utils/withTimeout'
 
@@ -65,19 +66,21 @@ export function useOnboardingSetupWrites() {
       throw new Error('Dados do onboarding não encontrados. Volte e revise os passos.')
     }
 
+    // Spec 113: o contexto guarda o valor da CAIXA (voltar ao passo reabre o form igual); a razão
+    // (÷ volume do rótulo) só nasce aqui, na gravação — mesma regra do form completo (FR-005).
     let medicineId = createdMedicineId.current
     if (!medicineId) {
       // 066 E: `source` diz se o 1º remédio veio da caixa, da busca ou digitado (TRACKING_PLAN §5.3).
       const createdMedicine = await timed(
         inFlight(pendingMedicine, () =>
-          medicineService.create(medicine, { surface: SURFACES.MOBILE, source: medicineSource }),
+          medicineService.create(withNormalizedConcentration(medicine), { surface: SURFACES.MOBILE, source: medicineSource }),
         ),
       )
       medicineId = createdMedicine.id
       createdMedicineId.current = medicineId
       writtenMedicine.current = medicine
     } else if (writtenMedicine.current !== medicine) {
-      await timed(medicineService.update(medicineId, medicine, { surface: SURFACES.MOBILE }))
+      await timed(medicineService.update(medicineId, withNormalizedConcentration(medicine), { surface: SURFACES.MOBILE }))
       writtenMedicine.current = medicine
     }
 

@@ -23,8 +23,11 @@ interface CmedPresentationStepProps {
   onBack: () => void
 }
 
-export function concentrationLabel(option: Pick<PickerConcentration, 'strength' | 'dose' | 'unit'>): string {
-  return formatStrength(option.strength, option.dose, option.unit) ?? 'Concentração não informada'
+// Spec 113 (FR-004): com volume do rótulo (`lv`), a leitura da caixa ("2,5 mg / 0,5 mL").
+export function concentrationLabel(
+  option: Pick<PickerConcentration, 'strength' | 'dose' | 'unit'> & { volumeMl?: number | null },
+): string {
+  return formatStrength(option.strength, option.dose, option.unit, option.volumeMl ?? null) ?? 'Concentração não informada'
 }
 
 export function formLabel(form: string | null): string | null {
