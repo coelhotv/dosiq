@@ -1,4 +1,6 @@
-// DoseWeightPrompt.tsx — passo 2 do sheet de dose: pedido de peso (spec 069 A2 · FR-001/FR-004..FR-019).
+// DoseWeightPrompt.tsx — passo 2 do sheet de dose: pedido de medida (spec 069 A2 · FR-001/FR-004..FR-019;
+// spec 100 B: peso, glicemia ou pressão — a medida vem do `step.policy`, a copy de MEASURE_COPY).
+// O nome ficou "Weight" por histórico (C-B8): renomear só mexeria em import, não em comportamento.
 //
 // Aparece DEPOIS de a dose estar salva (INV-1: nada aqui desfaz a dose). Recibo da dose no topo, em
 // todos os estados — é ele que prova que a dose foi salva quando o peso falha (A-D2).
@@ -13,8 +15,11 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Check, Ruler, AlertCircle } = LucideIcons as any
-import { coerceDecimal, parseISO, validateBiomarkerLog } from '@dosiq/core'
+import {
+  coerceDecimal, parseISO, validateBiomarkerLog, BIOMARKER_TYPE_UNITS, BIOMARKER_CONTEXTS, BIOMARKER_CONTEXT_LABELS,
+} from '@dosiq/core'
 import MeasureValueFields from '@measures/components/MeasureValueFields'
+import MeasureContextChips from '@measures/components/MeasureContextChips'
 import { measuresRepo } from '@measures/services/measuresRepo'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES, ENTRY_POINTS, PROMPT_DISMISS_REASONS } from '@platform/analytics/analyticsEvents'
@@ -25,7 +30,44 @@ import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { markPromptPeriod, type PostDoseStep } from '../services/measurePrompt'
 
-const UNIT = 'kg'
+// Copy por medida (SaMD/ADR-062: só fato — nada de faixa, cor de julgamento ou interpretação).
+// Glicemia tem chips de contexto OPCIONAIS (PO 2026-10-30); PA, sistólica + diastólica.
+const MEASURE_COPY = {
+  peso: {
+    icon: 'Ruler', ask: 'Registrar o peso de hoje?', save: 'Salvar peso', saved: 'Peso registrado',
+    notSaved: 'O peso não foi salvo', closeAfterError: 'Fechar sem peso',
+  },
+  glicemia: {
+    icon: 'Droplet', ask: 'Registrar a glicemia agora?', save: 'Salvar glicemia', saved: 'Glicemia registrada',
+    notSaved: 'A glicemia não foi salva', closeAfterError: 'Fechar sem glicemia',
+  },
+  pressao_arterial: {
+    icon: 'HeartPulse', ask: 'Registrar a pressão agora?', save: 'Salvar pressão', saved: 'Pressão registrada',
+    notSaved: 'A pressão não foi salva', closeAfterError: 'Fechar sem pressão',
+  },
+}
+const GLICEMIA_CONTEXT = { values: BIOMARKER_CONTEXTS, labels: BIOMARKER_CONTEXT_LABELS }
+
+// O que muda por medida no passo 2 (copy, unidade, PA com 2 campos, ícone).
+function measureView(step) {
+  const biomarkerType = step.policy.biomarkerType
+  const copy = MEASURE_COPY[biomarkerType] ?? MEASURE_COPY.peso
+  return {
+    biomarkerType, copy,
+    unit: BIOMARKER_TYPE_UNITS[biomarkerType],
+    isPa: biomarkerType === 'pressao_arterial',
+    AskIcon: (LucideIcons as any)[copy.icon] ?? Ruler,
+  }
+}
+
+// Registro do passo 2: PA leva a diastólica; glicemia, o contexto só se um chip foi escolhido.
+function buildRecord(type, unit, value, valueSec, context) {
+  return {
+    type, value: coerceDecimal(value), unit,
+    ...(type === 'pressao_arterial' ? { value_secondary: coerceDecimal(valueSec) } : {}),
+    ...(type === 'glicemia' && context ? { context } : {}),
+  }
+}
 // Teto da gravação (mesmo valor do useMutation — R-168). Rede com perda total faz o iOS esperar ~60 s.
 const SAVE_TIMEOUT_MS = 15_000
 
@@ -37,8 +79,10 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-function formatKg(value) {
-  return Number(value).toFixed(1).replace('.', ',')
+function formatValue(type, value, valueSecondary) {
+  if (type === 'peso') return Number(value).toFixed(1).replace('.', ',')
+  const main = String(Math.round(Number(value)))
+  return type === 'pressao_arterial' && Number.isFinite(valueSecondary) ? `${main}/${Math.round(valueSecondary)}` : main
 }
 
 function formatDayMonth(iso) {
@@ -46,9 +90,10 @@ function formatDayMonth(iso) {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function lastMeasureCaption(lastMeasure) {
+function lastMeasureCaption(type, unit, lastMeasure) {
   if (!lastMeasure || !Number.isFinite(lastMeasure.value)) return 'Agora'
-  return `Agora · último: ${formatKg(lastMeasure.value)} kg em ${formatDayMonth(lastMeasure.measuredAt)}`
+  const shown = formatValue(type, lastMeasure.value, lastMeasure.valueSecondary)
+  return `Agora · último: ${shown} ${unit} em ${formatDayMonth(lastMeasure.measuredAt)}`
 }
 
 /**
@@ -76,6 +121,8 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
 ) {
   // States
   const [value, setValue] = useState('')
+  const [valueSec, setValueSec] = useState('')
+  const [context, setContext] = useState(null)
   const [phase, setPhase] = useState('idle') // idle | saving | error
   const [failure, setFailure] = useState(null) // 'network' | 'other'
   const [invalidMsg, setInvalidMsg] = useState(null)
@@ -87,8 +134,9 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
   const finishedRef = useRef(false)
   const { show } = useToast()
 
-  const biomarkerType = step.policy.biomarkerType
-  const baseProps = { biomarker_type: biomarkerType, trigger, surface: SURFACES.MOBILE }
+  const { biomarkerType, copy, unit, isPa, AskIcon } = measureView(step)
+  // FR-012: origem da medida (escolha gravada × regra da 069) em todo evento do pedido
+  const baseProps = { biomarker_type: biomarkerType, trigger, surface: SURFACES.MOBILE, measure_source: step.measureSource }
 
   // Effects — shown 1× por montagem do passo (denominador do funil)
   useEffect(() => {
@@ -111,7 +159,7 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
 
   function dismiss(reason) {
     if (phase === 'saving') return
-    // "Fechar sem peso" (e fechar sem botão no erro) NÃO marca a semana (P2)
+    // "Fechar sem …" (e fechar sem botão no erro) NÃO marca o período (P2)
     if (reason !== PROMPT_DISMISS_REASONS.CLOSE_AFTER_ERROR) void markPromptPeriod(step)
     void logEvent(EVENTS.MEASURE_PROMPT_DISMISSED, { ...baseProps, reason })
     finish()
@@ -123,18 +171,17 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
     },
   }))
 
-  function handleChange(text) {
-    setValue(text)
-    if (invalidMsg) setInvalidMsg(null)
-  }
+  const changeWith = (setter) => (text) => { setter(text); if (invalidMsg) setInvalidMsg(null) }
+  const handleChange = changeWith(setValue)
+  const handleChangeSec = changeWith(setValueSec)
 
   async function handleSave() {
     if (phase === 'saving') return
-    const num = coerceDecimal(value)
+    const record = buildRecord(biomarkerType, unit, value, valueSec, context)
     // Faixa e positividade vêm do Zod do core (FR-017) — a UI só mostra a mensagem dele.
-    const check = validateBiomarkerLog({ type: biomarkerType, value: num, unit: UNIT })
+    const check = validateBiomarkerLog(record)
     if (!check.success) {
-      const msg = check.errors?.find((e) => e.field === 'value')?.message
+      const msg = check.errors?.find((e) => e.field === 'value' || e.field === 'value_secondary')?.message
       setInvalidMsg(msg || 'Digite um valor válido maior que zero.')
       return
     }
@@ -149,7 +196,10 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
     try {
       // Camada 2: teto de 15 s. Estourar NÃO cancela o insert — por isso o id fixo acima.
       await withTimeout(
-        measuresRepo.create({ id: recordId, type: biomarkerType, value: num, unit: UNIT }, { entry_point: ENTRY_POINTS.DOSE_PROMPT }),
+        measuresRepo.create(
+          { id: recordId, ...record },
+          { entry_point: ENTRY_POINTS.DOSE_PROMPT, measure_source: step.measureSource }
+        ),
         SAVE_TIMEOUT_MS
       )
     } catch (err) {
@@ -157,15 +207,15 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
       setPhase('error')
       return
     }
-    // Salvar NÃO marca a semana (R-15, PO 02/10): o peso gravado já suprime pela recência de 7 dias
-    // (lida do banco a cada dose). Apagar o peso — digitado errado — reabre o pedido sem mexer na marca.
-    show('Peso registrado', { variant: 'success' })
+    // Salvar NÃO marca o período (R-15, PO 02/10): a medida gravada já suprime pela recência
+    // (lida do banco a cada dose). Apagar a medida — digitada errada — reabre o pedido sem mexer na marca.
+    show(copy.saved, { variant: 'success' })
     finish()
   }
 
   const saving = phase === 'saving'
   const isError = phase === 'error'
-  const canSave = value.trim() !== '' && !saving
+  const canSave = value.trim() !== '' && (!isPa || valueSec.trim() !== '') && !saving
 
   return (
     <View style={styles.root}>
@@ -181,33 +231,34 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
 
       <View style={styles.askRow}>
         <View style={styles.askIcon}>
-          <Ruler size={20} color={colors.status.info} strokeWidth={2} />
+          <AskIcon size={20} color={colors.status.info} strokeWidth={2} />
         </View>
         <View style={styles.flex}>
-          <Text style={styles.askTitle}>Registrar o peso de hoje?</Text>
+          <Text style={styles.askTitle}>{copy.ask}</Text>
           <Text style={styles.askHint}>Opcional</Text>
         </View>
       </View>
 
       <View style={[styles.field, invalidMsg && styles.fieldInvalid]}>
         <MeasureValueFields
-          unit={UNIT}
-          isPa={false}
+          unit={unit}
+          isPa={isPa}
           value={value}
           onChangeValue={handleChange}
-          valueSec=""
-          onChangeValueSec={() => {}}
+          valueSec={valueSec}
+          onChangeValueSec={handleChangeSec}
           errorMsg={invalidMsg}
           autoFocus={false}
         />
       </View>
-      {!invalidMsg && <Text style={styles.caption}>{lastMeasureCaption(step.lastMeasure)}</Text>}
+      {!invalidMsg && <Text style={styles.caption}>{lastMeasureCaption(biomarkerType, unit, step.lastMeasure)}</Text>}
+      {biomarkerType === 'glicemia' && <MeasureContextChips ctxConfig={GLICEMIA_CONTEXT} context={context} setContext={setContext} />}
 
       {isError && (
         <View style={styles.banner} accessibilityRole="alert">
           <AlertCircle size={20} color={colors.status.error} strokeWidth={2} />
           <View style={styles.flex}>
-            <Text style={styles.bannerTitle}>O peso não foi salvo</Text>
+            <Text style={styles.bannerTitle}>{copy.notSaved}</Text>
             <Text style={styles.bannerBody}>
               {failure === 'network' ? 'Sem internet. A dose está salva.' : 'Tente de novo. A dose está salva.'}
             </Text>
@@ -222,7 +273,7 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
           disabled={saving}
           accessibilityRole="button"
         >
-          <Text style={styles.btnNeutralText}>{isError ? 'Fechar sem peso' : 'Agora não'}</Text>
+          <Text style={styles.btnNeutralText}>{isError ? copy.closeAfterError : 'Agora não'}</Text>
         </Pressable>
         <Pressable
           style={[styles.btn, styles.btnMeasure, !canSave && styles.btnDisabled]}
@@ -231,7 +282,7 @@ const DoseWeightPrompt = forwardRef<DoseWeightPromptHandle, DoseWeightPromptProp
           accessibilityRole="button"
           accessibilityState={{ disabled: !canSave }}
         >
-          <Text style={styles.btnMeasureText}>{saving ? 'Salvando…' : isError ? 'Tentar de novo' : 'Salvar peso'}</Text>
+          <Text style={styles.btnMeasureText}>{saving ? 'Salvando…' : isError ? 'Tentar de novo' : copy.save}</Text>
         </Pressable>
       </View>
     </View>

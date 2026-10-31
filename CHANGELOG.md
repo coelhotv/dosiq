@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Cada tratamento diz qual medida acompanhar: peso, glicemia ou pressão (spec 100, Slice B)
+
+- **Mobile** (`Added`, sem bump de `APP_VERSION` — fica **0.34.0**; canal: **OTA** `[0.34.0+ota.1]`, R-314 — decisão do PO 2026-10-30: estende propósito já revisado na 0.34.0 (registro de peso/glicemia/pressão e pedido de peso pós-dose); 100% JS, sem dependência nativa). Até aqui o app só pedia peso, e só a tratamento semanal.
+  - **"Acompanhar nas doses"** no cadastro e na edição do tratamento: Peso · Glicemia · Pressão · Nenhum. Vem pré-selecionado pela classe do remédio lida da caixa (insulina e antidiabéticos → glicemia; GLP-1 e antiobesidade → peso; anti-hipertensivos → pressão) e a pessoa troca ou desliga. Tratamento antigo fica como estava até ser editado; a edição mostra a sugestão e só grava ao salvar. No primeiro tratamento do onboarding a medida é preenchida sozinha e pode ser trocada depois.
+  - **Pedido depois da dose** passa a valer para as três medidas, com teto para não cansar: peso 1×/semana (como hoje), glicemia até 2×/dia (manhã e tarde/noite, com contexto opcional — jejum, antes/depois de comer…), pressão 1×/dia e 3×/semana. "Agora não" conta como resolvido no período. Num lote com medidas diferentes aparece um pedido só, da medida menos frequente.
+  - **Detalhe do tratamento** ganha o gráfico de glicemia ou de pressão da semana (a partir de 3 dias com glicemia ou 2 com pressão nos últimos 7); antes disso o card diz quantos dias faltam. Só mostra os valores — sem faixa-alvo nem avaliação.
+  - O código da classe terapêutica passa a ser gravado no cadastro pela caixa (busca ou código de barras); escolher outro remédio pela busca sem caixa limpa o código.
+  - Analytics: `measure_source` nos eventos do pedido e do registro; `tracked_measure` + origem (`inferred`/`chosen`) em `treatment_created`/`treatment_edited` (TRACKING_PLAN).
+
 ### Medida acompanhada por tratamento: banco e regra no core (spec 100, Slice A)
 
 - **Shared/Core + Backend/Infra** (`Added`, `no-user-impact` — nenhuma tela, job ou select lê as colunas novas ainda; app e web seguem pedindo peso só a tratamento semanal, como hoje). Fundação para o tratamento dizer qual medida acompanha (peso, glicemia ou pressão), entregue no Slice B.

@@ -236,8 +236,8 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (092) | **ativação real** (time to first value) |
-| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (re-emite) | manutenção vs. instabilidade do plano |
+| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (092), `tracked_measure?` + `measure_source?: 'inferred'\|'chosen'` (100 B) | **ativação real** (time to first value) |
+| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?`, `presentation?` (re-emite), `tracked_measure?` (re-emite) + `measure_source?` (só quando `change_kind` tem `measure`) (100 B) | manutenção vs. instabilidade do plano |
 | `treatment_paused` | ✅ mobile | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
 | `treatment_resumed` | ✅ mobile | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
 | `treatment_ended` | ✅ mobile | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
@@ -283,7 +283,8 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 > `ProtocolDetailScreen` é sobre o **badge de UI**, que apenas segue `active` — não sobre o
 > tratamento.) O único status **derivado** é "finalizado" (`end_date` vencida) — esse não tem
 > evento próprio (§5.3.1). `change_kind` de `treatment_edited` é **lista** ⊂ `dose`·`schedule`·`frequency`·
-> `dates`·`alarm`·`plan`·`details`·`titration`, **sem o valor** (§6). Toda chave editável do form cai
+> `dates`·`alarm`·`plan`·`details`·`titration`·`measure` (100 B), **sem o valor** (§6) — exceção declarada:
+> `tracked_measure` vai como prop porque é a CONFIGURAÇÃO do acompanhamento (peso/glicemia/pressão/nenhum), não dado clínico. Toda chave editável do form cai
 > num grupo (teste de completude, 065 PR B).
 >
 > **`treatment_planned_end`** viaja em `treatment_created`/`treatment_edited` (re-emitida na edição)
@@ -414,9 +415,9 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `biomarker_logged` | ✅ mobile (#842) · alterado 069-A2 | medida gravada — casca do `measuresRepo` (Hoje, Histórico, Medidas, passo 2 da dose) | **`biomarker_type`**, `surface: 'mobile'` (sempre — fecha AD-5), `entry_point?: 'dose_prompt'\|'measure_series'` (ausente = destino deliberado) | adoção do acompanhamento **por tipo**; correlação com adesão/retenção; conversão do pedido da dose |
-| `measure_prompt_shown` | 🆕 mobile (069-A2) | passo 2 do sheet de dose montado (1× por sheet) | `biomarker_type`, `trigger: 'single'\|'bulk'`, `treatment_id` (só `single` — protocolo da dose aberta, R-299), `entry_point?: 'reminder'` (065 AD-8), `surface` | denominador do funil do pedido; quanto aparece por usuária ativa |
-| `measure_prompt_dismissed` | 🆕 mobile (069-A2) | passo 2 fechado sem salvar | `biomarker_type`, `reason: 'skip'\|'swipe'\|'close_after_error'`, `trigger`, `surface` | o pedido incomoda? o erro de gravação derruba a captura? |
+| `biomarker_logged` | ✅ mobile (#842) · alterado 069-A2 | medida gravada — casca do `measuresRepo` (Hoje, Histórico, Medidas, passo 2 da dose) | **`biomarker_type`**, `surface: 'mobile'` (sempre — fecha AD-5), `entry_point?: 'dose_prompt'\|'measure_series'` (ausente = destino deliberado), `measure_source?: 'configured'\|'fallback'` (só `dose_prompt`, 100 B) | adoção do acompanhamento **por tipo**; correlação com adesão/retenção; conversão do pedido da dose |
+| `measure_prompt_shown` | 🆕 mobile (069-A2) | passo 2 do sheet de dose montado (1× por sheet) | `biomarker_type`, `trigger: 'single'\|'bulk'`, `treatment_id` (só `single` — protocolo da dose aberta, R-299), `entry_point?: 'reminder'` (065 AD-8), `surface`, `measure_source: 'configured'\|'fallback'` (100 B) | denominador do funil do pedido; quanto aparece por usuária ativa |
+| `measure_prompt_dismissed` | 🆕 mobile (069-A2) | passo 2 fechado sem salvar | `biomarker_type`, `reason: 'skip'\|'swipe'\|'close_after_error'`, `trigger`, `surface`, `measure_source` (100 B) | o pedido incomoda? o erro de gravação derruba a captura? |
 | `measure_series_viewed` | 🆕 mobile (069-Bb) | card "Peso durante o tratamento" com estado FINAL (nunca no carregando): 1× por foco do detalhe; após salvar um peso, só se o estado mudou | `biomarker_type`, `state: 'chart'\|'missing_count'\|'missing_time'\|'missing_both'\|'error'`, `step_count`, `treatment_id` (protocolo do detalhe), `surface` | quantos chegam ao gráfico? os vazios convertem em registro (`biomarker_logged{entry_point:'measure_series'}`)? |
 | `measure_series_steps_toggled` | 🆕 mobile (069-Bb) | "Ver por etapa" aberto/fechado pela pessoa (nunca pela restauração do estado salvo) | `expanded: boolean`, `treatment_id`, `surface` | a lista recolhida esconde demais? |
 

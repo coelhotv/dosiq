@@ -22,14 +22,16 @@ const repo = createBiomarkerRepository({ client: supabase as any, getUserId })
 // 🔴 FR-8/R-042: nunca value/value_secondary/notes — dado clínico.
 // 069 A2 (FR-021): `surface` sempre (só cria em primeiro plano) + `entry_point` quando o registro
 // nasce de um pedido (dose_prompt | measure_series). Ausente = destino deliberado (Hoje/Histórico/Medidas).
+// 100 B (FR-012): `measure_source` (configured | fallback) só quando vem do pedido pós-dose.
 export const measuresRepo = {
   ...repo,
-  async create(biomarker, meta: { entry_point?: string } = {}) {
+  async create(biomarker, meta: { entry_point?: string; measure_source?: string } = {}) {
     const created = await repo.create(biomarker)
     void logEvent(EVENTS.BIOMARKER_LOGGED, {
       biomarker_type: created?.type ?? biomarker?.type,
       surface: SURFACES.MOBILE,
       ...(meta.entry_point ? { entry_point: meta.entry_point } : {}),
+      ...(meta.measure_source ? { measure_source: meta.measure_source } : {}),
     })
     return created
   },

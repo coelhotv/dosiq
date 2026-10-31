@@ -15,8 +15,8 @@ export const EVENTS = {
   // Ciclo de vida do tratamento (spec 065 US3 / CON-034). Pausa ≠ encerramento: `active` true→false
   // é `treatment_paused` (reversível), nunca `treatment_ended`. Emitidos SÓ pela casca do
   // protocolService (+ `emitTitrationEdited`, chamado pelo titrationService) — tela nenhuma emite.
-  TREATMENT_CREATED: 'treatment_created',   // entry_point, frequency, interval_days, treatment_plan_id?, is_titration, treatment_planned_end?, schedule_preset? (086)
-  TREATMENT_EDITED: 'treatment_edited',     // change_kind: string[] (dose|schedule|frequency|dates|alarm|plan|details|titration) — nunca o valor; + schedule_preset? (086)
+  TREATMENT_CREATED: 'treatment_created',   // entry_point, frequency, interval_days, treatment_plan_id?, is_titration, treatment_planned_end?, schedule_preset? (086), tracked_measure?, measure_source? (inferred|chosen — 100 B)
+  TREATMENT_EDITED: 'treatment_edited',     // change_kind: string[] (dose|schedule|frequency|dates|alarm|plan|details|titration|measure) — nunca o valor; + schedule_preset? (086), tracked_measure?, measure_source? (100 B)
   TREATMENT_PAUSED: 'treatment_paused',
   TREATMENT_RESUMED: 'treatment_resumed',
   TREATMENT_ENDED: 'treatment_ended',       // reason: 'deleted' (único ativo; prescription_end é derivado)
@@ -80,10 +80,10 @@ export const EVENTS = {
   STOCK_LOW_VIEWED: 'stock_low_viewed',
 
   // Famílias novas (065 US6) — só meta/tipo, NUNCA valor/texto/PII (FR-8, R-042).
-  BIOMARKER_LOGGED: 'biomarker_logged',               // biomarker_type: BIOMARKER_TYPES do core (glicemia|peso|pressao_arterial|batimentos), surface, entry_point? (dose_prompt|measure_series) — NUNCA value/value_secondary
+  BIOMARKER_LOGGED: 'biomarker_logged',               // biomarker_type: BIOMARKER_TYPES do core (glicemia|peso|pressao_arterial|batimentos), surface, entry_point? (dose_prompt|measure_series), measure_source? (configured|fallback, só dose_prompt — 100 B) — NUNCA value/value_secondary
   // Pedido de medida após a dose (spec 069 A2). Nomes genéricos de propósito (S-2): outro tipo reusa.
-  MEASURE_PROMPT_SHOWN: 'measure_prompt_shown',         // biomarker_type, trigger: single|bulk, treatment_id? (só single), entry_point? ('reminder'), surface
-  MEASURE_PROMPT_DISMISSED: 'measure_prompt_dismissed', // biomarker_type, reason: skip|swipe|close_after_error, trigger, surface
+  MEASURE_PROMPT_SHOWN: 'measure_prompt_shown',         // biomarker_type, trigger: single|bulk, treatment_id? (só single), entry_point? ('reminder'), surface, measure_source (configured|fallback — 100 B)
+  MEASURE_PROMPT_DISMISSED: 'measure_prompt_dismissed', // biomarker_type, reason: skip|swipe|close_after_error, trigger, surface, measure_source (100 B)
   // Peso durante o tratamento (spec 069 Bb). Nunca valor, média ou diferença (§6).
   MEASURE_SERIES_VIEWED: 'measure_series_viewed',       // biomarker_type, state: chart|missing_count|missing_time|missing_both|error, step_count, treatment_id, surface
   MEASURE_SERIES_STEPS_TOGGLED: 'measure_series_steps_toggled', // expanded: boolean, treatment_id, surface

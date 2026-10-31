@@ -58,6 +58,7 @@ const MOUNJARO = {
   dosage_per_intake: 1,
   intake_unit: null,
   frequency: 'semanal',
+  tracked_measure: null,
   medicine: { id: 'm-mj', name: 'Mounjaro', presentation: 'injetavel' },
 }
 
@@ -269,8 +270,8 @@ describe('PO-19 — eventos do passo 2', () => {
 })
 
 // ── Lote (AC-7b) ───────────────────────────────────────────────────────────────
-const SELOZOK = { id: 'p-sz', name: 'Selozok', frequency: 'diário', dosage_per_intake: 1, medicine: { id: 'm-sz', name: 'Selozok', presentation: 'comprimido' } }
-const OZEMPIC = { id: 'p-oz', name: 'Ozempic', frequency: 'semanal', dosage_per_intake: 1, medicine: { id: 'm-oz', name: 'Ozempic', presentation: 'injetavel' } }
+const SELOZOK = { id: 'p-sz', name: 'Selozok', frequency: 'diário', tracked_measure: null, dosage_per_intake: 1, medicine: { id: 'm-sz', name: 'Selozok', presentation: 'comprimido' } }
+const OZEMPIC = { id: 'p-oz', name: 'Ozempic', frequency: 'semanal', tracked_measure: null, dosage_per_intake: 1, medicine: { id: 'm-oz', name: 'Ozempic', presentation: 'injetavel' } }
 const MJ_BULK = { ...MOUNJARO, name: 'Mounjaro' }
 
 function renderBulk(protocols) {
