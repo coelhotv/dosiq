@@ -1,0 +1,1297 @@
+[
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 212,
+"q": "select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('request.path', $7, true)"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 206,
+"q": "select \"access_hook\".\"capture_access\"()"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 190,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"app_version_gate\".\"platform\", \"public\".\"app_version_gate\".\"min_supported_version\", \"public\".\"app_version_gate\".\"is_active\", \"public\".\"app_version_gate\".\"message\", \"public\".\"app_ver"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 154,
+"q": "COMMIT"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 3,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT \"public\".\"_spike106_ip\"() pgrst_scalar) pgrst_call) SELECT $3::bigint AS total_result_set, $4 AS page_total, coalesce(json_agg(_postgrest_t.pgrst_scalar)-"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"user_id\" FROM \"public\".\"user_settings\" LIMIT $1 OFFSET $2 ) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 2,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\" FROM \"public\".\"medicines\" LIMIT $1 OFFSET $2 ) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t),"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\", \"public\".\"medicines\".\"therapeutic_class_code\" FROM \"public\".\"medicines\" LIMIT $1 OFFSET $2 ) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_days\", \"public\".\"protocols\".\"time_schedule\", \"public\".\"protocols\".\"do"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"tracked_measure\" FROM \"public\".\"protocols\" LIMIT $1 OFFSET $2 ) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "anon",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"active\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_da"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17351,
+"q": "select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('request.path', $7, true)"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 16991,
+"q": "select \"access_hook\".\"capture_access\"()"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2352,
+"q": "COMMIT"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1868,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"consent_log\".\"id\", \"public\".\"consent_log\".\"consent_type\", \"public\".\"consent_log\".\"action\", \"public\".\"consent_log\".\"policy_version\", \"public\".\"consent_log\".\"platform\", \"public\".\"con"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1827,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"dose_instances\".\"id\", \"public\".\"dose_instances\".\"user_id\", \"public\".\"dose_instances\".\"protocol_id\", \"public\".\"dose_instances\".\"medicine_id\", \"public\".\"dose_instances\".\"scheduled_fo"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1089,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"stock_tracking_enabled\", \"public\".\"user_settings\".\"stock_paused_at\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 )"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1019,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\", \"public\".\"user_settings\".\"timezone\", \"public\".\"user_settings\".\"complexity_override\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"use"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 984,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"active\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_da"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 909,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\", \"public\".\"medicines\".\"name\", \"public\".\"medicines\".\"type\", \"public\".\"medicines\".\"presentation\", \"public\".\"medicines\".\"dosage_per_pill\", \"public\".\"medicines\".\"dosage"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 842,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"generated_through\" FROM \"public\".\"protocols\" WHERE \"public\".\"protocols\".\"id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_postgres"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 601,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\", COALESCE( \"protocols_titration_ste"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 485,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"app_version_gate\".\"platform\", \"public\".\"app_version_gate\".\"min_supported_version\", \"public\".\"app_version_gate\".\"is_active\", \"public\".\"app_version_gate\".\"message\", \"public\".\"app_ver"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 466,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"biomarkers_log\".\"id\", \"public\".\"biomarkers_log\".\"user_id\", \"public\".\"biomarkers_log\".\"type\", \"public\".\"biomarkers_log\".\"value\", \"public\".\"biomarkers_log\".\"value_secondary\", \"public"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 463,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"id\", \"public\".\"medicine_logs\".\"protocol_id\", \"public\".\"medicine_logs\".\"medicine_id\", \"public\".\"medicine_logs\".\"taken_at\", \"public\".\"medicine_logs\".\"quantity_taken\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 459,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"active\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_da"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 393,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\", \"public\".\"user_settings\".\"birth_date\", \"public\".\"user_settings\".\"city\", \"public\".\"user_settings\".\"state\", \"public\".\"user_settings\".\"phone\", \"public\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 313,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"stock\".\"medicine_id\", \"public\".\"stock\".\"opened_at\" FROM \"public\".\"stock\" WHERE \"public\".\"stock\".\"quantity\" > $1 AND NOT \"public\".\"stock\".\"opened_at\" IS NULL LIMIT $2 OFFSET $3 ) SE"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 312,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"user_id\", \"public\".\"user_settings\".\"telegram_chat_id\", \"public\".\"user_settings\".\"verification_token\", \"public\".\"user_settings\".\"notification_preference\", \"public\".\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 297,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titration_steps\".\"id\", \"public\".\"titration_steps\".\"titration_id\", \"public\".\"titration_steps\".\"position\", \"public\".\"titration_steps\".\"status\", \"public\".\"titration_steps\".\"started_at"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 283,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\" FROM \"public\".\"protocols\" LEFT JOIN LATERAL ( SELECT \"medicines_1\".\"name\" F"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 268,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"timezone\", \"public\".\"user_settings\".\"stock_tracking_enabled\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 268,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"id\", \"public\".\"medicine_logs\".\"taken_at\", \"public\".\"medicine_logs\".\"quantity_taken\", \"public\".\"medicine_logs\".\"protocol_id\", \"public\".\"medicine_logs\".\"medicine_id\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 266,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\", \"public\".\"medicines\".\"name\", \"public\".\"medicines\".\"laboratory\", \"public\".\"medicines\".\"type\", \"public\".\"medicines\".\"presentation\", \"public\".\"medicines\".\"dosage_unit"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 254,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $8) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $9) AS \"purchases\" FROM \"public\".\"medici"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 221,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"onboarding_completed\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_cat"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 195,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"dose_critical_events\"(\"actor\", \"detail\", \"dose_instance_id\", \"event\", \"occurred_at\", \"platform\", \"user_id\") SELECT \"pgrst_body\".\"actor\", \"pgrst_body\".\"detail\", \"pgrst_body\".\"do"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 180,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"in_app_nudges\".* FROM \"public\".\"in_app_nudges\" WHERE \"public\".\"in_app_nudges\".\"is_active\" = $1 AND \"public\".\"in_app_nudges\".\"target_view\" = ANY ($2) ORDER BY \"public\".\"in_app_nudge"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 157,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titration_steps\".\"id\", \"public\".\"titration_steps\".\"titration_id\", \"public\".\"titration_steps\".\"protocol_id\", \"public\".\"titration_steps\".\"position\", \"public\".\"titration_steps\".\"statu"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 146,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_days\", \"public\".\"protocols\".\"time_schedule\", \"public\".\"protocols\".\"do"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 129,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"timezone\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 121,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_provider\", \"p_push_token\", \"p_platform\", \"p_app_kind\", \"p_device_name\", \"p_device_fingerprint\", \"p_app_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 119,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"onboarding_completed\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_cat"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 114,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"taken_at\" FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"user_id\" = $1 AND \"public\".\"medicine_logs\".\"taken_at\" >= $2 AND \"public\".\"medicine_logs\".\"ta"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 108,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titration_steps\".\"titration_id\" FROM \"public\".\"titration_steps\" WHERE \"public\".\"titration_steps\".\"protocol_id\" = $1 AND \"public\".\"titration_steps\".\"user_id\" = $2 ORDER BY \"public\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 102,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.cou"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 101,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"notification_log\".\"id\" FROM \"public\".\"notification_log\" WHERE \"public\".\"notification_log\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) , pgrst_source_count AS (SELECT $5 FROM \"public\".\"noti"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 100,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_protocols_1\".\"medicines_protocols_1\", $6) AS \"protocols\" FROM \"public\".\"medicines\" LEFT JOIN LATERAL ( SELECT json_agg(\"medicines_protocols_1\")::"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 87,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"failed_notification_queue\".* FROM \"public\".\"failed_notification_queue\" LIMIT $1 OFFSET $2 ) , pgrst_source_count AS (SELECT $3 FROM \"public\".\"failed_notification_queue\") SELECT (SE"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 84,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\", COALESCE( \"protocols_titration_ste"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 75,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"notification_log\".* FROM \"public\".\"notification_log\" WHERE \"public\".\"notification_log\".\"user_id\" = $1 ORDER BY \"public\".\"notification_log\".\"sent_at\" DESC LIMIT $2 OFFSET $3 ) SELEC"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 74,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_consent_type\", \"p_platform\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_consent_type\" text, \"p"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 68,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_device_fingerprint\", \"p_platform\", \"p_app_version\", \"p_install_id\" FROM json_to_record(pgrst_payload.js"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 61,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_user_id\", \"p_protocol_id\", \"p_medicine_id\", \"p_taken_at\", \"p_quantity_taken\", \"p_notes\", \"p_dose_instan"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 56,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".* FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_postgrest"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 55,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\" FROM \"public\".\"medicines\" LIMIT $1 OFFSET $2 ) SELECT $3::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t),"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 53,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_stock_summary\".* FROM \"public\".\"medicine_stock_summary\" WHERE \"public\".\"medicine_stock_summary\".\"medicine_id\" = $1 AND \"public\".\"medicine_stock_summary\".\"user_id\" = $2 LIM"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 49,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\", \"public\".\"medicines\".\"name\", \"public\".\"medicines\".\"laboratory\", \"public\".\"medicines\".\"type\", \"public\".\"medicines\".\"presentation\", \"public\".\"medicines\".\"dosage_unit"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 45,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"notification_log\".\"id\" FROM \"public\".\"notification_log\" WHERE \"public\".\"notification_log\".\"user_id\" = $1 AND \"public\".\"notification_log\".\"sent_at\" > $2 LIMIT $3 OFFSET $4 ) , pgrst"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 44,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\", COALESCE( \"protocols_titration_ste"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 44,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titrations\".\"id\", COALESCE( \"titrations_steps_1\".\"titrations_steps_1\", $9) AS \"steps\" FROM \"public\".\"titrations\" LEFT JOIN LATERAL ( SELECT json_agg(\"titrations_steps_1\")::jsonb AS"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 41,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".* FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_postgrest"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 39,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"notification_devices\".\"platform\", \"public\".\"notification_devices\".\"app_version\", \"public\".\"notification_devices\".\"is_active\", \"public\".\"notification_devices\".\"last_seen_at\", \"publi"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 39,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"device_activity\".\"platform\", \"public\".\"device_activity\".\"app_version\", \"public\".\"device_activity\".\"last_seen_at\" FROM \"public\".\"device_activity\" WHERE \"public\".\"device_activity\".\"u"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 38,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"emergency_card\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"emergency_card\", \"pgrst_body\".\"updated_at\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 35,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"dosage_per_intake\", \"public\".\"protocols\".\"treatment_plan_id\", \"public\".\"protocols\".\"time_schedule\", row_to_json(\"protocols_medicine_1\".*)::js"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 34,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\", \"public\".\"medicines\".\"presentation\" FROM \"public\".\"medicines\" WHERE \"public\".\"medicines\".\"id\" = ANY ($1) LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 34,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\", COALESCE( \"protocols_titration_ste"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 28,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"stock\".* FROM \"public\".\"stock\" WHERE \"public\".\"stock\".\"medicine_id\" = $1 AND \"public\".\"stock\".\"user_id\" = $2 ORDER BY \"public\".\"stock\".\"created_at\" DESC LIMIT $3 OFFSET $4 ) SELECT"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 28,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"active\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_da"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 26,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"dose_instances\" SET \"la_push_token\" = \"pgrst_body\".\"la_push_token\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"la_push_token\" FROM json_to_record(pgrst_payload.jso"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 26,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".* FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"protocol_id\" = $1 AND \"public\".\"medicine_logs\".\"taken_at\" >= $2 AND \"public\".\"medicine_logs\".\"taken_a"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 25,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"emergency_card\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.c"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 23,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $8) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $9) AS \"purchases\" FROM \"public\".\"medici"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 22,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_days\", \"public\".\"protocols\".\"time_schedule\", \"public\".\"protocols\".\"do"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 20,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"dose_instances\".\"id\" FROM \"public\".\"dose_instances\" WHERE \"public\".\"dose_instances\".\"user_id\" = $1 AND \"public\".\"dose_instances\".\"status\" = $2 AND \"public\".\"dose_instances\".\"schedu"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 20,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"treatment_plans\".*, COALESCE( \"treatment_plans_protocols_1\".\"treatment_plans_protocols_1\", $8) AS \"protocols\" FROM \"public\".\"treatment_plans\" LEFT JOIN LATERAL ( SELECT json_agg(\"t"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"dose_instances\"(\"critical_alarm\", \"early_window_minutes\", \"expected_dose\", \"medicine_id\", \"protocol_id\", \"scheduled_for\", \"tolerance_minutes\", \"user_id\") SELECT \"pgrst_body\".\"c"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"id\", \"public\".\"medicine_logs\".\"protocol_id\", \"public\".\"medicine_logs\".\"medicine_id\", \"public\".\"medicine_logs\".\"taken_at\", \"public\".\"medicine_logs\".\"quantity_taken\","
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS (SELECT \"pgrst_call\".* FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_from\", \"p_to\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_from\" date, \"p_to\" date) LIMIT $4) pgrst_body"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"protocols\" SET \"generated_through\" = \"pgrst_body\".\"generated_through\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"generated_through\" FROM json_to_record(pgrst_payl"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"biomarkers_log\".\"id\", \"public\".\"biomarkers_log\".\"type\", \"public\".\"biomarkers_log\".\"value\", \"public\".\"biomarkers_log\".\"measured_at\" FROM \"public\".\"biomarkers_log\" WHERE \"public\".\"bi"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 17,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"emergency_card\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"emergency_card\", \"pgrst_body\".\"updated_at\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 16,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titration_steps\".\"id\", \"public\".\"titration_steps\".\"titration_id\", \"public\".\"titration_steps\".\"protocol_id\", \"public\".\"titration_steps\".\"position\", \"public\".\"titration_steps\".\"dose\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 16,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"biomarkers_log\".\"id\", \"public\".\"biomarkers_log\".\"user_id\", \"public\".\"biomarkers_log\".\"type\", \"public\".\"biomarkers_log\".\"value\", \"public\".\"biomarkers_log\".\"value_secondary\", \"public"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 15,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\" FROM \"public\".\"protocols\" WHERE \"public\".\"protocols\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) , pgrst_source_count AS (SELECT $5 FROM \"public\".\"protocols\" WHERE \"public\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 15,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $19) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $20) AS \"purchases\", COALESCE( \"medicin"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 15,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_provider\", \"p_push_token\", \"p_platform\", \"p_app_kind\", \"p_device_name\", \"p_device_fingerprint\", \"p_app_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 15,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"biomarkers_log\".\"id\", \"public\".\"biomarkers_log\".\"user_id\", \"public\".\"biomarkers_log\".\"type\", \"public\".\"biomarkers_log\".\"value\", \"public\".\"biomarkers_log\".\"value_secondary\", \"public"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 14,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"dose_instances\".\"id\", \"public\".\"dose_instances\".\"scheduled_for\", \"public\".\"dose_instances\".\"tolerance_minutes\" FROM \"public\".\"dose_instances\" WHERE \"public\".\"dose_instances\".\"proto"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 13,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"dosage_per_intake\", \"public\".\"protocols\".\"intake_unit\", row_to_json(\"protoco"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 13,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"timezone\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 13,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\" FROM \"public\".\"protocols\" LEFT JOIN"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 12,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_protocols_1\".\"medicines_protocols_1\", $6) AS \"protocols\" FROM \"public\".\"medicines\" LEFT JOIN LATERAL ( SELECT json_agg(\"medicines_protocols_1\")::"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 11,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"purchases\".*, COALESCE( \"purchases_stock_1\".\"purchases_stock_1\", $7) AS \"stock\" FROM \"public\".\"purchases\" LEFT JOIN LATERAL ( SELECT json_agg(\"purchases_stock_1\")::jsonb AS \"purcha"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 11,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_stock_summary\".\"total_quantity\" FROM \"public\".\"medicine_stock_summary\" WHERE \"public\".\"medicine_stock_summary\".\"medicine_id\" = $1 AND \"public\".\"medicine_stock_summary\".\"us"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 11,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"dose_instances\".\"id\", \"public\".\"dose_instances\".\"status\" FROM \"public\".\"dose_instances\" WHERE \"public\".\"dose_instances\".\"id\" = ANY ($1) LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS to"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 11,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"stock\".\"id\", \"public\".\"stock\".\"purchase_id\", \"public\".\"stock\".\"quantity\", \"public\".\"stock\".\"opened_at\" FROM \"public\".\"stock\" WHERE \"public\".\"stock\".\"medicine_id\" = $1 AND \"public\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 10,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"medicine_id\", \"public\".\"protocols\".\"active\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"time_schedu"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 10,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\", \"public\".\"user_settings\".\"timezone\", \"public\".\"user_settings\".\"complexity_override\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"use"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 9,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_device_fingerprint\", \"p_platform\", \"p_app_version\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 9,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"dose_instances\".\"id\", \"public\".\"dose_instances\".\"user_id\", \"public\".\"dose_instances\".\"protocol_id\", \"public\".\"dose_instances\".\"medicine_id\", \"public\".\"dose_instances\".\"scheduled_fo"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"onboarding_completed\", \"timezone\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"onboarding_completed\", \"pgrst_body\".\"timezone\", \"pgrst_body\".\"updated_at\", \"pgr"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_user_id\", \"p_protocol_id\", \"p_mode\", \"p_until\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_use"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\", COALESCE( \"protocols_titration_ste"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS (DELETE FROM \"public\".\"dose_instances\" WHERE \"public\".\"dose_instances\".\"protocol_id\" = $1 AND \"public\".\"dose_instances\".\"status\" = ANY ($2) AND \"public\".\"dose_instances\".\"scheduled_for\" > $3 RETURNIN"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"stock\".\"quantity\" FROM \"public\".\"stock\" WHERE \"public\".\"stock\".\"medicine_id\" = $1 AND \"public\".\"stock\".\"user_id\" = $2 LIMIT $3 OFFSET $4 ) SELECT $5::bigint AS total_result_set, pg"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"protocols\" SET \"paused_at\" = \"pgrst_body\".\"paused_at\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"paused_at\" FROM json_to_record(pgrst_payload.json_data) AS _(\"pau"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 8,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"purchases\".* FROM \"public\".\"purchases\" WHERE \"public\".\"purchases\".\"user_id\" = $1 AND \"public\".\"purchases\".\"medicine_id\" = ANY ($2) ORDER BY \"public\".\"purchases\".\"purchase_date\" DES"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 7,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"notification_devices\" SET \"is_active\" = \"pgrst_body\".\"is_active\", \"updated_at\" = \"pgrst_body\".\"updated_at\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"is_active\", "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 7,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_install_id\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_install_id\" uuid) LIMIT $4) pgrst_body"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"treatment_plans\".*, COALESCE( \"treatment_plans_protocols_1\".\"treatment_plans_protocols_1\", $8) AS \"protocols\" FROM \"public\".\"treatment_plans\" LEFT JOIN LATERAL ( SELECT json_agg(\"t"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"id\", \"public\".\"medicine_logs\".\"protocol_id\", \"public\".\"medicine_logs\".\"taken_at\" FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"user_id\" = $1 AND \"pu"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"onboarding_completed\", \"timezone\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"onboarding_completed\", \"pgrst_body\".\"timezone\", \"pgrst_body\".\"updated_at\", \"pgr"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"timezone\", \"user_id\") SELECT \"pgrst_body\".\"timezone\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"timezone\", \"user_id\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $13) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $14) AS \"purchases\", COALESCE( \"medicin"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 6,
+"q": "SET LOCAL ROLE authenticated"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"treatment_plans\".\"name\" FROM \"public\".\"treatment_plans\" WHERE \"public\".\"treatment_plans\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"stock_paused_at\", \"stock_tracking_enabled\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"stock_paused_at\", \"pgrst_body\".\"stock_tracking_enabled\", \"pgrst_body\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_medicine_id\", \"p_quantity\", \"p_unit_price\", \"p_purchase_date\", \"p_expiration_date\", \"p_pharmacy\", \"p_la"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $19) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $20) AS \"purchases\", COALESCE( \"medicin"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\" FROM \"public\".\"protocols\" WHERE ( \"public\".\"protocols\".\"end_date\" IS NULL OR \"public\".\"protocols\".\"end_date\" >= $1) AND \"public\".\"protocols\".\"user_id\" = $2 AND \"pub"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"stock_paused_at\", \"stock_tracking_enabled\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"stock_paused_at\", \"pgrst_body\".\"stock_tracking_enabled\", \"pgrst_body\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".\"id\" FROM \"public\".\"medicines\" WHERE \"public\".\"medicines\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) , pgrst_source_count AS (SELECT $5 FROM \"public\".\"medicines\" WHERE \"public\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"dose_instances\" SET \"la_push_state\" = \"pgrst_body\".\"la_push_state\", \"la_push_token\" = \"pgrst_body\".\"la_push_token\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"la_p"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 5,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"id\" FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) , pgrst_source_count AS (SELECT $5 FROM \"public\".\"medicine_logs"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"protocol_id\", \"public\".\"medicine_logs\".\"taken_at\" FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"user_id\" = $1 AND \"public\".\"medicine_logs\".\"taken_at"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $6) AS \"stock\" FROM \"public\".\"medicines\" LEFT JOIN LATERAL ( SELECT json_agg(\"medicines_stock_1\")::jsonb AS \"medici"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"timezone\", \"user_id\") SELECT \"pgrst_body\".\"timezone\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"timezone\", \"user_id\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"protocols\"(\"active\", \"critical_alarm\", \"dosage_per_intake\", \"frequency\", \"intake_unit\", \"interval_days\", \"medicine_id\", \"name\", \"notes\", \"start_date\", \"time_schedule\", \"treatme"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\", \"public\".\"user_settings\".\"birth_date\", \"public\".\"user_settings\".\"stock_tracking_enabled\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"protocols\" SET \"active\" = \"pgrst_body\".\"active\", \"critical_alarm\" = \"pgrst_body\".\"critical_alarm\", \"dosage_per_intake\" = \"pgrst_body\".\"dosage_per_intake\", \"end_date\" = \"pgrst_body\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\" FROM \"public\".\"protocols\" LEFT JOIN LATERAL ( SELECT \"treatment_plans_1\".\"id\", \"treatment_plans"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"medicines\"(\"active_ingredient\", \"anvisa_registration\", \"dosage_per_pill\", \"dosage_unit\", \"laboratory\", \"name\", \"presentation\", \"regulatory_category\", \"shelf_life_days\", \"therap"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"user_settings\" SET \"complexity_override\" = \"pgrst_body\".\"complexity_override\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"complexity_override\" FROM json_to_record("
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 4,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"treatment_plans\".\"id\", \"public\".\"treatment_plans\".\"name\" FROM \"public\".\"treatment_plans\" WHERE \"public\".\"treatment_plans\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS t"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT \"public\".\"delete_user_account\"() pgrst_scalar) pgrst_call) SELECT $3::bigint AS total_result_set, $4 AS page_total, coalesce(json_agg(_postgrest_t.pgrst_s"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_consent_type\", \"p_platform\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_consent_type\" text, \"p"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_stock_summary\".\"medicine_id\", \"public\".\"medicine_stock_summary\".\"total_quantity\" FROM \"public\".\"medicine_stock_summary\" WHERE \"public\".\"medicine_stock_summary\".\"user_id\" ="
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"protocols\" SET \"active\" = \"pgrst_body\".\"active\", \"critical_alarm\" = \"pgrst_body\".\"critical_alarm\", \"dosage_per_intake\" = \"pgrst_body\".\"dosage_per_intake\", \"end_date\" = \"pgrst_body\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"channel_mobile_push_enabled\", \"channel_telegram_enabled\", \"channel_web_push_enabled\", \"digest_time\", \"notification_mode\", \"notification_preference\", \"quiet_hour"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"medicines\"(\"active_ingredient\", \"anvisa_registration\", \"concentration_volume_ml\", \"dosage_per_pill\", \"dosage_unit\", \"laboratory\", \"name\", \"presentation\", \"regulatory_category\","
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"dose_instances\" SET \"snoozed_until\" = \"pgrst_body\".\"snoozed_until\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"snoozed_until\" FROM json_to_record(pgrst_payload.jso"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", COALESCE( \"protocols_titration_steps_1\".\"protocols_titration_steps_1\", $9) AS \"titration_steps\" FROM \"publ"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".\"injection_site\" FROM \"public\".\"medicine_logs\" WHERE \"public\".\"medicine_logs\".\"user_id\" = $1 AND NOT \"public\".\"medicine_logs\".\"injection_site\" IS NULL ORDER BY \"publ"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "SELECT public.consent_grant($1, $2)"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"biomarkers_log\"(\"context\", \"notes\", \"source\", \"type\", \"unit\", \"user_id\", \"value\", \"value_secondary\") SELECT \"pgrst_body\".\"context\", \"pgrst_body\".\"notes\", \"pgrst_body\".\"source\","
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"onboarding_completed\", \"timezone\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"onboarding_completed\", \"pgrst_body\".\"timezone\", \"pgrst_body\".\"updated_at\", \"pgr"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"biomarkers_log\"(\"id\", \"notes\", \"source\", \"type\", \"unit\", \"user_id\", \"value\") SELECT \"pgrst_body\".\"id\", \"pgrst_body\".\"notes\", \"pgrst_body\".\"source\", \"pgrst_body\".\"type\", \"pgrst_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_protocols_1\".\"medicines_protocols_1\", $6) AS \"protocols\" FROM \"public\".\"medicines\" LEFT JOIN LATERAL ( SELECT json_agg(\"medicines_protocols_1\")::"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 3,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".* FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $2 OFFSET $3 ) SELECT $4::bigint AS total_result_set, pg_catalog.count(_postgrest"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_medicine_id\", \"p_quantity\", \"p_unit_price\", \"p_purchase_date\", \"p_expiration_date\", \"p_pharmacy\", \"p_la"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"protocols\"(\"active\", \"critical_alarm\", \"dosage_per_intake\", \"frequency\", \"intake_unit\", \"interval_days\", \"medicine_id\", \"name\", \"notes\", \"start_date\", \"time_schedule\", \"treatme"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".\"id\", \"public\".\"protocols\".\"name\", \"public\".\"protocols\".\"frequency\", \"public\".\"protocols\".\"interval_days\", \"public\".\"protocols\".\"time_schedule\", \"public\".\"protocols\".\"do"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "SELECT public.consent_revoke($1, $2)"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"medicines\"(\"active_ingredient\", \"anvisa_registration\", \"dosage_per_pill\", \"dosage_unit\", \"laboratory\", \"name\", \"presentation\", \"regulatory_category\", \"shelf_life_days\", \"therap"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"emergency_card\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"emergency_card\", \"pgrst_body\".\"updated_at\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_user_id\", \"p_dose_instance_ids\", \"p_skipped_at\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_us"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"channel_mobile_push_enabled\", \"channel_telegram_enabled\", \"channel_web_push_enabled\", \"digest_time\", \"notification_mode\", \"notification_preference\", \"quiet_hour"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"timezone\", \"user_id\") SELECT \"pgrst_body\".\"timezone\", \"pgrst_body\".\"user_id\" FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"timezone\", \"user_id\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 2,
+"q": "WITH pgrst_source AS (DELETE FROM \"public\".\"protocols\" WHERE \"public\".\"protocols\".\"id\" = $1 AND \"public\".\"protocols\".\"user_id\" = $2 RETURNING $3) SELECT $4 AS total_result_set, pg_catalog.count(_postgrest_t) AS page_tota"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "DO $$ BEGIN IF public.get_my_deletion_notice() IS NOT NULL THEN RAISE EXCEPTION 'A viu data que nÃ£o Ã© dele'; END IF; END $$"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, COALESCE( \"protocols_titration_steps_1\".\"protocols_titration_steps_1\", $6) AS \"titration_steps\" FROM \"public\".\"protocols\" LEFT JOIN LATERAL ( SELECT json_agg(\"protoco"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "DO $$ BEGIN IF (SELECT count(*) FROM public.consent_copy) <> 1 THEN RAISE EXCEPTION 'authenticated nÃ£o lÃª consent_copy'; END IF; IF public.get_my_deletion_notice() IS NULL THEN RAISE EXCEPTION 'B nÃ£o vÃª a prÃ³pria data'; "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"consent_prompt_sessions\", \"public\".\"user_settings\".\"consent_prompt_last_seen_at\" FROM \"public\".\"user_settings\" WHERE \"public\".\"user_settings\".\"user_id\" = $1 LIMIT $"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".*, row_to_json(\"medicine_logs_protocol_1\".*)::jsonb AS \"protocol\", row_to_json(\"medicine_logs_medicine_1\".*)::jsonb AS \"medicine\" FROM \"public\".\"medicine_logs\" LEFT "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicine_logs\".*, row_to_json(\"medicine_logs_medicine_1\".*)::jsonb AS \"medicine\" FROM \"public\".\"medicine_logs\" LEFT JOIN LATERAL ( SELECT \"medicines_1\".* FROM \"public\".\"medicines\" "
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "SELECT set_config($1, $2, $3)"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"protocols\"(\"active\", \"critical_alarm\", \"dosage_per_intake\", \"end_date\", \"frequency\", \"interval_days\", \"medicine_id\", \"name\", \"notes\", \"start_date\", \"time_schedule\", \"treatment_"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"protocols\"(\"active\", \"critical_alarm\", \"dosage_per_intake\", \"end_date\", \"frequency\", \"intake_unit\", \"interval_days\", \"medicine_id\", \"name\", \"notes\", \"start_date\", \"time_schedul"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"medicines\".*, COALESCE( \"medicines_stock_1\".\"medicines_stock_1\", $8) AS \"stock\", COALESCE( \"medicines_purchases_1\".\"medicines_purchases_1\", $9) AS \"purchases\" FROM \"public\".\"medici"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"medicines\"(\"active_ingredient\", \"concentration_volume_ml\", \"dosage_per_pill\", \"dosage_unit\", \"laboratory\", \"name\", \"presentation\", \"regulatory_category\", \"shelf_life_days\", \"th"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "DO $$ BEGIN BEGIN UPDATE public.user_settings SET international_transfer_granted_at = now() WHERE user_id = '09600000-0000-0000-0000-00000000000a'; RAISE EXCEPTION 'GUARD FALHOU: UPDATE direto passou'; EXCEPTION WHEN rai"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"biomarkers_log\".\"id\", \"public\".\"biomarkers_log\".\"user_id\", \"public\".\"biomarkers_log\".\"type\", \"public\".\"biomarkers_log\".\"value\", \"public\".\"biomarkers_log\".\"value_secondary\", \"public"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"consent_prompt_last_seen_at\", \"consent_prompt_sessions\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"consent_prompt_last_seen_at\", \"pgrst_body\".\"consent_promp"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"titrations\".\"id\", \"public\".\"titrations\".\"treatment_plan_id\", \"public\".\"titrations\".\"created_at\", COALESCE( \"titrations_steps_1\".\"titrations_steps_1\", $8) AS \"steps\" FROM \"public\".\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"user_settings\"(\"birth_date\", \"city\", \"display_name\", \"phone\", \"state\", \"updated_at\", \"user_id\") SELECT \"pgrst_body\".\"birth_date\", \"pgrst_body\".\"city\", \"pgrst_body\".\"display_nam"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"user_settings\".\"display_name\", \"public\".\"user_settings\".\"birth_date\", \"public\".\"user_settings\".\"city\", \"public\".\"user_settings\".\"state\", \"public\".\"user_settings\".\"phone\", \"public\"."
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"protocols\"(\"active\", \"critical_alarm\", \"dosage_per_intake\", \"frequency\", \"intake_unit\", \"medicine_id\", \"name\", \"notes\", \"start_date\", \"time_schedule\", \"treatment_plan_id\", \"use"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (INSERT INTO \"public\".\"medicines\"(\"active_ingredient\", \"dosage_per_pill\", \"dosage_unit\", \"laboratory\", \"name\", \"presentation\", \"regulatory_category\", \"shelf_life_days\", \"therapeutic_class\", \"type\", \""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_step_id\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_step_id\" uuid) LIMIT $4) pgrst_body , LAT"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"biomarkers_log\" SET \"context\" = \"pgrst_body\".\"context\", \"measured_at\" = \"pgrst_body\".\"measured_at\", \"type\" = \"pgrst_body\".\"type\", \"unit\" = \"pgrst_body\".\"unit\", \"value\" = \"pgrst_body"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS (UPDATE \"public\".\"protocols\" SET \"active\" = \"pgrst_body\".\"active\", \"dosage_per_intake\" = \"pgrst_body\".\"dosage_per_intake\", \"end_date\" = \"pgrst_body\".\"end_date\", \"frequency\" = \"pgrst_body\".\"frequency\""
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "WITH pgrst_source AS ( SELECT \"public\".\"protocols\".*, row_to_json(\"protocols_medicine_1\".*)::jsonb AS \"medicine\", row_to_json(\"protocols_treatment_plan_1\".*)::jsonb AS \"treatment_plan\" FROM \"public\".\"protocols\" LEFT JOIN"
+},
+{
+"stats_reset": "2026-10-20 04:38:46.232579+00",
+"pg_version": "PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+"rolname": "authenticated",
+"calls": 1,
+"q": "DO $$ BEGIN BEGIN PERFORM public.consent_grant('ai_transfer', 'web'); RAISE EXCEPTION 'tipo invÃ¡lido passou'; EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'consent_type_invalid' THEN RAISE; END IF; END; END $$"
+}
+]

@@ -8,6 +8,12 @@
 |---|---|---|---|---|
 | `20260818_skip_dose_atomic_and_status_privilege.sql` | **§3 apenas** (`REVOKE UPDATE (status) ON dose_instances FROM authenticated` + os 16 `GRANT UPDATE` por coluna). §1 e §2 (as duas RPCs) **já aplicadas**. | 2026-08-18<br>(PR #797, `65931d11`) | Adoção da `APP_VERSION 0.31.1` nas lojas acima do limiar (a definir com o PO no check), **com** a web nova já em produção | `PO-SEC-2` da spec 067 |
 
+> **2026-10-31 (spec 108, ADR-119):** a 108 não tocou o UPDATE de `dose_instances` (INV-6, conferido
+> antes/depois na própria transação). Quando a §3 for aplicada, ela roda sob o padrão novo — objeto novo
+> nasce fechado e `REVOKE … ON TABLE` apaga grant de coluna: reemita os 16 `GRANT UPDATE (…)` no mesmo
+> arquivo e rode o `lint:migration-grants` e a varredura `20261031_108_residual_scan.sql` (atualizando a
+> lista dela). Ver [`20261031_108_public_least_privilege.md`](20261031_108_public_least_privilege.md).
+
 ## Por que a §3 está segurada (spec 067 Slice B, Decisões 15/16 do PO)
 
 O `REVOKE` tira de `authenticated` a escrita de `dose_instances.status`. As RPCs que substituem essa

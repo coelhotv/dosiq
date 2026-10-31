@@ -1,0 +1,31 @@
+════════════════════════════════════════════════════════════════
+ FROTA ATIVA — instalações vistas nos últimos 30 dias
+════════════════════════════════════════════════════════════════
+
+  versão      instalações   usuários   % da frota
+  ─────────────────────────────────────────────────
+  0.34.0          22          22      64.7%
+  0.33.48          1           1       2.9%
+  0.33.29          1           1       2.9%
+  0.33.3           1           1       2.9%
+  0.30.1           2           2       5.9%
+  0.30.0           7           7      20.6%
+  ─────────────────────────────────────────────────
+  TOTAL           34          32
+
+  Versão mais antiga ativa: 0.30.0
+  Piso de 5% (ADR-088): 1.7 instalações
+
+════════════════════════════════════════════════════════════════
+ VEREDITO DE DROP — coluna `stock_consumptions`
+════════════════════════════════════════════════════════════════
+
+  0.34.0      ✅ limpa
+  0.33.48     ❓ commit não localizado — verificar à mão
+  0.33.29     ❓ commit não localizado — verificar à mão
+  0.33.3      ✅ limpa
+  0.30.1      ✅ limpa
+  0.30.0      ✅ limpa
+
+⚠️  2 versão(ões) sem commit localizado — resolver ANTES de dropar.
+   Versão não verificada conta como afetada (fail-safe).

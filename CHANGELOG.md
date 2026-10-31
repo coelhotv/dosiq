@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Segurança: o banco passa a conceder só o que o app usa, e quatro tabelas sem uso saem (spec 108)
+
+- **Backend/Infra + Shared/Core** (`Security`, `no-user-impact`, sem bump — nenhuma superfície de web ou mobile muda; canal mobile: nenhum). Aplicado no QA em 2026-10-31; produção após aprovação.
+  - Tabela, view e função criadas daqui em diante no schema `public` nascem **sem acesso** para a chave pública (`anon`) e para o usuário logado (`authenticated`); cada migração concede o que precisa. Antes, tudo nascia aberto e dependia de alguém lembrar de fechar.
+  - A chave pública (embarcada no app) perde todo acesso a dados de saúde por privilégio, não só pela RLS — fica só o gate de versão (`app_version_gate`), a política de consentimento e o hook de registro de acesso. O usuário logado perde TRUNCATE/REFERENCES/TRIGGER/MAINTAIN e o acesso a 4 relações que o app não lê.
+  - Apagadas as tabelas vazias `push_notification_logs`, `push_subscriptions`, `dose_adherence_monthly` e `gemini_reviews` (e a função `batch_update_review_status`); a exclusão de conta deixa de citá-las. `geminiReviewSchema` sai do core e da web; `database.types.ts` regenerado.
+  - Novo `npm run lint:migration-grants`, encadeado no `lint`: barra migração com função/tabela sem GRANT, DROP+CREATE sem re-GRANT, hook de acesso sem `anon` e grant a `anon` fora da allowlist.
+
 ### Mounjaro pela busca ou pela caixa aparece como na embalagem: "2,5 mg / 0,5 mL" (spec 113)
 
 - **Mobile + Shared/Core** (`Fixed`, **patch**, sem bump de `APP_VERSION` — fica **0.34.0**; canal: **OTA** junto da spec 100 `[0.34.0+ota.1]`, R-314: 100% JS, sem permissão nem mudança de propósito). A busca e o código de barras mostravam e preenchiam o Mounjaro como "5 mg/mL", número que não está na caixa. Publicado em production em 2026-10-31: `[0.34.0+ota.1]` group `77eaf767-c7cd-4daf-94e8-b2c68905f0d0` (android `01a19185-2bfc-758b-baf1-ecbd1bdad0b9`, ios `01a19185-2bfc-7012-952e-ebd7bd514c23`), branch `hotfix/ota-0.34.0` @ `913a3a26` (tag `mobile-v0.34.0` + runtime do main em `fb590060`); antes em preview `eb5a5cfc` e device `5b29a560`.

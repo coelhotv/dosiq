@@ -38,7 +38,7 @@ Ele é onde toda migração roda primeiro, onde o teste `BEGIN..ROLLBACK` aconte
 ## 2. Montar do zero (rebuild)
 
 Projeto novo e vazio, criado com **Data API ✅ · Automatically expose new tables ✅ · Automatic RLS ⬜**
-(espelha prod: prod expõe tabelas novas via default ACL e não tem event trigger de RLS automática —
+(espelha prod: prod não tem event trigger de RLS automática; desde a 108 objeto novo nasce sem grant —
 RLS automática no QA esconderia a migração que esquece `ENABLE ROW LEVEL SECURITY`).
 
 ```bash
@@ -58,9 +58,13 @@ O script (saída em `~/local/dosiq-qa/`, fora do repo — o bootstrap tem segred
 Leva ~5 min (Oregon: ~1.500 instruções, cada uma com ida e volta).
 
 ### Armadilhas conhecidas
-- **Default ACL abre tudo.** Toda tabela/função criada no `public` ganha ALL para anon/authenticated/service_role.
-  O `pg_dump` emite só os GRANTs de prod, não revoga o que o default deu ⇒ sem o `04` o QA fica **mais
-  aberto** que prod e um `42501` que prod daria passa no QA.
+- **ACL do dump é relativa ao `acldefault`.** O `pg_dump` emite só a diferença entre a ACL de prod e o
+  padrão embutido do Postgres; sem o `04` o QA herda o que o projeto novo dá a objeto criado e fica
+  **mais aberto** que prod — um `42501` que prod daria passa no QA. Até a spec 108 isso era "default
+  ACL abre tudo" também em prod; **desde 2026-10-31** prod nasce fechado (ADR-119) e o `04` também
+  reaplica os padrões da 108 (revogação no `public`, EXECUTE de `PUBLIC` global revogado, devolvido em
+  `extensions`). Paridade conferida em 2026-10-31: ACL do `public` QA = prod (md5 idêntico,
+  `docs/migrations/20261031_108_acl_snapshot.md`); varredura `20261031_108_residual_scan.sql` = 0 nos dois.
 - **Host de prod hardcoded** no hook de acesso: sem a troca, toda request no QA grava `access_log` em prod.
 - Triggers em `auth.users` não saem no dump por schema — o `03` recria.
 

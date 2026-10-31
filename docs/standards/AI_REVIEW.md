@@ -314,6 +314,13 @@ sobre um diff não-confiável). Absorvemos as estratégias:
 - **Finding de coluna/schema → verificar no banco ANTES de virar trabalho.** R-295 vale contra o
   revisor também — o critical falso do #757 ("coluna não existe") caiu com 1 query no
   `information_schema`.
+- **Migração SQL: revisar GRANT, não REVOKE (spec 108 · ADR-119).** Desde 2026-10-31 objeto novo no
+  `public` nasce fechado. O que RC5/RC6 (e o humano — `.sql` fica fora dos globs do RC6, cobertura
+  `partial`) procuram: **GRANT ausente** (tabela/view/função nova ou recriada por DROP+CREATE sem
+  grant ⇒ 42501 no app), **GRANT amplo demais** (`ALL`/TRUNCATE a `authenticated`, papel que não chama
+  a RPC) e **grant a `anon` fora da allowlist** (`app_version_gate`, `consent_policy`,
+  `capture_access`). "Falta `REVOKE … FROM anon`" deixou de ser achado. O `lint:migration-grants`
+  cobre a forma; a revisão cobre o mínimo.
 - **Conferir `base=` no stderr.** O script usa `origin/main` (fetch automático), mas offline cai
   pro main local — desatualizado, revisa o diff errado em silêncio (caso #756).
 - **Finding `introduced:true` critical/high** → corrigir ou justificar ANTES de pedir aprovação.

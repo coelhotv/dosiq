@@ -103,7 +103,7 @@ Factory em `@dosiq/core/repositories/` (DI de `client`/`getUserId`/selects); val
 ### Plataforma (ponteiros obrigatórios)
 - **Mobile/lazy**: views lazy + `ViewSkeleton` (R-117); perf: `docs/standards/MOBILE_PERFORMANCE.md`.
 - **Telegram bot**: callback <64 bytes, `escapeMarkdownV2` (escapar `\` primeiro).
-- **Migrações Supabase**: template de grants + SECURITY DEFINER **obrigatório** — `docs/standards/SUPABASE_MIGRATIONS.md` (default ACL de prod dá ALL a anon/authenticated em tabela nova ⇒ REVOKE explícito).
+- **Migrações Supabase**: template de grants + SECURITY DEFINER **obrigatório** — `docs/standards/SUPABASE_MIGRATIONS.md` (desde a 108, objeto novo no `public` nasce **fechado** ⇒ GRANT explícito por papel; `capture_access` e `app_version_gate` precisam de `anon`; `lint:migration-grants` barra a falta).
 - **Banco de QA (CON-044)**: dev/teste usa `dosiq-qa` (`ikcvwxyohmntncanclze`) — teste de migração, seed e smoke web; prod (`kwqjtdsqkkbebfiaxubb`) via MCP em dev = só leitura; migração vai ao QA antes de prod. Detalhe: `docs/architecture/QA_ENVIRONMENT.md`.
 - **Vercel api/** (R-090): máx 12 funções (utilitários em `api/_prefixo/`); NUNCA `process.exit()`; SEMPRE `res.status(code).json(body)` (lint barra); env fallback `process.env.X || process.env.VITE_X`. Ver `api/CLAUDE.md`.
 

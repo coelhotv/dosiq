@@ -315,48 +315,6 @@ export type Database = {
           },
         ]
       }
-      dose_adherence_monthly: {
-        Row: {
-          expected: number
-          missed: number
-          month: string
-          protocol_id: string
-          taken: number
-          user_id: string
-        }
-        Insert: {
-          expected: number
-          missed: number
-          month: string
-          protocol_id: string
-          taken: number
-          user_id: string
-        }
-        Update: {
-          expected?: number
-          missed?: number
-          month?: string
-          protocol_id?: string
-          taken?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dose_adherence_monthly_protocol_id_fkey"
-            columns: ["protocol_id"]
-            isOneToOne: false
-            referencedRelation: "protocols"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dose_adherence_monthly_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dose_critical_events: {
         Row: {
           actor: string
@@ -605,90 +563,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "feedbacks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gemini_reviews: {
-        Row: {
-          category: string | null
-          commit_sha: string
-          created_at: string | null
-          description: string | null
-          file_path: string
-          github_issue_number: number | null
-          id: string
-          issue_hash: string
-          line_end: number | null
-          line_start: number | null
-          pr_number: number
-          priority: string | null
-          resolution_type: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          status: string | null
-          suggestion: string | null
-          title: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          category?: string | null
-          commit_sha: string
-          created_at?: string | null
-          description?: string | null
-          file_path: string
-          github_issue_number?: number | null
-          id?: string
-          issue_hash: string
-          line_end?: number | null
-          line_start?: number | null
-          pr_number: number
-          priority?: string | null
-          resolution_type?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string | null
-          suggestion?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          category?: string | null
-          commit_sha?: string
-          created_at?: string | null
-          description?: string | null
-          file_path?: string
-          github_issue_number?: number | null
-          id?: string
-          issue_hash?: string
-          line_end?: number | null
-          line_start?: number | null
-          pr_number?: number
-          priority?: string | null
-          resolution_type?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string | null
-          suggestion?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gemini_reviews_resolved_by_fkey"
-            columns: ["resolved_by"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gemini_reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_emails"
@@ -1331,98 +1205,6 @@ export type Database = {
           },
         ]
       }
-      push_notification_logs: {
-        Row: {
-          body: string
-          delivered: boolean | null
-          error_message: string | null
-          id: string
-          notification_type: string
-          sent_at: string | null
-          subscription_id: string | null
-          title: string
-          user_id: string | null
-        }
-        Insert: {
-          body: string
-          delivered?: boolean | null
-          error_message?: string | null
-          id?: string
-          notification_type: string
-          sent_at?: string | null
-          subscription_id?: string | null
-          title: string
-          user_id?: string | null
-        }
-        Update: {
-          body?: string
-          delivered?: boolean | null
-          error_message?: string | null
-          id?: string
-          notification_type?: string
-          sent_at?: string | null
-          subscription_id?: string | null
-          title?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "push_notification_logs_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "push_subscriptions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "push_notification_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      push_subscriptions: {
-        Row: {
-          created_at: string | null
-          device_info: Json | null
-          endpoint: string
-          id: string
-          keys_auth: string
-          keys_p256dh: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          device_info?: Json | null
-          endpoint: string
-          id?: string
-          keys_auth: string
-          keys_p256dh: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          device_info?: Json | null
-          endpoint?: string
-          id?: string
-          keys_auth?: string
-          keys_p256dh?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       stock: {
         Row: {
           created_at: string | null
@@ -2013,14 +1795,6 @@ export type Database = {
           p_reason: string
         }
         Returns: Json
-      }
-      batch_update_review_status: {
-        Args: {
-          new_status: string
-          resolution_type?: string
-          review_ids: string[]
-        }
-        Returns: number
       }
       brevo_deleted_since: {
         Args: { p_since: string }

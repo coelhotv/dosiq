@@ -61,8 +61,9 @@ notify pgrst, 'reload config';
 notify pgrst, 'reload schema';
 EOF
 
-# Default ACL do Supabase dá ALL a anon/authenticated/service_role em todo objeto criado; o pg_dump
-# só emite ACL relativa ao acldefault. Sem este passo o QA fica MAIS aberto que prod e esconde 42501.
+# O pg_dump só emite ACL relativa ao acldefault; o projeto novo dá ALL a anon/authenticated em todo objeto
+# criado. Sem este passo o QA fica MAIS aberto que prod e esconde 42501. No fim, reaplica os padrões de
+# privilégio da spec 108 (ADR-119: objeto novo no public nasce fechado) — paridade QA × prod (CON-044 §4).
 {
   cat <<'EOF'
 -- dosiq-qa 04: alinha ACLs com prod (acldefault → reaplica GRANT/REVOKE do dump).
@@ -83,6 +84,14 @@ do $$ declare r record; begin
 end $$;
 EOF
   grep -E '^(GRANT|REVOKE) .* ON (TABLE|SEQUENCE|FUNCTION|PROCEDURE) ' "$OUT/02-schema.sql"
+  cat <<'EOF'
+-- spec 108 (ADR-119): padrões de privilégio iguais aos de prod
+alter default privileges for role postgres in schema public revoke all on tables    from anon, authenticated;
+alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated;
+alter default privileges for role postgres in schema public revoke all on functions from anon, authenticated;
+alter default privileges for role postgres revoke execute on functions from public;
+alter default privileges for role postgres in schema extensions grant execute on functions to public;
+EOF
   echo 'commit;'
 } > "$OUT/04-acl-sync.sql"
 
