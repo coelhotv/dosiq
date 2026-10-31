@@ -462,7 +462,7 @@ describe('classifySurfaceTransition — transição real em cada boundary (spec 
 
   it('tol 30: missed em T+30 e o cap (T+120) não gera transição', () => {
     const out = walk(item({ scheduledFor: iso(0), toleranceMinutes: 30 }))
-    expect(out.filter(([, t]) => t).map(([m, t]) => [m, t.to])).toEqual([
+    expect(out.filter(([, t]) => t).map(([m, t]) => [m, (t as { to: string }).to])).toEqual([
       [-240, 'later'], [-60, 'upcoming'], [-10, 'now'], [10, 'late'], [30, 'missed'],
     ])
     expect(out.find(([m]) => m === 120)[1]).toBeNull()

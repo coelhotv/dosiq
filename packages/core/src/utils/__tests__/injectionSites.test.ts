@@ -71,6 +71,7 @@ describe('isInjectable — detecção por presentation (PO-1)', () => {
     expect(isInjectable(undefined)).toBe(false)
   })
   it('NÃO confunde com type (type não tem injetavel)', () => {
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(isInjectable({ type: 'injetavel' })).toBe(false)
   })
 })

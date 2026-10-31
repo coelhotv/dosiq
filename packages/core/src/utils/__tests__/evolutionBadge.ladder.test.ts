@@ -64,6 +64,6 @@ describe('getEvolutionBadge — escada completa vs recorte por protocol_id', () 
   it('sem escada / sem vigente → Estável (default do §2)', () => {
     expect(getEvolutionBadge([]).key).toBe('estavel')
     expect(getEvolutionBadge(null).key).toBe('estavel')
-    expect(getEvolutionBadge([{ id: 'x', position: 0, status: 'upcoming', duration_days: 7 }]).key).toBe('estavel')
+    expect(getEvolutionBadge([{ position: 0, status: 'upcoming', duration_days: 7 }]).key).toBe('estavel')
   })
 })

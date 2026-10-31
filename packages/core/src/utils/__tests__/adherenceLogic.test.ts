@@ -64,8 +64,8 @@ describe('adherenceLogic - evaluateDoseTimelineState', () => {
     expect(result[4].scheduledTime).toBe('15:00')
 
     // Verificar status
-    const statusMap = result.reduce((acc, curr) => {
-      acc[curr.id] = curr.timelineStatus
+    const statusMap = result.reduce<Record<string, unknown>>((acc, curr) => {
+      acc[String(curr.id)] = curr.timelineStatus
       return acc
     }, {})
 
@@ -93,8 +93,8 @@ describe('adherenceLogic - evaluateDoseTimelineState', () => {
     }
 
     const result = evaluateDoseTimelineState(date, dosesObj, now)
-    const statusMap = result.reduce((acc, curr) => {
-      acc[curr.id] = curr.timelineStatus
+    const statusMap = result.reduce<Record<string, unknown>>((acc, curr) => {
+      acc[String(curr.id)] = curr.timelineStatus
       return acc
     }, {})
 

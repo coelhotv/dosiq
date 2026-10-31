@@ -14,7 +14,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00', '20:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -35,7 +35,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -49,7 +49,7 @@ describe('calculateDosesByDate', () => {
           medicine_id: 'med-1',
           taken_at: localTimeString, // 08:30 local - dentro da janela de 08:00
           quantity_taken: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
           protocol: { name: 'Protocolo Manhã' },
         },
       ]
@@ -70,7 +70,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00', '20:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -81,7 +81,7 @@ describe('calculateDosesByDate', () => {
           medicine_id: 'med-1',
           taken_at: '2026-02-11T14:00:00Z', // 11:00 local - fora da janela de 08:00
           quantity_taken: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
           protocol: { name: 'Protocolo Manhã' },
         },
       ]
@@ -102,7 +102,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00', '20:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -146,7 +146,7 @@ describe('calculateDosesByDate', () => {
           days: ['quarta', 'sexta'],
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Vitamina D', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -167,7 +167,7 @@ describe('calculateDosesByDate', () => {
           days: ['segunda', 'terça'], // Não inclui quarta
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Vitamina D', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -189,7 +189,7 @@ describe('calculateDosesByDate', () => {
           start_date: '2026-02-11', // Dia 0
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Omeprazol', type: 'cápsula' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -208,7 +208,7 @@ describe('calculateDosesByDate', () => {
           start_date: '2026-02-10', // Dia anterior (diferença = 1, ímpar)
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Omeprazol', type: 'cápsula' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -229,7 +229,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -264,7 +264,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: [], // Vazio
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -284,7 +284,7 @@ describe('calculateDosesByDate', () => {
           start_date: '2026-02-15', // Data futura
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -304,7 +304,7 @@ describe('calculateDosesByDate', () => {
           end_date: '2026-02-01', // Data passada
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -323,7 +323,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'quando_necessário',
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Dipirona', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -343,7 +343,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'personalizado',
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Medicamento', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -365,7 +365,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
         {
           id: 'proto-2',
@@ -374,7 +374,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['14:00', '20:00'],
           dosage_per_intake: 1,
-          medicine: { name: 'Ibuprofeno', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -397,7 +397,7 @@ describe('calculateDosesByDate', () => {
           frequency: 'diário',
           time_schedule: ['08:00'],
           dosage_per_intake: 2,
-          medicine: { name: 'Paracetamol', type: 'comprimido' },
+          medicine: { dosage_unit: 'mg' },
         },
       ]
 
@@ -414,7 +414,7 @@ describe('calculateDosesByDate', () => {
       expect(missed.quantity_taken).toBe(0)
       expect(missed.status).toBe('missed')
       expect(missed.isSynthetic).toBe(true)
-      expect(missed.medicine).toEqual({ name: 'Paracetamol', type: 'comprimido' })
+      expect(missed.medicine).toEqual({ dosage_unit: 'mg' })
     })
   })
 })

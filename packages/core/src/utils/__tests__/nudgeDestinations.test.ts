@@ -4,10 +4,10 @@ import {
   resolveNudgeDestination,
   buildNudgeNavigatePayload,
 } from '../nudgeDestinations'
-import { buildNudgeList } from '../nudgeScheduler'
+import { buildNudgeList, type Nudge } from '../nudgeScheduler'
 import { validateNudgeCreate, validateNudgeUpdate } from '../../schemas/nudgeSchema'
 
-const navNudge = (id, action_payload) => ({
+const navNudge = (id: string, action_payload: Nudge['action_payload']): Nudge => ({
   id,
   version: 1,
   platform: 'all',
@@ -84,7 +84,7 @@ describe('buildNudgeList — filtro de destino', () => {
     const list = buildNudgeList([
       navNudge('ok', { tab: 'Perfil', screen: 'Measures' }),
       navNudge('ruim', { tab: 'Estoque', screen: 'PurchaseForm' }),
-      { id: 'info', version: 1, platform: 'all', action_type: 'dismiss_only' },
+      { id: 'info', version: 1, platform: 'all', action_type: 'dismiss_only' } satisfies Nudge,
     ], [], { platform: 'ios' })
     expect(list.map((n) => n.id)).toEqual(['ok', 'info'])
   })
