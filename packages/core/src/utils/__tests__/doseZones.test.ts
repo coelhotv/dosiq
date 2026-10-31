@@ -234,6 +234,7 @@ describe('buildDoseItemsFromInstances (core)', () => {
     expect(
       buildDoseItemsFromInstances(
         [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(0), status: 'pending' }],
+        // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
         { not: 'array' }
       )
     ).toEqual([])

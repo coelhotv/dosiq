@@ -7,6 +7,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### `packages/core` volta a compilar sem erros de tipo, e o gate passa a cobrir o pacote inteiro
+
+- **Shared/Core** (`Fixed`, `no-user-impact`, sem bump — só testes e script de gate; nenhum código de runtime muda). `tsc -p packages/core` acumulava 53 erros, todos em fixtures de `utils/__tests__` que ficaram para trás quando os tipos de runtime apertaram (union de `platform` dos nudges, escada de titulação N2, `AdherenceProtocol`). Fixtures tipadas; testes de entrada inválida marcados com `@ts-expect-error`.
+  - `scripts/strict-island.sh` passa a compilar `packages/core/tsconfig.json` inteiro com teto 0 — antes só os domínios nível A eram vistos, e `utils/` ficava fora.
+
 ### Cada tratamento diz qual medida acompanhar: peso, glicemia ou pressão (spec 100, Slice B)
 
 - **Mobile** (`Added`, sem bump de `APP_VERSION` — fica **0.34.0**; canal: **OTA** `[0.34.0+ota.1]`, R-314 — decisão do PO 2026-10-30: estende propósito já revisado na 0.34.0 (registro de peso/glicemia/pressão e pedido de peso pós-dose); 100% JS, sem dependência nativa). Até aqui o app só pedia peso, e só a tratamento semanal.

@@ -32,7 +32,7 @@ describe('attachFullLadders', () => {
   })
 
   it('não mistura escadas de titulações diferentes', () => {
-    const protocols = [{ id: 'prot-1' }, { id: 'prot-2' }]
+    const protocols: { id: string; titration_steps?: unknown[] }[] = [{ id: 'prot-1' }, { id: 'prot-2' }]
     const steps = [
       { id: 'a1', titration_id: 't1', protocol_id: 'prot-1', position: 0 },
       { id: 'a2', titration_id: 't1', protocol_id: null, position: 1 },
@@ -78,7 +78,7 @@ describe('attachFullLadders', () => {
   })
 
   it('ignora etapa sem titration_id em vez de agrupar sob undefined', () => {
-    const protocols = [{ id: 'prot-1' }]
+    const protocols: { id: string; titration_steps?: unknown[] }[] = [{ id: 'prot-1' }]
     const steps = [
       { id: 'lixo', titration_id: undefined as unknown as string, protocol_id: 'prot-1' },
       { id: 'ok', titration_id: 't1', protocol_id: 'prot-1', position: 0 },

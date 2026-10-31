@@ -86,12 +86,14 @@ describe('buildTimeline — robustez', () => {
   it('retorna [] para entrada não-array', () => {
     expect(buildTimeline(null)).toEqual([])
     expect(buildTimeline(undefined)).toEqual([])
+    // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
     expect(buildTimeline({})).toEqual([])
   })
 
   it('descarta eventos sem occurred_at ou com instante inválido', () => {
     const out = buildTimeline([
       ev('ok', '2026-05-20T10:00:00Z'),
+      // @ts-expect-error entrada inválida proposital — testa a robustez em runtime
       { id: 'no-ts', type: 'dose', payload: {} },
       ev('bad', 'lixo'),
       null,

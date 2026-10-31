@@ -28,6 +28,7 @@ MAX_A_TESTS_WEB=0         # testes hooks web (já zerado — trava)
 MAX_A_TESTS_MOBILE=0      # testes hooks mobile (zerado no lote 6.4 — useMedicineDatabase/useMutation tipados)
 MAX_TESTS_PROG_API=0      # programa api/ (testes)
 MAX_TESTS_PROG_SERVER=0   # programa server/ (testes; zerado no lote 6.2)
+MAX_TESTS_PROG_CORE=0     # programa packages/core inteiro (testes de utils/ etc. fora do A_SRC — 53 erros acumularam invisíveis até o fix de 2026-10-31)
 MAX_TESTS_PROG_MOBILE=0   # programa mobile (testes; zerado no lote 6.4 — criticalAuditQueue tipado + 8 mocks/globals corrigidos)
 
 A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications|apps/web/src/shared/hooks|apps/mobile/src/shared/hooks)/'
@@ -86,7 +87,7 @@ if [ -n "$EXTLESS" ]; then
 fi
 echo "✅ server/api sem import relativo extensionless"
 
-for P in api/tsconfig.json server/tsconfig.json apps/mobile/tsconfig.json; do
+for P in packages/core/tsconfig.json api/tsconfig.json server/tsconfig.json apps/mobile/tsconfig.json; do
   [ -f "$P" ] || continue
   P_OUT=$(npx tsc -p "$P" --noEmit 2>&1 | grep -E ': error TS' || true)
   P_SRC=$(printf '%s\n' "$P_OUT" | grep -vE "$TESTS" || true)
@@ -97,6 +98,7 @@ for P in api/tsconfig.json server/tsconfig.json apps/mobile/tsconfig.json; do
     exit 1
   fi
   case "$P" in
+    packages/core/*) check_ceiling "testes programa core" "$P_TEST_COUNT" "$MAX_TESTS_PROG_CORE" ;;
     api/*)    check_ceiling "testes programa api"    "$P_TEST_COUNT" "$MAX_TESTS_PROG_API" ;;
     server/*) check_ceiling "testes programa server" "$P_TEST_COUNT" "$MAX_TESTS_PROG_SERVER" ;;
     *)        check_ceiling "testes programa mobile" "$P_TEST_COUNT" "$MAX_TESTS_PROG_MOBILE" ;;
