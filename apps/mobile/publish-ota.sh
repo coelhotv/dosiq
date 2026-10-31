@@ -89,6 +89,27 @@ for key in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
   fi
 done
 
+# ── Gate 0b: banco certo para o canal ─────────────────────────────────────────────────
+# O build `preview` aponta para o QA (variáveis do ambiente EAS `preview`), mas o `.env` desta pasta
+# é de prod. Sem `--environment`, o `eas update` embutia a URL do `.env` e um build de QA passava a
+# ler e gravar no banco de PROD com a sessão de uma conta de teste (spec 100 §9, 2026-10-31).
+# Com `--environment preview` o EAS injeta as variáveis do servidor no processo, e elas vencem o
+# `.env` (o carregador do Expo não sobrescreve o que já está no ambiente). Conferido aqui, antes de
+# empacotar: fora de production, URL de prod = recusa.
+PROD_SUPABASE_REF="kwqjtdsqkkbebfiaxubb"
+if [ "$CHANNEL" != "production" ]; then
+  EAS_ENV_URL="$(eas env:list --environment "$CHANNEL" --format short 2>/dev/null | grep -E '^EXPO_PUBLIC_SUPABASE_URL=' | head -1)"
+  if [ -z "$EAS_ENV_URL" ]; then
+    echo "❌ EXPO_PUBLIC_SUPABASE_URL ausente no ambiente EAS '$CHANNEL' (eas env:list)."
+    echo "   O bundle cairia no .env local (prod). Configure a variável no EAS antes de publicar."
+    exit 1
+  fi
+  if printf '%s' "$EAS_ENV_URL" | grep -q "$PROD_SUPABASE_REF"; then
+    echo "❌ O ambiente EAS '$CHANNEL' aponta para o Supabase de PROD — recusando publicar."
+    exit 1
+  fi
+fi
+
 # ── Gate 1: árvore limpa ────────────────────────────────────────────────────────
 # O bundle publicado é fotografia da working tree AGORA. Working tree suja = código no ar que
 # não corresponde a nenhum commit — irreproduzível e irrastreável.
@@ -204,6 +225,11 @@ ARGS=(update
   --message "$FULL_MESSAGE"
   --clear-cache
 )
+
+# Gate 0b: fora de production, as variáveis vêm do ambiente EAS do canal (QA), não do `.env` (prod).
+if [ "$CHANNEL" != "production" ]; then
+  ARGS+=(--environment "$CHANNEL")
+fi
 
 if [ -n "$ROLLOUT" ]; then
   ARGS+=(--rollout-percentage "$ROLLOUT")
