@@ -26,9 +26,10 @@ MESSAGE="${2:-}"
 ROLLOUT="${3:-}"
 
 usage() {
-  echo "Uso: bash publish-ota.sh <preview|production> \"<mensagem>\" [rollout-%]"
+  echo "Uso: bash publish-ota.sh <preview|device|production> \"<mensagem>\" [rollout-%]"
   echo ""
   echo "  preview     canal de staging — alvo do smoke, incl. teste destrutivo"
+  echo "  device      build ad hoc em aparelho físico (perfil device do eas.json)"
   echo "  production  usuários reais — exige confirmação explícita"
   echo ""
   echo "Exemplos:"
@@ -38,7 +39,7 @@ usage() {
 }
 
 case "$CHANNEL" in
-  preview|production) ;;
+  preview|device|production) ;;
   *) usage ;;
 esac
 
@@ -97,15 +98,28 @@ done
 # `.env` (o carregador do Expo não sobrescreve o que já está no ambiente). Conferido aqui, antes de
 # empacotar: fora de production, URL de prod = recusa.
 PROD_SUPABASE_REF="kwqjtdsqkkbebfiaxubb"
+# Ambiente EAS de cada canal: o perfil `device` (distribuição internal, sem `environment` no eas.json)
+# é construído com o ambiente `preview` — o update tem que levar as mesmas variáveis do binário.
+case "$CHANNEL" in
+  device) EAS_ENV="preview" ;;
+  *) EAS_ENV="$CHANNEL" ;;
+esac
+# O app.config resolve variante (`extra.appEnv`) por EAS_BUILD_PROFILE, que os scripts de build
+# exportam e o `eas update` não: sem isto, o update de preview/device sairia com a config da
+# variante production. O `device` também liga as dev tools no binário (eas.json) — o update repete.
 if [ "$CHANNEL" != "production" ]; then
-  EAS_ENV_URL="$(eas env:list --environment "$CHANNEL" --format short 2>/dev/null | grep -E '^EXPO_PUBLIC_SUPABASE_URL=' | head -1)"
+  export EAS_BUILD_PROFILE="$CHANNEL"
+  [ "$CHANNEL" = "device" ] && export EXPO_PUBLIC_DEV_TOOLS=1
+fi
+if [ "$CHANNEL" != "production" ]; then
+  EAS_ENV_URL="$(eas env:list --environment "$EAS_ENV" --format short 2>/dev/null | grep -E '^EXPO_PUBLIC_SUPABASE_URL=' | head -1)"
   if [ -z "$EAS_ENV_URL" ]; then
-    echo "❌ EXPO_PUBLIC_SUPABASE_URL ausente no ambiente EAS '$CHANNEL' (eas env:list)."
+    echo "❌ EXPO_PUBLIC_SUPABASE_URL ausente no ambiente EAS '$EAS_ENV' (eas env:list)."
     echo "   O bundle cairia no .env local (prod). Configure a variável no EAS antes de publicar."
     exit 1
   fi
   if printf '%s' "$EAS_ENV_URL" | grep -q "$PROD_SUPABASE_REF"; then
-    echo "❌ O ambiente EAS '$CHANNEL' aponta para o Supabase de PROD — recusando publicar."
+    echo "❌ O ambiente EAS '$EAS_ENV' aponta para o Supabase de PROD — recusando publicar."
     exit 1
   fi
 fi
@@ -228,7 +242,7 @@ ARGS=(update
 
 # Gate 0b: fora de production, as variáveis vêm do ambiente EAS do canal (QA), não do `.env` (prod).
 if [ "$CHANNEL" != "production" ]; then
-  ARGS+=(--environment "$CHANNEL")
+  ARGS+=(--environment "$EAS_ENV")
 fi
 
 if [ -n "$ROLLOUT" ]; then
