@@ -36,12 +36,12 @@ import {
 const AsyncStorage = AsyncStorageImport as unknown as { getItem: jest.Mock; setItem: jest.Mock }
 const policy = MEASURE_PROMPT_POLICIES.peso
 
-const INJ = { protocol: { frequency: 'diário', medicine: { presentation: 'injetavel' } } }
-const MONTHLY_INJ = { protocol: { frequency: 'intervalo_dias', medicine: { presentation: 'injetavel' } } }
-const WEEKLY = { protocol: { frequency: 'semanal', medicine: { presentation: 'comprimido' } } }
+const INJ = { protocol: { frequency: 'diário', tracked_measure: null, medicine: { presentation: 'injetavel' } } }
+const MONTHLY_INJ = { protocol: { frequency: 'intervalo_dias', tracked_measure: null, medicine: { presentation: 'injetavel' } } }
+const WEEKLY = { protocol: { frequency: 'semanal', tracked_measure: null, medicine: { presentation: 'comprimido' } } }
 // Elegível = semanal (R-11 emendada 2026-10-05); o injetável semanal é o caso GLP-1 típico.
-const WEEKLY_INJ = { protocol: { frequency: 'semanal', medicine: { presentation: 'injetavel' } } }
-const DAILY = { protocol: { frequency: 'diário', medicine: { presentation: 'comprimido' } } }
+const WEEKLY_INJ = { protocol: { frequency: 'semanal', tracked_measure: null, medicine: { presentation: 'injetavel' } } }
+const DAILY = { protocol: { frequency: 'diário', tracked_measure: null, medicine: { presentation: 'comprimido' } } }
 
 // Quinta 01/10/2026 14:30 local
 const NOW = new Date(2026, 9, 1, 14, 30)

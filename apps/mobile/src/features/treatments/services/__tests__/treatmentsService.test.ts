@@ -40,6 +40,13 @@ describe('getActiveTreatments — select', () => {
     expect(select).toMatch(/medicine:medicine_id\([^)]*\bpresentation\b/)
   })
 
+  it('100 B · PO-10: traz tracked_measure (bulk por plano/lembrete) — sem ela o pedido falha fechado', async () => {
+    await getActiveTreatments('11111111-1111-4111-8111-111111111111')
+    const select = String(mockSelect.mock.calls[0][0]).replace(/\s+/g, '')
+    // no nível do protocolo (fora do embed de medicine)
+    expect(select.split('medicine:medicine_id')[0]).toMatch(/(^|,)tracked_measure(,|$)/)
+  })
+
   it('094 PO-2: tratamento arquivado (excluído) fica fora da lista viva', async () => {
     await getAllTreatments('11111111-1111-4111-8111-111111111111')
     expect(mockIs).toHaveBeenCalledWith('archived_at', null)

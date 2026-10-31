@@ -33,7 +33,9 @@ export async function getActiveProtocols(userId, dateStr) {
     // `select()` é string e nada no pipeline confronta a string com o schema: nem tsc (não
     // é tipada), nem os testes (o client é mockado). Mantê-la = `42703` pós-DROP, que é
     // exatamente como web+mobile+cron caíram no #750 (AP-300 / R-295).
-    .select('id, name, medicine_id, active, frequency, interval_days, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
+    // 100 B (RC3 E-1): `tracked_measure` alimenta o pedido pós-dose (single, hero, deeplink). Sem ela
+    // `effectiveMeasure` devolve `missing` e o pedido falha fechado. R-295: 200 em QA e prod 2026-10-30.
+    .select('id, name, medicine_id, active, frequency, interval_days, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, weekdays, critical_alarm, tracked_measure, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)

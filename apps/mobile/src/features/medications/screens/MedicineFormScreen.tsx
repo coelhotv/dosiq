@@ -269,6 +269,8 @@ export default function MedicineFormScreen() {
         name: item.name ?? form.values.name,
         active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
         therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
+        // 100 B (C-B3): busca sem caixa não traz código; zera o de uma caixa escolhida antes (merge).
+        therapeutic_class_code: null,
         // Base ANVISA traz a categoria sem acento/normalização ('Biologico'); o Picker
         // (esp. iOS, match estrito) só casa o valor canônico acentuado ('Biológico').
         // normalizeRegulatoryCategory mapeia p/ o enum canônico — mesma correção da web.

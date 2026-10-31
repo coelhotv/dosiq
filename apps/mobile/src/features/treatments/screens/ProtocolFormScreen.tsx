@@ -88,6 +88,7 @@ export default function ProtocolFormScreen() {
     editId,
     existing,
     form,
+    medicine,
     planField,
     mutation,
     show,

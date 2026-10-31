@@ -26,6 +26,7 @@ import {
   BIOMARKER_PA_CONTEXT_LABELS,
 } from '@dosiq/core'
 import MeasureValueFields from './MeasureValueFields'
+import MeasureContextChips from './MeasureContextChips'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
@@ -105,24 +106,7 @@ function MeasureTypeTabs({ showTabs, type, handleSelectType }) {
 
 function MeasureContextGrid({ showContext, ctxConfig, context, setContext }) {
   if (!showContext || !ctxConfig) return null
-  return (
-    <View style={styles.ctxGrid}>
-      {ctxConfig.values.map((c) => (
-        <Pressable
-          key={c}
-          onPress={() => { selectionTap(); setContext(context === c ? null : c) }}
-          style={[styles.ctxChip, context === c && styles.ctxChipActive]}
-          accessibilityRole="button"
-          accessibilityState={{ selected: context === c }}
-          accessibilityLabel={ctxConfig.labels[c]}
-        >
-          <Text style={[styles.ctxChipText, context === c && styles.ctxChipTextActive]}>
-            {ctxConfig.labels[c]}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  )
+  return <MeasureContextChips ctxConfig={ctxConfig} context={context} setContext={setContext} />
 }
 
 function MeasureDateTimePicker({ isEdit, measuredAt, handleOpenPicker }) {
@@ -432,14 +416,6 @@ const styles = StyleSheet.create({
   typeChipActive: { backgroundColor: colors.status.info },
   typeChipText: { fontSize: 15, fontWeight: '600', color: colors.text.secondary },
   typeChipTextActive: { color: colors.text.inverse },
-  ctxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], justifyContent: 'center', marginTop: spacing[3] },
-  ctxChip: {
-    paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: borderRadius.full,
-    backgroundColor: colors.neutral[100], minHeight: 44, justifyContent: 'center',
-  },
-  ctxChipActive: { backgroundColor: colors.status.infoLight, borderWidth: 1, borderColor: colors.status.info },
-  ctxChipText: { fontSize: 14, fontWeight: '500', color: colors.text.secondary },
-  ctxChipTextActive: { color: colors.status.info, fontWeight: '700' },
   timeHint: { fontSize: 13, color: colors.text.muted, textAlign: 'center', marginTop: spacing[4] },
   dateRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

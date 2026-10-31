@@ -75,6 +75,8 @@ function baseFromAnvisaItem(item, current) {
     name: item.name ?? current.name,
     active_ingredient: item.activeIngredient ?? current.active_ingredient,
     therapeutic_class: item.therapeuticClass ?? current.therapeutic_class,
+    // 100 B (C-B3): a base ANVISA não traz código; zera o de uma caixa lida antes.
+    therapeutic_class_code: null,
     // A base ANVISA traz a categoria crua ('Biologico', 'Gases Medicinais') e o enum é
     // acentuado — sem normalizar, o safeParse falha em `regulatory_category`, um campo
     // que NÃO existe nesta tela: o usuário via "Verifique os campos destacados" sem

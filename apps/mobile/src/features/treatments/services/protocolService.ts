@@ -63,6 +63,8 @@ export const CHANGE_GROUPS = {
   frequency: ['frequency', 'interval_days'],
   dates: ['start_date', 'end_date'],
   alarm: ['critical_alarm'],
+  // 100 B: "Acompanhar nas doses" (TRACKING_PLAN §5.3) — o valor vai em `tracked_measure` (não é clínico).
+  measure: ['tracked_measure'],
   plan: ['treatment_plan_id'],
   details: ['name', 'notes'],
 }
@@ -110,6 +112,8 @@ function writeProps(row) {
     // própria escrita devolve (`FULL_SELECT_AFTER_WRITE`), sem consulta extra. Fora do enum do banco
     // ou ausente ⇒ chave omitida pelo `compact` (INV-3), nunca `outro`.
     presentation: PRESENTATIONS.includes(row?.medicine?.presentation) ? row.medicine.presentation : null,
+    // 100 B (FR-012): medida que a LINHA gravada acompanha (`nenhum` incluso); NULL = não decidido ⇒ omitida.
+    tracked_measure: row?.tracked_measure,
   }
 }
 
@@ -127,7 +131,9 @@ export async function emitTitrationEdited({ treatmentId, medicineId = null, surf
 export const protocolService = {
   ...repo,
 
-  async create(protocol, { surface = null, entryPoint = null } = {}) {
+  // `measureSource` (FR-012): 'inferred' (salvou a pré-seleção da matriz) | 'chosen' (tocou no campo).
+  // Só existe no save — o banco guarda o valor, não a origem (C-B5).
+  async create(protocol, { surface = null, entryPoint = null, measureSource = null } = {}) {
     const row = await repo.create(protocol)
     await logEvent(
       EVENTS.TREATMENT_CREATED,
@@ -137,12 +143,13 @@ export const protocolService = {
         // No mobile a escada nasce DEPOIS do protocolo (createFullLadder) → false na criação.
         is_titration: Array.isArray(row?.titration_steps) && row.titration_steps.length > 0,
         ...writeProps(row),
+        measure_source: measureSource,
       })
     )
     return row
   },
 
-  async update(id, updates, { surface = null, previous = null } = {}) {
+  async update(id, updates, { surface = null, previous = null, measureSource = null } = {}) {
     const row = await repo.update(id, updates)
     const activeChanged = 'active' in updates && (previous == null || previous.active !== updates.active)
     if (activeChanged) {
@@ -159,6 +166,8 @@ export const protocolService = {
           ...baseProps(row, surface),
           change_kind: changeKind,
           ...writeProps(row),
+          // origem só quando a medida mudou nesta edição
+          measure_source: changeKind.includes('measure') ? measureSource : null,
         })
       )
     }

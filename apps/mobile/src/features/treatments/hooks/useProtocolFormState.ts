@@ -35,6 +35,9 @@ export function buildInitialValues({ todayIso, presetPlanId }) {
     // repositório e quebra todo cadastro de tratamento (R-295).
     treatment_plan_id: presetPlanId || null,
     critical_alarm: false,
+    // 100 B (FR-005): null = o campo segue a inferência (matriz da classe × frequência) até o
+    // usuário tocar; o valor só vai ao banco no save (useProtocolFormSubmit → resolveTrackedMeasure).
+    tracked_measure: null,
   }
 }
 
@@ -61,6 +64,8 @@ function buildPrefill(existing, todayIso) {
     // um tratamento não toca a escada; ela tem tela própria.
     treatment_plan_id: existing.treatment_plan_id ?? null,
     critical_alarm: existing.critical_alarm ?? false,
+    // Legado (NULL) abre seguindo a inferência; escolha gravada (inclusive 'nenhum') fica (INV-1).
+    tracked_measure: existing.tracked_measure ?? null,
   }
 }
 

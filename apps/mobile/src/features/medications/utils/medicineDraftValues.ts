@@ -11,6 +11,9 @@ export function valuesFromDraft(base, draft, current) {
     name: draft.name || base.name,
     active_ingredient: draft.active_ingredient ?? base.active_ingredient,
     therapeutic_class: draft.therapeutic_class ?? base.therapeutic_class,
+    // 100 B (FR-001): código EphMRA da caixa, já normalizado pelo rascunho do core (C-A3). Caixa sem
+    // código ⇒ null — nunca o código de uma escolha anterior (o setValues do form faz merge, C-B3).
+    therapeutic_class_code: draft.therapeutic_class_code ?? null,
     regulatory_category: draft.regulatory_category ?? base.regulatory_category,
     laboratory: draft.laboratory ?? '',
     anvisa_registration: draft.anvisa_registration,
@@ -51,6 +54,7 @@ export function baseFromScan(draft, current) {
     name: draft.name,
     active_ingredient: draft.active_ingredient,
     therapeutic_class: draft.therapeutic_class,
+    therapeutic_class_code: draft.therapeutic_class_code ?? null,
     regulatory_category: draft.regulatory_category,
     laboratory: draft.laboratory ?? '',
     anvisa_registration: draft.anvisa_registration,

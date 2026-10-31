@@ -87,6 +87,8 @@ export async function getAllTreatments(userId) {
     // desta listagem já vinha de `fetchAndAttachFullLadders` acima, e não dela — ver a nota do AP-311
     // logo acima, que diz literalmente que o sinal NÃO pode ser `protocols.titration_status`.
     // Vestígio em `select()` não é inofensivo: pós-DROP vira `42703` (AP-300).
+    // 100 B (RC3 E-1): `tracked_measure` alimenta o pedido do bulk por plano/lembrete
+    // (usePlanProtocols → getActiveTreatments). R-295: 200 em QA e prod 2026-10-30.
     const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
       .select(`
@@ -101,6 +103,7 @@ export async function getAllTreatments(userId) {
         start_date,
         end_date,
         weekdays,
+        tracked_measure,
         titration_steps(status, duration_days),
         treatment_plan:treatment_plan_id (
           id,
