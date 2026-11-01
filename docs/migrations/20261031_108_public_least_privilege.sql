@@ -52,6 +52,24 @@ SELECT a.attname,
 UNION ALL
 SELECT '<tabela>', has_table_privilege('authenticated', 'public.dose_instances', 'UPDATE');
 
+-- Revisão independente (2026-11-01): EXECUTE de authenticated/service_role ANTES — a revogação de
+-- PUBLIC não pode tirar acesso de quem tem grant explícito (matriz §3). Comparado no passo 7.
+CREATE TEMP TABLE _108_fn_exec_before ON COMMIT DROP AS
+SELECT p.oid, r.rolname, has_function_privilege(r.rolname, p.oid, 'EXECUTE') AS can_exec
+  FROM pg_proc p CROSS JOIN (VALUES ('authenticated'), ('service_role')) r(rolname)
+ WHERE p.pronamespace = 'public'::regnamespace;
+
+-- authenticated perde stock_adjustments/stock_consumptions: quem as escreve por RPC tem de ser DEFINER.
+DO $$
+DECLARE v_list text;
+BEGIN
+  SELECT string_agg(p.oid::regprocedure::text, ', ') INTO v_list FROM pg_proc p
+   WHERE p.pronamespace = 'public'::regnamespace AND NOT p.prosecdef
+     AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
+     AND p.prosrc ~ '(stock_adjustments|stock_consumptions)';
+  IF v_list IS NOT NULL THEN RAISE EXCEPTION 'matriz §2: RPC INVOKER escreve em tabela revogada: %', v_list; END IF;
+END $$;
+
 -- ─── 1. DROPs (FR-007, FR-009) ──────────────────────────────────────────────────────────────
 DROP FUNCTION public.batch_update_review_status(uuid[], text, text);
 -- Sem CASCADE de propósito: dependência não mapeada aborta em vez de levar objeto junto.
@@ -215,6 +233,12 @@ BEGIN
            THEN has_table_privilege('authenticated', 'public.dose_instances', 'UPDATE')
            ELSE has_column_privilege('authenticated', 'public.dose_instances', b.attname, 'UPDATE') END;
   IF v_list IS NOT NULL THEN RAISE EXCEPTION 'INV-6: UPDATE de dose_instances mudou em: %', v_list; END IF;
+
+  -- Matriz §3: nenhum EXECUTE de authenticated/service_role perdido (funções que sobreviveram).
+  SELECT string_agg(b.oid::regprocedure::text || '/' || b.rolname, ', ') INTO v_list FROM _108_fn_exec_before b
+   WHERE b.can_exec AND EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = b.oid)
+     AND NOT has_function_privilege(b.rolname, b.oid, 'EXECUTE');
+  IF v_list IS NOT NULL THEN RAISE EXCEPTION 'matriz §3: EXECUTE perdido: %', v_list; END IF;
 
   -- SC-001: padrões do postgres no public sem anon/authenticated.
   SELECT count(*) INTO v_n FROM pg_default_acl d, aclexplode(d.defaclacl) a

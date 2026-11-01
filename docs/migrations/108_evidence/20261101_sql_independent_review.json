@@ -1,0 +1,47 @@
+```json
+{
+  "summary": "A migração está bem desenhada no essencial. A ordem dos passos está certa. Os REVOKE de tabela apagam os grants de coluna, e por isso eles são reemitidos no passo 5. O ALTER DEFAULT PRIVILEGES global trata corretamente o EXECUTE a PUBLIC, que é padrão embutido. A semântica de coalesce(proacl, acldefault) está correta e o UPDATE de dose_instances fica preservado: o REVOKE de REFERENCES não afeta o UPDATE de coluna. Os pós-checks de anon, sequências, TRUNCATE/REF/TRIGGER/MAINTAIN e INV-6 disparam de verdade. Não achei privilégio da matriz revogado por engano nem DROP perigoso. A função de exclusão de conta não foi comparada linha a linha com o original de prod, porque o original não estava no material: está coerente com a matriz e o PO-5 do teste a cobre. Os achados são lacunas de verificação, ou seja, quebra possível que nenhum check pega, e não erro de SQL comprovado.",
+  "findings": [
+    {
+      "file": "docs/migrations/20261031_108_public_least_privilege.sql",
+      "line": 132,
+      "severity": "medium",
+      "issue": "Esta linha tira o EXECUTE de PUBLIC em toda função do public. O pós-check só confere capture_access() por privilégio e nunca a executa. Se capture_access, que é hook de pré-request e roda a cada requisição como anon/authenticated, for SECURITY INVOKER e chamar alguma função public.* (ex.: consent_subject_hash ou outro helper), a chamada passa a dar 42501. Resultado: app inteira fora do ar, com a migração e o teste verdes. Vale o mesmo para função public usada dentro de policy RLS de app_version_gate/consent_policy avaliada como anon.",
+      "evidence": "IF NOT has_function_privilege('anon', 'access_hook.capture_access()', 'EXECUTE')",
+      "fix": "No .test.sql, executar a função de verdade com SET LOCAL ROLE anon e depois authenticated: preencher request.headers/jwt.claims via set_config e rodar PERFORM access_hook.capture_access(). Ou provar antes, via pg_depend/prosrc, que ela é SECURITY DEFINER ou que não chama nada do public."
+    },
+    {
+      "file": "docs/migrations/20261031_108_public_least_privilege.sql",
+      "line": 143,
+      "severity": "medium",
+      "issue": "A garantia de que 'todo EXECUTE de authenticated é explícito' é só uma afirmação da matriz: nenhum pós-check a confere, ao contrário do INV-6, que tem snapshot. Também não há verificação para service_role, que a matriz §3 nem cobre (ex.: get_dlq_stats chamada por server/ com service_role). Se alguma função usada por authenticated ou service_role dependia só do PUBLIC, perde o acesso em silêncio.",
+      "evidence": "-- EXECUTE de authenticated: todos os grants atuais são explícitos e estão na matriz §3 — nada a revogar.",
+      "fix": "No passo 0, criar uma tabela temporária com has_function_privilege(r, oid, 'EXECUTE') para r IN (authenticated, service_role) em toda função do public. No passo 7, dar RAISE se algum true virar false, no mesmo padrão do _108_di_update_before."
+    },
+    {
+      "file": "docs/migrations/20261031_108_public_least_privilege.sql",
+      "line": 137,
+      "severity": "low",
+      "issue": "authenticated perde tudo em stock_adjustments e stock_consumptions. As RPCs que escrevem nelas (consume_stock_fifo, restore_stock_for_log, apply_manual_stock_adjustment, register/update/delete_dose_log_atomic) só funcionam se forem SECURITY DEFINER. A legenda da matriz presume isso, mas nem a migração nem o teste verificam. O teste não chama nenhuma dessas RPCs como authenticated.",
+      "evidence": "REVOKE ALL ON TABLE public.stock_adjustments, public.stock_consumptions,",
+      "fix": "No passo 0, adicionar: RAISE se alguma função com grant explícito a authenticated e com stock_adjustments/stock_consumptions no prosrc tiver prosecdef = false."
+    },
+    {
+      "file": "docs/migrations/20261031_108_public_least_privilege.sql",
+      "line": 220,
+      "severity": "low",
+      "issue": "O SC-001 e o passo 3 só cobrem os padrões FOR ROLE postgres. No Supabase também existem padrões de supabase_admin em public que concedem a anon/authenticated. Objeto criado no public por supabase_admin (ex.: extensão instalada pela plataforma) nasce aberto, e o pós-check não vê.",
+      "evidence": "WHERE d.defaclrole = 'postgres'::regrole AND d.defaclnamespace = 'public'::regnamespace",
+      "fix": "Pelo menos medir e reportar os pg_default_acl de defaclnamespace = public para qualquer defaclrole com grantee anon/authenticated. Se não der para alterar (supabase_admin não é acessível), registrar isso como risco aceito no PR."
+    },
+    {
+      "file": "docs/migrations/20261031_108_public_least_privilege.sql",
+      "line": 124,
+      "severity": "low",
+      "issue": "Esta revogação padrão é global e vale para todos os schemas do postgres (private, access_hook…), não só o public. Hoje não muda nenhum privilégio existente. Mas se uma migração futura fizer DROP+CREATE de access_hook.capture_access, a função nasce sem EXECUTE para anon/authenticated, a menos que haja GRANT explícito. Esse efeito fora do public não está na matriz.",
+      "evidence": "ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;",
+      "fix": "Documentar o efeito em docs/standards/SUPABASE_MIGRATIONS.md, no template de grants que diz que todo objeto novo nasce fechado em qualquer schema. Manter o bloco FR-014 como obrigatório."
+    }
+  ]
+}
+```
