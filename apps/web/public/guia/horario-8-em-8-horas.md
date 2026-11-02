@@ -13,10 +13,13 @@ Para tomar 3 doses diárias com intervalo exato de 8 horas e dormir uma noite in
 - **12 em 12 horas (2 doses/dia):** 08:00 · 20:00
 - **6 em 6 horas (4 doses/dia):** 06:00 · 12:00 · 18:00 · 00:00
 
+- Guia de 12 em 12 horas: https://dosiq.app/guia/horario-12-em-12-horas
+- Guia de 6 em 6 horas: https://dosiq.app/guia/horario-6-em-6-horas
+
 ## Por que o intervalo exato é fundamental?
 Medicamentos como antibióticos dependem de manter a concentração sanguínea acima da Concentração Inibitória Mínima (CIM) continuamente. Atrasos de 3 ou mais horas reduzem a eficácia e favorecem resistência bacteriana. Nunca tome dois comprimidos ao mesmo tempo para compensar atrasos.
 
-## Como o dosiq ajuda
+## Como fazer isso no dosiq
 O dosiq é um aplicativo gratuito de gestão de medicamentos:
 - **Presets de Posologia:** Configuração imediata de intervalos de 8h, 12h ou diários;
 - **Alertas Críticos no Silencioso:** Notificações audíveis mesmo com o celular no silencioso ou modo Foco;

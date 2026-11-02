@@ -184,22 +184,45 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                   <li>
                     <a href="/guia/validade-caneta-aberta">Validade da Caneta Aberta</a>
                   </li>
-                </ul>
-              </div>
-              <div className="lp-footer__col">
-                <p className="lp-footer__col-title">Horários & Tratamentos</p>
-                <ul className="lp-footer__list">
                   <li>
                     <a href="/insulina-e-glicemia">Insulina e Diário de Glicemia</a>
                   </li>
+                </ul>
+              </div>
+              <div className="lp-footer__col">
+                <p className="lp-footer__col-title">Horários & Intervalos</p>
+                <ul className="lp-footer__list">
                   <li>
                     <a href="/guia/horario-8-em-8-horas">Remédio de 8 em 8 Horas</a>
                   </li>
                   <li>
-                    <a href="/injecao-mensal">Injeção Mensal (30 dias)</a>
+                    <a href="/guia/horario-12-em-12-horas">Remédio de 12 em 12 Horas</a>
+                  </li>
+                  <li>
+                    <a href="/guia/horario-6-em-6-horas">Remédio de 6 em 6 Horas</a>
+                  </li>
+                  <li>
+                    <a href="/injecao-mensal">Injeção Mensal e Trimestral</a>
                   </li>
                   <li>
                     <a href="/guia/alarme-remedio-silencioso-iphone-android">Alarme no Silencioso</a>
+                  </li>
+                </ul>
+              </div>
+              <div className="lp-footer__col">
+                <p className="lp-footer__col-title">Melhor Horário para Tomar</p>
+                <ul className="lp-footer__list">
+                  <li>
+                    <a href="/guia/melhor-horario-remedio-pressao">Remédio de Pressão</a>
+                  </li>
+                  <li>
+                    <a href="/guia/melhor-horario-remedio-tireoide">Remédio de Tireoide</a>
+                  </li>
+                  <li>
+                    <a href="/guia/melhor-horario-remedio-colesterol">Remédio de Colesterol</a>
+                  </li>
+                  <li>
+                    <a href="/guia/melhor-horario-remedio-diabetes">Remédio de Diabetes</a>
                   </li>
                 </ul>
               </div>
@@ -220,7 +243,7 @@ function LandingVariantNew({ isAuthenticated, onOpenAuth, onContinue }) {
                     </a>
                   </li>
                   <li>
-                    <a href="https://github.com/coelhotv/dosiq/" target="_blank" rel="noopener noreferrer">
+                    <a href="https://github.com/dosiq-app/dosiq/" target="_blank" rel="noopener noreferrer">
                       Código Aberto no GitHub
                     </a>
                   </li>

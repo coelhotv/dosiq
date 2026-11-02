@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Guias de horário por classe, marcas de referência e erros de bula corrigidos nas páginas públicas (spec 114)
+
+- **Web/PWA** (`Added` + `Fixed`, **minor** 4.35.3 → 4.36.0 — 6 páginas públicas novas; sem mudança no app logado nem no mobile; canal mobile: nenhum).
+  - **Correções de bula nas páginas no ar:** a caneta de semaglutida aberta (Ozempic®, Wegovy®) vale **6 semanas (42 dias)** no Brasil, não 56 dias; para trocar o dia da aplicação semanal são **pelo menos 3 dias (72 horas)** desde a última dose, não 48 h; "Dulaglutina" vira Dulaglutida (Trulicity®); o aviso de descarte da caneta aberta é descrito como de fato funciona (3 dias antes e no dia do vencimento).
+  - **6 guias novos:** remédio de 12 em 12 horas, de 6 em 6 horas e melhor horário para remédio de pressão, tireoide, colesterol e diabetes — cada um com a regra da bula, o que fazer no dosiq e perguntas frequentes.
+  - **Marcas de referência** (Ozempic®, Mounjaro®, Lantus®, Puran T4®…) citadas junto do princípio ativo, com aviso de que o dosiq não é afiliado aos laboratórios.
+  - **Páginas de canetas e insulina** levam às páginas customizadas da App Store e do Google Play para canetas e injetáveis.
+  - Rodapé das páginas públicas e da página inicial com os 14 guias; `sitemap.xml` e `llms.txt` atualizados, com a identificação da empresa (CNPJ, IDs oficiais do app) para buscadores e assistentes de IA não confundirem o dosiq com um app homônimo estrangeiro. Cada página aponta a sua versão em Markdown (`<link rel="alternate" type="text/markdown">`).
+  - Link do código aberto passa para `github.com/dosiq-app/dosiq` (repositório transferido para a organização da empresa).
+
 ### Segurança: o banco passa a conceder só o que o app usa, e quatro tabelas sem uso saem (spec 108)
 
 - **Backend/Infra + Shared/Core** (`Security`, `no-user-impact`, sem bump — nenhuma superfície de web ou mobile muda; canal mobile: nenhum). Aplicado no QA em 2026-10-31; produção após aprovação.

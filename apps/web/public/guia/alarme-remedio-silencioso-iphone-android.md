@@ -9,7 +9,8 @@ Notificações push convencionais são silenciadas sumariamente quando o botão 
 - **No iPhone (iOS):** Utilização do entitlement de Alertas Críticos (Critical Alerts), permissão especial auditada pela Apple para soar audível mesmo no Silencioso, Foco ou Não Perturbe. Inclui Live Activity na tela bloqueada e Ilha Dinâmica.
 - **No Android:** Emissão via canal com atributo `USAGE_ALARM` e isenção de restrições de bateria (Doze Mode), contornando a suspensão agressiva em aparelhos Samsung, Motorola e Xiaomi.
 
-## Como Configurar
+## Como fazer isso no dosiq: ativar o alarme que toca no silencioso
+- Ative o Alerta Crítico uma vez e ele vale para todas as doses.
 - **iOS:** Ajustes > dosiq > Notificações > Ativar "Alertas Críticos".
 - **Android:** Configurações > Aplicativos > dosiq > Bateria > "Sem restrições".
 
