@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Dose crítica: o servidor volta a avisar quando o alarme do celular deixa de funcionar (spec 082, Slice D2)
+
+- **Mobile** (`Fixed`, **patch** `APP_VERSION` 0.34.1 → **0.34.2**; canal: **build de loja** — R-314: o app passa a ler e relatar o estado do aparelho, mudança de propósito da coleta). O app informa ao servidor, de tempos em tempos, se o alarme de dose crítica ainda pode tocar (permissão de notificação, canal do alarme ligado, alarme exato liberado, alarmes armados). Se deixou de poder, a prova antiga de "alarme armado" para de valer e o servidor manda a notificação crítica — antes, reinstalar o app ou desligar o canal do alarme deixava a dose sem aviso nenhum. Registrar a dose pela tela Hoje agora desarma também a soneca e o acompanhamento da dose (o card não volta a "pendente").
+
 ### Servidor: aviso de dose crítica deixa de ser calado por alarme que o aparelho declarou perdido; paciente sem canal há dias sai do alerta diário (spec 082 D2-server)
 
 - **Backend/Infra + Shared/Core** (`Changed` + `Added`, `no-user-impact`, sem bump — nenhuma tela de web ou mobile muda; canal mobile: nenhum; deploy normal do servidor). Preparação do app 0.34.2 (D2-app), que é quem passa a emitir o boletim.
