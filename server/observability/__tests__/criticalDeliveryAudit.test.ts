@@ -7,6 +7,9 @@ import {
   buildReport,
   shouldAlert,
   runCriticalDeliveryAudit,
+  classifyNoChannelPersistence,
+  isWeeklyDigestDay,
+  NO_CHANNEL_PERSISTENT_DAYS,
   type CriticalDose,
   type DeliveryLogRow,
 } from '../criticalDeliveryAudit.js'
@@ -333,6 +336,10 @@ function makeSupabase(tables: Record<string, Row[]>) {
           rows = rows.filter((r) => String(r[col]) <= val)
           return q
         },
+        in: (col: string, vals: unknown[]) => {
+          rows = rows.filter((r) => vals.includes(r[col]))
+          return q
+        },
         limit: (n: number) => {
           rows = rows.slice(0, n)
           return q
@@ -348,6 +355,9 @@ function makeSupabase(tables: Record<string, Row[]>) {
 const loggerStub = { info: vi.fn(), error: vi.fn() }
 const NOW = new Date(2026, 8, 10, 9, 0, 0)
 const DENTRO = new Date(NOW.getTime() - 60 * 60 * 1000) // 1 h atrás, dentro da janela de 24 h
+// 082 D2: `sem_canal` NOVO = aparelho cadastrado e visto há < 3 d, mas sem aparelho ATIVO hoje.
+// (Sem aparelho algum o caso vira PERSISTENTE e só sai no resumo de segunda.)
+const APARELHO_VISTO_ONTEM = { user_id: U, provider: 'expo', is_active: false, last_seen_at: DENTRO.toISOString() }
 
 describe('runCriticalDeliveryAudit', () => {
   it('só considera dose crítica e respeita a regra CRÍTICA de canal (GAP-4)', async () => {
@@ -361,7 +371,7 @@ describe('runCriticalDeliveryAudit', () => {
       notification_log: [],
       protocols: [{ user_id: U, critical_alarm: true, active: true }],
       user_settings: [{ user_id: U, telegram_chat_id: null, consent_revoked_at: null }],
-      notification_devices: [],
+      notification_devices: [APARELHO_VISTO_ONTEM],
     })
 
     const report = await runCriticalDeliveryAudit({ supabase, logger: loggerStub, now: NOW })
@@ -447,7 +457,7 @@ describe('emissão ao Sentry (FR-009/FR-010)', () => {
       notification_log: [],
       protocols: [{ user_id: U, critical_alarm: true, active: true }],
       user_settings: [{ user_id: U, telegram_chat_id: null, consent_revoked_at: null }],
-      notification_devices: [],
+      notification_devices: [APARELHO_VISTO_ONTEM],
     })
     await runCriticalDeliveryAudit({ supabase, logger: loggerStub, now: NOW })
 
@@ -495,5 +505,89 @@ describe('truncamento do PostgREST (AP-186)', () => {
     const report = await runCriticalDeliveryAudit({ supabase, logger: loggerStub, now: NOW })
     expect(report.truncatedReads).toContain('user_settings')
     expect(shouldAlert(report)).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------------------------
+// 082 D2 (T070d/T070e · PO-D2-7) — `sem_canal` persistente sai do alerta diário e vai ao resumo de
+// segunda-feira, com dias e causa. A persistência é DERIVADA de `last_seen_at` (o audit não tem estado).
+// ---------------------------------------------------------------------------------------------
+describe('sem_canal novo × persistente (082 D2)', () => {
+  const AGORA = new Date('2026-11-05T12:00:00.000Z')
+  const diasAtras = (d: number) => new Date(AGORA.getTime() - d * 24 * 60 * 60 * 1000).toISOString()
+  const item = (userId: string) => ({ userId, reason: 'sem_aparelho_sem_telegram' as const })
+
+  it('aparelho visto há < 3 d ⇒ NOVO (alerta diário)', () => {
+    const r = classifyNoChannelPersistence([item('a')], [{ user_id: 'a', last_seen_at: diasAtras(1) }], AGORA)
+    expect(r.novos.map((p) => p.userId)).toEqual(['a'])
+    expect(r.persistentes).toHaveLength(0)
+  })
+
+  it('🔴 aparelho visto há ≥ 3 d ⇒ PERSISTENTE `aparelho_inativo`, com os dias (mutação: limiar errado fica vermelho)', () => {
+    const r = classifyNoChannelPersistence([item('a')], [{ user_id: 'a', last_seen_at: diasAtras(NO_CHANNEL_PERSISTENT_DAYS) }], AGORA)
+    expect(r.novos).toHaveLength(0)
+    expect(r.persistentes).toEqual([{ userId: 'a', cause: 'aparelho_inativo', days: NO_CHANNEL_PERSISTENT_DAYS }])
+  })
+
+  it('🔴 sem aparelho cadastrado ⇒ PERSISTENTE `sem_canal_configurado`, dias null', () => {
+    const r = classifyNoChannelPersistence([item('a')], [], AGORA)
+    expect(r.persistentes).toEqual([{ userId: 'a', cause: 'sem_canal_configurado', days: null }])
+  })
+
+  it('🔴 `last_seen_at` NULL conta como nunca visto ⇒ persistente `aparelho_inativo`', () => {
+    const r = classifyNoChannelPersistence([item('a')], [{ user_id: 'a', last_seen_at: null }], AGORA)
+    expect(r.persistentes).toEqual([{ userId: 'a', cause: 'aparelho_inativo', days: null }])
+  })
+
+  it('🔴 quebra da sequência: um aparelho visto ontem (entre outros mortos) volta o caso a NOVO', () => {
+    const r = classifyNoChannelPersistence(
+      [item('a')],
+      [
+        { user_id: 'a', last_seen_at: diasAtras(140) },
+        { user_id: 'a', last_seen_at: null },
+        { user_id: 'a', last_seen_at: diasAtras(1) },
+      ],
+      AGORA
+    )
+    expect(r.novos.map((p) => p.userId)).toEqual(['a'])
+  })
+
+  it('segunda-feira é a de São Paulo, não a do UTC', () => {
+    expect(isWeeklyDigestDay(new Date('2026-11-02T12:00:00.000Z'))).toBe(true)  // seg 09:00 SP
+    expect(isWeeklyDigestDay(new Date('2026-11-03T02:00:00.000Z'))).toBe(true)  // seg 23:00 SP (ter no UTC)
+    expect(isWeeklyDigestDay(new Date('2026-11-02T02:00:00.000Z'))).toBe(false) // dom 23:00 SP (seg no UTC)
+  })
+
+  const persistenteSó = () =>
+    makeSupabase({
+      dose_instances: [],
+      notification_log: [],
+      protocols: [{ user_id: U, critical_alarm: true, active: true }],
+      user_settings: [{ user_id: U, telegram_chat_id: null, consent_revoked_at: null }],
+      notification_devices: [{ user_id: U, provider: 'expo', is_active: true, last_seen_at: '2026-06-12T10:00:00.000Z' }]
+        .map((d) => ({ ...d, is_active: false })),
+    })
+
+  it('🔴 PO-D2-7: persistente fora da segunda NÃO alerta (sai do diário)', async () => {
+    const quinta = new Date('2026-11-05T12:00:00.000Z')
+    const report = await runCriticalDeliveryAudit({ supabase: persistenteSó(), logger: loggerStub, now: quinta })
+
+    expect(report.noChannelPatients.total).toBe(0)
+    expect(report.persistentNoChannel.total).toBe(1)
+    expect(report.persistentNoChannel.items[0]).toMatchObject({ userId: U, cause: 'aparelho_inativo' })
+    expect(shouldAlert(report)).toBe(false)
+    expect(captureServerEvent).not.toHaveBeenCalled()
+  })
+
+  it('🔴 PO-D2-7: na segunda o resumo sai, com a lista no TOPO do extra (T060a)', async () => {
+    const segunda = new Date('2026-11-02T12:00:00.000Z')
+    const report = await runCriticalDeliveryAudit({ supabase: persistenteSó(), logger: loggerStub, now: segunda })
+
+    expect(shouldAlert(report)).toBe(true)
+    const [, ctx] = vi.mocked(captureServerEvent).mock.calls[0]
+    const extras = (ctx?.extras ?? {}) as Record<string, any>
+    expect(extras.persistentNoChannelItems).toEqual([{ userId: U, cause: 'aparelho_inativo', days: 143 }])
+    expect(extras.noChannelItems).toEqual([])
+    expect(profundidadeMaxima(extras)).toBeLessThanOrEqual(3)
   })
 })

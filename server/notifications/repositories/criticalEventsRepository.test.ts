@@ -4,6 +4,7 @@ import {
   findInstancesWithAlarmEvidence,
   isUserAlarmCapable,
   findInstancesWithSnoozeEvidence,
+  findLatestIncapableAt,
   ALARM_CAPABILITY_WINDOW_DAYS,
 } from './criticalEventsRepository'
 
@@ -15,7 +16,7 @@ afterEach(() => {
 /** Query builder encadeável mínimo: cada método devolve `this` e o terminal resolve o thenable. */
 function makeClient(result: { data?: unknown; error?: unknown }, spy = vi.fn()) {
   const builder: Record<string, unknown> = {}
-  for (const m of ['select', 'eq', 'in', 'gte', 'limit']) {
+  for (const m of ['select', 'eq', 'in', 'gte', 'gt', 'order', 'limit']) {
     builder[m] = vi.fn((...args: unknown[]) => {
       spy(m, ...args)
       return builder
@@ -257,5 +258,65 @@ describe('findInstancesWithSnoozeEvidence — prova exata da soneca (spec 101)',
     expect((await findInstancesWithSnoozeEvidence(iso, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).has('i1')).toBe(true)
     const lixo = makeClient({ data: [row(TAP, { snoozedUntil: 'lixo' })] })
     expect((await findInstancesWithSnoozeEvidence(lixo, [{ instanceId: 'i1', snoozedUntil: SNOOZED_UNTIL }])).size).toBe(0)
+  })
+})
+
+// 082 D2 (FR-016a · PO-D2-1): o boletim NEGATIVO do aparelho invalida a prova anterior a ele.
+describe('findLatestIncapableAt (082 D2)', () => {
+  const NOW = parseISO('2026-11-02T12:00:00.000Z')
+
+  it('devolve o created_at do último device_capability com capable=false', async () => {
+    const client = makeClient({ data: [{ created_at: '2026-11-02T10:00:00.000Z' }] })
+    const at = await findLatestIncapableAt(client, 'u1', NOW)
+
+    expect(at).toBe('2026-11-02T10:00:00.000Z')
+    expect(client._spy).toHaveBeenCalledWith('eq', 'user_id', 'u1')
+    expect(client._spy).toHaveBeenCalledWith('eq', 'event', 'device_capability')
+    // Só o `false` literal é negativo: `capable` ausente/null NÃO invalida (lado conservador do app antigo).
+    expect(client._spy).toHaveBeenCalledWith('eq', 'detail->>capable', 'false')
+    // F6: o relógio comparado é o do SERVIDOR (`created_at`), nunca o `occurred_at` do aparelho.
+    expect(client._spy).toHaveBeenCalledWith('order', 'created_at', { ascending: false })
+    expect(client._spy).toHaveBeenCalledWith('limit', 1)
+  })
+
+  it('sem nenhum negativo ⇒ null (nenhum corte; comportamento anterior ao D2)', async () => {
+    const client = makeClient({ data: [] })
+    expect(await findLatestIncapableAt(client, 'u1', NOW)).toBeNull()
+  })
+
+  it('🔴 fail-open: erro de leitura ⇒ corte em NOW (toda prova anterior cai ⇒ o push sai)', async () => {
+    const client = makeClient({ error: { message: 'connection reset' } })
+    expect(await findLatestIncapableAt(client, 'u1', NOW)).toBe(NOW.toISOString())
+  })
+
+  it('created_at ilegível na linha ⇒ fail-open (corte em NOW)', async () => {
+    const client = makeClient({ data: [{ created_at: null }] })
+    expect(await findLatestIncapableAt(client, 'u1', NOW)).toBe(NOW.toISOString())
+  })
+})
+
+describe('corte `since` nos leitores de prova (082 D2)', () => {
+  it('🔴 alarm_scheduled: `since` vira filtro ESTRITO em created_at (prova no mesmo instante NÃO conta)', async () => {
+    const client = makeClient({ data: [] })
+    await findInstancesWithAlarmEvidence(client, ['i1'], '2026-11-02T10:00:00.000Z')
+    expect(client._spy).toHaveBeenCalledWith('gt', 'created_at', '2026-11-02T10:00:00.000Z')
+    expect(client._spy).not.toHaveBeenCalledWith('gte', 'created_at', expect.anything())
+  })
+
+  it('🔴 snoozed: `since` vira filtro ESTRITO em created_at', async () => {
+    const client = makeClient({ data: [] })
+    await findInstancesWithSnoozeEvidence(
+      client,
+      [{ instanceId: 'i1', snoozedUntil: '2026-11-02T10:30:00.000Z' }],
+      '2026-11-02T10:00:00.000Z'
+    )
+    expect(client._spy).toHaveBeenCalledWith('gt', 'created_at', '2026-11-02T10:00:00.000Z')
+  })
+
+  it('sem `since` nenhum corte é aplicado (assinatura antiga intacta)', async () => {
+    const client = makeClient({ data: [] })
+    await findInstancesWithAlarmEvidence(client, ['i1'])
+    await findInstancesWithSnoozeEvidence(client, [{ instanceId: 'i1', snoozedUntil: '2026-11-02T10:30:00.000Z' }], null)
+    expect(client._spy).not.toHaveBeenCalledWith('gt', expect.anything(), expect.anything())
   })
 })

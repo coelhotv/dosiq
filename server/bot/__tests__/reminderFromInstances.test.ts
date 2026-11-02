@@ -11,6 +11,9 @@ const { mockSupabase } = vi.hoisted(() => {
     in: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
     lt: vi.fn().mockReturnThis(),
+    // 082 D2: corte da prova (`gt` em created_at) e leitura do último boletim negativo (`order`).
+    gt: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
@@ -205,7 +208,13 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
   // ---------------------------------------------------------------------------------------------
   describe('gate por evidência de alarme (082 Slice C)', () => {
     /** Monta a fila do caminho crítico: settings → instâncias → snoozed → [evidência] → [capacidade] → claim. */
-    const armarCiclo = ({ instancias, evidencia, capaz = undefined, erroEvidencia = false, soneca = [] }) => {
+    // 082 D2: `negativo` = linhas do último boletim negativo (só lido quando algum bloco SERIA
+    // suprimido — omitir quando o ciclo não chega lá); `erroNegativo` simula a falha da leitura;
+    // `evidenciaAposCorte`/`sonecaAposCorte` = releitura com `since` quando há corte.
+    const armarCiclo = ({
+      instancias, evidencia, capaz = undefined, erroEvidencia = false, soneca = [],
+      negativo = undefined, erroNegativo = false, evidenciaAposCorte = [], sonecaAposCorte = [],
+    }: any) => {
       setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
       setMockData(instancias);
       setMockData([]);                       // snoozed
@@ -217,6 +226,15 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
       // 082 D1: a leitura de `snoozed` só acontece quando há dose ADIADA no ciclo.
       if (instancias.some(i => i.snoozed_until)) setMockData(soneca);
       if (capaz !== undefined) setMockData(capaz ? [{ id: 'ev-1' }] : []);
+      if (erroNegativo) {
+        mockDataQueue.push({ data: null, error: { message: 'connection reset' } });
+      } else if (negativo !== undefined) {
+        setMockData(negativo);
+      }
+      if (erroNegativo || (negativo && negativo.length > 0)) {
+        setMockData(evidenciaAposCorte.map(id => ({ dose_instance_id: id })));
+        if (instancias.some(i => i.snoozed_until)) setMockData(sonecaAposCorte);
+      }
       setMockData(instancias.map(i => ({ id: i.id })));  // claim
     };
 
@@ -238,7 +256,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
 
     it('🔴 TODAS as doses do bloco com prova ⇒ suprime como `native_alarm` (dose coberta) [PO-1]', async () => {
       process.env.REMINDER_SOURCE = 'instances';
-      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: ['inst-1'] });
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: ['inst-1'], negativo: [] });
 
       await checkRemindersViaDispatcher(mockDispatcher, 'corr-prova');
 
@@ -261,7 +279,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
 
     it('🔴 sem prova + usuário INCAPAZ ⇒ suprime como `no_alarm_evidence` (silêncio residual do D1) [PO-2]', async () => {
       process.env.REMINDER_SOURCE = 'instances';
-      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: false });
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: false, negativo: [] });
 
       await checkRemindersViaDispatcher(mockDispatcher, 'corr-incapaz');
 
@@ -283,6 +301,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
           { ...instanciaCritica('inst-2'), critical_alarm: false },
         ],
         evidencia: ['inst-1', 'inst-2'],
+        negativo: [],
       });
       setMockData([{ id: 'inst-2' }]);  // claim do 2º bloco
 
@@ -328,6 +347,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
           instancias: [adiada()],
           evidencia: [],
           soneca: [snoozedRow('2026-06-30T15:40:04.000Z')],
+          negativo: [],
         });
 
         await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-prova');
@@ -342,6 +362,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
           instancias: [adiada()],
           evidencia: ['inst-1'],
           soneca: [snoozedRow('2026-06-30T15:41:30.000Z', 'ios')],
+          negativo: [],
         });
 
         await checkRemindersViaDispatcher(mockDispatcher, 'corr-d1-ios');
@@ -395,6 +416,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
         instancias: [instanciaCritica('inst-1'), instanciaCritica('inst-2')],
         evidencia: ['inst-1'],
         capaz: true,
+        negativo: [],
       });
 
       await checkRemindersViaDispatcher(mockDispatcher, 'corr-misto');
@@ -411,6 +433,99 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
 
       expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
       expect(motivoDespachado()).toBeUndefined();
+    });
+
+    // -------------------------------------------------------------------------------------------
+    // 082 D2 · FR-016a — boletim NEGATIVO do aparelho invalida a prova anterior a ele (PO-D2-1).
+    // -------------------------------------------------------------------------------------------
+    describe('D2 — boletim negativo corta a prova', () => {
+      const CORTE = '2026-06-30T15:10:00.000Z';
+
+      it('🔴 prova ANTERIOR ao negativo ⇒ push SAI (mutação: remover o corte deixa vermelho) [PO-D2-1]', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [instanciaCritica('inst-1')],
+          evidencia: ['inst-1'],
+          negativo: [{ created_at: CORTE }],
+          evidenciaAposCorte: [],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-anterior');
+
+        expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+        expect(motivoDespachado()).toBeUndefined();
+        expect(mockSupabase.gt).toHaveBeenCalledWith('created_at', CORTE);
+      });
+
+      it('🟢 prova POSTERIOR ao negativo (re-emitida ao voltar a capaz) ⇒ suprime [PO-D2-1]', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [instanciaCritica('inst-1')],
+          evidencia: ['inst-1'],
+          negativo: [{ created_at: CORTE }],
+          evidenciaAposCorte: ['inst-1'],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-posterior');
+
+        expect(motivoDespachado()).toBe('native_alarm');
+      });
+
+      it('🔴 erro ao ler o negativo ⇒ corta em NOW ⇒ push SAI (fail-open) [PO-D2-1]', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [instanciaCritica('inst-1')],
+          evidencia: ['inst-1'],
+          erroNegativo: true,
+          evidenciaAposCorte: [],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-erro');
+
+        expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+        expect(motivoDespachado()).toBeUndefined();
+      });
+
+      it('🔴 incapaz + negativo ⇒ push SAI, nunca `no_alarm_evidence` (o negativo é informativo)', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [instanciaCritica('inst-1')],
+          evidencia: [],
+          capaz: false,
+          negativo: [{ created_at: CORTE }],
+          evidenciaAposCorte: [],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-incapaz');
+
+        expect(motivoDespachado()).toBeUndefined();
+      });
+
+      it('🔴 dose ADIADA com `snoozed` anterior ao negativo ⇒ push SAI [PO-D2-1]', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({
+          instancias: [{ ...instanciaCritica('inst-1'), snoozed_until: '2026-06-30T15:45:00.000Z' }],
+          evidencia: [],
+          soneca: [{ dose_instance_id: 'inst-1', created_at: '2026-06-30T15:40:04.000Z', platform: 'android' }],
+          negativo: [{ created_at: CORTE }],
+          evidenciaAposCorte: [],
+          sonecaAposCorte: [],
+        });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-soneca');
+
+        expect(motivoDespachado()).toBeUndefined();
+      });
+
+      it('F5: ciclo que já ENVIA não paga a leitura do negativo', async () => {
+        process.env.REMINDER_SOURCE = 'instances';
+        armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: true });
+
+        await checkRemindersViaDispatcher(mockDispatcher, 'corr-d2-f5');
+
+        expect(motivoDespachado()).toBeUndefined();
+        expect(mockSupabase.order).not.toHaveBeenCalled();
+      });
     });
 
     it('FR-014: dose NÃO-crítica não paga consulta de evidência nem recebe motivo', async () => {
