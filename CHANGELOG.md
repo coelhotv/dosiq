@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Servidor: aviso de dose crítica deixa de ser calado por alarme que o aparelho declarou perdido; paciente sem canal há dias sai do alerta diário (spec 082 D2-server)
+
+- **Backend/Infra + Shared/Core** (`Changed` + `Added`, `no-user-impact`, sem bump — nenhuma tela de web ou mobile muda; canal mobile: nenhum; deploy normal do servidor). Preparação do app 0.34.2 (D2-app), que é quem passa a emitir o boletim.
+  - **Banco:** `dose_critical_events` aceita o evento `device_capability` (boletim de capacidade de alarme do aparelho; `detail` só com fatos do aparelho, nunca medicamento). Migração `20261102_device_capability_event.sql` no QA; produção antes do build de loja 0.34.2.
+  - **Lembrete de dose crítica:** um boletim `capable = false` invalida a prova de alarme gravada antes dele — o push volta a sair até o app provar de novo que o alarme está armado. Erro ao ler o boletim conta como "sem prova" (envia). Inerte até o app 0.34.2: versões anteriores nunca emitem negativo.
+  - **Apuração diária de entrega crítica:** paciente sem canal nenhum e sem aparelho visto há 3 dias ou mais deixa de entrar no alerta diário e vai a um resumo de segunda-feira, com os dias e a causa (`aparelho_inativo` ou `sem_canal_configurado`).
+
 ### Limpeza: sai o código do antigo interruptor geral de alarme (spec 039 F5)
 
 - **Mobile** (`Removed`, **patch** `APP_VERSION` 0.34.0 → **0.34.1**; canal: **build de loja** — decisão do PO 2026-11-02; o bump gera runtime novo, então o build já embarca o que saiu no `[0.34.0+ota.1]`). Nenhuma mudança visível: o interruptor geral de alarme foi aposentado na spec 010 (o alarme é ligado por tratamento) e o código que restava (`useAlarmEnabled`, `isAlarmEnabled`/`setAlarmEnabled`) não era usado por nada. A limpeza dos canais antigos do Android, também prevista na 039 F5, já tinha saído na 062 (#867).

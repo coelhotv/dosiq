@@ -37,6 +37,12 @@ export const CRITICAL_AUDIT_EVENTS = [
   // só p/ falha de rede. Enquanto o Slice C não fecha, a métrica é confiável só em Android (FR-009 —
   // iOS deriva o instante no foreground, AP-257).
   'alarm_out_of_window',
+  // 082 D2 (FR-015/FR-016a): boletim de capacidade de alarme do aparelho. `doseInstanceId` fica NULL
+  // — a capacidade é do USUÁRIO (a tabela não tem coluna de aparelho). `detail` é ALLOWLIST FECHADA
+  // de fatos do aparelho (`capable`, `notifications_allowed`, `alarm_channel_blocked`,
+  // `exact_alarm_allowed`, `critical_expected`, `critical_armed`, `app_version`), nunca medicamento.
+  // `capable: false` INVALIDA no servidor a prova de alarme anterior a ele (`findLatestIncapableAt`).
+  'device_capability',
 ]
 
 export const CRITICAL_AUDIT_PLATFORMS = ['ios', 'android', 'server']

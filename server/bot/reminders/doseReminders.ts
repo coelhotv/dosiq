@@ -14,6 +14,7 @@ import {
 import {
   findInstancesWithAlarmEvidence,
   findInstancesWithSnoozeEvidence,
+  findLatestIncapableAt,
   isUserAlarmCapable,
 } from '../../notifications/repositories/criticalEventsRepository.js';
 
@@ -563,6 +564,28 @@ async function _loadCriticalEvidence(userId, criticalDoses) {
   // todas já têm prova.
   const someWithoutEvidence = criticalDoses.some(d => !_isDoseCovered(d, evidenceByInstance, snoozeEvidence));
   const isCapable = someWithoutEvidence ? await isUserAlarmCapable(supabase, userId) : true;
+
+  // 082 D2 (FR-016a): o boletim NEGATIVO do aparelho invalida a prova anterior a ele. Só é lido quando
+  // algum bloco SERIA suprimido (RC3 F5) — prova presente ou usuário incapaz; no caminho que já envia
+  // a leitura não muda nada e não é paga.
+  const anyCovered = criticalDoses.some(d => _isDoseCovered(d, evidenceByInstance, snoozeEvidence));
+  if (anyCovered || !isCapable) {
+    const cut = await findLatestIncapableAt(supabase, userId);
+    if (cut) {
+      // Releitura com corte (e não filtro em memória): os leitores devolvem `Set`, sem `created_at`.
+      // O negativo é declaração explícita "não alarmo" de app 0.34.2+ ⇒ a ausência de prova passa a
+      // ser INFORMATIVA ⇒ trata como capaz (envia), nunca `no_alarm_evidence`.
+      const evidenceAfterCut = await findInstancesWithAlarmEvidence(supabase, instanceIds, cut);
+      const snoozeAfterCut = snoozed.length > 0
+        ? await findInstancesWithSnoozeEvidence(supabase, snoozed, cut)
+        : new Set();
+      logger.info('boletim negativo do aparelho: prova anterior invalidada', {
+        userId, corte: cut, comProvaAntes: evidenceByInstance.size + snoozeEvidence.size,
+        comProvaDepois: evidenceAfterCut.size + snoozeAfterCut.size,
+      });
+      return { evidenceByInstance: evidenceAfterCut, snoozeEvidence: snoozeAfterCut, isCapable: true };
+    }
+  }
 
   logger.debug('Evidência de alarme lida para o ciclo', {
     userId, criticas: criticalDoses.length, comProva: evidenceByInstance.size,

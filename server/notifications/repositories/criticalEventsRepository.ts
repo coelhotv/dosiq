@@ -46,14 +46,27 @@ interface SupabaseLike {
 }
 
 /**
+ * 082 D2 — aplica o corte da prova. `>` ESTRITO de propósito: prova e negativo no mesmo instante ⇒ a
+ * prova NÃO conta (o lado que envia). Os dois lados são `created_at`, relógio do SERVIDOR (RC3 F6):
+ * o `occurred_at` vem do aparelho e pode estar adiantado ou atrasado.
+ * @private
+ */
+function _afterCut(query: any, since: string | null): any {
+  return since ? query.gt('created_at', since) : query
+}
+
+/**
  * Quais destas ocorrências têm prova de alarme agendado.
  *
+ * @param since 082 D2 — corte ESTRITO em `created_at`: só conta prova gravada DEPOIS dele (o último
+ *              boletim negativo do aparelho, `findLatestIncapableAt`). Ausente ⇒ sem corte.
  * @returns `Set` com os `dose_instance_id` COM prova. Em erro de leitura devolve `Set` vazio —
  *          "sem prova" é o lado que envia o push (fail-open, FR-013).
  */
 export async function findInstancesWithAlarmEvidence(
   client: SupabaseLike,
-  instanceIds: string[]
+  instanceIds: string[],
+  since: string | null = null
 ): Promise<Set<string>> {
   const withEvidence = new Set<string>()
   const ids = (instanceIds || []).filter(Boolean)
@@ -62,12 +75,14 @@ export async function findInstancesWithAlarmEvidence(
 
   for (let i = 0; i < ids.length; i += ID_CHUNK_SIZE) {
     const chunk = ids.slice(i, i + ID_CHUNK_SIZE)
-    const { data, error } = await client
-      .from('dose_critical_events')
-      .select('dose_instance_id')
-      .eq('event', EVENT_ALARM_SCHEDULED)
-      .in('dose_instance_id', chunk)
-      .limit(ROW_LIMIT)
+    const { data, error } = await _afterCut(
+      client
+        .from('dose_critical_events')
+        .select('dose_instance_id')
+        .eq('event', EVENT_ALARM_SCHEDULED)
+        .in('dose_instance_id', chunk),
+      since
+    ).limit(ROW_LIMIT)
 
     if (error) {
       // Fail-open: devolve VAZIO (ninguém tem prova ⇒ todo mundo recebe push), e não o que já
@@ -165,11 +180,13 @@ function _matchesCurrentSnooze(createdAt: string | null, snoozedUntil: string, d
  * `snoozed_until` e deixa o `snoozed` antigo fora dela ⇒ o push sai. `alarm_scheduled` NUNCA prova
  * dose adiada (AP-353): descreve o alarme do horário original, que já passou.
  *
+ * @param since 082 D2 — mesmo corte estrito de `findInstancesWithAlarmEvidence`.
  * @returns `Set` com os ids COM prova. Erro de leitura ou teto batido ⇒ `Set` vazio (fail-open).
  */
 export async function findInstancesWithSnoozeEvidence(
   client: SupabaseLike,
-  items: SnoozedInstance[]
+  items: SnoozedInstance[],
+  since: string | null = null
 ): Promise<Set<string>> {
   const withEvidence = new Set<string>()
   const snoozedUntilById = new Map<string, string>()
@@ -181,13 +198,15 @@ export async function findInstancesWithSnoozeEvidence(
 
   for (let i = 0; i < ids.length; i += ID_CHUNK_SIZE) {
     const chunk = ids.slice(i, i + ID_CHUNK_SIZE)
-    const { data, error } = await client
-      .from('dose_critical_events')
-      .select('dose_instance_id, created_at, platform, detail')
-      .eq('event', EVENT_SNOOZED)
-      .in('platform', DEVICE_PLATFORMS)
-      .in('dose_instance_id', chunk)
-      .limit(ROW_LIMIT)
+    const { data, error } = await _afterCut(
+      client
+        .from('dose_critical_events')
+        .select('dose_instance_id, created_at, platform, detail')
+        .eq('event', EVENT_SNOOZED)
+        .in('platform', DEVICE_PLATFORMS)
+        .in('dose_instance_id', chunk),
+      since
+    ).limit(ROW_LIMIT)
 
     if (error) {
       logger.error('Leitura de evidência de soneca indisponível — fail-open (envia)', error, {
@@ -256,4 +275,53 @@ export async function isUserAlarmCapable(
   }
 
   return (data ?? []).length > 0
+}
+
+/** Boletim de capacidade de alarme que o app 0.34.2+ emite (082 D2 · FR-015/FR-016a). */
+const EVENT_DEVICE_CAPABILITY = 'device_capability'
+
+/**
+ * Instante (servidor) do último boletim NEGATIVO de capacidade do usuário (082 D2 · FR-016a).
+ *
+ * A prova de alarme é append-only e o alarme é volátil: revogar a permissão, desligar o canal ou
+ * reinstalar apaga o alarme e MANTÉM a prova — e o gate suprimiria o push por um alarme que não
+ * existe. Só o app sabe; ele avisa com `device_capability` + `detail.capable = false`. Toda prova
+ * anterior a esse instante deixa de valer.
+ *
+ * - Só o `false` literal é negativo: `capable` ausente/null nunca invalida (app antigo nunca emite
+ *   negativo ⇒ comportamento anterior ao D2, sem `compareSemver` — E-12 resolvido por construção).
+ * - Capacidade é por USUÁRIO (a tabela não tem coluna de aparelho): o negativo de um aparelho corta a
+ *   prova do usuário inteiro. Medido 2026-11-02: 0 de 10 pacientes críticos com > 1 aparelho ativo.
+ *
+ * @returns ISO do corte, ou `null` sem negativo. Em erro devolve `now` — corta TODA prova anterior ⇒ o
+ *          push sai (fail-open, FR-013), sem ramo especial no chamador.
+ */
+export async function findLatestIncapableAt(
+  client: SupabaseLike,
+  userId: string,
+  now: Date = getNow()
+): Promise<string | null> {
+  const { data, error } = await client
+    .from('dose_critical_events')
+    .select('created_at')
+    .eq('user_id', userId)
+    .eq('event', EVENT_DEVICE_CAPABILITY)
+    .eq('detail->>capable', 'false')
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error) {
+    logger.error('Leitura do boletim de capacidade indisponível — fail-open (corta a prova, envia)', error, { userId })
+    return now.toISOString()
+  }
+
+  const rows = (data ?? []) as Array<{ created_at: string | null }>
+  if (rows.length === 0) return null
+
+  const createdAt = rows[0].created_at
+  if (!createdAt || Number.isNaN(Date.parse(createdAt))) {
+    logger.error('Boletim negativo com created_at ilegível — fail-open (corta a prova, envia)', null, { userId })
+    return now.toISOString()
+  }
+  return createdAt
 }

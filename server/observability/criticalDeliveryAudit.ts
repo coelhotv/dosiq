@@ -192,12 +192,94 @@ export interface NoChannelItem {
   reason: NoChannelReason
 }
 
+/**
+ * 082 D2 (T070d/T070e · PO-D2-7) — por que um `sem_canal` é PERSISTENTE.
+ *   `aparelho_inativo`      → o paciente TEM aparelho cadastrado, mas nenhum visto nos últimos dias
+ *                             (token morto: caso 7ffac39c, último `last_seen_at` 2026-06-12)
+ *   `sem_canal_configurado` → nunca cadastrou aparelho
+ */
+export type PersistentNoChannelCause = 'aparelho_inativo' | 'sem_canal_configurado'
+
+export interface PersistentNoChannelItem {
+  userId: string
+  cause: PersistentNoChannelCause
+  /** Dias desde o último `last_seen_at` de qualquer aparelho dele; `null` = nunca visto/sem aparelho. */
+  days: number | null
+}
+
+/**
+ * Sem aparelho VISTO há este tanto ⇒ o `sem_canal` é persistente (sai do alerta diário). O audit não
+ * guarda estado entre dias: a "sequência de dias" é DERIVADA do `last_seen_at` (RC3 F2).
+ */
+export const NO_CHANNEL_PERSISTENT_DAYS = 3
+
+/** Linha de `notification_devices` usada só para a persistência — nunca para decidir canal. */
+export interface DeviceSeenRow {
+  user_id: string
+  last_seen_at: string | null
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Separa os `sem_canal` em NOVO (alerta diário) e PERSISTENTE (resumo semanal), 082 D2.
+ *
+ * 🔴 Usa `last_seen_at`, NUNCA `is_active` (RC3 F3): push suprimido nunca desativa aparelho, e quem já
+ * está aqui está, por definição, sem aparelho ATIVO — o `is_active` não distingue nada. A regra de
+ * QUEM está sem canal continua sendo a do dispatcher (`classifyChannels`); isto só classifica.
+ *
+ * Aparelho visto há < 3 d ⇒ novo (a sequência "quebrou": algo mudou ontem e merece olho hoje).
+ * `last_seen_at` NULL conta como nunca visto.
+ */
+export function classifyNoChannelPersistence(
+  items: NoChannelItem[],
+  devices: DeviceSeenRow[],
+  now: Date
+): { novos: NoChannelItem[]; persistentes: PersistentNoChannelItem[] } {
+  const lastSeenByUser = new Map<string, number | null>()
+  for (const row of devices) {
+    const seen = Date.parse(row.last_seen_at ?? '')
+    const prev = lastSeenByUser.get(row.user_id) ?? null
+    const curr = Number.isNaN(seen) ? null : seen
+    lastSeenByUser.set(row.user_id, prev === null ? curr : curr === null ? prev : Math.max(prev, curr))
+  }
+
+  const novos: NoChannelItem[] = []
+  const persistentes: PersistentNoChannelItem[] = []
+  for (const item of items) {
+    const hasDevice = lastSeenByUser.has(item.userId)
+    const seen = lastSeenByUser.get(item.userId) ?? null
+    const days = seen === null ? null : Math.floor((now.getTime() - seen) / DAY_MS)
+    if (days !== null && days < NO_CHANNEL_PERSISTENT_DAYS) {
+      novos.push(item)
+      continue
+    }
+    persistentes.push({ userId: item.userId, cause: hasDevice ? 'aparelho_inativo' : 'sem_canal_configurado', days })
+  }
+  return { novos, persistentes }
+}
+
+/**
+ * O resumo semanal dos persistentes sai às SEGUNDAS no fuso de São Paulo — cadência semanal sem estado.
+ * O cron diário roda em UTC; o dia da semana é do fuso do operador, não do servidor.
+ */
+export function isWeeklyDigestDay(now: Date): boolean {
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short' }).format(now) === 'Mon'
+}
+
 export interface CriticalDeliveryReport {
   window: { start: string; end: string }
   totals: Record<DoseOutcome, number>
   consentRevokedSkipped: number
   criticalNoDelivery: { total: number; items: NoDeliveryItem[] }
+  /** Só os `sem_canal` NOVOS (082 D2): os persistentes saem do alerta diário. */
   noChannelPatients: { total: number; soTelegram: number; items: NoChannelItem[] }
+  /**
+   * 082 D2 (PO-D2-7): `sem_canal` persistente, com dias e causa. Sempre calculado; só ALERTA na
+   * segunda-feira (`weeklyDigest`) — fora dela o dia não toca o Sentry por causa deles.
+   */
+  persistentNoChannel: { total: number; items: PersistentNoChannelItem[] }
+  weeklyDigest: boolean
   /** Contexto (decisão do PO): pacientes SEM canal físico em qualquer tipo de notificação. */
   noChannelAllTypes: number
   /** Leituras truncadas pelo teto do PostgREST — não-vazio invalida os números deste run. */
@@ -224,6 +306,8 @@ export function buildReport(params: {
   noChannel: NoChannelItem[]
   noChannelAllTypes: number
   truncatedReads?: string[]
+  persistentNoChannel?: PersistentNoChannelItem[]
+  weeklyDigest?: boolean
 }): CriticalDeliveryReport {
   const totals: Record<DoseOutcome, number> = {
     entregue: 0,
@@ -268,6 +352,11 @@ export function buildReport(params: {
       items: params.noChannel.slice(0, MAX_ITEMS),
     },
     noChannelAllTypes: params.noChannelAllTypes,
+    persistentNoChannel: {
+      total: (params.persistentNoChannel ?? []).length,
+      items: (params.persistentNoChannel ?? []).slice(0, MAX_ITEMS),
+    },
+    weeklyDigest: params.weeklyDigest ?? false,
     truncatedReads: params.truncatedReads ?? [],
     residualSilence: totals.nao_avisada,
   }
@@ -278,6 +367,7 @@ export function shouldAlert(report: CriticalDeliveryReport): boolean {
   return (
     report.criticalNoDelivery.total > 0 ||
     report.noChannelPatients.total > 0 ||
+    (report.weeklyDigest && report.persistentNoChannel.total > 0) ||
     report.truncatedReads.length > 0
   )
 }
@@ -428,7 +518,25 @@ export async function runCriticalDeliveryAudit(params: {
     settings.filter((row) => row.consent_revoked_at !== null).map((row) => row.user_id)
   )
 
-  const noChannel = classifyChannels(criticalUserIds, { withDevice, settingsByUser, revokedUserIds })
+  const noChannelAll = classifyChannels(criticalUserIds, { withDevice, settingsByUser, revokedUserIds })
+
+  // 082 D2: entre os SEM canal nenhum (com Telegram há canal), separa novo de persistente pelo
+  // `last_seen_at`. Lido só para esses — `.in([])` seria ida ao banco para nada.
+  const semCanal = noChannelAll.filter((p) => p.reason === 'sem_aparelho_sem_telegram')
+  const seenRows = semCanal.length === 0
+    ? []
+    : await fetchOrThrow<DeviceSeenRow>(
+      supabase
+        .from('notification_devices')
+        .select('user_id, last_seen_at')
+        .eq('provider', 'expo')
+        .in('user_id', semCanal.map((p) => p.userId))
+        .limit(ROW_LIMIT),
+      'notification_devices(last_seen_at)'
+    )
+  const { persistentes } = classifyNoChannelPersistence(semCanal, seenRows, windowEnd)
+  const persistentIds = new Set(persistentes.map((p) => p.userId))
+  const noChannel = noChannelAll.filter((p) => !persistentIds.has(p.userId))
   const noChannelAllTypes = classifyChannels(activeUserIds, {
     withDevice,
     settingsByUser,
@@ -444,6 +552,8 @@ export async function runCriticalDeliveryAudit(params: {
     noChannel,
     noChannelAllTypes,
     truncatedReads,
+    persistentNoChannel: persistentes,
+    weeklyDigest: isWeeklyDigestDay(windowEnd),
   })
 
   if (!shouldAlert(report)) {
@@ -480,6 +590,11 @@ export async function runCriticalDeliveryAudit(params: {
       // custa uma entrada de allowlist e conserta só o que está quebrado. O `items` de não-entrega,
       // que já nascia no topo, é a prova de que array de objetos RASOS no topo atravessa inteiro.
       noChannelItems: report.noChannelPatients.items,
+      // 082 D2: resumo semanal (segunda, SP) dos `sem_canal` persistentes — mesma regra de topo do
+      // T060a (lista no nível 1 do `extra`), com dias e causa nomeada.
+      ...(report.weeklyDigest && report.persistentNoChannel.total > 0
+        ? { persistentNoChannelItems: report.persistentNoChannel.items }
+        : {}),
       noChannelAllTypes: report.noChannelAllTypes,
       residualSilence: report.residualSilence,
       logRate: { doses: doses.length, linhas: logs.length, truncado: report.truncatedReads },
@@ -490,6 +605,7 @@ export async function runCriticalDeliveryAudit(params: {
     correlationId,
     semEntrega: report.criticalNoDelivery.total,
     semCanal: report.noChannelPatients.total,
+    semCanalPersistente: report.persistentNoChannel.total,
   })
 
   return report

@@ -44,6 +44,9 @@ const EXTRA_ALLOWLIST = new Set([
   // opaco + o motivo (`sem_aparelho_sem_telegram` × `so_telegram_sem_aparelho`). Sem nome de
   // medicamento, protocolo ou plano — quem recebe resolve no banco, com o id em mãos.
   'noChannelItems',
+  // 082 D2 — resumo semanal dos `sem_canal` PERSISTENTES: `user_id` opaco + causa
+  // (`aparelho_inativo` × `sem_canal_configurado`) + dias desde o último aparelho visto. Sem dado clínico.
+  'persistentNoChannelItems',
   'logRate',
 ])
 
