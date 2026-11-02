@@ -39,9 +39,16 @@ loja mais antiga da frota.
 | PO-9 — `capture_access` recriada sem GRANT no QA | `{"code":"42501","message":"permission denied for function capture_access"}` HTTP 401 em `app_version_gate` como anon; ACL nasceu `{postgres=X/postgres}` (A′ funcionando); `GRANT` restaurado → HTTP 200; o checador acusa o SQL (regra c) |
 | PO-6 — `20261031_108_residual_scan.sql` | 0 linhas |
 
-## Prod
+## Prod (`kwqjtdsqkkbebfiaxubb`, aplicada 2026-11-01 após merge do #925 `f8bc4db6`)
 
-_Pendente — T062, após aprovação do PR._ Antes: snapshot (`20261031_108_acl_snapshot.md`) já capturado;
-rodar a varredura em prod **antes** (deve acusar o excesso atual — prova de que a varredura não é vazia)
-e **depois** (0 linhas). Rollback de privilégio: `20261031_108_acl_restore_prod.sql`.
-PO-7: 48 h de Sentry e logs do Supabase sem `42501`/`relation does not exist` novos.
+| Prova | Resultado |
+|---|---|
+| Varredura ANTES | acusou o excesso (anon com tudo em 22 relações, 9 funções com EXECUTE a PUBLIC/anon, 24 padrões abertos, 3 sequências…) — varredura não é vazia |
+| ACL antes = snapshot | md5 `4359a4b141d768b81a917e2c57fbc1df` (igual ao de 2026-10-31); 4 tabelas mortas com 0 linhas |
+| `apply_migration` | `success` — todos os pós-checks (INV-5/6/7, SC-001/002, EXECUTE de authenticated/service_role preservado) passaram |
+| Curl anon pós | `app_version_gate` (select do app) **200** · `consent_policy` **200** · `medicines` **401** |
+| Varredura DEPOIS | **0 linhas** |
+| Logs Postgres (24 h) | 1 `permission denied for table medicines` = o curl de teste acima; 0 `does not exist` |
+
+`.test.sql` **não** roda em prod: insere usuário e dados fictícios (mesmo desfeitos) — manipulação de dados só no QA. Em prod a prova é só leitura (pós-checks + varredura + curl).
+**PO-7 aberta:** 48 h de Sentry e logs (até 2026-11-03). Rollback de privilégio: `20261031_108_acl_restore_prod.sql`.
