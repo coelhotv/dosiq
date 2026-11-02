@@ -182,7 +182,7 @@ gh pr create --title "feat: descrição resumida" \
 ```
 
 **Using GitHub Web:**
-1. Go to: https://github.com/coelhotv/dosiq/pulls
+1. Go to: https://github.com/dosiq-app/dosiq/pulls
 2. Click "New Pull Request"
 3. Select: `main` ← `feature/wave-X/nome-descritivo`
 4. **USE TEMPLATE:** Copy from [`docs/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)

@@ -25,7 +25,7 @@ export function LandingWedge() {
           <div>
             <h2>Faz tratamento com caneta injetável?</h2>
             <p>
-              Titulação em degraus, dia fixo da aplicação, mapa do corpo para rodízio de local e evolução do peso por etapa — a parte do dosiq feita para semaglutida, tirzepatida e insulina, com as respostas práticas de quem está começando.
+              Titulação em degraus, dia fixo da aplicação, mapa do corpo para rodízio de local e evolução do peso por etapa: a parte do dosiq feita para semaglutida, tirzepatida e insulina, com as respostas práticas de quem está começando.
             </p>
           </div>
           <div>
@@ -127,7 +127,7 @@ export function LandingFuncionalidades() {
           <div className="lp-feature">
             <div className="lp-feature__icon"><PackageIcon size={20} /></div>
             <h3>Estoque Opcional pela Caixa</h3>
-            <p>Escaneie a caixa ao comprar para atualizar o estoque — ou desligue se só quiser lembretes.</p>
+            <p>Escaneie a caixa ao comprar para atualizar o estoque, ou desligue se só quiser lembretes.</p>
           </div>
           <div className="lp-feature">
             <div className="lp-feature__icon"><LockIcon size={20} /></div>

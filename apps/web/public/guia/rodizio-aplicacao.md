@@ -4,7 +4,7 @@
 
 ## O que é o rodízio do local de injeção?
 
-Rodízio é distribuir as aplicações por pontos diferentes da pele, em vez de usar sempre o mesmo. Nas canetas subcutâneas, isso significa alternar tanto a região — abdômen, coxa, parte posterior do braço ou flanco — quanto o ponto específico dentro da região escolhida.
+Rodízio é distribuir as aplicações por pontos diferentes da pele, em vez de usar sempre o mesmo. Nas canetas subcutâneas, isso significa alternar tanto a região (abdômen, coxa, parte posterior do braço ou flanco) quanto o ponto específico dentro da região escolhida.
 
 A prática vem do uso de insulina, onde o rodízio é orientação clássica há décadas, e vale igualmente para as canetas semanais de semaglutida e tirzepatida: são todas aplicações subcutâneas repetidas no mesmo corpo, semana após semana.
 
@@ -12,7 +12,7 @@ A prática vem do uso de insulina, onde o rodízio é orientação clássica há
 
 ## Por que repetir o mesmo ponto é um problema?
 
-A aplicação repetida no mesmo local pode alterar o tecido subcutâneo daquela área — o que se conhece como lipo-hipertrofia ou lipoatrofia. O tecido alterado absorve o medicamento de forma irregular, então a mesma dose pode agir de maneira diferente de uma semana para outra.
+A aplicação repetida no mesmo local pode alterar o tecido subcutâneo daquela área, o que se conhece como lipo-hipertrofia ou lipoatrofia. O tecido alterado absorve o medicamento de forma irregular, então a mesma dose pode agir de maneira diferente de uma semana para outra.
 
 Além da absorção, há o desconforto: nódulos, endurecimento e dor local são as queixas mais frequentes de quem aplica sempre no mesmo canto do abdômen por hábito. Se você notar nódulo, endurecimento, vermelhidão persistente ou dor no local, não improvise: mostre a área para quem prescreveu ou para um farmacêutico antes da próxima aplicação.
 
@@ -31,7 +31,13 @@ A técnica de aplicação, a área permitida e o volume são sempre os descritos
 
 ---
 
-## Como o dosiq ajuda no rodízio
+## Vale para todas as canetas subcutâneas
+
+Ozempic® e Wegovy® (semaglutida), Mounjaro® (tirzepatida) e as canetas de insulina, como Lantus® (insulina glargina), são todas aplicações subcutâneas. A lógica do rodízio é a mesma; as regiões permitidas e a técnica são as descritas na bula de cada produto.
+
+---
+
+## Como fazer isso no dosiq: o mapa do rodízio
 
 Ao registrar a dose no aplicativo dosiq, você seleciona a região no mapa corporal frente e costas (abdômen, coxa, parte posterior do braço ou flanco/glúteo). O aplicativo:
 
@@ -47,4 +53,6 @@ Conteúdo meramente informativo. Não substitui a orientação de quem prescreve
 
 - Entidade: DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11
 - Web: https://dosiq.app
-- Código-fonte: https://github.com/coelhotv/dosiq
+- Código-fonte: https://github.com/dosiq-app/dosiq
+
+**Marcas citadas:** Ozempic®, Wegovy®, Mounjaro®, Lantus® são marcas registradas dos respectivos titulares, citadas de forma referencial e informativa, com base nas bulas aprovadas pela ANVISA. O dosiq não é afiliado, patrocinado nem endossado por esses laboratórios.

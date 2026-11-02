@@ -151,7 +151,7 @@ git push origin feature/wave-X/nome-descritivo
 #### Using GitHub CLI
 
 ```bash
-gh pr create --repo coelhotv/dosiq \
+gh pr create --repo dosiq-app/dosiq \
              --head feature/wave-X/nome-descritivo \
              --title "feat: descrição resumida" \
              --body-file docs/standards/PULL_REQUEST_TEMPLATE.md
@@ -159,7 +159,7 @@ gh pr create --repo coelhotv/dosiq \
 
 #### Using GitHub Web
 
-1. Go to: https://github.com/coelhotv/dosiq/pulls
+1. Go to: https://github.com/dosiq-app/dosiq/pulls
 2. Click "New Pull Request"
 3. Select: `main` ← `feature/wave-X/nome-descritivo`
 4. **USE TEMPLATE:** Copy from [`docs/standards/PULL_REQUEST_TEMPLATE.md`](./PULL_REQUEST_TEMPLATE.md)

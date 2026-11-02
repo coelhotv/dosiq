@@ -8,11 +8,17 @@ Para quem convive com diabetes, a gestão posológica de insulina exige rigor:
 - **Insulina Prandial/Bolus (Ação Rápida/Ultrarrápida):** Cobertura de refeições ou correção de picos (ex.: asparte, lispro, glulisina).
 - **Lipohipertrofia:** A repetição da injeção no mesmo ponto causa nódulos de gordura que tornam a absorção errática, gerando hiperglicemias ou hipoglicemias inesperadas.
 
+## Insulinas basais pelo nome da caixa
+As insulinas basais mais usadas têm regras de horário diferentes na bula:
+- **Lantus® e Basaglar® (insulina glargina):** A bula do Lantus® diz que a glargina não tem pico e pode ser aplicada em qualquer hora do dia, mas sempre no mesmo horário.
+- **Tresiba® (insulina degludeca):** A bula exige no mínimo 8 horas entre as aplicações, inclusive quando uma dose é esquecida. Mudar o horário só com orientação do médico.
+- **Insulina NPH:** O efeito dura cerca de 10 a 18 horas e varia de pessoa para pessoa. O horário (café, jantar ou ao deitar) é definido pelo médico.
+
 ## Transparência de Escopo: DMT2 vs DMT1
 - **Diabetes Tipo 2 / Esquema Basal Fixo:** Experiência 100% nativa no dosiq, com alarmes diários para a dose basal, anotações de glicemia em jejum e integração com antidiabéticos orais.
 - **Diabetes Tipo 1 / Esquema Basal-Bolus:** O dosiq não é calculadora de bolus e não realiza contagem de carboidratos. A adaptação recomendada é cadastrar a insulina rápida com a frequência "Quando necessário", registrando cada dose avulsa aplicada em UI juntamente com o local no mapa de rodízio corporal para alimentar o Relatório Clínico.
 
-## Diferenciais do dosiq
+## Como fazer isso no dosiq
 - **Unidades em UI pela base ANVISA:** Leitor de código de barras pela câmera com suporte nativo a UI;
 - **Alertas Críticos no Silencioso:** Sons audíveis no iPhone e Android mesmo em modo Foco ou Não Perturbe;
 - **Mapa Corporal Frente e Costas:** Alternância entre quadrantes anatômicos para evitar nódulos;
@@ -21,3 +27,5 @@ Para quem convive com diabetes, a gestão posológica de insulina exige rigor:
 ## Aviso Legal (SaMD)
 O dosiq é um aplicativo de organização e suporte posológico e não substitui a consulta médica nem calcula doses terapêuticas.
 DOSIQ DIGITAL HEALTH WEB DESIGN LTDA · CNPJ 68.335.606/0001-11
+
+**Marcas citadas:** Lantus®, Basaglar®, Tresiba® são marcas registradas dos respectivos titulares, citadas de forma referencial e informativa, com base nas bulas aprovadas pela ANVISA. O dosiq não é afiliado, patrocinado nem endossado por esses laboratórios.

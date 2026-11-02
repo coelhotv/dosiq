@@ -139,7 +139,7 @@ O schema deve ser injetado como um grafo único (`@graph`):
       "sameAs": [
         "https://apps.apple.com/br/app/dosiq-intelig%C3%AAncia-em-doses/id6762740948",
         "https://play.google.com/store/apps/details?id=com.coelhotv.dosiq",
-        "https://github.com/coelhotv/dosiq"
+        "https://github.com/dosiq-app/dosiq"
       ]
     },
     {
