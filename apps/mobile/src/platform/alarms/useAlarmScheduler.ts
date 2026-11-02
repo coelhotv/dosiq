@@ -17,6 +17,7 @@
 import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import Constants from 'expo-constants'
 import {
   createDoseInstanceRepository,
   createCriticalAuditService,
@@ -29,6 +30,7 @@ import {
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
 import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from './snoozeAnchorStore'
+import { probeDevice, deriveCapability, type DeviceFacts, type CapabilityVerdict } from '@platform/device/deviceProbe'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
@@ -67,14 +69,85 @@ async function _alarmUndeliverable(): Promise<boolean> {
   }
 }
 
-/**
- * `alarm_scheduled` do sync (spec 042), fail-open TOTAL. C-34: alarme que não vai chegar não vira
- * prova; o dedupe fica intocado e a prova sai no primeiro sync depois do desbloqueio.
- */
-async function _emitScheduledAudit(items, userId) {
+// 082 D2: boletim de capacidade (`device_capability`). Throttle: só emite se `capable` mudou desde o
+// último boletim ACEITO ou se passaram 24 h — o sync roda a cada foreground/mutação.
+export const CAPABILITY_AUDIT_KEY = '@dosiq/audit/device_capability_last'
+export const CAPABILITY_REFRESH_MS = 24 * 60 * 60 * 1000
+
+type CapabilityRead = { verdict: CapabilityVerdict; facts: DeviceFacts }
+
+/** Sonda o aparelho e deriva a capacidade. `null` = não emitir (sem crítico ou fato desconhecido). */
+async function _readCapability(expectedIds: string[]): Promise<CapabilityRead | null> {
   try {
+    const facts = await probeDevice()
+    const verdict = deriveCapability(facts, expectedIds)
+    return verdict ? { verdict, facts } : null
+  } catch {
+    return null
+  }
+}
+
+async function _capabilityThrottled(capable: boolean, nowMs: number): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(CAPABILITY_AUDIT_KEY)
+    const last = raw ? JSON.parse(raw) : null
+    return last?.capable === capable && typeof last?.at === 'number' && nowMs - last.at < CAPABILITY_REFRESH_MS
+  } catch {
+    return false // throttle é best-effort: na dúvida, emite
+  }
+}
+
+/**
+ * Emite o boletim. `detail` = allowlist FECHADA de fatos do aparelho — nunca medicamento/dose.
+ * Insert falho NÃO grava o throttle ⇒ o próximo sync tenta de novo (PO-D2-3).
+ */
+async function _emitCapability({ verdict, facts }: CapabilityRead, userId: string) {
+  const nowMs = Date.now()
+  if (await _capabilityThrottled(verdict.capable, nowMs)) return
+  const res = await createCriticalAuditService({ client: supabase as any })
+    .emit({
+      userId,
+      doseInstanceId: null,
+      event: 'device_capability',
+      platform: Platform.OS,
+      actor: 'system',
+      detail: {
+        capable: verdict.capable,
+        notifications_allowed: facts.notificationsAllowed,
+        alarm_channel_blocked: facts.alarmChannelBlocked,
+        exact_alarm_allowed: facts.exactAlarmAllowed,
+        critical_expected: verdict.criticalExpected,
+        critical_armed: verdict.criticalArmed,
+        app_version: Constants.expoConfig?.version ?? null,
+      },
+    })
+    .catch(() => ({ ok: false }))
+  if (res?.ok !== true) return
+  try {
+    await AsyncStorage.setItem(CAPABILITY_AUDIT_KEY, JSON.stringify({ capable: verdict.capable, at: nowMs }))
+  } catch {
+    /* fail-open */
+  }
+}
+
+/**
+ * `alarm_scheduled` do sync (spec 042) + boletim de capacidade (082 D2), fail-open TOTAL.
+ * C-34: alarme que não vai chegar não vira prova. 082 D2: boletim NEGATIVO invalida no servidor a
+ * prova já emitida; aqui ele zera o dedupe e NÃO emite prova nova (uma prova posterior ao negativo
+ * o anularia). Ao voltar a capaz, o dedupe vazio faz o sync re-emitir `alarm_scheduled` — prova NOVA.
+ * @param scheduledIds - ids de trigger que este sync agendou (instanceId ou `String(ts)` do grupo)
+ */
+async function _emitScheduledAudit(items, userId, scheduledIds: string[] = []) {
+  try {
+    const capability = userId && items.length > 0 ? await _readCapability(scheduledIds) : null
+    if (capability?.verdict.capable === false) {
+      await _emitCapability(capability, userId)
+      await AsyncStorage.removeItem(SCHEDULED_AUDIT_KEY).catch(() => {})
+      return
+    }
     if (items.length > 0 && (await _alarmUndeliverable())) return
     await emitScheduledDedupe(items.map((it) => it.instanceId), userId, await _scheduledMode(items.length))
+    if (capability) await _emitCapability(capability, userId)
   } catch (err) {
     if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
   }
@@ -246,12 +319,15 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
 
   const snoozed = items.filter((it) => it.snoozeFireAt != null)
   await _scheduleSnoozedAlarms(snoozed)
+  // 082 D2: ids de trigger agendados — o boletim confere quantos o SO de fato guardou.
+  const scheduledIds: string[] = snoozed.map((it) => String(it.instanceId))
 
   const groups = _groupItemsByTimestamp(items)
 
   for (const [ts, groupItems] of groups.entries()) {
     if (groupItems.length === 1) {
       const it = groupItems[0]
+      scheduledIds.push(String(it.instanceId))
       await alarmService.scheduleAlarm({
         doseInstanceId: it.instanceId,
         medicineName: it.medicineName,
@@ -271,6 +347,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
       // janela do grupo como UNIÃO das janelas individuais. Usar o MENOR barraria um disparo que é
       // legítimo para a dose mais folgada do lote, e a recusa é por lote (FR-005 emendada).
       const maxEarlyWindow = Math.max(...groupItems.map((it) => it.earlyWindowMinutes ?? 120))
+      scheduledIds.push(String(ts))
 
       await alarmService.scheduleAlarm({
         doseInstanceId: String(ts),
@@ -292,7 +369,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
   // Auditoria (spec 042): emite `alarm_scheduled` uma vez por ocorrência crítica agendada.
   // `items` já está filtrado a critical+pending → usamos os instanceIds reais (não o id
   // sintético do grupo). Fail-open TOTAL: auditoria jamais pode quebrar o agendamento.
-  await _emitScheduledAudit(items, userId)
+  await _emitScheduledAudit(items, userId, scheduledIds)
   // 062 D-3: apaga os canais Android legados. SÓ aqui — depois de cancelAll + re-agendamento no canal
   // vigente, nenhum trigger da versão antiga sobrou (RC3 E-1; soneca/nag headless não passam por aqui).
   // Fail-open total: limpeza de canal jamais pode quebrar o agendamento.

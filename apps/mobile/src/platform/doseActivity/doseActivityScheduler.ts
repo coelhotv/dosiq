@@ -30,6 +30,7 @@ import {
   LATE_CHRONO_CAP_MINUTES,
 } from './doseActivitySurfaceService'
 import { enqueueSurfaceTransition, emitDeliveredTransition } from '@platform/audit/surfaceAuditBeacon'
+import { isDoseResolved } from './resolvedDoseStore'
 
 const numOrNull = (v) => {
   const n = Number(v)
@@ -125,6 +126,9 @@ async function scheduleNextBoundary(doseItem, fromMs, discreet) {
   const times = allBoundaryTimes(doseItem)
   const next = times.find((t) => t > fromMs)
   if (next == null) return // nada à frente (já passou tudo)
+  // 082 D2 (C-35): conferido o mais perto possível do agendamento — um arme em voo que leu a dose
+  // `pending` antes do registro não pode re-agendar boundary depois do cancel.
+  if (await isDoseResolved(doseItem.instanceId)) return
 
   // `next` é epoch ms (numérico, sem ambiguidade de tz — R-020 visa strings 'YYYY-MM-DD').
   // eslint-disable-next-line no-restricted-syntax
@@ -199,6 +203,11 @@ export async function armDoseActivity(activity, doseItem, { now = getRawNow(), d
   if (Platform.OS !== 'android') return
   if (!activity || !activity.instanceId || !doseItem) return
   const occurredAt = now.toISOString() // INV-5: instante do fato, antes de qualquer await
+  // 082 D2 (C-35): dose já registrada neste aparelho ⇒ nunca re-exibe; garante o encerramento.
+  if (await isDoseResolved(activity.instanceId)) {
+    await endDoseActivity(activity.instanceId)
+    return
+  }
   // Lido ANTES de exibir/encerrar: depois disso o exibido já é o estado novo (ou nenhum).
   await emitArmTransition(activity, source, occurredAt)
   if (activity.state === DOSE_ACTIVITY_STATES.DONE || activity.state === DOSE_ACTIVITY_STATES.MISSED) {
@@ -218,6 +227,11 @@ export async function advanceDoseActivity(data, now = getRawNow()) {
   if (Platform.OS !== 'android') return // C-27
   if (!data || data.__surface !== 'true' || !data.doseInstanceId) return
   const occurredAt = now.toISOString() // INV-5: carimbado na entrega, antes de qualquer await
+  // 082 D2 (C-35): boundary que escapou ao cancel (já EXIBIDO pelo trigger) é retirado aqui.
+  if (await isDoseResolved(data.doseInstanceId)) {
+    await endDoseActivity(data.doseInstanceId)
+    return
+  }
   const doseItem = reconstructDoseItem(data)
   if (!doseItem.scheduledFor) return
   await scheduleNextBoundary(doseItem, now.getTime(), data.discreet === 'true')
