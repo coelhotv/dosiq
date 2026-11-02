@@ -7,7 +7,10 @@
 --   Bloco 1: id 8e543eed…, event device_capability, dose_instance_id NULL, capable 'false'   ✅
 --   Bloco 2: ERROR 23514 dose_critical_events_event_check ('Device_Capability')              ✅
 --   Bloco 3: antes 4.830 linhas · 13 tipos; depois do apply 4.830 linhas; CHECK com 14 valores ✅
---   Prod: pendente (T100, após o merge do PR 6a).
+-- RESULTADO REGISTRADO — PROD (kwqjtdsqkkbebfiaxubb), 2026-11-02, após o merge do #929 (9a79a679):
+--   Bloco 1: id f9465faf… (ROLLBACK), event device_capability, dose_instance_id NULL, capable 'false' ✅
+--   Bloco 2: ERROR 23514 dose_critical_events_event_check ('Device_Capability')                     ✅
+--   Bloco 3: antes 7.711 linhas · 13 tipos; depois do apply_migration 7.711 · 13; CHECK com 14 valores ✅
 
 -- ═════════════════════════════════════════════════════════════════════════════
 -- Bloco 1 — o valor novo é ACEITO, com dose_instance_id NULL e `detail` da allowlist
