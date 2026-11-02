@@ -337,7 +337,21 @@ function main() {
       failCheck('o conteúdo das memórias divergiu do índice compilado.');
       return;
     }
-    console.log(`índice em dia (sourceHash ${sourceHash.slice(0, 12)}…)`);
+    // 079 F2-a: frescor não basta. Memória com frontmatter inválido é pulada pelo compilador, então
+    // um índice "em dia" podia esconder regra invisível ao seletor — foi o que os 43 pulados fizeram
+    // (38 arquivadas por desenho + 5 inválidas), e 43 parecia normal. O número tem de separar as
+    // duas causas e o exit code tem de reagir à que é defeito.
+    const { skipped } = buildIndex(root);
+    const invalidos = skipped.filter((entry) => entry.kind === 'invalido');
+    if (invalidos.length > 0) {
+      console.error(`${invalidos.length} memória(s) com frontmatter inválido — ficam fora do índice:`);
+      for (const entry of invalidos) console.error(`  - ${entry.path}: ${entry.reason.split('\n')[0]}`);
+      console.error('  Detalhe: node scripts/validate-memory-schema.mjs --strict');
+      console.error('  Em emergência, `git commit --no-verify` pula o hook — a memória segue invisível.');
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`índice em dia (sourceHash ${sourceHash.slice(0, 12)}…), 0 inválida(s)`);
     process.exitCode = 0;
     return;
   }
@@ -401,7 +415,10 @@ function main() {
       // 92% do arquivo, contra 6.183B de payload real. Pior, encolhia conforme o acervo migrasse,
       // então o tamanho do índice media o progresso da migração em vez do próprio conteúdo.
       // A lista completa sai por --report.
-      skippedCount: skipped.length
+      skippedCount: skipped.length,
+      // 079 F2-a: a soma sozinha escondia a dívida — arquivada é desenho, inválida é defeito.
+      skippedArchived: skipped.filter((entry) => entry.kind === 'por_desenho').length,
+      skippedInvalid: skipped.filter((entry) => entry.kind === 'invalido').length
     }
   };
 
@@ -427,7 +444,7 @@ function main() {
   }
 
   console.log(
-    `Índice compilado: ${counts.total} regra(s) válida(s), ${skipped.length} pulada(s), ${hot.length} hot. -> ${outPath}`
+    `Índice compilado: ${counts.total} regra(s) válida(s), ${skipped.length} pulada(s) (${index.meta.skippedArchived} arquivada(s), ${index.meta.skippedInvalid} inválida(s)), ${hot.length} hot. -> ${outPath}`
   );
   process.exitCode = 0;
 }
@@ -439,4 +456,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   main();
 }
 
-export { specificity, computeSourceHash, validateFile };
+export { specificity, computeSourceHash, validateFile, buildIndex };

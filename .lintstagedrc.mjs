@@ -62,5 +62,11 @@ export default {
   // artefato versionado velho (verificado em branch descartável: commit exit=0 com só a memória no
   // diff). Fechar isso exigiria `git diff --cached` dentro do hook, que é a lógica à mão que este
   // desenho evita de propósito. O que o gate garante é "o disco é consistente", não "o commit é".
+  //
+  // 🔴 079 F2: desde o cutover do moat (2026-09-09/10) `.agent` é SYMLINK para `dosiq-moat/agent` —
+  // o git do dosiq não vê os `.md` e este glob nunca casa. O gate real mora no moat
+  // (`.githooks/pre-commit` → `scripts/memory-precommit-gate.mjs`), e o `validate:agent` confere
+  // que ele existe e reprova de fato (`scripts/check-memory-gate.mjs`). Fica aqui só para o caso
+  // de a memória voltar a morar neste repo.
   ".agent/memory/**/*.md": () => "node scripts/compile-memory-index.mjs --check"
 }
