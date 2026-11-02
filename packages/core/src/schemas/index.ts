@@ -122,11 +122,6 @@ export {
 } from './biomarkerLogSchema'
 
 export {
-  geminiReviewSchema,
-  validateGeminiReview,
-} from './geminiReviewSchema'
-
-export {
   notificationLogSchema,
   notificationLogCreateSchema,
   NOTIFICATION_DELIVERY_STATUSES,

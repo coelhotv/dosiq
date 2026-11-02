@@ -1,7 +1,7 @@
 ---
 title: "Migrações Supabase — template e regras obrigatórias"
 description: "Template SQL obrigatório, grants, regras de DDL destrutiva e procedimento de aplicação de migrações no Supabase."
-version: "1.0.0"
+version: "2.0.0"
 status: active
 category: standard
 audience:
@@ -13,7 +13,7 @@ tags:
   - sql
   - database
 created_at: "2026-07-18"
-updated_at: "2026-10-21"
+updated_at: "2026-10-31"
 ---
 
 > 🔴 **Migração escrita ≠ migração aplicada.** Quando uma migração (ou uma PARTE dela) fica no repo
@@ -28,34 +28,86 @@ updated_at: "2026-10-21"
 > qualquer `CREATE TABLE` / função nova. **Toda migração passa pelo QA (`dosiq-qa`) antes de prod**
 > (CON-044 · [`QA_ENVIRONMENT.md`](../architecture/QA_ENVIRONMENT.md) §4). Aplicação em prod: via MCP, após aprovação.
 
-## Grants obrigatórios
+## Grants obrigatórios — objeto novo nasce FECHADO (spec 108 · ADR-119)
 
-⚠️ **Corrigido 2026-10-21 (verificado em `pg_default_acl`):** em prod as default privileges do schema
-`public` (donos `postgres` e `supabase_admin`) dão **ALL — inclusive TRUNCATE — a `anon`, `authenticated`
-e `service_role`** em toda tabela/função nova. O texto anterior ("novas tabelas não recebem grants
-automáticos") estava errado. Consequência: toda tabela nova precisa de **REVOKE explícito** do que não
-deve existir (TRUNCATE ignora RLS) + GRANT do mínimo. Endurecer o default é dívida aberta.
+**A partir de 2026-10-31 (migração `20261031_108_public_least_privilege.sql`)**, toda tabela, view,
+sequência ou função criada pelo `postgres` no `public` nasce **sem grant nenhum** a `anon`,
+`authenticated` ou `PUBLIC`. Sem `GRANT` explícito, o app recebe `42501` — no QA, alto e na hora.
+Isso é proposital (falha fechada e barulhenta, ADR-119); a regra é **conceder o mínimo**, não lembrar
+de revogar. `REVOKE … FROM PUBLIC/anon` em objeto novo vira opcional (não há o que revogar).
 
-Template obrigatório após `CREATE TABLE`:
+> Histórico: até a 108 o default ACL dava ALL (inclui TRUNCATE) a `anon`/`authenticated` e EXECUTE a
+> `PUBLIC`; migrações de 2026-07 a 2026-10 trazem `REVOKE ALL … FROM anon, authenticated` por isso.
+> Não as edite — são registro do que foi aplicado. Objetos criados pelo painel (`supabase_admin`) ainda
+> nascem abertos: a varredura `docs/migrations/20261031_108_residual_scan.sql` acusa.
+
+Templates (no MESMO arquivo do `CREATE` — o checador `lint:migration-grants` barra a falta):
 
 ```sql
-REVOKE ALL ON public.<tabela> FROM anon, authenticated;  -- default ACL deu ALL (inclui TRUNCATE)
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO service_role;
--- anon: apenas se a tabela tiver dados verdadeiramente públicos (raro no dosiq)
+-- Tabela
+CREATE TABLE public.<tabela> (...);
 ALTER TABLE public.<tabela> ENABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.<tabela> TO authenticated;  -- só o que o app usa
+GRANT ALL ON TABLE public.<tabela> TO service_role;
+-- ou, se só o servidor toca:   -- grants: nenhum (só service_role)
+
+-- View (sempre security_invoker; só leitura)
+CREATE VIEW public.<view> WITH (security_invoker = on) AS ...;
+GRANT SELECT ON public.<view> TO authenticated;
+
+-- Sequência (só se authenticated insere direto numa tabela com serial/identity)
+GRANT USAGE ON SEQUENCE public.<seq> TO authenticated;
+
+-- Função / RPC
+CREATE FUNCTION public.<fn>(...) ... SET search_path = '' ...;
+GRANT EXECUTE ON FUNCTION public.<fn>(<tipos>) TO authenticated;   -- e/ou service_role
 ```
 
-Esquecer o grant = tabela invisível pro app com RLS ligada — falha silenciosa em prod
-(classe AP-275: default privileges legados exigem REVOKE explícito ao mexer em objeto antigo).
+**`anon` só recebe o que está na allowlist do checador** (`scripts/migration-grants-gate.mjs`,
+`ANON_ALLOWLIST`): `app_version_gate` (por coluna — gate de versão antes do login), `consent_policy` e
+`access_hook.capture_access()` (pre-request do PostgREST). Fora disso, grant a `anon` falha o lint.
+
+### DROP + CREATE apaga os grants
+
+Mudança de assinatura (`DROP FUNCTION` + `CREATE FUNCTION`) nasce com o padrão novo — **sem** os
+grants da versão anterior. Reemita todos no mesmo arquivo. `CREATE OR REPLACE` (mesma assinatura)
+preserva a ACL; se for o caso, declare com o marcador `-- migration-grants: ok — <motivo>`.
+🔴 `access_hook.capture_access()` recriada sem `GRANT EXECUTE … TO anon, authenticated` derruba
+**toda** requisição (`permission denied for function capture_access` — provado no QA, spec 108 PO-9).
+
+### Grant por coluna some com REVOKE de tabela
+
+`REVOKE … ON TABLE` também revoga os grants **de coluna** (`app_version_gate`, `consent_log`), e
+`has_table_privilege`/`relacl` não os mostram. Toda migração que revoga privilégio de tabela reemite
+os de coluna depois e confere com `has_column_privilege`.
+
+### Bloco padrão no `.test.sql` (FR-014 da 108 — copiar em toda migração)
+
+```sql
+DO $$
+BEGIN
+  IF NOT has_function_privilege('anon', 'access_hook.capture_access()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'access_hook.capture_access()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FR-014: capture_access sem EXECUTE para anon/authenticated'; END IF;
+  IF NOT has_column_privilege('anon', 'public.app_version_gate', 'min_supported_version', 'SELECT') THEN
+    RAISE EXCEPTION 'FR-014: anon não lê app_version_gate'; END IF;
+END $$;
+```
+
+### Checador `lint:migration-grants` (encadeado no `npm run lint`)
+
+`.sql` de `docs/migrations/` com data ≥ 20261031 (fora `*.test.sql` e `*_acl_restore_*`). Falha em:
+(a) `CREATE FUNCTION` sem `GRANT EXECUTE` da mesma; (b) `DROP`+`CREATE` sem re-GRANT; (c)
+`capture_access` tocada sem `anon, authenticated`; (d) `CREATE TABLE/VIEW` em `public` sem GRANT nem
+`-- grants: nenhum (só service_role)`; (e) grant a `anon` fora da allowlist. (a)/(b)/(d) aceitam o
+marcador `-- migration-grants: ok — <motivo>`; (c)/(e) não.
 
 ## Funções SECURITY DEFINER — regras obrigatórias
 
-- `REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC;` **antes** de qualquer `GRANT` explícito
-  (default do Postgres é PUBLIC — AP-278/FR-019 do 046).
-- `REVOKE EXECUTE ON FUNCTION ... FROM anon;` sempre — não autenticado não chama RPC privilegiada.
 - `SET search_path = ''` no cabeçalho (previne search path injection).
 - Com `search_path = ''`, usar `public.<tabela>` (schema qualificado) no body.
+- **Concedeu o mínimo?** `GRANT EXECUTE` só aos papéis que chamam (RPC do app → `authenticated`;
+  job → `service_role`; chamada só por outra DEFINER → nenhum grant). Nunca `anon` (exceto o hook).
 - Guarda interna de chamador quando a função é service-only: `auth.role()`, nunca `current_user`
   (dentro de DEFINER, `current_user` é sempre o OWNER — guarda inerte, AP-292).
 
@@ -76,7 +128,7 @@ repositório (AP-314).
 O script cruza a distribuição de versões instaladas (`notification_devices`) com o histórico do git,
 versão a versão, e mostra a linha do `.select()` como evidência.
 
-**Era 1 — hoje até a spec 051 (EAS Update) ser entregue E adotada: nenhum DROP, sem exceção.** Não
+**Era 1 — hoje até a spec 051 (EAS Update) ser entregue E adotada: nenhum DROP.** Única exceção (emenda ao ADR-088, spec 108): tabela que **nenhum commit do cliente jamais referenciou** (`git log --all -S <tabela> -- apps/mobile` vazio) — prova mais forte que o veredito por versão. Não
 existe mecanismo para alcançar a frota atual: nem OTA (só chega em binário que já embute
 `expo-updates`), nem update forçado. A única saída é **expand/contract**:
 
@@ -98,7 +150,7 @@ vontade de fechar o épico. Essa pressão de fechamento foi ingrediente causal d
 3. Assinatura única por função (overload = AP-227; `DROP FUNCTION` da antiga na mesma migração).
 4. Teste `BEGIN..ROLLBACK` **no QA** antes de aplicar (padrão PO-SEC); depois `apply_migration` no QA + curl R-295 no QA. Prod só no gatilho da spec (CON-044).
 5. `npm run supabase:types` após aplicar (regen `database.types.ts` — R-289).
-6. Varredura de DEFINER aberta (AP-278, emenda 098) — em TODA migração, não só na que cria função:
-   `SELECT p.oid::regprocedure FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-   WHERE n.nspname = 'public' AND p.prosecdef AND (p.proacl IS NULL OR array_to_string(p.proacl, ',') ~ '(^|,)(=|anon=)X');`
-   → 0 linhas, ou cada uma justificada no PR. Política RLS se audita por `roles`/`qual`, nunca pelo nome.
+6. **Concedeu o mínimo?** `npm run lint:migration-grants` verde; bloco FR-014 no `.test.sql`; e a
+   varredura `docs/migrations/20261031_108_residual_scan.sql` com 0 linhas no QA (e em prod após aplicar).
+   Linha nova legítima = atualize a matriz/listas da varredura no mesmo PR. Política RLS se audita por
+   `roles`/`qual`, nunca pelo nome.

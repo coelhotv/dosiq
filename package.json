@@ -13,9 +13,10 @@
   "scripts": {
     "dev": "npm run dev --workspace @dosiq/web",
     "build": "npm run build --workspace @dosiq/core && npm run build --workspace @dosiq/web",
-    "lint": "eslint . && npm run lint:unit-label && npm run lint:vigency",
+    "lint": "eslint . && npm run lint:unit-label && npm run lint:vigency && npm run lint:migration-grants",
     "lint:unit-label": "bash scripts/unit-label-gate.sh",
     "lint:vigency": "bash scripts/vigency-single-source.sh",
+    "lint:migration-grants": "node scripts/migration-grants-gate.mjs",
     "preview": "npm run preview --workspace @dosiq/web",
     "dev:web": "npm run dev --workspace @dosiq/web",
     "build:web": "npm run build --workspace @dosiq/web",
