@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Limpeza: sai o código do antigo interruptor geral de alarme (spec 039 F5)
+
+- **Mobile** (`Removed`, **patch** `APP_VERSION` 0.34.0 → **0.34.1**; canal: **build de loja** — decisão do PO 2026-11-02; o bump gera runtime novo, então o build já embarca o que saiu no `[0.34.0+ota.1]`). Nenhuma mudança visível: o interruptor geral de alarme foi aposentado na spec 010 (o alarme é ligado por tratamento) e o código que restava (`useAlarmEnabled`, `isAlarmEnabled`/`setAlarmEnabled`) não era usado por nada. A limpeza dos canais antigos do Android, também prevista na 039 F5, já tinha saído na 062 (#867).
+
 ### Guias de horário por classe, marcas de referência e erros de bula corrigidos nas páginas públicas (spec 114)
 
 - **Web/PWA** (`Added` + `Fixed`, **minor** 4.35.3 → 4.36.0 — 6 páginas públicas novas; sem mudança no app logado nem no mobile; canal mobile: nenhum).

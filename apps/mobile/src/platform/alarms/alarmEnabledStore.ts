@@ -1,43 +1,14 @@
-// alarmEnabledStore.js — preferência local do alarme nativo (Spec 001, FR-007)
+// alarmEnabledStore.ts — flags locais de onboarding do alarme nativo (Spec 001, FR-009)
 //
-// Persistência em AsyncStorage (NÃO em user_settings — adicionar coluna seria
-// migration = Tier 2; o toggle do alarme é local ao device, Tier 1).
-//
-// Default OFF (opt-in): o alarme invasivo (full-screen + bypass DND) NUNCA liga
-// sozinho — o usuário ativa conscientemente (FR-007). O nudge (FR-009) apenas
-// anuncia e leva ao toggle, sem ativar nada.
+// Persistência em AsyncStorage, local ao device. O toggle global do alarme (FR-007:
+// `isAlarmEnabled`/`setAlarmEnabled`/`useAlarmEnabled`) foi aposentado na 010 — o controle
+// é por tratamento (`protocols.critical_alarm`) — e removido na 039 F5 (T051). A chave
+// `@dosiq/alarm-enabled` pode sobrar em aparelhos antigos: ninguém a lê.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-// Aposentado em 010 — controle por-tratamento em protocols.critical_alarm
-export const ALARM_ENABLED_KEY = '@dosiq/alarm-enabled'
 export const ALARM_NUDGE_SEEN_KEY = '@dosiq/alarm-nudge-seen'
 export const ALARM_PERMS_GUIDE_KEY = '@dosiq/alarm-perms-guide-shown'
-
-/**
- * Lê se o alarme nativo está ligado. Default OFF.
- * @returns {Promise<boolean>}
- */
-export async function isAlarmEnabled() {
-  try {
-    const raw = await AsyncStorage.getItem(ALARM_ENABLED_KEY)
-    return raw === 'true'
-  } catch {
-    return false
-  }
-}
-
-/**
- * Persiste o estado do toggle do alarme.
- * @param {boolean} enabled
- */
-export async function setAlarmEnabled(enabled) {
-  try {
-    await AsyncStorage.setItem(ALARM_ENABLED_KEY, enabled ? 'true' : 'false')
-  } catch {
-    // best-effort — falha de storage não deve quebrar a UI do toggle
-  }
-}
 
 /**
  * Lê se o nudge de anúncio já foi visto (mostra 1×). Default false.

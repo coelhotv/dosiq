@@ -1,7 +1,7 @@
 // AlarmSchedulerBridge.jsx — cola o scheduler de alarmes ao app root (Spec 001/010)
 //
 // Spec 010: controle migrou para por-tratamento (protocols.critical_alarm).
-// O toggle global (useAlarmEnabled) foi aposentado como master-switch; o scheduler
+// O toggle global (useAlarmEnabled) foi aposentado como master-switch (removido na 039 F5); o scheduler
 // roda sempre que há userId, e syncAlarms filtra apenas doses críticas.
 // Também registra o handler de FOREGROUND do Notifee (o de background fica no
 // index.js). Render nulo — é só orquestração.
