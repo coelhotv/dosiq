@@ -6,6 +6,7 @@ const SCHEDULED_AUDIT_KEY = '@dosiq/audit/alarm_scheduled_ids'
 const ALLOWLIST = [
   'alarm_channel_blocked',
   'app_version',
+  'background_restricted',
   'capable',
   'critical_armed',
   'critical_expected',
@@ -24,7 +25,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   }),
 }))
 
-jest.mock('@platform/supabase/nativeSupabaseClient', () => ({ supabase: {} }))
+jest.mock('@platform/supabase/nativeSupabaseClient', () => ({ supabase: { auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } } }))
 jest.mock('expo-constants', () => ({ expoConfig: { version: '0.34.2' } }))
 
 jest.mock('../alarmService', () => ({
@@ -73,6 +74,7 @@ const capable = (over = {}) => ({
   alarmChannelBlocked: false,
   exactAlarmAllowed: true,
   criticalArmedIds: ['i1'],
+  backgroundRestricted: false,
   batteryOptimized: true,
   powerManagerActivity: null,
   ...over,
@@ -110,6 +112,7 @@ describe('boletim device_capability (082 D2)', () => {
     ['canal do alarme NONE', { alarmChannelBlocked: true }],
     ['alarme exato negado', { exactAlarmAllowed: false }],
     ['zero alarmes críticos armados', { criticalArmedIds: [] }],
+    ['app restrito em segundo plano', { backgroundRestricted: true }],
   ])('negativo (%s): emite capable=false, zera o dedupe e NÃO emite prova', async (_l, over) => {
     mockStore.set(SCHEDULED_AUDIT_KEY, JSON.stringify(['i1']))
     mockFacts = capable(over)
@@ -161,6 +164,11 @@ describe('throttle e recuperação (PO-D2-3)', () => {
     mockFacts = capable({ alarmChannelBlocked: true })
     await sync()
     expect(calls('device_capability').map((b) => b.detail.capable)).toEqual([true, false])
+  })
+
+  it('dois syncs simultâneos emitem UM boletim (smoke T101: duplicata a 150 ms)', async () => {
+    await Promise.all([sync(), sync()])
+    expect(calls('device_capability')).toHaveLength(1)
   })
 
   it('mesmo estado após 24 h re-emite', async () => {

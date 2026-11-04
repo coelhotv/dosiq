@@ -13,6 +13,7 @@ const supabase = supabaseImport as any
 import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
 import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
+import { dismissPushForResolvedDoses } from '@platform/notifications/pushTray'
 import { markDosesResolved, unmarkDoseResolved } from '@platform/doseActivity/resolvedDoseStore'
 import { clearSnoozeState } from '@platform/alarms/snoozeAnchorStore'
 import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
@@ -119,6 +120,7 @@ async function _safeRun(fn: () => Promise<any>, actionName: string, instanceId: 
 async function _cancelAlarmBestEffort(instanceId: string | null) {
   if (!instanceId) return
   await markDosesResolved([instanceId])
+  await dismissPushForResolvedDoses([instanceId])
   const isAndroid = Platform.OS === 'android'
   const doneLabel = isAndroid ? await _safeRun(() => readSurfaceLabel(instanceId), 'readSurfaceLabel', instanceId) : null
 

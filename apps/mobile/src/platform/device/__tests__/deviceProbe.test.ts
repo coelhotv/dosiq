@@ -3,6 +3,9 @@
 import notifee from '@notifee/react-native'
 import { probeDevice, deriveCapability, type DeviceFacts } from '../deviceProbe'
 
+let mockRestricted: boolean | null = null
+jest.mock('../backgroundRestriction', () => ({ isBackgroundRestricted: () => mockRestricted }))
+
 jest.mock('@platform/alarms/alarmService', () => ({
   ALARM_CRITICAL_CHANNEL_ID: 'dose-alarm-critical-v3',
   LEGACY_CRITICAL_CHANNEL_ID: 'dose-alarm-critical-v2',
@@ -18,6 +21,7 @@ const facts = (over: Partial<DeviceFacts> = {}): DeviceFacts => ({
   alarmChannelBlocked: false,
   exactAlarmAllowed: true,
   criticalArmedIds: ['a', 'b'],
+  backgroundRestricted: false,
   batteryOptimized: false,
   powerManagerActivity: null,
   ...over,
@@ -28,6 +32,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  mockRestricted = null
   RN.Platform.OS = ORIGINAL_OS
   jest.clearAllMocks()
   jest.clearAllTimers()
@@ -39,12 +44,14 @@ describe('probeDevice', () => {
     mocked.getChannel.mockResolvedValueOnce({ importance: 0 })
     mocked.getTriggerNotificationIds.mockResolvedValueOnce(['x', 42])
     mocked.isBatteryOptimizationEnabled.mockResolvedValueOnce(true)
+    mockRestricted = true
     const out = await probeDevice()
     expect(out).toEqual({
       notificationsAllowed: true,
       alarmChannelBlocked: true,
       exactAlarmAllowed: false,
       criticalArmedIds: ['x', '42'],
+      backgroundRestricted: true,
       batteryOptimized: true,
       powerManagerActivity: null,
     })
@@ -69,6 +76,7 @@ describe('probeDevice', () => {
       alarmChannelBlocked: null,
       exactAlarmAllowed: null,
       criticalArmedIds: null,
+      backgroundRestricted: null,
       batteryOptimized: null,
       powerManagerActivity: null,
     })
@@ -83,6 +91,7 @@ describe('probeDevice', () => {
     expect(out.alarmChannelBlocked).toBeNull()
     expect(out.exactAlarmAllowed).toBeNull()
     expect(out.batteryOptimized).toBeNull()
+    expect(out.backgroundRestricted).toBeNull()
     expect(mocked.getChannel).not.toHaveBeenCalled()
   })
 
@@ -103,12 +112,17 @@ describe('deriveCapability', () => {
     ['canal do alarme NONE', { alarmChannelBlocked: true }],
     ['alarme exato negado', { exactAlarmAllowed: false }],
     ['zero críticos armados', { criticalArmedIds: ['zzz'] }],
+    ['app restrito em segundo plano (smoke T101)', { backgroundRestricted: true }],
   ])('negativo: %s', (_label, over) => {
     expect(deriveCapability(facts(over as Partial<DeviceFacts>), ['a'])?.capable).toBe(false)
   })
 
   it('PO-D2-9: bateria otimizada NUNCA gera negativo', () => {
     expect(deriveCapability(facts({ batteryOptimized: true, powerManagerActivity: 'x' }), ['a'])?.capable).toBe(true)
+  })
+
+  it('restrição em segundo plano desconhecida (módulo ausente) não bloqueia', () => {
+    expect(deriveCapability(facts({ backgroundRestricted: null }), ['a'])?.capable).toBe(true)
   })
 
   it('sem dose crítica no horizonte ⇒ null (não emite)', () => {

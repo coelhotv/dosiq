@@ -53,6 +53,10 @@ jest.mock('../snoozeAnchorStore', () => ({
 let mockStoredAttempts: Record<string, number> = {}
 const mockEndLa = jest.fn(() => Promise.resolve())
 jest.mock('@platform/doseActivity/liveActivityService', () => ({ endLiveActivity: () => mockEndLa() }))
+const mockReassert = jest.fn((..._a: any[]) => Promise.resolve())
+jest.mock('@platform/device/capabilityBulletin', () => ({
+  reassertIncapableAfterSnooze: (...a: any[]) => mockReassert(...a),
+}))
 const mockDefer = jest.fn((..._a: any[]) => Promise.resolve())
 jest.mock('@platform/doseActivity/doseActivityScheduler', () => ({
   deferDoseActivity: (...a: any[]) => mockDefer(...a),
@@ -225,6 +229,22 @@ describe('scheduleSnooze — contrato com o gate do servidor (082 D1 · E-2)', (
   it('dose NÃO-crítica não emite `snoozed` (o gate só olha crítica)', async () => {
     await scheduleSnooze({ ...CRITICA, isCritical: false })
     expect(mockEmit).not.toHaveBeenCalled()
+    expect(mockReassert).not.toHaveBeenCalled()
+  })
+
+  it('🔴 082 D2 (smoke T101): reafirma o negativo DEPOIS do `snoozed` — senão a soneca anula o corte', async () => {
+    const order: string[] = []
+    mockEmit.mockImplementationOnce(async () => {
+      order.push('snoozed')
+    })
+    mockReassert.mockImplementationOnce(async () => {
+      order.push('reassert')
+    })
+
+    await scheduleSnooze(CRITICA)
+
+    expect(order).toEqual(['snoozed', 'reassert'])
+    expect(mockReassert).toHaveBeenCalledWith(['inst-4'])
   })
 })
 

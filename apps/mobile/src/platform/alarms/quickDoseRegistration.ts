@@ -27,6 +27,8 @@ import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
 import { emitDoseChanged } from './doseChangedBus'
 import { markRegisterHandoff } from './registerHandoff'
+import { markDosesResolved } from '@platform/doseActivity/resolvedDoseStore'
+import { dismissPushForResolvedDoses } from '@platform/notifications/pushTray'
 
 // 067 C.2 (FR-043): trilha do SKIP. Só o registrar emitia `resolved` (doseLogService.ts:311), então
 // a trilha de uma dose pulada terminava em `alarm_fired` — indistinguível de "tocou e ninguém fez
@@ -220,6 +222,9 @@ async function _emitDoseSkipped(skipInstances, surface) {
  * notificação deixava a superfície em "agora" até o app abrir. Best-effort por dose. @private
  */
 async function _endSkippedSurfaces(ids) {
+  // 082 D2: o pulo também resolve — marca (guard do C-35) e tira o push da bandeja, como o "Tomei".
+  await markDosesResolved(ids)
+  await dismissPushForResolvedDoses(ids)
   await Promise.all(ids.map((id) => Promise.resolve(endDoseActivity(id)).catch(() => {})))
 }
 

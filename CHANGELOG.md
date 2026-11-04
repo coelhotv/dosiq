@@ -10,6 +10,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Dose crítica: o servidor volta a avisar quando o alarme do celular deixa de funcionar (spec 082, Slice D2)
 
 - **Mobile** (`Fixed`, **patch** `APP_VERSION` 0.34.1 → **0.34.2**; canal: **build de loja** — R-314: o app passa a ler e relatar o estado do aparelho, mudança de propósito da coleta). O app informa ao servidor, de tempos em tempos, se o alarme de dose crítica ainda pode tocar (permissão de notificação, canal do alarme ligado, alarme exato liberado, alarmes armados). Se deixou de poder, a prova antiga de "alarme armado" para de valer e o servidor manda a notificação crítica — antes, reinstalar o app ou desligar o canal do alarme deixava a dose sem aviso nenhum. Registrar a dose pela tela Hoje agora desarma também a soneca e o acompanhamento da dose (o card não volta a "pendente").
+  - **Android, "Permitir uso em segundo plano" desligado:** o sistema segura o alarme da dose crítica (medido no smoke: alarme das 16:30 não tocou). O app passa a ler essa restrição (módulo nativo novo) e a contar como "alarme não toca" — o servidor manda a notificação. A otimização de bateria comum continua não contando.
+  - **Adiar num celular que não alarma** (canal desligado, sem permissão ou app restrito) não cala mais a notificação do servidor: antes, a soneca valia como prova de alarme armado.
+  - **Notificação de dose já registrada sai da bandeja:** tomar ou pular a dose apaga o aviso "Hora de tomar …" que o servidor tinha mandado (aviso de várias doses só sai quando todas forem registradas).
+- **Backend/Infra** (`Changed`, `no-user-impact`, sem bump; deploy normal do servidor). O push de lembrete de dose passa a levar os ids das doses que avisa (ids opacos, sem dado clínico, inclusive no modo sem transferência) — é o que o app usa para tirar da bandeja o aviso de dose registrada. App anterior ignora o campo.
 
 ### Servidor: aviso de dose crítica deixa de ser calado por alarme que o aparelho declarou perdido; paciente sem canal há dias sai do alerta diário (spec 082 D2-server)
 

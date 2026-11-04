@@ -6,6 +6,8 @@
 //
 // 🔴 Bateria (`batteryOptimized`/`powerManagerActivity`) é coletada para a 068 e NUNCA entra na
 // capacidade (E-14: ≈100 % da base tem otimização ligada — virar negativo silenciaria a prova de todos).
+// ≠ "restrito em segundo plano" (`backgroundRestricted`): esse SEGURA o alarme exato e ENTRA na
+// capacidade (smoke T101, moto g06/Android 15: alarme 16:30 vencido e não entregue).
 
 import { Platform } from 'react-native'
 import notifee, { AndroidImportance, AndroidNotificationSetting, IOSNotificationSetting } from '@notifee/react-native'
@@ -14,6 +16,7 @@ import {
   LEGACY_CRITICAL_CHANNEL_ID,
   isPushUsable,
 } from '@platform/alarms/alarmService'
+import { isBackgroundRestricted } from './backgroundRestriction'
 
 export interface DeviceFacts {
   /** O alarme pode aparecer: push utilizável, ou (iOS) alerta crítico autorizado (054 C-11). */
@@ -24,6 +27,8 @@ export interface DeviceFacts {
   exactAlarmAllowed: boolean | null
   /** Ids de trigger pendentes no SO (`getTriggerNotificationIds`). */
   criticalArmedIds: string[] | null
+  /** Android 9+: app "restrito em segundo plano" — o SO segura o alarme. iOS/indisponível: null. */
+  backgroundRestricted: boolean | null
   /** Android: otimização de bateria ligada (só 068 — nunca capacidade). iOS: null. */
   batteryOptimized: boolean | null
   /** Android: o OEM expõe tela de gerenciamento de energia (só 068). iOS: null. */
@@ -68,6 +73,7 @@ export async function probeDevice(): Promise<DeviceFacts> {
     alarmChannelBlocked: isAndroid ? await _safe(_alarmChannelBlocked) : null,
     exactAlarmAllowed: isAndroid && settings ? _exactAlarmAllowed(settings) : null,
     criticalArmedIds: Array.isArray(ids) ? ids.map(String) : null,
+    backgroundRestricted: isAndroid ? isBackgroundRestricted() : null,
     batteryOptimized: isAndroid ? await _safe(() => notifee.isBatteryOptimizationEnabled()) : null,
     powerManagerActivity: isAndroid ? ((await _safe(() => notifee.getPowerManagerInfo()))?.activity ?? null) : null,
   }
@@ -82,7 +88,8 @@ export interface CapabilityVerdict {
 /**
  * Capacidade do alarme crítico (082 D2). `null` = não emitir boletim: sem dose crítica no horizonte
  * ou algum fato necessário desconhecido (desconhecido ≠ negativo — F7).
- * Importância MIN/LOW/DEFAULT do canal continua capaz (atributo, não fato — E-10). Bateria ignorada.
+ * Importância MIN/LOW/DEFAULT do canal continua capaz (atributo, não fato — E-10). Otimização de
+ * bateria ignorada; app restrito em segundo plano é negativo (`null` = desconhecido, não bloqueia).
  * @param facts - saída de `probeDevice()`
  * @param expectedIds - ids de trigger que o sync acabou de agendar para doses críticas
  */
@@ -98,6 +105,7 @@ export function deriveCapability(facts: DeviceFacts, expectedIds: string[]): Cap
     facts.notificationsAllowed &&
     facts.alarmChannelBlocked !== true &&
     facts.exactAlarmAllowed !== false &&
+    facts.backgroundRestricted !== true &&
     criticalArmed > 0
   return { capable, criticalExpected, criticalArmed }
 }

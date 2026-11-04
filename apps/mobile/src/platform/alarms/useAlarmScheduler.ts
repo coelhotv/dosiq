@@ -17,7 +17,6 @@
 import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import Constants from 'expo-constants'
 import {
   createDoseInstanceRepository,
   createCriticalAuditService,
@@ -30,7 +29,7 @@ import {
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
 import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from './snoozeAnchorStore'
-import { probeDevice, deriveCapability, type DeviceFacts, type CapabilityVerdict } from '@platform/device/deviceProbe'
+import { readCapability, emitCapability } from '@platform/device/capabilityBulletin'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
@@ -69,66 +68,8 @@ async function _alarmUndeliverable(): Promise<boolean> {
   }
 }
 
-// 082 D2: boletim de capacidade (`device_capability`). Throttle: só emite se `capable` mudou desde o
-// último boletim ACEITO ou se passaram 24 h — o sync roda a cada foreground/mutação.
-export const CAPABILITY_AUDIT_KEY = '@dosiq/audit/device_capability_last'
-export const CAPABILITY_REFRESH_MS = 24 * 60 * 60 * 1000
-
-type CapabilityRead = { verdict: CapabilityVerdict; facts: DeviceFacts }
-
-/** Sonda o aparelho e deriva a capacidade. `null` = não emitir (sem crítico ou fato desconhecido). */
-async function _readCapability(expectedIds: string[]): Promise<CapabilityRead | null> {
-  try {
-    const facts = await probeDevice()
-    const verdict = deriveCapability(facts, expectedIds)
-    return verdict ? { verdict, facts } : null
-  } catch {
-    return null
-  }
-}
-
-async function _capabilityThrottled(capable: boolean, nowMs: number): Promise<boolean> {
-  try {
-    const raw = await AsyncStorage.getItem(CAPABILITY_AUDIT_KEY)
-    const last = raw ? JSON.parse(raw) : null
-    return last?.capable === capable && typeof last?.at === 'number' && nowMs - last.at < CAPABILITY_REFRESH_MS
-  } catch {
-    return false // throttle é best-effort: na dúvida, emite
-  }
-}
-
-/**
- * Emite o boletim. `detail` = allowlist FECHADA de fatos do aparelho — nunca medicamento/dose.
- * Insert falho NÃO grava o throttle ⇒ o próximo sync tenta de novo (PO-D2-3).
- */
-async function _emitCapability({ verdict, facts }: CapabilityRead, userId: string) {
-  const nowMs = Date.now()
-  if (await _capabilityThrottled(verdict.capable, nowMs)) return
-  const res = await createCriticalAuditService({ client: supabase as any })
-    .emit({
-      userId,
-      doseInstanceId: null,
-      event: 'device_capability',
-      platform: Platform.OS,
-      actor: 'system',
-      detail: {
-        capable: verdict.capable,
-        notifications_allowed: facts.notificationsAllowed,
-        alarm_channel_blocked: facts.alarmChannelBlocked,
-        exact_alarm_allowed: facts.exactAlarmAllowed,
-        critical_expected: verdict.criticalExpected,
-        critical_armed: verdict.criticalArmed,
-        app_version: Constants.expoConfig?.version ?? null,
-      },
-    })
-    .catch(() => ({ ok: false }))
-  if (res?.ok !== true) return
-  try {
-    await AsyncStorage.setItem(CAPABILITY_AUDIT_KEY, JSON.stringify({ capable: verdict.capable, at: nowMs }))
-  } catch {
-    /* fail-open */
-  }
-}
+// 082 D2: boletim de capacidade — throttle, serialização e allowlist em `capabilityBulletin`.
+export { CAPABILITY_AUDIT_KEY, CAPABILITY_REFRESH_MS } from '@platform/device/capabilityBulletin'
 
 /**
  * `alarm_scheduled` do sync (spec 042) + boletim de capacidade (082 D2), fail-open TOTAL.
@@ -139,15 +80,15 @@ async function _emitCapability({ verdict, facts }: CapabilityRead, userId: strin
  */
 async function _emitScheduledAudit(items, userId, scheduledIds: string[] = []) {
   try {
-    const capability = userId && items.length > 0 ? await _readCapability(scheduledIds) : null
+    const capability = userId && items.length > 0 ? await readCapability(scheduledIds) : null
     if (capability?.verdict.capable === false) {
-      await _emitCapability(capability, userId)
+      await emitCapability(capability, userId)
       await AsyncStorage.removeItem(SCHEDULED_AUDIT_KEY).catch(() => {})
       return
     }
     if (items.length > 0 && (await _alarmUndeliverable())) return
     await emitScheduledDedupe(items.map((it) => it.instanceId), userId, await _scheduledMode(items.length))
-    if (capability) await _emitCapability(capability, userId)
+    if (capability) await emitCapability(capability, userId)
   } catch (err) {
     if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
   }

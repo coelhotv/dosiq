@@ -22,6 +22,7 @@ import { triggerAlarmResync } from './alarmResyncBus'
 import { setSnoozeAnchors, setSnoozeAttempts, getSnoozeAttempts } from './snoozeAnchorStore'
 import { SURFACE_ID_SUFFIX } from '@platform/doseActivity/doseActivitySurfaceService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { reassertIncapableAfterSnooze } from '@platform/device/capabilityBulletin'
 import notifee, {
   AndroidImportance,
   AndroidVisibility,
@@ -936,6 +937,9 @@ export async function scheduleSnooze({
         }),
       ),
     )
+    // 082 D2 (smoke T101): aparelho que não alarma reafirma o negativo DEPOIS do `snoozed`, senão a
+    // soneca vira prova posterior ao corte e o servidor cala o push. Fail-open (nunca rejeita).
+    await reassertIncapableAfterSnooze(snoozedIds)
   }
 
   // 065 AD-8: `dose_snoozed` só quando a soneca FOI agendada (recusa fora da janela e teto estourado

@@ -75,7 +75,9 @@ interface NotificationEventData {
   critical_alarm?: boolean;
   /** 082 Slice C (FR-013b) — ver `metadataSchema.suppress_push_reason`. */
   suppress_push_reason?: 'native_alarm' | 'no_alarm_evidence';
-  doses?: Array<{ protocolId?: string; [key: string]: unknown }>;
+  doses?: Array<{ protocolId?: string; instanceId?: string | null; [key: string]: unknown }>;
+  /** 082 D2 — ver `metadataSchema.doseInstanceIds`. */
+  doseInstanceIds?: string[];
   [key: string]: unknown;
 }
 
@@ -409,6 +411,10 @@ function buildMetadata(kind: Kind, context: NotificationContext, data: Notificat
 
   const navigation = getNavigationMetadata(kind, data, protocolIds)
 
+  // 082 D2: blocos (plano/misc) trazem o id em cada dose; o single, em `doseInstanceIds`.
+  const doseInstanceIds = (data.doseInstanceIds ?? (Array.isArray(data.doses) ? data.doses.map((d) => d.instanceId) : []))
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+
   const rawMetadata = {
     kind,
     builtAt: getServerTimestamp(),
@@ -426,6 +432,7 @@ function buildMetadata(kind: Kind, context: NotificationContext, data: Notificat
     critical_alarm: data.critical_alarm,
     // FR-013b — viaja do reminder (quem tem o `instanceId` de cada dose) até o canal.
     suppress_push_reason: data.suppress_push_reason,
+    doseInstanceIds: doseInstanceIds.length > 0 ? doseInstanceIds : undefined,
   }
 
   // Remove chaves com valor undefined

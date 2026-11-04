@@ -109,6 +109,12 @@ describe('redactForNoTransfer — contrato por kind (PO-13)', () => {
     }
   })
 
+  it('082 D2: doseInstanceIds (ids opacos) sobrevive — o app tira o push da bandeja ao registrar', () => {
+    const p = payloadFor('dose_reminder')
+    const out = redactForNoTransfer({ ...p, metadata: { ...p.metadata, doseInstanceIds: ['inst-1'] } })
+    expect((out.metadata as Record<string, unknown>).doseInstanceIds).toEqual(['inst-1'])
+  })
+
   it('não muta o payload recebido (a inbox guarda o original)', () => {
     const original = payloadFor('dose_reminder')
     const snapshot = JSON.stringify(original)
