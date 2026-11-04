@@ -13,7 +13,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - **Android, "Permitir uso em segundo plano" desligado:** o sistema segura o alarme da dose crítica (medido no smoke: alarme das 16:30 não tocou). O app passa a ler essa restrição (módulo nativo novo) e a contar como "alarme não toca" — o servidor manda a notificação. A otimização de bateria comum continua não contando.
   - **Adiar num celular que não alarma** (canal desligado, sem permissão ou app restrito) não cala mais a notificação do servidor: antes, a soneca valia como prova de alarme armado.
   - **Notificação de dose já registrada sai da bandeja:** tomar ou pular a dose apaga o aviso "Hora de tomar …" que o servidor tinha mandado (aviso de várias doses só sai quando todas forem registradas).
-- **Backend/Infra** (`Changed`, `no-user-impact`, sem bump; deploy normal do servidor). O push de lembrete de dose passa a levar os ids das doses que avisa (ids opacos, sem dado clínico, inclusive no modo sem transferência) — é o que o app usa para tirar da bandeja o aviso de dose registrada. App anterior ignora o campo.
+  - **Tocar num aviso de dose já registrada abre a tela Hoje**, não a janela de registro — antes ela abria como se a dose estivesse pendente e convidava a registrar de novo.
+- **Backend/Infra** (`Changed`, `no-user-impact`, sem bump; deploy normal do servidor). O push de lembrete de dose passa a levar os ids das doses que avisa (ids opacos, sem dado clínico, inclusive no modo sem transferência) e, no Android, uma etiqueta com esses ids (com o app fechado, é a única parte do aviso que o app consegue ler na bandeja) — é o que o app usa para tirar da bandeja o aviso de dose registrada. App anterior ignora o campo.
 
 ### Servidor: aviso de dose crítica deixa de ser calado por alarme que o aparelho declarou perdido; paciente sem canal há dias sai do alerta diário (spec 082 D2-server)
 

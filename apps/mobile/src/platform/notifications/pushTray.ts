@@ -5,13 +5,35 @@
 // dose já `taken`. O servidor manda `doseInstanceIds` no data do push; aqui o push sai quando TODAS as
 // ocorrências que ele avisa estão resolvidas neste aparelho (bloco de plano: registrar uma dose não
 // apaga o aviso das outras). Push antigo, sem o campo, fica como antes. Best-effort: nunca lança.
+//
+// 🔴 Android com o app fechado: quem exibe o push é o FCM, e o `data` fica preso no contentIntent —
+// `getPresentedNotificationsAsync` devolve a notificação "estrangeira" SEM data (dumpsys do smoke
+// T101). O que sobra é a TAG, que o expo põe no identificador (`…?tag=<tag>&id=0`,
+// ExpoPresentationDelegate.getInternalIdentifierKey). Por isso o servidor manda `tag: dose:<ids>`.
 
 import * as Notifications from 'expo-notifications'
 import { isDoseResolved } from '@platform/doseActivity/resolvedDoseStore'
 
-function _doseIds(data: unknown): string[] {
-  const ids = (data as { doseInstanceIds?: unknown } | null | undefined)?.doseInstanceIds
-  return Array.isArray(ids) ? ids.map(String).filter(Boolean) : []
+export const DOSE_PUSH_TAG_PREFIX = 'dose:'
+
+function _idsFromTag(identifier: unknown): string[] {
+  if (typeof identifier !== 'string') return []
+  const m = identifier.match(/[?&]tag=([^&]+)/)
+  if (!m) return []
+  let tag: string
+  try {
+    tag = decodeURIComponent(m[1])
+  } catch {
+    return []
+  }
+  if (!tag.startsWith(DOSE_PUSH_TAG_PREFIX)) return []
+  return tag.slice(DOSE_PUSH_TAG_PREFIX.length).split(',').filter(Boolean)
+}
+
+function _doseIds(notification: Notifications.Notification): string[] {
+  const ids = (notification?.request?.content?.data as { doseInstanceIds?: unknown } | null | undefined)?.doseInstanceIds
+  if (Array.isArray(ids) && ids.length > 0) return ids.map(String).filter(Boolean)
+  return _idsFromTag(notification?.request?.identifier)
 }
 
 /**
@@ -24,7 +46,7 @@ export async function dismissPushForResolvedDoses(resolvedIds: string[]): Promis
   try {
     const presented = await Notifications.getPresentedNotificationsAsync()
     for (const notification of presented) {
-      const ids = _doseIds(notification?.request?.content?.data)
+      const ids = _doseIds(notification)
       if (!ids.some((id) => resolved.has(id))) continue
       const flags = await Promise.all(ids.map((id) => (resolved.has(id) ? true : isDoseResolved(id))))
       if (!flags.every(Boolean)) continue

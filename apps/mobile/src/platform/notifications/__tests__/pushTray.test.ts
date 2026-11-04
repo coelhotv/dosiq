@@ -43,6 +43,18 @@ describe('dismissPushForResolvedDoses', () => {
     expect(dismiss).toHaveBeenCalledWith('bloco')
   })
 
+  it('Android/FCM: data vazio, ids vêm da tag no identificador estrangeiro', async () => {
+    const fcm = (tag: string) => `expo-notifications://foreign_notifications?tag=${encodeURIComponent(tag)}&id=0`
+    presented.mockResolvedValueOnce([
+      push(fcm('dose:inst-1'), {}),
+      push(fcm('dose:inst-1,inst-2'), {}),
+      push(fcm('FCM-Notification:509892109'), {}),
+    ])
+    await dismissPushForResolvedDoses(['inst-1'])
+    expect(dismiss).toHaveBeenCalledTimes(1)
+    expect(dismiss).toHaveBeenCalledWith(fcm('dose:inst-1'))
+  })
+
   it('push antigo sem doseInstanceIds fica como antes', async () => {
     presented.mockResolvedValueOnce([push('velho', { kind: 'dose_reminder', protocolId: 'p' })])
     await dismissPushForResolvedDoses(['inst-1'])

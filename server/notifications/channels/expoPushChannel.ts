@@ -78,6 +78,17 @@ function _isTimeSensitive(payload: NotificationPayload, isCriticalDose: boolean)
 // não existir no device, o iOS entrega a notificação SEM botões, em silêncio.
 export const TITRATION_CATEGORY_ID = 'dosiq-titration-v1'
 
+// 082 D2 (smoke T101 · C-38): tag Android = ocorrências avisadas. Com o app fechado o FCM exibe o
+// push e o `data` não é legível na bandeja; a tag é (o expo a põe no identificador). O app dispensa
+// o push quando todas as ocorrências da tag estão resolvidas. Mesma tag ⇒ o reenvio da mesma dose
+// substitui o anterior em vez de empilhar. iOS ignora `tag`.
+export const DOSE_PUSH_TAG_PREFIX = 'dose:'
+
+function _doseTag(payload: NotificationPayload): string | null {
+  const ids = payload?.metadata?.doseInstanceIds
+  return Array.isArray(ids) && ids.length > 0 ? `${DOSE_PUSH_TAG_PREFIX}${ids.join(',')}` : null
+}
+
 // Constrói a lista de mensagens formatadas para o formato do Expo Push.
 function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload, isCriticalDose: boolean) {
   const timeSensitive = _isTimeSensitive(payload, isCriticalDose)
@@ -86,6 +97,7 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
   const categoryId = actions.length > 0 && payload?.metadata?.kind === 'titration_alert'
     ? TITRATION_CATEGORY_ID
     : null
+  const tag = _doseTag(payload)
 
   return devices.map((device) => ({
     to: device.push_token,
@@ -99,6 +111,7 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
     // canal; senão, o default (062 F3-B). O `sound` acima segue valendo no iOS, que ignora `channelId`.
     channelId: resolveAndroidPushChannel(device, isCriticalDose),
     ...(categoryId ? { categoryId } : {}),
+    ...(tag ? { tag } : {}),
     title: payload.title,
     body: payload.pushBody || payload.body,
     data: {
