@@ -15,7 +15,7 @@ tags:
   - dlq
   - architecture
 created_at: "2026-07-30"
-updated_at: "2026-10-11"
+updated_at: "2026-11-04"
 epic: "049"
 ---
 
@@ -30,11 +30,13 @@ epic: "049"
 
 A engine de notificações em background do Dosiq é responsável por processar, formatar, filtrar e entregar alertas de saúde no ambiente servidor. O sistema garante o envio de lembretes de dose, alertas de estoque, notificações da evolução do tratamento e relatórios de adesão com alta confiabilidade e baixa latência.
 
-O acionamento principal da engine ocorre via cron job do Vercel, que invoca periodicamente o endpoint serverless [api/notify.ts](file:///Users/coelhotv/git/dosiq/api/notify.ts). A arquitetura foi desenhada em 3 camadas independentes (Dispatcher → Channels → Providers), isolando as regras de negócio dos detalhes de transporte de cada fornecedor de mensagens.
+O acionamento da engine é **externo**: o [cron-job.org](https://cron-job.org) chama, a cada minuto e com `Authorization: Bearer CRON_SECRET`, o endpoint serverless [api/notify.ts](file:///Users/coelhotv/git/dosiq/api/notify.ts). A arquitetura foi desenhada em 3 camadas independentes (Dispatcher → Channels → Providers), isolando as regras de negócio dos detalhes de transporte de cada fornecedor de mensagens.
+
+> **Agendadores (2026-11-04).** Não usamos Vercel Cron (limite do plano Hobby — `getting-started/SETUP.md`). No cron-job.org rodam: `/api/notify` (todo minuto), `/api/generate-doses` (03:00 SP), `/api/ops?job=brevo_contacts_sync` (a cada 15 min) e `/api/ops?job=prune_enqueue|prune_execute` (21:20/21:25 SP). Os horários do cron-job.org estão em **GMT-3**; Vercel e `pg_cron` operam em **UTC**. No `pg_cron` de prod rodam só limpezas diárias (03:00–03:45 UTC). O agendador externo é ponto único de falha do tick — falhou em 2026-11-04; redundância em `plans/specs/116-notify-tick-resilience` (local-only, não versionado).
 
 ```mermaid
 flowchart TD
-    Cron[Vercel Cron / Scheduled Trigger] -->|HTTP GET/POST + Bearer| NotifyAPI[api/notify.ts]
+    Cron[cron-job.org · 1x/min] -->|HTTP GET/POST + Bearer| NotifyAPI[api/notify.ts]
     
     subgraph Engine["Engine de Notificações (server/notifications)"]
         NotifyAPI -->|1. Cron Tasks / Outbox Cycle| Tasks[server/bot/tasks.js / runOutboxCycle]
@@ -313,7 +315,7 @@ O módulo [server/notifications/apns/liveActivityPush.ts](file:///Users/coelhotv
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Cron as Cron Job (Vercel)
+    participant Cron as cron-job.org (1x/min)
     participant Engine as APNs Dispatcher
     participant DB as Supabase DB
     participant APNs as Apple APNs Gateway

@@ -13,7 +13,7 @@ tags:
   - observabilidade
   - notification-log
 created_at: "2026-09-11"
-updated_at: "2026-10-11"
+updated_at: "2026-11-04"
 ---
 
 # 📬 Entrega de notificação — desfechos, gate por evidência e a série
@@ -136,6 +136,22 @@ crítico tem **6** aparelhos.
   `sem_canal`, não supressão: não havia push a suprimir, e o problema é falta de canal.
 - **Dose não-crítica não passa pelo gate** (FR-014, R-191 intacto).
 
+### Boletim de capacidade invalida a prova (082 D2)
+
+A capacidade por usuário (`alarm_scheduled` nos últimos 7 dias) não enxerga o aparelho que **deixou**
+de conseguir tocar (notificação negada, canal de alarme bloqueado, alarme exato revogado). Desde a
+082 D2 o app (0.34.2+) emite o evento **`device_capability`** em `dose_critical_events`
+(`dose_instance_id` NULL — a capacidade é do usuário; `detail` em allowlist fechada: `capable`,
+`notifications_allowed`, `alarm_channel_blocked`, `exact_alarm_allowed`, `critical_expected`,
+`critical_armed`, `app_version` — nunca nome ou dose de medicamento).
+
+- Boletim com `detail.capable = false` **invalida** toda prova `alarm_scheduled` anterior a ele
+  (`findLatestIncapableAt`, `criticalEventsRepository.ts`) ⇒ o gate volta a **enviar** o push.
+- Migração: `docs/migrations/20261102_device_capability_event.sql` (CHECK 13 → 14 valores, junto do
+  enum `CRITICAL_AUDIT_EVENTS` do core — R-271). Aplicada em prod antes do build 0.34.2 (R-D2-1).
+- `sem_canal` persistente sai do alerta diário (082 D2-server, #929): paciente sem canal físico não é
+  falha recorrente de entrega a cada dia.
+
 ### `dose_critical_events` é 1:N — e isso é um contrato
 
 Até **7** linhas `alarm_scheduled` para a mesma dose (média 1,45 sobre 587 instâncias): o app
@@ -147,8 +163,8 @@ teto e apaga em silêncio a prova das vizinhas do mesmo lote (AP-186). Teto bati
 
 ## 4. A apuração diária
 
-Uma vez por dia, às 08:00 (SP), no cron já existente de `api/notify.ts` — **nenhuma função nova**
-(R-090). Confere as doses críticas das últimas 24 h contra o `notification_log` e emite **um** evento
+Uma vez por dia, às **05:00 (SP)** (era 08:00 até a spec 102), no cron já existente de `api/notify.ts` — **nenhuma função nova**
+(R-090). O job roda dentro de `withServerMonitor(CRITICAL_DELIVERY_AUDIT_MONITOR)` (`server/observability/sentry.ts`): monitor de cron do Sentry `critical-delivery-audit` (`0 5 * * *`, `America/Sao_Paulo`, margem 10 min). Se o audit **não roda** — inclusive porque o tick das 05:00 não aconteceu —, o Sentry acusa o check-in ausente; o silêncio deixa de ser ambíguo. Confere as doses críticas das últimas 24 h contra o `notification_log` e emite **um** evento
 agregado ao Sentry (projeto `dosiq-server`), só quando há o que reportar.
 
 - **Granularidade (FR-007a):** `notification_log` **não tem** `dose_instance_id` e o R-191 grava uma

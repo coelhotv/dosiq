@@ -13,7 +13,7 @@ tags:
   - alarms
   - push
 created_at: "2026-07-14"
-updated_at: "2026-10-11"
+updated_at: "2026-11-04"
 epic: "049"
 ---
 
@@ -23,9 +23,9 @@ epic: "049"
 
 O Dosiq precisa notificar os usuários sobre lembretes de dose, alertas de estoque e eventos promocionais. Para isso, utilizamos dois sistemas distintos que operam em paralelo: push remoto e alarmes locais.
 
-O push remoto é acionado pelo servidor. Ele funciona via Expo Notifications e requer conectividade ativa com a internet. Utilizamos essa via para avisos sistêmicos, nudges comportamentais e alertas de estoque baixo.
+O push remoto é acionado pelo servidor (tick minuto a minuto de `api/notify.ts`). Ele funciona via Expo Notifications e requer conectividade ativa com a internet. Por essa via saem **os lembretes de dose não crítica** (único caminho que eles têm), o push de dose crítica quando não há prova de alarme local (supressão por evidência — `NOTIFICATION_DELIVERY.md`), relatórios, nudges e alertas de estoque.
 
-Os alarmes locais operam 100% offline. Eles são baseados no Notifee e processados diretamente no dispositivo. Utilizamos alarmes nativos estritamente para os lembretes críticos de dose. O Notifee permite bypass do modo Não Perturbe, garante precisão no disparo e habilita ações customizadas na tela de bloqueio.
+Os alarmes locais operam 100% offline. Eles são baseados no Notifee e processados diretamente no dispositivo. Utilizamos alarmes nativos estritamente para os lembretes críticos de dose: `syncAlarms` (`platform/alarms/useAlarmScheduler.ts`) reconstrói, a cada sincronização, os alarmes das doses críticas `pending` das **próximas 72h** (`LOOK_AHEAD_DAYS = 3`, limitado pela cota de alarmes exatos do Android 12+). Dose não crítica **não** ganha alarme local; aparelho que passa mais de 72h sem sincronizar fica sem alarme agendado. O Notifee permite bypass do modo Não Perturbe, garante precisão no disparo e habilita ações customizadas na tela de bloqueio.
 
 ```mermaid
 graph TD
@@ -109,11 +109,19 @@ O modelo de permissões do Dosiq é estritamente contextual. Nunca pedimos autor
 
 No iOS, as permissões são globais. No Android 13+, a permissão `POST_NOTIFICATIONS` atua de maneira semelhante.
 
-### Canal de Notificação (Android)
+### Canais Android (vigentes desde a spec 062)
 
-O Android 8.0 introduziu canais obrigatórios. O som da notificação pertence ao canal e não pode ser modificado após a criação. 
+O Android 8.0 introduziu canais obrigatórios. Som e importância pertencem ao canal e não mudam após a criação: mudar a config exige **id novo, nunca usado** (R-261 — um id apagado ressuscita a config antiga se recriado).
 
-Por isso, utilizamos a função `ensurePushChannel` para montar o canal `dosiq-default-v1` contendo o som de alerta personalizado. Se precisarmos alterar o som no futuro, precisamos incrementar o ID do canal (v2).
+| Canal | Criado por | Uso | Som / importância |
+|---|---|---|---|
+| `dose-alarm-critical-v3` | expo-notifications (único que expõe `usage = ALARM`); notifee exibe nele | alarme local de dose crítica (notifee) | `alarm_dose`, HIGH, volume de alarme |
+| `dose-alarm-critical-v2` | notifee | **fallback** do alarme quando a criação do `-v3` falha (`resolveAlarmChannelId`) | `alarm_dose`, HIGH, `USAGE_NOTIFICATION` |
+| `dosiq-critical-v1` | `ensurePushChannel` | push remoto de dose crítica; servidor só envia para `app_version` ≥ `MIN_APP_VERSION_FOR_CRITICAL_PUSH_CHANNEL` (`ANDROID_PUSH_CHANNEL.CRITICAL`, `@dosiq/core`) | espelha o alarme, `USAGE_ALARM`; id próprio para o push não ser tratado como alarme local (AP-327) |
+| `dosiq-default-v1` | `ensurePushChannel` | push comum (lembrete não crítico, relatórios, avisos) | `push_chime`, HIGH |
+| `dose-activity-v2` | notifee | superfície persistente da dose (`doseActivitySurfaceService`) — superfície ≠ alarme | — |
+
+Legados varridos na atualização (lista fechada `LEGACY_SWEEP_CHANNEL_IDS`, nunca prefixo): `dose-alarm-critical-v1`, `dose-alarm-v3`, `dose-alarm-v2`, `dose-alarm`, `dose-activity-v1`. `dose-alarm-v3` sobrevive só como **categoria iOS** de ações. `dosiq-titration-v1` é categoria de ações da titulação, não canal.
 
 ### Sincronização de Dispositivo
 

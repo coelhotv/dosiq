@@ -13,7 +13,7 @@ tags:
   - cross-platform
   - hub
 created_at: "2026-02-01"
-updated_at: "2026-07-30"
+updated_at: "2026-11-04"
 epic: "049"
 ---
 
@@ -39,7 +39,7 @@ O diagrama a seguir ilustra a distribuição de responsabilidades entre o servid
 ```mermaid
 flowchart TD
     subgraph Server["Servidor Backend (Vercel Serverless / Cron)"]
-        Cron[Vercel Cron / api/notify.ts] --> Outbox[Outbox Engine & Tasks]
+        Cron[cron-job.org 1x/min → api/notify.ts] --> Outbox[Outbox Engine & Tasks]
         Outbox --> Dispatcher[Server Dispatcher]
         Dispatcher --> GatePolicy{Quiet Hours / Gate Policy}
         GatePolicy -->|Permitido| Channels[Channels Pool]
@@ -70,7 +70,7 @@ flowchart TD
 
 | Domínio | Responsabilidade Principal | Mecanismo Principal | Documentação de Referência |
 |---|---|---|---|
-| **Engine do Servidor** | Orquestração backend, payloads e retentativas. | Vercel Cron, Outbox Pattern e DLQ. | [`SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md) |
+| **Engine do Servidor** | Orquestração backend, payloads e retentativas. | cron-job.org (tick 1x/min), Outbox Pattern e DLQ. | [`SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md) |
 | **Notificações Mobile** | Push remoto e alarmes críticos locais. | Expo Push SDK e Notifee Engine. | [`MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md) |
 | **Live Activities** | Estado contínuo da dose em tempo real. | iOS ActivityKit e Android Ongoing. | [`DOSE_LIVE_ACTIVITY.md`](DOSE_LIVE_ACTIVITY.md) |
 | **Bot Telegram** | Lembretes e gestão por chat. | Telegram Bot API e Callbacks. | [`TELEGRAM_BOT.md`](TELEGRAM_BOT.md) |
@@ -259,12 +259,25 @@ O agendamento e o disparo consideram o fuso horário do usuário (`user_settings
 
 ---
 
+## 🧯 Resiliência da entrega de dose (estado em 2026-11-04)
+
+| Tipo de dose | Caminho principal | Rede de segurança | Sem servidor (tick parado) |
+|---|---|---|---|
+| **Crítica** (`critical_alarm`) | alarme local notifee, agendado 72h à frente | push crítico (suprimido quando há prova do alarme local daquela ocorrência) | **toca**, se o aparelho sincronizou nas últimas 72h |
+| **Não crítica** | push do tick (`api/notify.ts`) | nenhuma | **não toca** — lembrete do minuto é perdido |
+| Telegram / web / Live Activity iOS | tick | nenhuma | não entrega |
+
+O tick depende de um agendador externo único (cron-job.org). Detecção de falha hoje: audit diário das 05:00 SP (check-in no Sentry, spec 102). Redundância do agendador e janela de recuperação: spec 116 (local-only, não versionado).
+
 ## 🔗 Central de Documentação (Deep-Dives)
 
 Para entender os detalhes técnicos de implementação de cada componente, acesse os guias especializados:
 
 - 🖥️ **Backend & Server Engine:** [`docs/architecture/SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md)  
-  *Cobre a engine de 3 camadas, Vercel Cron, Outbox Pattern, Dead Letter Queue (DLQ), deduplicação e conexão HTTP/2 direta com APNs.*
+  *Cobre a engine de 3 camadas, os agendadores (cron-job.org), o gate do tick, Outbox Pattern, Dead Letter Queue (DLQ), deduplicação e conexão HTTP/2 direta com APNs.*
+
+- 📬 **Entrega, supressão e prova:** [`docs/architecture/NOTIFICATION_DELIVERY.md`](NOTIFICATION_DELIVERY.md)  
+  *Cobre os desfechos do `notification_log` (`enviada`/`falhou`/`sem_canal`), a supressão do push crítico por evidência de alarme local e o audit diário.*
 
 - 📱 **Mobile Push & Alarmes Locais:** [`docs/architecture/MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md)  
   *Cobre o registro de tokens via Expo SDK, permissões contextuais, canais Android e o agendamento offline de alarmes com Notifee.*
