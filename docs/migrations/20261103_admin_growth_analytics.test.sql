@@ -3,6 +3,15 @@
 -- Execução (MCP execute_sql, QA `ikcvwxyohmntncanclze`): roda DEPOIS da migração aplicada e termina
 -- com RAISE EXCEPTION 'RESULT …' — o erro final desfaz a fixture. Nada sobra no banco.
 --
+-- RESULTADO REGISTRADO — QA (ikcvwxyohmntncanclze), 2026-11-05: RESULT OK — PO-115-1/2/3/4/6/8 + PO-SEC-1/4/5
+--   (fixture 5 usuários, 7 pré-existentes excluídos; desfeito). md5(prosrc) 9389389e… = arquivo.
+-- RESULTADO REGISTRADO — PROD (kwqjtdsqkkbebfiaxubb), 2026-11-05, aprovação do PO no #931 (merge cfd5f09d):
+--   Fixture NÃO roda em prod (insere em auth.users; manipulação de dados só no QA). Provas sem escrita:
+--   md5(prosrc) 9389389e… (9795) = arquivo · prosecdef true · proconfig {search_path=""}                ✅
+--   routine_privileges = postgres:EXECUTE, service_role:EXECUTE                                        ✅
+--   POST /rest/v1/rpc/get_admin_growth_analytics com chave anon ⇒ HTTP 401 / 42501                     ✅
+--   EXPLAIN ANALYZE (limit 500): Execution Time 36.783 ms · 82 usuários · payload sem user-agent bruto ✅
+
 -- Isolamento: o QA já tem usuários. Toda chamada passa os usuários pré-existentes em
 -- p_excluded_user_ids, então os números abaixo são só da fixture (A, B, C, D, X).
 --   A — criado hoje · 2 tratamentos A10S (um com titulação + peso + alarme + estoque + data fim)
