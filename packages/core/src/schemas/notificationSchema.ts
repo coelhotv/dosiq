@@ -9,6 +9,8 @@ export const NOTIFICATION_TYPES = {
   DOSE_REMINDER_BY_PLAN: 'dose_reminder_by_plan',
   DOSE_REMINDER_MISC: 'dose_reminder_misc',
   STOCK_ALERT: 'stock_alert',
+  // 105: aviso de dose mensal (D-2) e lembrete de compra — um kind, `reason` no payload.
+  SUPPLY_REMINDER: 'supply_reminder',
   MISSED_DOSE: 'missed_dose',
   TITRATION_UPDATE: 'titration_update',
   DAILY_DIGEST: 'daily_digest',

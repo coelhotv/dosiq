@@ -35,6 +35,7 @@ import {
   buildWeeklyAdherencePayload,
   buildStockAlertPayload,
   buildStockExpiryAlertPayload,
+  buildSupplyReminderPayload,
   buildTitrationAlertPayload,
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
@@ -95,6 +96,7 @@ const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title:
   weekly_adherence: (data) => buildWeeklyAdherencePayload(data as never),
   stock_alert: (data) => buildStockAlertPayload(data as never),
   stock_expiry_alert: (data) => buildStockExpiryAlertPayload(data as never),
+  supply_reminder: (data) => buildSupplyReminderPayload(data as never),
   titration_alert: (data) => buildTitrationAlertPayload(data as never),
   monthly_report: (data) => buildMonthlyReportPayload(data as never),
   prescription_alert: (data) => buildPrescriptionAlertPayload(data as never),
@@ -395,6 +397,12 @@ function getNavigationMetadata(kind: Kind, data: NotificationEventData, protocol
     consent_prune_notice: { screen: 'privacy-data', params: {} },
   }
 
+  // 105 (FR-013/FR-016): um kind, duas telas — compra abre Estoque; aviso mensal abre o Hoje. Telas que
+  // existem em toda a frota (0.30.x), sem `medicine_id` nos params (E-14).
+  if (kind === 'supply_reminder') {
+    return { screen: data.reason === 'purchase' ? 'stock' : 'today', params: {} }
+  }
+
   return routes[kind] || { screen: 'today', params: {} }
 }
 
@@ -479,6 +487,9 @@ function resolveDeeplink(kind: Kind, data: NotificationEventData): string {
       const pids = data.protocolIds?.join(',') || '';
       return `${BASE_URL}today?bulkMode=misc&at=${data.scheduledTime || 'now'}${pids ? `&protocolIds=${pids}` : ''}`;
     }
+
+    case 'supply_reminder':
+      return data.reason === 'purchase' ? `${BASE_URL}stock` : `${BASE_URL}today`;
 
     default:
       return `${BASE_URL}today`;

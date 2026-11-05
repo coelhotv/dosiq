@@ -5,6 +5,7 @@ import {
   weeklyAdherenceDataSchema,
   stockAlertDataSchema,
   stockExpiryAlertDataSchema,
+  supplyReminderDataSchema,
   titrationAlertDataSchema,
   actionSchema,
   prescriptionAlertDataSchema,
@@ -228,6 +229,27 @@ function _formatStepDose(dose: number | undefined, intakeUnit: string | null | u
  * As AÇÕES saem só no `medicine_switch` (§3.1): `[Iniciar etapa]` `[Ainda não]`, espelhando o
  * card do Hoje. `dose_change` é automático na data → informativo, SEM botões (§3.4).
  */
+/**
+ * 105 — aviso de dose mensal (D-2) e lembrete de compra (D-2/D-1). FR-006/INV-7: NUNCA nomeia o
+ * remédio (tela bloqueada, Telegram); diz o tipo de aviso e quando. Texto de ACESSO (comprar, buscar,
+ * agendar), nunca clínico (linha SaMD). Sem "protocolo" e sem possessivos (termos de UI).
+ */
+export function buildSupplyReminderPayload(data: z.input<typeof supplyReminderDataSchema>): NotificationPayload {
+  const { reason, daysUntil, withPurchaseLine } = supplyReminderDataSchema.parse(data);
+  const quando = daysUntil === 1 ? 'amanhã' : `daqui a ${daysUntil} dias`;
+  if (reason === 'monthly_dose') {
+    const title = '🗓️ Dose mensal chegando';
+    const acao = withPurchaseLine
+      ? 'O estoque cadastrado não cobre essa dose: hora de comprar ou buscar.'
+      : 'Hora de garantir: comprar, buscar ou agendar a aplicação.';
+    const plain = `A dose mensal é ${quando}. ${acao} Abra o dosiq para ver os detalhes.`;
+    return { title, body: escapeMarkdownV2(plain), pushBody: plain };
+  }
+  const title = '📦 Hora de garantir a próxima caixa';
+  const plain = `A próxima compra é para ${quando}. Abra o dosiq para ver qual medicamento.`;
+  return { title, body: escapeMarkdownV2(plain), pushBody: plain };
+}
+
 export function buildTitrationAlertPayload(data: z.input<typeof titrationAlertDataSchema>): NotificationPayload & { actions?: Array<z.input<typeof actionSchema>> } {
   const parsed = titrationAlertDataSchema.parse(data);
   const { medicineName, currentStage, totalStages, stepId, dose, intakeUnit, status, requiresNewMedicine } = parsed;

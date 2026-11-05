@@ -16,6 +16,8 @@ import { runOutboxCycle } from '../server/notifications/outbox/runOutboxCycle.js
 import { createOutboxRepository } from '../server/notifications/outbox/outboxRepository.js';
 import { enqueueStockAlerts } from '../server/bot/outbox/enqueueStockAlerts.js';
 import { buildStockExpiryContent } from '../server/bot/outbox/stockExpiryContent.js';
+import { enqueueMonthlyHeadsUp } from '../server/bot/outbox/enqueueMonthlyHeadsUp.js';
+import { buildSupplyReminderContent } from '../server/bot/outbox/supplyReminderContent.js';
 import { buildStockAlertContent } from '../server/bot/outbox/stockAlertContent.js';
 import {
   buildDailyAdherenceData,
@@ -69,7 +71,10 @@ const OUTBOX_CONTENT_BUILDERS = {
   stock_alert: ({ userId, subjectId }) => buildStockAlertContent({ userId, subjectId }),
   // 050 PR 2: eixo VALIDADE — fan-out por LOTE (subject_id = stock.id). `daysLeft` é recalculado
   // no envio; lote consumido ou apagado devolve null e a linha é fechada sem envio.
-  stock_expiry_alert: ({ userId, subjectId }) => buildStockExpiryContent({ userId, subjectId })
+  stock_expiry_alert: ({ userId, subjectId }) => buildStockExpiryContent({ userId, subjectId }),
+  // 105: aviso de dose mensal (subject = dose_instance.id) e lembrete de compra (subject =
+  // medicine_id). Sem legado: só existe pela outbox (FR-012).
+  supply_reminder: ({ userId, subjectId }) => buildSupplyReminderContent({ userId, subjectId })
 };
 // outbox kind → kind de dispatch quando divergem (payload legado usa 'adherence_report').
 const OUTBOX_DISPATCH_KIND = { daily_adherence: 'adherence_report' };
@@ -161,7 +166,9 @@ async function retryPendingDlq(notificationDispatcher, correlationId) {
 // === HELPER: _runOutboxCycleJob ===
 // Ciclo da outbox do tick (ADR-078). 109: o plano do gate pula os enqueues sem janela aberta; o drain
 // roda sempre que o ciclo roda (linhas já pendentes).
-async function _runOutboxCycleJob(notificationDispatcher, correlationId, plan) {
+// 105 C-6: `now` é o relógio do tick (a 116 FR-016 o troca pelo minuto-alvo na recuperação) — os
+// enqueues de janela derivam data e janela dele, nunca de um `new Date()` interno.
+async function _runOutboxCycleJob(notificationDispatcher, correlationId, plan, now = getRawNow()) {
   // 050 PR 1b/2: enqueue dos alertas de estoque ANTES do ciclo — fan-out (1 linha por medicamento) que o
   // enqueue por range de relatórios não expressa. 🔴 `kinds: OUTBOX_KINDS` NÃO é decorativo: o
   // claim não filtra kind e o guard do legado (abaixo) segue ligado até o cutover (PR 2), então
@@ -175,11 +182,29 @@ async function _runOutboxCycleJob(notificationDispatcher, correlationId, plan) {
       stockEnqueue = await enqueueStockAlerts({
         repo: createOutboxRepository({ client: supabase }),
         kinds: OUTBOX_KINDS,
+        now,
         correlationId,
         logger,
       });
     } catch (err) {
       logger.error('[outbox] enqueue dos alertas de estoque falhou (isolado — ciclo segue)', err, { correlationId });
+    }
+  }
+
+  // 105 (US-1): aviso D-2 de dose mensal — eixo PRÓPRIO, sem filtro de estoque (FR-014). Isolado
+  // como o de estoque (R-245): falhar aqui não derruba o drain.
+  let monthlyHeadsUp = null;
+  if (!plan || plan.supplyEnqueue) {
+    try {
+      monthlyHeadsUp = await enqueueMonthlyHeadsUp({
+        repo: createOutboxRepository({ client: supabase }),
+        kinds: OUTBOX_KINDS,
+        now,
+        correlationId,
+        logger,
+      });
+    } catch (err) {
+      logger.error('[outbox] enqueue do aviso de dose mensal falhou (isolado — ciclo segue)', err, { correlationId });
     }
   }
 
@@ -193,7 +218,7 @@ async function _runOutboxCycleJob(notificationDispatcher, correlationId, plan) {
     logger,
     skipReportEnqueue: !!plan && !plan.reportEnqueue,
   });
-  logger.info('[outbox] ciclo concluído', { correlationId, stockEnqueue, ...outcome });
+  logger.info('[outbox] ciclo concluído', { correlationId, stockEnqueue, monthlyHeadsUp, ...outcome });
 }
 
 // === HELPER: resolveTickPlan (spec 109 · ADR-115) ===
@@ -233,7 +258,7 @@ function _gatedJobs(plan) {
 
 // === HELPER: executeCronJobs ===
 
-async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan = null) {
+async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan = null, now) {
   const currentHour = spDate.getHours();
   const currentMinute = spDate.getMinutes();
   const currentDay = spDate.getDate();
@@ -268,7 +293,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   //    109: com gate, só roda com linha pendente ou janela de enqueue aberta (FR-006/FR-007).
   if (gated.outboxCycle) {
     await runJob('outbox_cycle', 'outbox_cycle',
-      () => _runOutboxCycleJob(notificationDispatcher, correlationId, plan));
+      () => _runOutboxCycleJob(notificationDispatcher, correlationId, plan, now));
   }
 
   // --- Jobs LEGADOS: pulados quando o kind já é servido pela outbox (evita envio duplo). ---
@@ -428,7 +453,7 @@ export default async function handler(req, res) {
   try {
     const results = await withServerIsolation(async () => {
       const plan = await resolveTickPlan(now, correlationId);
-      return _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan);
+      return _executeCronJobs(notificationDispatcher, bot, correlationId, spDate, plan, now);
     });
 
     logger.info('Cron jobs completed', {

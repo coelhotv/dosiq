@@ -38,7 +38,9 @@ export function isTransferRedacted(settings: TransferRedactionSettings | null | 
  * Kinds cuja copy já é neutra por contrato de schema (sem campo onde dado clínico caiba) — passam
  * intactos. Um kind só entra aqui com a mesma prova de CONSENT_LIFECYCLE_KINDS.
  */
-export const TRANSFER_NEUTRAL_KINDS = Object.freeze(['consent_prune_notice', 'prune_admin_alert'])
+// 105 (FR-017 · ADR-120): `supply_reminder` entra com a prova de schema — `supplyReminderDataSchema`
+// é `.strict()` e não tem campo de remédio, dose ou plano.
+export const TRANSFER_NEUTRAL_KINDS = Object.freeze(['consent_prune_notice', 'prune_admin_alert', 'supply_reminder'])
 
 const DOSE_GENERIC = { title: '💊 Hora do seu remédio', body: 'Abra o dosiq para ver a dose.' }
 

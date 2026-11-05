@@ -590,3 +590,67 @@ describe('dispatchNotification — status da entrega (082/ADR-100)', () => {
     expect(logged.status).toBe('falhou')
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 105 PO-105-6 — `supply_reminder` pelo dispatcher REAL: gate central (sem mock) e payload final
+// por canal sem nome de remédio, com e sem a caixa B (FR-017 · INV-7 · ADR-120).
+describe('dispatchNotification — supply_reminder (105)', () => {
+  const MONTHLY = { reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: true }
+  const run = (settings: Record<string, unknown>, data: Record<string, unknown> = MONTHLY) => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      notification_mode: 'realtime', quiet_hours_enabled: false,
+      channel_mobile_push_enabled: true, channel_telegram_enabled: true, ...settings,
+    })
+    mockBot.sendMessage.mockResolvedValue({ message_id: 1 })
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[abc]' }])
+    return dispatchNotification({
+      userId: 'user-105', kind: 'supply_reminder', data, channels: ['telegram', 'mobile_push'],
+      context: makeContext(), repositories: mockRepositories, bot: mockBot, expoClient: mockExpoClient,
+    })
+  }
+  const sent = () => JSON.stringify({
+    telegram: mockBot.sendMessage.mock.calls,
+    expo: mockExpoClient.sendPushNotificationsAsync.mock.calls,
+  })
+
+  it.each([
+    ['silent', { notification_mode: 'silent' }],
+    ['digest_morning', { notification_mode: 'digest_morning' }],
+    ['quiet hours (12:00 dentro de 11:00–13:00)', { quiet_hours_enabled: true, quiet_hours_start: '11:00', quiet_hours_end: '13:00' }],
+  ])('gate central: %s ⇒ suprimido (AC-6)', async (_l, settings) => {
+    const result = await run({ international_transfer_granted_at: '2026-10-21T10:00:00Z', ...settings })
+    expect(result.totalDelivered).toBe(0)
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+  })
+
+  it('estoque desligado não cala: realtime ⇒ entregue nos 2 canais (INV-6)', async () => {
+    const result = await run({ stock_tracking_enabled: false, international_transfer_granted_at: '2026-10-21T10:00:00Z' })
+    expect(result.totalDelivered).toBe(2)
+    expect(sent()).toContain('Dose mensal chegando')
+  })
+
+  it.each([
+    ['com B', '2026-10-21T10:00:00Z'],
+    ['sem B', null],
+  ])('🔴 %s: texto neutro passa intacto (TRANSFER_NEUTRAL_KINDS) e sem medicamento em título, corpo ou data', async (_l, b) => {
+    await run({ international_transfer_granted_at: b })
+    const out = sent()
+    expect(out).toContain('A dose mensal é daqui a 2 dias')
+    expect(out).not.toMatch(/medicineName|medicine_id|protocolId|Medicamento Teste/)
+  })
+
+  it('compra abre Estoque; aviso mensal abre o Hoje (FR-013/FR-016)', async () => {
+    await run({ international_transfer_granted_at: null }, { reason: 'purchase', daysUntil: 1, withPurchaseLine: false })
+    expect(sent()).toContain('"screen":"stock"')
+    mockBot.sendMessage.mockClear(); mockExpoClient.sendPushNotificationsAsync.mockClear()
+    await run({ international_transfer_granted_at: null })
+    expect(sent()).toContain('"screen":"today"')
+  })
+
+  it('🔴 schema rejeita nome de remédio no payload — nenhum chamador consegue vazar (FR-017)', async () => {
+    await expect(run({}, { ...MONTHLY, medicineName: 'Medicamento Teste' })).rejects.toThrow()
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+  })
+})

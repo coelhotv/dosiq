@@ -29,6 +29,14 @@ export function getNotificationIcon(type: string): {
       label: 'Alerta de estoque',
       deepLinkAction: 'stock',
     },
+    // 105: um kind para o aviso de dose mensal e o lembrete de compra; o rótulo serve aos dois.
+    supply_reminder: {
+      iconName: 'CalendarClock',
+      color: '#d97706',
+      bgColor: 'rgba(217, 119, 6, 0.10)',
+      label: 'Lembrete de reposição',
+      deepLinkAction: 'dashboard',
+    },
     missed_dose: {
       iconName: 'AlertTriangle',
       color: '#dc2626',

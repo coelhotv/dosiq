@@ -19,7 +19,8 @@ export type OutboxKind =
   | 'monthly_report'
   | 'daily_digest'
   | 'stock_alert'
-  | 'stock_expiry_alert';
+  | 'stock_expiry_alert'
+  | 'supply_reminder';
 
 type Granularity = 'daily' | 'weekly' | 'monthly';
 
@@ -31,6 +32,8 @@ const KIND_GRANULARITY: Record<OutboxKind, Granularity> = {
   stock_alert: 'daily',
   // 050 PR 2: validade biológica — a chave é o DIA local; o assunto (o lote) mora em subject_id.
   stock_expiry_alert: 'daily',
+  // 105: dia local; o assunto (dose_instance.id ou medicine_id) mora em subject_id.
+  supply_reminder: 'daily',
   weekly_adherence: 'weekly',
   monthly_report: 'monthly',
 };

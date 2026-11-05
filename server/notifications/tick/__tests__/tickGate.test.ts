@@ -38,8 +38,23 @@ describe('planTick — minuto ocioso', () => {
   it('nenhum job por minuto roda', () => {
     expect(plan(work())).toEqual({
       reminders: false, laStart: false, laLifecycle: false, outboxCycle: false,
-      reportEnqueue: false, stockEnqueue: false, legacyDigest: false, failOpen: false,
+      reportEnqueue: false, stockEnqueue: false, supplyEnqueue: false, legacyDigest: false, failOpen: false,
     });
+  });
+});
+
+describe('planTick — supply_reminder (105 FR-012)', () => {
+  const at10 = new Date('2026-10-27T13:03:00Z');
+  it.each([
+    ['com o kind, na janela ⇒ roda e abre o ciclo', new Set([...ALL_KINDS, 'supply_reminder']), at10, true],
+    ['sem os kinds de estoque, só supply_reminder ⇒ roda (gate próprio)', new Set(['supply_reminder']), at10, true],
+    ['sem o kind ⇒ nunca', ALL_KINDS, at10, false],
+    ['fora da janela ⇒ não', new Set(['supply_reminder']), new Date('2026-10-27T13:10:00Z'), false],
+  ])('%s', (_l, kinds, now, expected) => {
+    const p = plan(work(), now as Date, kinds as Set<string>);
+    expect(p.supplyEnqueue).toBe(expected);
+    // Sem os kinds de estoque, só o supply abre o ciclo da outbox.
+    if (!(kinds as Set<string>).has('stock_alert')) expect(p.outboxCycle).toBe(expected);
   });
 });
 
