@@ -2,6 +2,8 @@
 # Regenerated via: npx expo prebuild
 ios/
 android/
+# módulos Expo locais versionam o próprio android/ (082 D2 · background-restriction)
+!modules/*/android/
 credentials/
 
 # @bacons/apple-targets — gerados no prebuild a partir de targets/*/expo-target.config.js

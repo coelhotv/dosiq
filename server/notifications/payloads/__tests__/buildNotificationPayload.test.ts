@@ -109,6 +109,36 @@ describe('buildNotificationPayload', () => {
     });
   });
 
+  describe('doseInstanceIds no metadata (082 D2 · smoke T101)', () => {
+    it('single: leva os ids do data — o app tira da bandeja o push da dose registrada', () => {
+      const payload = buildNotificationPayload({
+        kind: 'dose_reminder',
+        data: { medicineName: 'Lantus', time: '16:05', doseInstanceIds: ['inst-1'] },
+      });
+      expect(payload.metadata?.doseInstanceIds).toEqual(['inst-1']);
+    });
+
+    it('bloco: deriva dos `instanceId` de cada dose, ignorando vazios', () => {
+      const payload = buildNotificationPayload({
+        kind: 'dose_reminder_misc',
+        data: {
+          scheduledTime: '08:00',
+          hour: 8,
+          doses: [
+            { protocolId: 'p1', medicineName: 'A', dosagePerIntake: 1, instanceId: 'a' },
+            { protocolId: 'p2', medicineName: 'B', dosagePerIntake: 1, instanceId: null },
+          ],
+        },
+      });
+      expect(payload.metadata?.doseInstanceIds).toEqual(['a']);
+    });
+
+    it('sem id: o campo não existe', () => {
+      const payload = buildNotificationPayload({ kind: 'dose_reminder', data: { medicineName: 'X', time: '09:00' } });
+      expect(payload.metadata).not.toHaveProperty('doseInstanceIds');
+    });
+  });
+
   describe('dose_reminder', () => {
     it('should generate clean push body for single dose without dosage', () => {
       const data = {

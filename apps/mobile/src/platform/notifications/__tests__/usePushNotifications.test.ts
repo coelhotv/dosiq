@@ -57,6 +57,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(() => Promise.resolve()),
 }))
 
+const mockResolvedIds = new Set<string>()
+jest.mock('@platform/doseActivity/resolvedDoseStore', () => ({
+  isDoseResolved: jest.fn(async (id) => mockResolvedIds.has(id)),
+}))
+
 // Acesso às funções mock via require (após as declarações de mock)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { navigateToDose, navigateToHistory, navigateToPrivacyData } = require('@navigation/navigateToDose')
@@ -214,6 +219,32 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(navigateToDose).toHaveBeenCalledWith({ screen: 'dose-individual', protocolId: 'proto-1' })
+    unmount()
+  })
+
+  // 082 D2 · C-40: push de dose já registrada neste aparelho abre o Hoje, não a modal.
+  it.each([
+    ['todas registradas ⇒ Hoje sem modal', ['inst-1'], null],
+    ['alguma pendente ⇒ modal', [], { screen: 'dose-individual', protocolId: 'proto-1' }],
+  ])('tap em push com doseInstanceIds: %s', async (_label, resolved, expected) => {
+    resolved.forEach((id) => mockResolvedIds.add(id))
+    const capturedHandler = { fn: null }
+    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
+      capturedHandler.fn = fn
+      return { remove: jest.fn() }
+    })
+    const { unmount } = renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    const response = makeResponse('dose-individual', { protocolId: 'proto-1' })
+    Object.assign(response.notification.request.content.data, { doseInstanceIds: ['inst-1'] })
+    await act(async () => {
+      capturedHandler.fn(response)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(navigateToDose).toHaveBeenCalledWith(expected)
+    mockResolvedIds.clear()
     unmount()
   })
 

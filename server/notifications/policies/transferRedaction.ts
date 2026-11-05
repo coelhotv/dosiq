@@ -72,6 +72,7 @@ const METADATA_ALLOWLIST = Object.freeze([
   'critical_alarm', // instrução de som/canal (o alarme crítico do aparelho depende dele) — não é dado clínico
   'suppress_push_reason',
   'notificationLogId',
+  'doseInstanceIds', // 082 D2: ids opacos — o app apaga da bandeja o push da dose registrada
 ])
 
 /** `navigation.params` sem B: só ids e o instante (o app resolve o resto localmente). */

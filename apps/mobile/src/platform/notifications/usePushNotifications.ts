@@ -16,6 +16,7 @@ import { debugLog } from '@shared/utils/debugLog'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { emitServerReminderOpened } from '@platform/analytics/reminderEvents'
+import { isDoseResolved } from '@platform/doseActivity/resolvedDoseStore'
 
 // Navega para a tela correta a partir de um tap em push notification.
 // No cold start o NavigationContainer pode não ter montado ainda — navegar
@@ -55,9 +56,24 @@ function navigateFromPush(data) {
   } else if (screen === 'privacy-data') {
     navigateToPrivacyData()
   } else {
-    navigateToDose(screen ? { screen, ...(navigationData?.params ?? {}) } : null)
+    void _navigateToDoseUnlessResolved(data, screen ? { screen, ...(navigationData?.params ?? {}) } : null)
   }
   debugLog('[usePushNotifications] Navegando para:', screen ?? ROUTES.TODAY)
+}
+
+// 082 D2 (smoke T101 · C-40): push que ficou na bandeja de dose JÁ registrada neste aparelho abre
+// o Hoje, não a modal — a modal aceita dose avulsa e convidava a registrar de novo. Só a marca local
+// (`resolvedDoseStore`); falha ou push sem `doseInstanceIds` ⇒ comportamento anterior (abre a modal).
+async function _navigateToDoseUnlessResolved(data, params) {
+  const ids = Array.isArray(data?.doseInstanceIds) ? data.doseInstanceIds.map(String).filter(Boolean) : []
+  if (params && ids.length > 0) {
+    const flags = await Promise.all(ids.map((id) => isDoseResolved(id).catch(() => false)))
+    if (flags.every(Boolean)) {
+      navigateToDose(null)
+      return
+    }
+  }
+  navigateToDose(params)
 }
 
 export function usePushNotifications({ supabase, session, canRegister = false }) {

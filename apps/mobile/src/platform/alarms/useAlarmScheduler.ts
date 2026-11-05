@@ -29,6 +29,7 @@ import {
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
 import { getSnoozeAnchors, getSnoozeAttempts, mergeSnoozeAnchors } from './snoozeAnchorStore'
+import { readCapability, emitCapability } from '@platform/device/capabilityBulletin'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
@@ -67,14 +68,27 @@ async function _alarmUndeliverable(): Promise<boolean> {
   }
 }
 
+// 082 D2: boletim de capacidade — throttle, serialização e allowlist em `capabilityBulletin`.
+export { CAPABILITY_AUDIT_KEY, CAPABILITY_REFRESH_MS } from '@platform/device/capabilityBulletin'
+
 /**
- * `alarm_scheduled` do sync (spec 042), fail-open TOTAL. C-34: alarme que não vai chegar não vira
- * prova; o dedupe fica intocado e a prova sai no primeiro sync depois do desbloqueio.
+ * `alarm_scheduled` do sync (spec 042) + boletim de capacidade (082 D2), fail-open TOTAL.
+ * C-34: alarme que não vai chegar não vira prova. 082 D2: boletim NEGATIVO invalida no servidor a
+ * prova já emitida; aqui ele zera o dedupe e NÃO emite prova nova (uma prova posterior ao negativo
+ * o anularia). Ao voltar a capaz, o dedupe vazio faz o sync re-emitir `alarm_scheduled` — prova NOVA.
+ * @param scheduledIds - ids de trigger que este sync agendou (instanceId ou `String(ts)` do grupo)
  */
-async function _emitScheduledAudit(items, userId) {
+async function _emitScheduledAudit(items, userId, scheduledIds: string[] = []) {
   try {
+    const capability = userId && items.length > 0 ? await readCapability(scheduledIds) : null
+    if (capability?.verdict.capable === false) {
+      await emitCapability(capability, userId)
+      await AsyncStorage.removeItem(SCHEDULED_AUDIT_KEY).catch(() => {})
+      return
+    }
     if (items.length > 0 && (await _alarmUndeliverable())) return
     await emitScheduledDedupe(items.map((it) => it.instanceId), userId, await _scheduledMode(items.length))
+    if (capability) await emitCapability(capability, userId)
   } catch (err) {
     if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
   }
@@ -246,12 +260,15 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
 
   const snoozed = items.filter((it) => it.snoozeFireAt != null)
   await _scheduleSnoozedAlarms(snoozed)
+  // 082 D2: ids de trigger agendados — o boletim confere quantos o SO de fato guardou.
+  const scheduledIds: string[] = snoozed.map((it) => String(it.instanceId))
 
   const groups = _groupItemsByTimestamp(items)
 
   for (const [ts, groupItems] of groups.entries()) {
     if (groupItems.length === 1) {
       const it = groupItems[0]
+      scheduledIds.push(String(it.instanceId))
       await alarmService.scheduleAlarm({
         doseInstanceId: it.instanceId,
         medicineName: it.medicineName,
@@ -271,6 +288,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
       // janela do grupo como UNIÃO das janelas individuais. Usar o MENOR barraria um disparo que é
       // legítimo para a dose mais folgada do lote, e a recusa é por lote (FR-005 emendada).
       const maxEarlyWindow = Math.max(...groupItems.map((it) => it.earlyWindowMinutes ?? 120))
+      scheduledIds.push(String(ts))
 
       await alarmService.scheduleAlarm({
         doseInstanceId: String(ts),
@@ -292,7 +310,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
   // Auditoria (spec 042): emite `alarm_scheduled` uma vez por ocorrência crítica agendada.
   // `items` já está filtrado a critical+pending → usamos os instanceIds reais (não o id
   // sintético do grupo). Fail-open TOTAL: auditoria jamais pode quebrar o agendamento.
-  await _emitScheduledAudit(items, userId)
+  await _emitScheduledAudit(items, userId, scheduledIds)
   // 062 D-3: apaga os canais Android legados. SÓ aqui — depois de cancelAll + re-agendamento no canal
   // vigente, nenhum trigger da versão antiga sobrou (RC3 E-1; soneca/nag headless não passam por aqui).
   // Fail-open total: limpeza de canal jamais pode quebrar o agendamento.

@@ -305,6 +305,28 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     expect(messages[0].channelId).not.toBe(ANDROID_PUSH_CHANNEL.CRITICAL)
   })
 
+  it('082 C-38: tag Android = ocorrências avisadas; sem ids, sem tag', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[tag]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    const send = (metadata: Record<string, unknown>) =>
+      sendExpoPushNotification({
+        userId: 'user-tag',
+        payload: { title: 't', body: 'b', metadata },
+        context: makeContext(),
+        repositories: mockRepositories,
+        expoClient: mockExpoClient,
+      })
+
+    await send({ kind: 'dose_reminder', doseInstanceIds: ['a', 'b'] })
+    await send({ kind: 'daily_digest' })
+
+    const calls = mockExpoClient.sendPushNotificationsAsync.mock.calls
+    expect(calls[0][0][0].tag).toBe('dose:a,b')
+    expect(calls[1][0][0]).not.toHaveProperty('tag')
+  })
+
   it('deve usar som push_chime.wav e active para dose normal', async () => {
     mockRepositories.devices.listActiveByUser.mockResolvedValue([
       { push_token: 'ExponentPushToken[plain]', native_alarm_enabled: false },

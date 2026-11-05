@@ -177,6 +177,12 @@ export const metadataSchema = z.object({
    *   no_alarm_evidence → sem prova e usuário incapaz de produzi-la ⇒ dose NÃO avisada (D1)
    */
   suppress_push_reason: z.enum(['native_alarm', 'no_alarm_evidence']).optional(),
+  /**
+   * 082 D2 (smoke T101) — ocorrências que o push avisa. O app registra a dose pelo `instanceId` e
+   * apaga da bandeja o push daquela dose; sem o id, o aviso de dose já tomada ficava exibido.
+   * Ids opacos, sem dado clínico.
+   */
+  doseInstanceIds: z.array(z.string()).optional(),
 });
 
 

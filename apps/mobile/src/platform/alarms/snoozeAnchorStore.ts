@@ -106,3 +106,24 @@ export async function getSnoozeAttempts(): Promise<Record<string, number>> {
     return {}
   }
 }
+
+/**
+ * 082 D2 (C-35): dose resolvida não tem mais soneca — remove âncora e tentativa das ocorrências.
+ * Higiene: os consumidores já filtram `pending`, mas âncora de dose resolvida não deve sobreviver
+ * (desfazer o registro reabriria a dose com a soneca velha). Best-effort.
+ */
+export async function clearSnoozeState(ids: string[]): Promise<void> {
+  const drop = new Set(ids.filter(Boolean).map(String))
+  if (drop.size === 0) return
+  for (const key of [SNOOZE_ANCHOR_KEY, SNOOZE_ATTEMPT_KEY]) {
+    try {
+      const raw = await AsyncStorage.getItem(key)
+      if (!raw) continue
+      const map = { ...(JSON.parse(raw) || {}) }
+      for (const id of drop) delete map[id]
+      await AsyncStorage.setItem(key, JSON.stringify(map))
+    } catch {
+      // best-effort
+    }
+  }
+}

@@ -83,7 +83,7 @@ run/
 .agent/synthesis/
 
 # AI tool configs — share instructions and hooks, ignore only personal runtime/cache
-!.agents/
+.agents/
 !.claude/
 !.gemini/
 !.kiro/

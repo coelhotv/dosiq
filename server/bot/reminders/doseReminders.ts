@@ -456,6 +456,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
       intakeUnit: dose.intakeUnit ?? null,
       hour: currentHour,
       critical_alarm: dose.critical_alarm ?? false,
+      doseInstanceIds: dose.instanceId ? [dose.instanceId] : undefined,
     };
   }
 

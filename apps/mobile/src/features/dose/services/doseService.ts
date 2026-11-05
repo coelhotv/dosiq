@@ -13,6 +13,9 @@ const supabase = supabaseImport as any
 import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
 import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
+import { dismissPushForResolvedDoses } from '@platform/notifications/pushTray'
+import { markDosesResolved, unmarkDoseResolved } from '@platform/doseActivity/resolvedDoseStore'
+import { clearSnoozeState } from '@platform/alarms/snoozeAnchorStore'
 import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { getMedicinePresentations } from '@platform/analytics/medicineForm'
@@ -108,8 +111,16 @@ async function _safeRun(fn: () => Promise<any>, actionName: string, instanceId: 
   }
 }
 
+/**
+ * C-35 (082 D2): registro aceito ⇒ desarma TUDO da ocorrência — alarme, nags, soneca (trigger +
+ * âncora + tentativa) e superfície — e marca a dose como resolvida ANTES do cancel, para que um arme
+ * da superfície em voo não re-agende boundary depois. O `resolved` da trilha já sai do core
+ * (`createDoseLogService`, single e lote) — não emitir aqui.
+ */
 async function _cancelAlarmBestEffort(instanceId: string | null) {
   if (!instanceId) return
+  await markDosesResolved([instanceId])
+  await dismissPushForResolvedDoses([instanceId])
   const isAndroid = Platform.OS === 'android'
   const doneLabel = isAndroid ? await _safeRun(() => readSurfaceLabel(instanceId), 'readSurfaceLabel', instanceId) : null
 
@@ -121,6 +132,7 @@ async function _cancelAlarmBestEffort(instanceId: string | null) {
       await _safeRun(() => showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() }), 'showDoseDone', instanceId)
     }
   }
+  await clearSnoozeState([instanceId])
   triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })
 }
 
@@ -207,6 +219,8 @@ export async function undoDose(instanceId, { surface = null } = {}) {
     if (!instance) return { success: false, error: 'Registro não encontrado.' }
 
     await doseLogCore.undoDose(instanceId)
+    // 082 D2: a dose voltou a `pending` — a superfície pode voltar a armar.
+    await unmarkDoseResolved(instanceId)
 
     _emitDoseLogged([{
       base: { action: 'undo', medicine_id: (instance as any).medicine_id },
