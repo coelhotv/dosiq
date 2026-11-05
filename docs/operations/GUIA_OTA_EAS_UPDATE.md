@@ -474,6 +474,9 @@ compile: ele não distingue correção de feature nova. A pergunta não é *"cab
       de CHANGELOG é `[X.Y.Z+ota.N]` com `updateId` + SHA.
 - [ ] Se é OTA de **produção**: sai da tag `mobile-v<APP_VERSION>` ou de `hotfix/ota-*` cortado dela
       (R-307, §6) — **nunca** da `main` que já andou.
+- [ ] O fix precisa valer no **primeiro uso** (onboarding, primeiro cadastro)? Instalação nova roda o
+      bundle **embarcado** no binário da loja até o OTA aplicar (§8) → o fix também entra no próximo
+      build de loja, e dado gravado nesse intervalo precisa de backfill.
 - [ ] O parque-alvo embute o cliente `expo-updates` (≥ **v0.30.0**)? Abaixo disso nenhum publish
       alcança (§8) — o instrumento é build de loja + kill switch, não OTA.
 
@@ -618,6 +621,14 @@ versão referencia as entradas `+ota.N` anteriores (não duplica o conteúdo).
   carrega esse cliente — os installs abaixo dela (21 de 25 medidos no outage do AP-314/ADR-088)
   seguem inalcançáveis por OTA até migrarem para um build que o embuta. Não há atalho: quem não
   atualiza o binário não é alcançado por nada publicado neste canal.
+- Não cobre o **primeiro uso de instalação nova.** Quem baixa da loja abre no bundle **embarcado** no
+  binário; com `checkAutomatically: 'ON_LOAD'` + `fallbackToCacheTimeout: 0` o OTA só baixa nessa
+  abertura e aplica na **próxima** abertura a frio. Onboarding e primeiro cadastro acontecem antes
+  disso. Medido 2026-11-05: OTA `[0.34.0+ota.1]` publicado em 31/10, mas todo tratamento criado
+  depois por conta nova (1–14 min após o cadastro) saiu do bundle 0.34.0 — 5 GLP-1 sem
+  `therapeutic_class_code`, corrigidos por backfill (`20261105_100_class_code_backfill.sql`) e pelo
+  build de loja 0.34.4. Fix que afeta dado gravado no primeiro uso = OTA **e** build de loja, com
+  backfill do intervalo.
 - Não entrega **feature nova** nem mudança de propósito, mesmo sendo 100% JS, e não legitima
   embarcar código inativo para ligar depois — Apple 3.3.1 / Google Play (saúde). A regra e o
   checklist de roteamento estão em **R-314** (§5.1); o hook que força a decisão está no SQP
