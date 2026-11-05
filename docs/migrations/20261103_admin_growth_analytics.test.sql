@@ -8,6 +8,8 @@
 -- FIX RÓTULO sem_codigo (2026-11-05): fixture D ganhou texto de classe sem código. Vermelho antes
 --   (QA, função antiga): sem_codigo label = "Antiobesidade". Verde depois (QA, migração reaplicada):
 --   RESULT OK — PO-115-1/2/3/4/6/8 + PO-SEC-1/4/5 (fixture 5 usuários, 7 pré-existentes excluídos; desfeito)
+--   PROD (kwqjtdsqkkbebfiaxubb) 2026-11-05, OK do PO no #932: apply_migration success · sem_codigo label null
+--   (12 usuários / 14 tratamentos) · A10S 19 usuários · grants service_role+postgres · definer, search_path="" ✅
 -- RESULTADO REGISTRADO — PROD (kwqjtdsqkkbebfiaxubb), 2026-11-05, aprovação do PO no #931 (merge cfd5f09d):
 --   Fixture NÃO roda em prod (insere em auth.users; manipulação de dados só no QA). Provas sem escrita:
 --   md5(prosrc) 9389389e… (9795) = arquivo · prosecdef true · proconfig {search_path=""}                ✅
