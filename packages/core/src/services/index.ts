@@ -116,11 +116,13 @@ export type {
 // Medida acompanhada por tratamento (spec 100 · ADR-121) — matriz só no form; runtime via effectiveMeasure
 export {
   MEASURE_CLASS_MATRIX,
+  WEDGE_CLASS_PREFIXES,
+  classifyWedge,
   normalizeClassCode,
   inferMeasure,
   effectiveMeasure,
 } from './trackedMeasure'
-export type { Measure, EffectiveMeasure } from './trackedMeasure'
+export type { Measure, EffectiveMeasure, WedgeBucket } from './trackedMeasure'
 
 // Aritmética de dia local (YYYY-MM-DD) da série — o card da 069-B precisa das mesmas contas da ponte.
 export { shiftDay, daysBetween } from './report/reportFormat'
