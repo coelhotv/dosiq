@@ -164,7 +164,8 @@ SELECT jsonb_build_object(
     ) ORDER BY g.users DESC, g.protocols DESC, g.code)
     FROM (
       SELECT coalesce(class_code, 'sem_codigo') AS code,
-             mode() WITHIN GROUP (ORDER BY class_label) AS label,
+             -- sem_codigo junta classes distintas: rótulo nulo, nunca o texto de uma delas (fix pós-#931)
+             mode() WITHIN GROUP (ORDER BY class_label) FILTER (WHERE class_code IS NOT NULL) AS label,
              min(wedge_bucket) AS bucket,
              count(DISTINCT user_id)::int AS users, count(*)::int AS protocols
       FROM classified GROUP BY coalesce(class_code, 'sem_codigo')

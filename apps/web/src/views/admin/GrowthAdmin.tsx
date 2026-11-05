@@ -123,7 +123,7 @@ function WedgePanel({ data }: { data: GrowthAnalytics }) {
               <span className={`growth-badge growth-badge--${c.wedge === 'glp1_antiobesidade' ? 'glp1' : 'code'}`}>
                 {c.class_code === 'sem_codigo' ? 'sem código' : c.class_code}
               </span>
-              <span className="growth-classes__label" title={c.label ?? undefined}>{c.label ?? '—'}</span>
+              <span className="growth-classes__label" title={c.label ?? undefined}>{c.label ?? (c.class_code === 'sem_codigo' ? 'Várias classes' : '—')}</span>
               <span className="growth-classes__n">
                 {c.users} usu. · {fmtPct(c.users_pct)} · {c.protocols} trat.
               </span>

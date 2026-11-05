@@ -5,6 +5,11 @@
 --
 -- RESULTADO REGISTRADO — QA (ikcvwxyohmntncanclze), 2026-11-05: RESULT OK — PO-115-1/2/3/4/6/8 + PO-SEC-1/4/5
 --   (fixture 5 usuários, 7 pré-existentes excluídos; desfeito). md5(prosrc) 9389389e… = arquivo.
+-- FIX RÓTULO sem_codigo (2026-11-05): fixture D ganhou texto de classe sem código. Vermelho antes
+--   (QA, função antiga): sem_codigo label = "Antiobesidade". Verde depois (QA, migração reaplicada):
+--   RESULT OK — PO-115-1/2/3/4/6/8 + PO-SEC-1/4/5 (fixture 5 usuários, 7 pré-existentes excluídos; desfeito)
+--   PROD (kwqjtdsqkkbebfiaxubb) 2026-11-05, OK do PO no #932: apply_migration success · sem_codigo label null
+--   (12 usuários / 14 tratamentos) · A10S 19 usuários · grants service_role+postgres · definer, search_path="" ✅
 -- RESULTADO REGISTRADO — PROD (kwqjtdsqkkbebfiaxubb), 2026-11-05, aprovação do PO no #931 (merge cfd5f09d):
 --   Fixture NÃO roda em prod (insere em auth.users; manipulação de dados só no QA). Provas sem escrita:
 --   md5(prosrc) 9389389e… (9795) = arquivo · prosecdef true · proconfig {search_path=""}                ✅
@@ -55,7 +60,7 @@ BEGIN
   INSERT INTO public.medicines (user_id, name, therapeutic_class, therapeutic_class_code)
     VALUES (c, 'SECRET_MED_NAME_C', 'Betabloqueadores', 'C7A0') RETURNING id INTO m_c;
   INSERT INTO public.medicines (user_id, name, therapeutic_class, therapeutic_class_code)
-    VALUES (d, 'SECRET_MED_NAME_D', NULL, NULL) RETURNING id INTO m_d;
+    VALUES (d, 'SECRET_MED_NAME_D', 'Antiobesidade', NULL) RETURNING id INTO m_d;
   INSERT INTO public.medicines (user_id, name, therapeutic_class, therapeutic_class_code)
     VALUES (x, 'SECRET_MED_NAME_X', 'Antiobesidade', 'A8A') RETURNING id INTO m_x;
 
@@ -108,6 +113,7 @@ BEGIN
   END IF;
   SELECT e INTO cls FROM jsonb_array_elements(r->'class_distribution') e WHERE e->>'class_code' = 'sem_codigo';
   IF (cls->>'users')::int <> 1 OR (cls->>'users_pct')::numeric <> 25.0 THEN RAISE EXCEPTION 'PO-115-1: sem_codigo=%', cls; END IF;
+  IF jsonb_typeof(cls->'label') <> 'null' THEN RAISE EXCEPTION 'PO-115-1: sem_codigo com rótulo emprestado=%', cls; END IF;
   IF EXISTS (SELECT 1 FROM jsonb_array_elements(r->'class_distribution') e WHERE e->>'class_code' = 'C7A') THEN
     RAISE EXCEPTION 'PO-115-2: tratamento arquivado entrou na distribuição';
   END IF;
