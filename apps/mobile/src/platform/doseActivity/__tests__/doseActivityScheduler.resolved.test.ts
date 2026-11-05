@@ -59,6 +59,12 @@ describe('resolvedDoseStore', () => {
     expect(await isDoseResolved('b', NOW.getTime() + RESOLVED_DOSE_TTL_MS + 1)).toBe(false)
   })
 
+  it('marcas concorrentes não se sobrescrevem (RC6 #930)', async () => {
+    await Promise.all([markDosesResolved(['a'], NOW.getTime()), markDosesResolved(['b'], NOW.getTime())])
+    expect(await isDoseResolved('a', NOW.getTime())).toBe(true)
+    expect(await isDoseResolved('b', NOW.getTime())).toBe(true)
+  })
+
   it('JSON inválido ou id vazio ⇒ não resolvida (fail-open)', async () => {
     mockStore.set(RESOLVED_DOSES_KEY, '{nope')
     expect(await isDoseResolved('a')).toBe(false)

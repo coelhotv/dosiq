@@ -11,12 +11,26 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }))
 
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
-  supabase: { auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } },
+  supabase: {
+    auth: {
+      // offline: o Auth remoto falha; a sessão persistida segue legível (AP-357)
+      getUser: async () => {
+        throw new TypeError('Network request failed')
+      },
+      getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }),
+    },
+  },
 }))
 jest.mock('expo-constants', () => ({ expoConfig: { version: '0.34.2' } }))
 
 const mockEmit = jest.fn()
-jest.mock('@dosiq/core', () => ({ createCriticalAuditService: () => ({ emit: mockEmit }) }))
+const mockServiceOpts: any[] = []
+jest.mock('@dosiq/core', () => ({
+  createCriticalAuditService: (opts) => {
+    mockServiceOpts.push(opts)
+    return { emit: mockEmit }
+  },
+}))
 
 jest.mock('@platform/alarms/alarmService', () => ({}))
 jest.mock('../backgroundRestriction', () => ({ isBackgroundRestricted: () => null }))
@@ -51,6 +65,7 @@ afterEach(() => {
   jest.clearAllMocks()
   jest.clearAllTimers()
   mockStore.clear()
+  mockServiceOpts.length = 0
 })
 
 describe('reassertIncapableAfterSnooze', () => {
@@ -82,5 +97,11 @@ describe('reassertIncapableAfterSnooze', () => {
     mockFacts = facts({ notificationsAllowed: null })
     await reassertIncapableAfterSnooze(['inst-4'])
     expect(mockEmit).not.toHaveBeenCalled()
+  })
+
+  it('offline: o dono sai da sessão persistida, não do Auth remoto (RC6 #930 · AP-357)', async () => {
+    mockFacts = facts({ alarmChannelBlocked: true })
+    await reassertIncapableAfterSnooze(['inst-4'])
+    expect(await mockServiceOpts[0].getUserId()).toBe('u1')
   })
 })

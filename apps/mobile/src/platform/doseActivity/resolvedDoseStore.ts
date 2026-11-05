@@ -28,25 +28,35 @@ async function _read(nowMs: number): Promise<Record<string, number>> {
 }
 
 /** Marca as ocorrências como resolvidas (registro aceito pelo servidor). */
-export async function markDosesResolved(ids: string[], nowMs: number = Date.now()): Promise<void> {
-  try {
-    const map = await _read(nowMs)
-    for (const id of ids) if (id) map[String(id)] = nowMs
-    await AsyncStorage.setItem(RESOLVED_DOSES_KEY, JSON.stringify(map))
-  } catch {
-    // best-effort — sem a marca, vale só o cancel imediato (comportamento anterior)
-  }
+// Escritas SERIALIZADAS: ler-mutar-gravar do mapa inteiro em paralelo (registro em lote + pulo)
+// perdia a marca de quem gravou primeiro — e marca perdida reabre o C-35 (RC6 #930).
+let _chain: Promise<unknown> = Promise.resolve()
+
+function _write(mutate: (map: Record<string, number>, nowMs: number) => void, nowMs: number): Promise<void> {
+  const run = _chain
+    .then(async () => {
+      const map = await _read(nowMs)
+      mutate(map, nowMs)
+      await AsyncStorage.setItem(RESOLVED_DOSES_KEY, JSON.stringify(map))
+    })
+    .catch(() => {
+      // best-effort — sem a marca, vale só o cancel imediato (comportamento anterior)
+    })
+  _chain = run
+  return run
+}
+
+export function markDosesResolved(ids: string[], nowMs: number = Date.now()): Promise<void> {
+  return _write((map, at) => {
+    for (const id of ids) if (id) map[String(id)] = at
+  }, nowMs)
 }
 
 /** Retira a marca (desfazer registro: a dose volta a `pending` e a superfície pode voltar). */
-export async function unmarkDoseResolved(id: string, nowMs: number = Date.now()): Promise<void> {
-  try {
-    const map = await _read(nowMs)
+export function unmarkDoseResolved(id: string, nowMs: number = Date.now()): Promise<void> {
+  return _write((map) => {
     delete map[String(id)]
-    await AsyncStorage.setItem(RESOLVED_DOSES_KEY, JSON.stringify(map))
-  } catch {
-    // best-effort
-  }
+  }, nowMs)
 }
 
 /** A ocorrência foi resolvida neste aparelho nas últimas 24 h? Falha ⇒ false. */
