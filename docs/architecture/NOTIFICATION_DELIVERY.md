@@ -139,18 +139,36 @@ crítico tem **6** aparelhos.
 ### Boletim de capacidade invalida a prova (082 D2)
 
 A capacidade por usuário (`alarm_scheduled` nos últimos 7 dias) não enxerga o aparelho que **deixou**
-de conseguir tocar (notificação negada, canal de alarme bloqueado, alarme exato revogado). Desde a
-082 D2 o app (0.34.2+) emite o evento **`device_capability`** em `dose_critical_events`
+de conseguir tocar (notificação negada, canal de alarme bloqueado, alarme exato revogado, app restrito
+em segundo plano). Desde a 082 D2 o app (0.34.4+, #930) emite o evento **`device_capability`** em `dose_critical_events`
 (`dose_instance_id` NULL — a capacidade é do usuário; `detail` em allowlist fechada: `capable`,
-`notifications_allowed`, `alarm_channel_blocked`, `exact_alarm_allowed`, `critical_expected`,
-`critical_armed`, `app_version` — nunca nome ou dose de medicamento).
+`notifications_allowed`, `alarm_channel_blocked`, `exact_alarm_allowed`, `background_restricted`,
+`critical_expected`, `critical_armed`, `app_version` — nunca nome ou dose de medicamento).
+Fatos lidos por `platform/device/deviceProbe.ts`; `null` = desconhecido, **nunca** negativo.
 
 - Boletim com `detail.capable = false` **invalida** toda prova `alarm_scheduled` anterior a ele
   (`findLatestIncapableAt`, `criticalEventsRepository.ts`) ⇒ o gate volta a **enviar** o push.
+- **Negativo:** permissão negada (iOS: push **e** Crítico desligados — Crítico sozinho ainda toca),
+  canal do alarme `NONE`, alarme exato negado, **app restrito em segundo plano** (Android
+  `ActivityManager.isBackgroundRestricted()`, módulo `apps/mobile/modules/background-restriction`:
+  o AlarmManager segura o alarme — smoke T101). Otimização de bateria **nunca** é negativo.
+- **Negativo não emite prova:** zera o dedupe do `alarm_scheduled`; a prova volta só quando o aparelho
+  voltar a capaz. Throttle: emite quando `capable` muda ou a cada 24 h; emissões serializadas.
+- **Soneca em aparelho incapaz reafirma o negativo** depois do `snoozed` (que é prova — D1/AP-353),
+  sem throttle; senão o servidor calaria o push da soneca (smoke T101, C-37).
 - Migração: `docs/migrations/20261102_device_capability_event.sql` (CHECK 13 → 14 valores, junto do
-  enum `CRITICAL_AUDIT_EVENTS` do core — R-271). Aplicada em prod antes do build 0.34.2 (R-D2-1).
+  enum `CRITICAL_AUDIT_EVENTS` do core — R-271). Aplicada em prod (T100) antes do build de loja.
 - `sem_canal` persistente sai do alerta diário (082 D2-server, #929): paciente sem canal físico não é
   falha recorrente de entrega a cada dia.
+
+### Push de dose sai da bandeja quando a dose é resolvida (082 D2 · C-38)
+
+O payload do lembrete leva `metadata.doseInstanceIds` (ids opacos, liberados no modo sem transferência)
+e o Expo push ganha `tag: dose:<ids>` no Android. Com o app fechado o **FCM** exibe o push e o `data`
+fica no contentIntent — ilegível na bandeja; a tag aparece no identificador da notificação estrangeira
+(`…?tag=<tag>&id=0`). O app (`platform/notifications/pushTray.ts`) dispensa o push quando todas as
+ocorrências dele estão resolvidas neste aparelho (iOS: pelo `data` do APNs). Mesma tag ⇒ reenvio da
+mesma dose substitui o anterior. Toque em push de dose já resolvida abre o Hoje, não a modal (C-40).
 
 ### `dose_critical_events` é 1:N — e isso é um contrato
 
