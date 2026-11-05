@@ -4,6 +4,11 @@ ios/
 android/
 # módulos Expo locais versionam o próprio android/ (082 D2 · background-restriction)
 !modules/*/android/
+# …mas não o que o Gradle gera dentro dele (cache e saída de build do módulo)
+modules/*/android/.gradle/
+modules/*/android/build/
+modules/*/android/.cxx/
+modules/*/android/local.properties
 credentials/
 
 # @bacons/apple-targets — gerados no prebuild a partir de targets/*/expo-target.config.js
