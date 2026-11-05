@@ -11,6 +11,10 @@
 --   C — criado hoje · 1 tratamento C7A0 PAUSADO (active=false) com alarme crítico (conta)
 --   D — criado hoje · 1 tratamento de medicamento sem therapeutic_class_code
 --   X — criado hoje · 1 tratamento A8A (alvo da exclusão do PO-115-8)
+-- Plataformas (D-AN-2 / PO-115-3 / PO-SEC-5):
+--   A — aparelho Android de 2 dias atrás + sessão do app iOS agora ⇒ [android, ios], principal ios
+--   B — deslogou do app (sem aparelho) · sessões okhttp (antiga) e navegador (recente) ⇒ [android, web], principal web
+--   C — só sessão curl ⇒ [] (UA fora dos prefixos é ignorado)
 
 DO $$
 DECLARE
@@ -20,7 +24,7 @@ DECLARE
   p_a1 uuid; p_arch uuid; t_a uuid;
   others uuid[];
   r jsonb; r_all jsonb; r_def jsonb; r_empty jsonb;
-  feat jsonb; cls jsonb; ua jsonb;
+  feat jsonb; cls jsonb; ua jsonb; ub jsonb; uc jsonb;
 BEGIN
   SELECT coalesce(array_agg(id), '{}') INTO others FROM auth.users;
 
@@ -69,6 +73,14 @@ BEGIN
     VALUES (t_a, a, 1, m_arch, 1, 'mg', 'upcoming', p_arch);
   INSERT INTO public.stock (user_id, medicine_id, quantity, purchase_date) VALUES (a, m_a1, 4, current_date);
   INSERT INTO public.stock (user_id, medicine_id, quantity, purchase_date) VALUES (a, m_arch, 4, current_date);
+
+  INSERT INTO public.device_activity (user_id, device_fingerprint, platform, app_version, last_seen_at)
+    VALUES (a, 'fixture-115-a', 'android', '0.34.0', now() - interval '2 days');
+  INSERT INTO auth.sessions (id, user_id, created_at, updated_at, user_agent) VALUES
+    (gen_random_uuid(), a, now() - interval '1 hour', now(), 'Dosiq/45 CFNetwork/1.0 Darwin/24.0'),
+    (gen_random_uuid(), b, now() - interval '50 days', now() - interval '40 days', 'okhttp/4.12.0'),
+    (gen_random_uuid(), b, now() - interval '5 days', now() - interval '1 day', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15'),
+    (gen_random_uuid(), c, now() - interval '1 day', now(), 'curl/8.7.1');
 
   -- ===== Cenário principal: X excluído junto com o resto do QA =====
   r := public.get_admin_growth_analytics(100, 0, others || x);
@@ -132,6 +144,21 @@ BEGIN
     RAISE EXCEPTION 'PO-115-4: badges de A1=%', ua->'treatments';
   END IF;
 
+  -- PO-115-3 / D-AN-2: plataformas = canais já usados; principal = atividade mais recente
+  SELECT e INTO ub FROM jsonb_array_elements(r->'users') e WHERE e->>'user_id' = b::text;
+  SELECT e INTO uc FROM jsonb_array_elements(r->'users') e WHERE e->>'user_id' = c::text;
+  IF ua->'platforms' <> '["android", "ios"]'::jsonb OR ua->>'platform' <> 'ios' OR ua->>'app_version' <> '0.34.0' THEN
+    RAISE EXCEPTION 'PO-115-3: plataformas de A=% / % / %', ua->'platforms', ua->>'platform', ua->>'app_version';
+  END IF;
+  IF ub->'platforms' <> '["android", "web"]'::jsonb OR ub->>'platform' <> 'web' OR ub->>'app_version' IS NOT NULL THEN
+    RAISE EXCEPTION 'PO-115-3: deslogado B=% / % / %', ub->'platforms', ub->>'platform', ub->>'app_version';
+  END IF;
+  -- PO-SEC-5: UA fora dos prefixos não vira plataforma; nenhum UA bruto no payload
+  IF uc->'platforms' <> '[]'::jsonb OR uc->>'platform' IS NOT NULL THEN
+    RAISE EXCEPTION 'PO-SEC-5: curl virou plataforma=%', uc->'platforms';
+  END IF;
+  IF r::text ~* '(okhttp|mozilla|cfnetwork|curl/|darwin)' THEN RAISE EXCEPTION 'PO-SEC-5: user-agent bruto no payload'; END IF;
+
   -- paginação: limit 1 devolve 1 linha, total_users segue 4
   r_all := public.get_admin_growth_analytics(1, 0, others || x);
   IF jsonb_array_length(r_all->'users') <> 1 OR (r_all->>'total_users')::int <> 4 THEN RAISE EXCEPTION 'paginação: %', r_all->'total_users'; END IF;
@@ -157,10 +184,14 @@ BEGIN
      OR NOT has_function_privilege('service_role', 'public.get_admin_growth_analytics(integer, integer, uuid[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'PO-115-6: grants errados';
   END IF;
+  -- PO-SEC-4 / S-11: o dono da função ainda lê auth.sessions (upgrade do Supabase acusa aqui)
+  IF NOT has_table_privilege('postgres', 'auth.sessions', 'SELECT') THEN
+    RAISE EXCEPTION 'PO-SEC-4: postgres perdeu SELECT em auth.sessions';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_admin_growth_analytics' AND prosecdef
                  AND proconfig = ARRAY['search_path=""']) THEN
     RAISE EXCEPTION 'PO-SEC-1: definer/search_path=%', (SELECT proconfig FROM pg_proc WHERE proname = 'get_admin_growth_analytics');
   END IF;
 
-  RAISE EXCEPTION 'RESULT OK — PO-115-1/2/4/6/8 + PO-SEC-1 (fixture 5 usuários, % pré-existentes excluídos; desfeito)', coalesce(array_length(others, 1), 0);
+  RAISE EXCEPTION 'RESULT OK — PO-115-1/2/3/4/6/8 + PO-SEC-1/4/5 (fixture 5 usuários, % pré-existentes excluídos; desfeito)', coalesce(array_length(others, 1), 0);
 END $$;

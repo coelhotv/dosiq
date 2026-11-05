@@ -10,6 +10,7 @@
 
 import { Fragment } from 'react'
 import { ArrowLeft, RefreshCw, ChevronDown, ChevronRight, Users, Pill, BellRing, Target } from 'lucide-react'
+import { FREQUENCY_LABELS } from '@dosiq/core'
 import { parseISO } from '@utils/dateUtils'
 import { useGrowthAdminState, type GrowthAnalytics, type GrowthTreatment, type GrowthUser } from './useGrowthAdminState'
 import './GrowthAdmin.css'
@@ -30,17 +31,14 @@ const FEATURE_LABEL: Record<string, string> = {
   end_date: 'Data de término',
 }
 const MEASURE_LABEL: Record<string, string> = { peso: 'peso', glicemia: 'glicemia', pressao_arterial: 'pressão arterial' }
-const FREQUENCY_LABEL: Record<string, string> = {
-  diário: 'Diário',
-  dias_alternados: 'Dias alternados',
-  semanal: 'Semanal',
-  personalizado: 'Personalizado',
-  quando_necessário: 'Quando necessário',
-}
+// Rótulos canônicos do core (smoke C-1: o mapa local não tinha `intervalo_dias`, que aparecia cru).
+const FREQUENCY_LABEL: Record<string, string> = FREQUENCY_LABELS
 const PLATFORM_LABEL: Record<string, string> = { ios: 'iOS', android: 'Android', web: 'Web' }
 const TOP_CLASSES = 8
 
 const fmtDate = (iso?: string | null) => (iso ? parseISO(iso).toLocaleDateString('pt-BR') : '—')
+/** Smoke C-2/C-3: "1 tratamentos", "1 contas". */
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 const fmtPct = (pct: number) => `${Number(pct).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
 /** Barra proporcional em CSS (D-RC2-2): largura = percentual, rótulo com o n ao lado. */
@@ -81,7 +79,7 @@ function KpiHeader({ data }: { data: GrowthAnalytics }) {
         icon={<Pill size={14} />}
         label="Com tratamento"
         value={t.users_with_protocols}
-        detail={`${fmtPct(t.users ? (100 * t.users_with_protocols) / t.users : 0)} dos usuários · ${t.protocols} tratamentos`}
+        detail={`${fmtPct(t.users ? (100 * t.users_with_protocols) / t.users : 0)} dos usuários · ${plural(t.protocols, 'tratamento', 'tratamentos')}`}
       />
       <Kpi icon={<BellRing size={14} />} label="Push ativo" value={fmtPct(t.push_active_pct)} detail={`${t.push_active_users} de ${t.users} usuários`} />
       <Kpi
@@ -111,7 +109,7 @@ function WedgePanel({ data }: { data: GrowthAnalytics }) {
             n={w.users}
             of={of}
             tone={bucket === 'glp1_antiobesidade' ? 'brand' : bucket === 'sem_codigo' ? 'muted' : 'neutral'}
-            secondary={`${w.protocols} tratamentos`}
+            secondary={plural(w.protocols, 'tratamento', 'tratamentos')}
           />
         )
       })}
@@ -125,7 +123,7 @@ function WedgePanel({ data }: { data: GrowthAnalytics }) {
               <span className={`growth-badge growth-badge--${c.wedge === 'glp1_antiobesidade' ? 'glp1' : 'code'}`}>
                 {c.class_code === 'sem_codigo' ? 'sem código' : c.class_code}
               </span>
-              <span className="growth-classes__label">{c.label ?? '—'}</span>
+              <span className="growth-classes__label" title={c.label ?? undefined}>{c.label ?? '—'}</span>
               <span className="growth-classes__n">
                 {c.users} usu. · {fmtPct(c.users_pct)} · {c.protocols} trat.
               </span>
@@ -218,7 +216,19 @@ function UserRow({ u, expanded, onToggle }: { u: GrowthUser; expanded: boolean; 
         <td className="growth-table__email" title={u.user_id}>{u.email ?? u.user_id.slice(0, 8)}</td>
         <td>{fmtDate(u.created_at)}</td>
         <td>{fmtDate(u.last_activity_at)}</td>
-        <td>{u.platform ? PLATFORM_LABEL[u.platform] : '—'}</td>
+        {/* D-AN-2: canais já usados (aparelhos + sessões no servidor); o mais recente primeiro, em negrito */}
+        <td className={u.platforms.length ? undefined : 'growth-table__muted'}>
+          {u.platforms.length === 0
+            ? 'Sem registro'
+            : [...u.platforms]
+                .sort((p1, p2) => Number(p2 === u.platform) - Number(p1 === u.platform))
+                .map((p, i) => (
+                  <Fragment key={p}>
+                    {i > 0 && ' · '}
+                    {p === u.platform ? <strong>{PLATFORM_LABEL[p]}</strong> : PLATFORM_LABEL[p]}
+                  </Fragment>
+                ))}
+        </td>
         <td className="growth-table__mono">{u.app_version ?? '—'}</td>
         <td><span className={`growth-status growth-status--${u.push_active ? 'on' : 'off'}`}>{u.push_active ? 'Ativo' : 'Inativo'}</span></td>
         <td>{u.onboarding_completed ? 'Concluído' : 'Pendente'}</td>
@@ -262,7 +272,7 @@ export default function GrowthAdmin({ onBack }: { onBack?: () => void }) {
           <h1>Crescimento &amp; Wedge</h1>
           {data && (
             <p className="growth-admin__meta">
-              {data.excluded_count > 0 ? `${data.excluded_count} contas internas excluídas · ` : ''}
+              {data.excluded_count > 0 ? `${plural(data.excluded_count, 'conta interna excluída', 'contas internas excluídas')} · ` : ''}
               Atualizado em {parseISO(data.generated_at).toLocaleString('pt-BR')}
             </p>
           )}
@@ -315,7 +325,7 @@ export default function GrowthAdmin({ onBack }: { onBack?: () => void }) {
                   <option value="ios">iOS</option>
                   <option value="android">Android</option>
                   <option value="web">Web</option>
-                  <option value="none">Sem aparelho</option>
+                  <option value="none">Sem registro</option>
                 </select>
                 <select aria-label="Push" value={state.pushFilter} onChange={(e) => state.setPushFilter(e.target.value as any)}>
                   <option value="all">Push: todos</option>
@@ -344,7 +354,7 @@ export default function GrowthAdmin({ onBack }: { onBack?: () => void }) {
                       <th scope="col">E-mail</th>
                       <th scope="col">Criada em</th>
                       <th scope="col">Última atividade</th>
-                      <th scope="col">Plataforma</th>
+                      <th scope="col" title="Canais em que a conta já entrou; em negrito, o mais recente">Plataformas</th>
                       <th scope="col">Versão</th>
                       <th scope="col">Push</th>
                       <th scope="col">Onboarding</th>

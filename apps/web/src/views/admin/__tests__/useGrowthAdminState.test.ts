@@ -15,6 +15,7 @@ const user = (over: Partial<GrowthUser>): GrowthUser => ({
   email: 'ana@exemplo.com',
   created_at: '2026-11-01T12:00:00Z',
   last_activity_at: null,
+  platforms: ['ios'],
   platform: 'ios',
   app_version: '0.34.0',
   push_active: true,
@@ -26,8 +27,9 @@ const user = (over: Partial<GrowthUser>): GrowthUser => ({
 
 const USERS = [
   user({}),
-  user({ user_id: 'bbbbbbbb-0000-4000-8000-000000000000', email: 'BRUNO@exemplo.com', platform: 'android', push_active: false }),
-  user({ user_id: 'cccccccc-0000-4000-8000-000000000000', email: null, platform: null, push_active: false }),
+  // deslogou do app: sem aparelho vinculado, mas já usou Android e Web (D-AN-2)
+  user({ user_id: 'bbbbbbbb-0000-4000-8000-000000000000', email: 'BRUNO@exemplo.com', platforms: ['android', 'web'], platform: 'web', push_active: false }),
+  user({ user_id: 'cccccccc-0000-4000-8000-000000000000', email: null, platforms: [], platform: null, push_active: false }),
 ]
 
 describe('filterGrowthUsers', () => {
@@ -42,8 +44,9 @@ describe('filterGrowthUsers', () => {
     expect(filterGrowthUsers(USERS, { query: '', platform: 'all', push: 'all' })).toHaveLength(3)
   })
 
-  it('plataforma e push combinam; "none" pega quem não tem aparelho', () => {
+  it('plataforma casa com qualquer canal já usado; "none" pega quem não tem registro', () => {
     expect(filterGrowthUsers(USERS, { query: '', platform: 'ios', push: 'all' }).map((u) => u.email)).toEqual(['ana@exemplo.com'])
+    expect(filterGrowthUsers(USERS, { query: '', platform: 'web', push: 'all' }).map((u) => u.email)).toEqual(['BRUNO@exemplo.com'])
     expect(filterGrowthUsers(USERS, { query: '', platform: 'none', push: 'all' })).toHaveLength(1)
     expect(filterGrowthUsers(USERS, { query: '', platform: 'all', push: 'inactive' })).toHaveLength(2)
     expect(filterGrowthUsers(USERS, { query: '', platform: 'android', push: 'active' })).toHaveLength(0)

@@ -356,6 +356,14 @@
   min-width: 240px;
 }
 
+/* Smoke C-6: o estilo global de form dava largura total e empilhava os 3 controles. */
+.growth-filters .growth-filters__search,
+.growth-filters select {
+  width: auto;
+  flex: 0 1 auto;
+  margin: 0;
+}
+
 .growth-table__scroll {
   overflow-x: auto;
 }
@@ -397,6 +405,10 @@
 
 .growth-table__mono {
   font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.growth-table__muted {
+  color: var(--growth-ink-2);
 }
 
 .growth-table__num {

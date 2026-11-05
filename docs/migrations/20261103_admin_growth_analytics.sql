@@ -10,12 +10,17 @@
 --     espelha WEDGE_CLASS_PREFIXES do core — wedgeParity.test.ts lê a linha marcada abaixo.
 --   · Titulação = existe etapa em titration_steps (as colunas N1 de protocols estão mortas — 029 F6).
 --   · Estoque por tratamento = o medicamento do protocolo tem ≥1 linha em stock (D-AN-1).
+--   · Plataformas usadas (D-AN-2 / FR-011) = device_activity ∪ notification_devices ∪ user-agent de
+--     auth.sessions classificado aqui (iOS app · Android app · Web). O logout do app apaga as duas
+--     primeiras (spec 095); a sessão no servidor sobrevive (`signOut({ scope: 'local' })`).
 --   · Push ativo = notification_devices ativo com provider expo/webpush (apns_liveactivity é token
 --     de Live Activity, não push).
 --   · Contas excluídas (p_excluded_user_ids) saem de TODA CTE, numerador e denominador (PO-115-8).
 --
 -- 🔴 Privacidade (INV-2 / SC-004): medicines.name NUNCA é lido. De auth.users só id, created_at e
---    last_sign_in_at (RC-SEC S-2); e-mail vem de public.user_emails.
+--    last_sign_in_at; de auth.sessions só user_id, user_agent e updated_at — a linha também guarda
+--    material de token e IP (RC-SEC S-2/S-9). E-mail vem de public.user_emails. O user-agent é
+--    texto do cliente: só é comparado com prefixos fixos e nunca sai da função (S-10).
 -- 🔴 SECURITY DEFINER com search_path vazio e nomes qualificados (RC-SEC S-1). EXECUTE só para
 --    service_role (ADR-119 / INV-3): anon e authenticated não chamam pelo PostgREST.
 --
@@ -113,6 +118,22 @@ feature_rates AS (
   FROM feature_rows fr
   GROUP BY fr.feature
 ),
+platform_events AS (
+  SELECT da.user_id, da.platform, da.last_seen_at AS seen_at
+  FROM public.device_activity da JOIN base_users bu ON bu.user_id = da.user_id
+  UNION ALL
+  SELECT nd.user_id, nd.platform, nd.last_seen_at
+  FROM public.notification_devices nd JOIN base_users bu ON bu.user_id = nd.user_id
+  UNION ALL
+  SELECT ses.user_id,
+    CASE
+      WHEN ses.user_agent LIKE 'Dosiq/%CFNetwork%' THEN 'ios'
+      WHEN ses.user_agent LIKE 'okhttp/%' THEN 'android'
+      WHEN ses.user_agent LIKE 'Mozilla/%' THEN 'web'
+    END,
+    ses.updated_at
+  FROM auth.sessions ses JOIN base_users bu ON bu.user_id = ses.user_id
+),
 users_page AS (
   SELECT bu.* FROM base_users bu
   ORDER BY bu.created_at DESC, bu.user_id
@@ -193,7 +214,15 @@ SELECT jsonb_build_object(
       'created_at', up.created_at,
       'last_activity_at', greatest(up.last_sign_in_at,
         (SELECT max(da.last_seen_at) FROM public.device_activity da WHERE da.user_id = up.user_id)),
-      'platform', coalesce(dev.platform, nd.platform),
+      'platforms', coalesce((
+        SELECT jsonb_agg(DISTINCT pe.platform ORDER BY pe.platform)
+        FROM platform_events pe WHERE pe.user_id = up.user_id AND pe.platform IS NOT NULL
+      ), '[]'::jsonb),
+      'platform', (
+        SELECT pe.platform FROM platform_events pe
+        WHERE pe.user_id = up.user_id AND pe.platform IS NOT NULL
+        ORDER BY pe.seen_at DESC NULLS LAST LIMIT 1
+      ),
       'app_version', coalesce(dev.app_version, nd.app_version),
       'push_active', EXISTS (SELECT 1 FROM push_users pu WHERE pu.user_id = up.user_id),
       'onboarding_completed', coalesce((SELECT bool_or(us.onboarding_completed) FROM public.user_settings us WHERE us.user_id = up.user_id), false),
@@ -219,11 +248,11 @@ SELECT jsonb_build_object(
     ) ORDER BY up.created_at DESC, up.user_id)
     FROM users_page up
     LEFT JOIN LATERAL (
-      SELECT da.platform, da.app_version FROM public.device_activity da
+      SELECT da.app_version FROM public.device_activity da
       WHERE da.user_id = up.user_id ORDER BY da.last_seen_at DESC NULLS LAST LIMIT 1
     ) dev ON true
     LEFT JOIN LATERAL (
-      SELECT x.platform, x.app_version FROM public.notification_devices x
+      SELECT x.app_version FROM public.notification_devices x
       WHERE x.user_id = up.user_id ORDER BY x.last_seen_at DESC NULLS LAST LIMIT 1
     ) nd ON true
   ), '[]'::jsonb)

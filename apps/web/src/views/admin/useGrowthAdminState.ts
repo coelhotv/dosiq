@@ -31,6 +31,9 @@ export type GrowthUser = {
   email: string | null
   created_at: string
   last_activity_at: string | null
+  /** Canais em que a conta já entrou (D-AN-2): aparelhos ∪ sessões no servidor. */
+  platforms: Array<'ios' | 'android' | 'web'>
+  /** Canal da atividade mais recente. */
   platform: 'ios' | 'android' | 'web' | null
   app_version: string | null
   push_active: boolean
@@ -66,13 +69,14 @@ export type GrowthAnalytics = {
 
 export type GrowthFilters = { query: string; platform: PlatformFilter; push: PushFilter }
 
-/** Filtro puro da tabela: busca por e-mail ou id (sem diferenciar caixa) + plataforma + push. */
+/** Filtro puro da tabela: busca por e-mail ou id (sem diferenciar caixa) + plataforma já usada + push. */
 export function filterGrowthUsers(users: GrowthUser[] = [], { query, platform, push }: GrowthFilters): GrowthUser[] {
   const q = query.trim().toLowerCase()
   return users.filter((u) => {
     if (q && !(u.email ?? '').toLowerCase().includes(q) && !u.user_id.toLowerCase().includes(q)) return false
-    if (platform === 'none' && u.platform !== null) return false
-    if (platform !== 'all' && platform !== 'none' && u.platform !== platform) return false
+    const used = u.platforms ?? []
+    if (platform === 'none' && used.length > 0) return false
+    if (platform !== 'all' && platform !== 'none' && !used.includes(platform)) return false
     if (push === 'active' && !u.push_active) return false
     if (push === 'inactive' && u.push_active) return false
     return true
