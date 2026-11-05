@@ -1,4 +1,4 @@
-import { Terminal, Database, MessageSquare, Volume2, ShieldAlert, UserX } from 'lucide-react'
+import { Terminal, Database, MessageSquare, Volume2, ShieldAlert, UserX, TrendingUp } from 'lucide-react'
 
 /**
  * AdminSection — Ferramentas administrativas e DLQ.
@@ -70,6 +70,17 @@ export default function AdminSection({ isAdmin, dlqCount, onNavigate }) {
           <div className="sr-admin__label">
             <UserX size={18} />
             <span>Exclusões pendentes</span>
+          </div>
+        </button>
+
+        <button
+          className="sr-admin__row"
+          onClick={() => onNavigate('admin-growth')}
+          type="button"
+        >
+          <div className="sr-admin__label">
+            <TrendingUp size={18} />
+            <span>Crescimento &amp; Wedge</span>
           </div>
         </button>
       </div>

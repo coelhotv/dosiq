@@ -7,6 +7,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Admin: painel de crescimento e do wedge GLP-1 (spec 115)
+
+- **Web/PWA** (`Added`, **minor** 4.36.0 → 4.37.0 — tela nova no bundle web, só para a conta admin; sem mudança para usuários comuns; canal mobile: nenhum). Nova tela "Crescimento & Wedge" na área de administração: novos usuários, push ativo, distribuição das classes terapêuticas dos tratamentos ativos (GLP-1/antiobesidade × outros antidiabéticos × demais classes × sem código, pelo código EphMRA da classe, não pelo nome) e adoção de titulação, biomarcador, alarme crítico, estoque e data de término — sempre em usuários distintos, com o número absoluto ao lado do percentual e a coorte dos últimos 30 dias. Tabela de contas com busca, filtros de plataforma e push e detalhe dos tratamentos de cada conta, sem nome comercial de medicamento.
+- **Backend/Infra + Shared/Core** (`Added`, `no-user-impact`, sem bump). RPC `get_admin_growth_analytics` (`SECURITY DEFINER`, execução só pelo servidor) servida em `api/admin?resource=growth` — sem função serverless nova. Contas internas de smoke ficam fora de todos os números pela env `GROWTH_EXCLUDED_USER_IDS`. Migração `20261103_admin_growth_analytics.sql` aplicada no QA; produção após aprovação. Core exporta `WEDGE_CLASS_PREFIXES`/`classifyWedge`, espelhados na RPC por teste de paridade.
+
 ### Dose crítica: o servidor volta a avisar quando o alarme do celular deixa de funcionar (spec 082, Slice D2)
 
 - **Mobile** (`Fixed`, **patch** `APP_VERSION` 0.34.1 → **0.34.4** (0.34.2–0.34.3 = builds intermediários de smoke); canal: **build de loja** — R-314: o app passa a ler e relatar o estado do aparelho, mudança de propósito da coleta). O app informa ao servidor, de tempos em tempos, se o alarme de dose crítica ainda pode tocar (permissão de notificação, canal do alarme ligado, alarme exato liberado, alarmes armados). Se deixou de poder, a prova antiga de "alarme armado" para de valer e o servidor manda a notificação crítica — antes, reinstalar o app ou desligar o canal do alarme deixava a dose sem aviso nenhum. Registrar a dose pela tela Hoje agora desarma também a soneca e o acompanhamento da dose (o card não volta a "pendente").

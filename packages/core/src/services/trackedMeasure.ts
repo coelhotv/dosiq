@@ -30,6 +30,24 @@ export const MEASURE_CLASS_MATRIX: ReadonlyArray<readonly [prefix: string, measu
   ['C9', 'pressao_arterial'],
 ]
 
+/**
+ * Wedge 2026 (spec 115 · INV-4): GLP-1/antiobesidade por prefixo de `therapeutic_class_code`,
+ * nunca por texto de classe ("Antidiabeticos" junta GLP-1 e insulina). Espelhada literalmente na
+ * RPC `get_admin_growth_analytics` — o `wedgeParity.test.ts` barra divergência.
+ */
+export const WEDGE_CLASS_PREFIXES: ReadonlyArray<string> = ['A10S', 'A10X9', 'A8A']
+
+export type WedgeBucket = 'glp1_antiobesidade' | 'antidiabeticos_outros' | 'outras' | 'sem_codigo'
+
+/** Bucket do wedge de um código de classe (mesma regra da RPC). */
+export function classifyWedge(code: string | null | undefined): WedgeBucket {
+  const normalized = normalizeClassCode(code)
+  if (normalized === null) return 'sem_codigo'
+  if (WEDGE_CLASS_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return 'glp1_antiobesidade'
+  if (normalized.startsWith('A10')) return 'antidiabeticos_outros'
+  return 'outras'
+}
+
 /** Trim + maiúsculas; `null` se vazio ou fora do formato do CHECK do banco. */
 export function normalizeClassCode(code: string | null | undefined): string | null {
   if (typeof code !== 'string') return null
