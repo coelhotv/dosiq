@@ -50,19 +50,19 @@ describe('aviso de dose mensal (subject = dose_instance.id)', () => {
     // saldo 1 cobre a dose de 06/11; a de 07/11 fica descoberta
     seed({ stockX: 1 });
     const d = await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: NOW });
-    expect(d).toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: true });
+    expect(d).toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: true, protocolId: 'pX' });
   });
 
   it('saldo cobre ⇒ sem linha de compra', async () => {
     seed({ stockX: 5 });
     expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: NOW }))
-      .toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: false });
+      .toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: false, protocolId: 'pX' });
   });
 
   it('estoque DESLIGADO ⇒ aviso sai, sem linha de compra (FR-014, INV-6)', async () => {
     seed({ tracking: false });
     expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: NOW }))
-      .toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: false });
+      .toEqual({ reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: false, protocolId: 'pX' });
   });
 
   it.each([
@@ -75,9 +75,15 @@ describe('aviso de dose mensal (subject = dose_instance.id)', () => {
     expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: NOW })).toBeNull();
   });
 
-  it('drain fora do dia (D-1) ⇒ null', async () => {
+  it('D-1 (recuperação FR-018) ⇒ aviso com "amanhã"', async () => {
+    seed({ tracking: false });
+    expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: new Date('2026-11-06T13:20:00Z') }))
+      .toEqual({ reason: 'monthly_dose', daysUntil: 1, withPurchaseLine: false, protocolId: 'pX' });
+  });
+
+  it('drain no dia da dose (D-0) ⇒ null', async () => {
     seed();
-    expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: new Date('2026-11-06T13:20:00Z') })).toBeNull();
+    expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'dD2', now: new Date('2026-11-07T13:20:00Z') })).toBeNull();
   });
 
   it('instância de OUTRO usuário não é lida (user_id no filtro)', async () => {
@@ -90,7 +96,7 @@ describe('lembrete de compra (subject = medicine_id) — PO-105-2', () => {
   it('saldo 0, dose amanhã ⇒ compra em D-1', async () => {
     seed({ stockX: 0 });
     expect(await buildSupplyReminderContent({ userId: 'M', subjectId: 'X', now: NOW }))
-      .toEqual({ reason: 'purchase', daysUntil: 1, withPurchaseLine: false });
+      .toEqual({ reason: 'monthly_purchase', daysUntil: 1, withPurchaseLine: false, protocolId: 'pX' });
   });
 
   it('🔴 compra registrada entre o enqueue e o envio ⇒ null (revalida no envio)', async () => {
@@ -107,6 +113,6 @@ describe('lembrete de compra (subject = medicine_id) — PO-105-2', () => {
   it('payload nunca carrega campo de remédio (FR-017)', async () => {
     seed({ stockX: 0 });
     const d = await buildSupplyReminderContent({ userId: 'M', subjectId: 'X', now: NOW });
-    expect(Object.keys(d!).sort()).toEqual(['daysUntil', 'reason', 'withPurchaseLine']);
+    expect(Object.keys(d!).sort()).toEqual(['daysUntil', 'protocolId', 'reason', 'withPurchaseLine']);
   });
 });

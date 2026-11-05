@@ -236,17 +236,24 @@ function _formatStepDose(dose: number | undefined, intakeUnit: string | null | u
  */
 export function buildSupplyReminderPayload(data: z.input<typeof supplyReminderDataSchema>): NotificationPayload {
   const { reason, daysUntil, withPurchaseLine } = supplyReminderDataSchema.parse(data);
-  const quando = daysUntil === 1 ? 'amanhã' : `daqui a ${daysUntil} dias`;
+  const amanha = daysUntil === 1;
+  let title: string;
+  let plain: string;
   if (reason === 'monthly_dose') {
-    const title = '🗓️ Dose mensal chegando';
+    title = '🗓️ Dose mensal chegando';
     const acao = withPurchaseLine
       ? 'O estoque cadastrado não cobre essa dose: hora de comprar ou buscar.'
       : 'Hora de garantir: comprar, buscar ou agendar a aplicação.';
-    const plain = `A dose mensal é ${quando}. ${acao} Abra o dosiq para ver os detalhes.`;
-    return { title, body: escapeMarkdownV2(plain), pushBody: plain };
+    plain = `A dose mensal é ${amanha ? 'amanhã' : `daqui a ${daysUntil} dias`}. ${acao} Abra o dosiq para ver os detalhes.`;
+  } else if (reason === 'monthly_purchase') {
+    title = '🗓️ Dose mensal amanhã';
+    plain = 'O estoque cadastrado não cobre a dose de amanhã: hora de comprar ou buscar. Abra o dosiq para ver os detalhes.';
+  } else {
+    // 105 smoke (C-13): o cerne é a TROCA de etapa, não a compra — a compra é a consequência.
+    title = '📈 Troca de etapa chegando';
+    plain = `${amanha ? 'Amanhã' : `Em ${daysUntil} dias`} o tratamento passa para a próxima etapa, com outro medicamento. ` +
+      'Garanta a caixa a tempo. Abra o dosiq para ver qual.';
   }
-  const title = '📦 Hora de garantir a próxima caixa';
-  const plain = `A próxima compra é para ${quando}. Abra o dosiq para ver qual medicamento.`;
   return { title, body: escapeMarkdownV2(plain), pushBody: plain };
 }
 

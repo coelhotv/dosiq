@@ -67,7 +67,11 @@ export interface RunwayStock {
 export type SupplyReason = 'sparse' | 'step_switch'
 
 export type SupplyDateResult =
-  | { status: 'due'; date: string; medicineId: string; reason: SupplyReason }
+  /**
+   * `protocolId` = tratamento de ORIGEM (o mensal, ou o que executa a etapa de passagem) — id opaco
+   * que o push leva para o app abrir o detalhe do tratamento (105 C-12); nunca o nome do remédio.
+   */
+  | { status: 'due'; date: string; medicineId: string; reason: SupplyReason; protocolId: string }
   /** Saldo cobre tudo o que é previsível: não há o que comprar agora. */
   | { status: 'covered' }
   /** Elegível, mas sem dose futura nem `duration_days` (AC-4): sem data, sem aviso. */
@@ -206,9 +210,11 @@ export function computeSupplyDate(params: {
   const own = firstUncoveredDate(medicineId, instances, protocols, stocks[medicineId], today, tz)
 
   // Escada: qualquer protocolo do medicamento executando etapa de passagem decide a troca.
-  const switching = protocols.map((p) => switchingStepOf(p, steps)).find((x) => x !== null) ?? null
-  if (!switching) {
-    if (own.date) return { status: 'due', date: own.date, medicineId, reason: 'sparse' }
+  const switchingProtocol = protocols.find((p) => switchingStepOf(p, steps) !== null) ?? null
+  const switching = switchingProtocol ? switchingStepOf(switchingProtocol, steps) : null
+  if (!switching || !switchingProtocol) {
+    // Elegível sem etapa de passagem ⇒ todo protocolo é esparso (predicado); o 1º é a origem.
+    if (own.date) return { status: 'due', date: own.date, medicineId, reason: 'sparse', protocolId: protocols[0].id }
     return own.hasFuture ? { status: 'covered' } : { status: 'no_date' }
   }
 
@@ -226,5 +232,5 @@ export function computeSupplyDate(params: {
   const need = Number.isFinite(firstDose) && firstDose > 0 ? doseInStockUnits(firstDose, next.intake_unit, nextStock) : 0
   if (need > 0 && cleanFloat((nextStock?.qty ?? 0) - need) >= 0) return { status: 'covered' }
 
-  return { status: 'due', date, medicineId: next.medicine_id, reason: 'step_switch' }
+  return { status: 'due', date, medicineId: next.medicine_id, reason: 'step_switch', protocolId: switchingProtocol.id }
 }

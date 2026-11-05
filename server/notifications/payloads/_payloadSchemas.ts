@@ -51,11 +51,18 @@ export const stockAlertDataSchema = z.object({
  * nome de remédio no payload, então o texto é neutro em todo canal, com ou sem a caixa B.
  */
 export const supplyReminderDataSchema = z.object({
-  reason: z.enum(['monthly_dose', 'purchase']),
+  /**
+   * monthly_dose     — aviso de dose mensal (D-2; D-1 se o D-2 não saiu, FR-018)
+   * monthly_purchase — compra do mensal com estoque ligado (D-1, AC-2)
+   * step_switch      — troca de etapa da escada para outro medicamento (D-2/D-1)
+   */
+  reason: z.enum(['monthly_dose', 'monthly_purchase', 'step_switch']),
   /** Dias até a data (D-2 ⇒ 2, D-1 ⇒ 1). */
   daysUntil: z.number().int().min(1).max(2),
   /** D-2 mensal com estoque ligado e saldo que não cobre a dose (AC-2). */
   withPurchaseLine: z.boolean(),
+  /** Tratamento de ORIGEM — id opaco para o app abrir o detalhe (C-12). Não identifica o remédio. */
+  protocolId: z.string().uuid().optional(),
 }).strict();
 
 export const stockExpiryAlertDataSchema = z.object({

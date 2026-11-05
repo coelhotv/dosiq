@@ -167,11 +167,13 @@ export interface EnqueueStockAlertsResult {
  */
 export async function enqueueStockAlerts(
   // eslint-disable-next-line no-restricted-syntax -- instante absoluto do tick, tz aplicada via Intl
-  { repo, kinds, now = new Date(), correlationId, logger }:
+  { repo, kinds, now = new Date(), correlationId, logger, settings }:
   {
     repo: { enqueue(entries: any[]): Promise<number> };
     kinds: Set<string>;
     now?: Date;
+    /** `user_settings` já lido no tick (105 perf b); ausente ⇒ lê aqui. */
+    settings?: any[];
     correlationId?: string;
     logger?: { info: (...a: any[]) => void; error: (...a: any[]) => void };
   }
@@ -196,7 +198,7 @@ export async function enqueueStockAlerts(
   //   delete from public.notification_outbox
   //    where kind in ('stock_alert','stock_expiry_alert') and status = 'pending';
 
-  const users = await _fetchStockTrackingUsers(correlationId);
+  const users = await _fetchStockTrackingUsers(correlationId, settings);
   if (users.length === 0) return empty;
 
   // Filtra ANTES da varredura: fora da janela, nenhuma das duas queries pesadas roda.

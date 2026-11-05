@@ -397,10 +397,14 @@ function getNavigationMetadata(kind: Kind, data: NotificationEventData, protocol
     consent_prune_notice: { screen: 'privacy-data', params: {} },
   }
 
-  // 105 (FR-013/FR-016): um kind, duas telas — compra abre Estoque; aviso mensal abre o Hoje. Telas que
-  // existem em toda a frota (0.30.x), sem `medicine_id` nos params (E-14).
+  // 105 (FR-013 reescrito, C-12): destino = detalhe do tratamento de origem. O app decide a tela final
+  // (escada com estoque ligado ⇒ estoque do próximo medicamento, Fatia B) a partir do `protocolId` e do
+  // `supply` — nunca de um `medicine_id` no push (E-14). App sem suporte (frota atual) cai no Hoje.
   if (kind === 'supply_reminder') {
-    return { screen: data.reason === 'purchase' ? 'stock' : 'today', params: {} }
+    return {
+      screen: 'treatment-detail',
+      params: { ...(data.protocolId ? { protocolId: data.protocolId } : {}), supply: data.reason },
+    }
   }
 
   return routes[kind] || { screen: 'today', params: {} }
@@ -489,7 +493,7 @@ function resolveDeeplink(kind: Kind, data: NotificationEventData): string {
     }
 
     case 'supply_reminder':
-      return data.reason === 'purchase' ? `${BASE_URL}stock` : `${BASE_URL}today`;
+      return data.protocolId ? `${BASE_URL}treatment?protocolId=${data.protocolId}` : `${BASE_URL}today`;
 
     default:
       return `${BASE_URL}today`;

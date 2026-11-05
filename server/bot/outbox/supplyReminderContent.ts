@@ -3,7 +3,7 @@
 // SEC-1 (ADR-078): a fila guarda só a referência. O MOTIVO sai do próprio assunto — os dois são UUIDs
 // de tabelas diferentes, então não há ambiguidade:
 //   subject = dose_instances.id → aviso de dose mensal (reason monthly_dose)
-//   subject = medicines.id      → lembrete de compra   (reason purchase)
+//   subject = medicines.id      → lembrete de compra   (reason monthly_purchase | step_switch)
 //
 // FR-005/E-10/E-15: tudo é revalidado AGORA. Sem conteúdo ⇒ `null` (o drain marca `sent` sem enviar,
 // `skippedNoContent`) com `reason` no log — silêncio sem motivo seria falha silenciosa.
@@ -28,7 +28,13 @@ const logger = createLogger('SupplyReminderContent');
 const DEFAULT_TZ = 'America/Sao_Paulo';
 const MS_DAY = 86400000;
 
-type SupplyReminderData = { reason: 'monthly_dose' | 'purchase'; daysUntil: number; withPurchaseLine: boolean };
+type SupplyReminderData = {
+  reason: 'monthly_dose' | 'monthly_purchase' | 'step_switch';
+  daysUntil: number;
+  withPurchaseLine: boolean;
+  /** Tratamento de origem — id opaco para o toque abrir o detalhe (C-12). */
+  protocolId?: string;
+};
 
 function skip(reason: string, ctx: Record<string, unknown>): null {
   logger.info('supply_reminder descartado no envio', { reason, ...ctx });
@@ -48,7 +54,7 @@ async function readSettings(userId: string): Promise<{ tz: string; tracking: boo
 
 /** Escopo de um usuário para o plano de compra — a MESMA varredura do enqueue (uma implementação). */
 async function loadUserScope(userId: string, now: Date) {
-  const scan = await _scanStockAlertCandidates([{ user_id: userId }], 'supply_reminder_content');
+  const scan = await _scanStockAlertCandidates([{ user_id: userId }], 'supply_reminder_content', { quiet: true });
   const steps = scan.stepsByUser?.[userId] || [];
   const eligible = eligiblePurchaseMedicines(scan.protocolsByMedicine, { [userId]: steps });
   const instances = await _fetchPendingInstances(
@@ -69,7 +75,8 @@ async function monthlyHeadsUpContent(
   if (inst.status !== 'pending') return skip('dose_resolved', { userId, subjectId });
   const doseDate = localDate(inst.scheduled_for, tz);
   const daysUntil = daysBetween(today, doseDate);
-  if (daysUntil !== MONTHLY_HEADS_UP_DAYS) return skip('out_of_window', { userId, subjectId, daysUntil });
+  // D-2 normal; D-1 só chega aqui pela recuperação da FR-018 (o enqueue garante 1 aviso por dose).
+  if (daysUntil !== MONTHLY_HEADS_UP_DAYS && daysUntil !== 1) return skip('out_of_window', { userId, subjectId, daysUntil });
 
   const { data: protocol, error: pErr } = await supabase
     .from('protocols')
@@ -82,8 +89,10 @@ async function monthlyHeadsUpContent(
   if (protocol.end_date && protocol.end_date < today) return skip('protocol_ended', { userId, subjectId });
   if (!isSparseProtocol(protocol)) return skip('not_sparse', { userId, subjectId });
 
-  // Linha de compra (AC-2): só com estoque ligado e saldo que não cobre ESTA dose (FR-014).
-  if (!tracking) return { reason: 'monthly_dose', daysUntil, withPurchaseLine: false };
+  const base = { reason: 'monthly_dose' as const, daysUntil, protocolId: protocol.id };
+  // Linha de compra (AC-2): só com estoque ligado e saldo que não cobre ESTA dose (FR-014). Sem
+  // estoque ligado, a varredura do usuário nem roda (105 perf c).
+  if (!tracking) return { ...base, withPurchaseLine: false };
   const scope = await loadUserScope(userId, now);
   const r = computeSupplyDate({
     medicineId: inst.medicine_id,
@@ -94,7 +103,7 @@ async function monthlyHeadsUpContent(
     tz,
     now,
   });
-  return { reason: 'monthly_dose', daysUntil, withPurchaseLine: r.status === 'due' && r.date === doseDate };
+  return { ...base, withPurchaseLine: r.status === 'due' && r.date === doseDate };
 }
 
 /** Ramo do lembrete de compra (subject = medicamento a comprar). */
@@ -115,7 +124,12 @@ async function purchaseContent(
   const hit = planned.find((p) => p.medicineId === subjectId);
   // Compra registrada, protocolo pausado ou deixou de ser elegível: o plano de agora não o contém.
   if (!hit) return skip('purchase_no_longer_due', { userId, subjectId });
-  return { reason: 'purchase', daysUntil: hit.daysUntil, withPurchaseLine: false };
+  return {
+    reason: hit.reason === 'step_switch' ? 'step_switch' : 'monthly_purchase',
+    daysUntil: hit.daysUntil,
+    withPurchaseLine: false,
+    protocolId: hit.protocolId,
+  };
 }
 
 export async function buildSupplyReminderContent(
@@ -123,14 +137,17 @@ export async function buildSupplyReminderContent(
   { userId, subjectId, now = new Date() }: { userId: string; subjectId: string | null; now?: Date }
 ): Promise<Record<string, unknown> | null> {
   if (!subjectId) return null;
-  const { tz, tracking } = await readSettings(userId);
-
-  const { data: inst, error: instErr } = await supabase
-    .from('dose_instances')
-    .select(DOSE_INSTANCE_SCAN_COLUMNS)
-    .eq('id', subjectId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  // 105 perf: as duas leituras independem — em paralelo.
+  const [{ tz, tracking }, instRes] = await Promise.all([
+    readSettings(userId),
+    supabase
+      .from('dose_instances')
+      .select(DOSE_INSTANCE_SCAN_COLUMNS)
+      .eq('id', subjectId)
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ]);
+  const { data: inst, error: instErr } = instRes;
   if (instErr) throw new Error(`buildSupplyReminderContent.dose_instances: ${instErr.message}`);
 
   return inst

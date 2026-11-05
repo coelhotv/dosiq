@@ -120,7 +120,7 @@ describe('computeSupplyDate — esparso (FR-003)', () => {
       instances: [inst('2026-11-07'), inst('2026-12-07')],
       stocks: { [MED_A]: solid(0) }, tz: TZ, now: NOW,
     })
-    expect(r).toEqual({ status: 'due', date: '2026-11-07', medicineId: MED_A, reason: 'sparse' })
+    expect(r).toEqual({ status: 'due', date: '2026-11-07', medicineId: MED_A, reason: 'sparse', protocolId: P1 })
   })
 
   it('saldo cobre 1 dose ⇒ D = 2ª dose', () => {
@@ -207,7 +207,7 @@ describe('computeSupplyDate — escada com troca (FR-003, PO-105-3/4)', () => {
       medicineId: MED_A, protocols: [daily], steps: [step(), nextB],
       instances: days(6, 10), stocks: { [MED_A]: solid(3) }, tz: TZ, now: NOW,
     })
-    expect(r).toEqual({ status: 'due', date: '2026-11-09', medicineId: MED_B, reason: 'step_switch' })
+    expect(r).toEqual({ status: 'due', date: '2026-11-09', medicineId: MED_B, reason: 'step_switch', protocolId: P1 })
   })
 
   it('só duration_days: D = started_at + duration_days', () => {

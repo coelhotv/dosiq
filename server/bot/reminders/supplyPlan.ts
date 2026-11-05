@@ -95,6 +95,8 @@ export interface PlannedPurchase {
   date: string;
   reason: 'sparse' | 'step_switch';
   daysUntil: number;
+  /** Tratamento de origem (id opaco do push, C-12). */
+  protocolId: string;
 }
 
 /**
@@ -134,7 +136,7 @@ export function planPurchasesForUser(params: {
     // Dois remédios de origem apontando para a MESMA compra (ex.: duas escadas trocando para o mesmo
     // medicamento) = um lembrete só (FR-004: no máximo 1 por medicamento por dia).
     if (!byMedicine.has(r.medicineId)) {
-      byMedicine.set(r.medicineId, { medicineId: r.medicineId, date: r.date, reason: r.reason, daysUntil });
+      byMedicine.set(r.medicineId, { medicineId: r.medicineId, date: r.date, reason: r.reason, daysUntil, protocolId: r.protocolId });
     }
   }
   return [...byMedicine.values()];

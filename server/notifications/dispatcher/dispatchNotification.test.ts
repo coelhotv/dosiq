@@ -641,12 +641,23 @@ describe('dispatchNotification — supply_reminder (105)', () => {
     expect(out).not.toMatch(/medicineName|medicine_id|protocolId|Medicamento Teste/)
   })
 
-  it('compra abre Estoque; aviso mensal abre o Hoje (FR-013/FR-016)', async () => {
-    await run({ international_transfer_granted_at: null }, { reason: 'purchase', daysUntil: 1, withPurchaseLine: false })
-    expect(sent()).toContain('"screen":"stock"')
-    mockBot.sendMessage.mockClear(); mockExpoClient.sendPushNotificationsAsync.mockClear()
-    await run({ international_transfer_granted_at: null })
-    expect(sent()).toContain('"screen":"today"')
+  it('destino = detalhe do tratamento de origem com id opaco, também sem B (FR-013 reescrito, C-12)', async () => {
+    const PROTO = '10500000-0000-4000-8000-000000000002'
+    await run({ international_transfer_granted_at: null }, { reason: 'step_switch', daysUntil: 2, withPurchaseLine: false, protocolId: PROTO })
+    expect(sent()).toContain('"screen":"treatment-detail"')
+    expect(sent()).toContain(PROTO)
+    expect(sent()).toContain('"supply":"step_switch"')
+  })
+
+  it.each([
+    ['monthly_purchase', 1, '🗓️ Dose mensal amanhã', 'O estoque cadastrado não cobre a dose de amanhã'],
+    ['step_switch', 2, '📈 Troca de etapa chegando', 'Em 2 dias o tratamento passa para a próxima etapa, com outro medicamento'],
+    ['step_switch', 1, '📈 Troca de etapa chegando', 'Amanhã o tratamento passa para a próxima etapa'],
+    ['monthly_dose', 1, '🗓️ Dose mensal chegando', 'A dose mensal é amanhã'],
+  ])('copy: %s D-%s (C-13)', async (reason, daysUntil, title, body) => {
+    await run({ international_transfer_granted_at: null }, { reason, daysUntil, withPurchaseLine: false })
+    expect(sent()).toContain(title)
+    expect(sent()).toContain(body)
   })
 
   it('🔴 schema rejeita nome de remédio no payload — nenhum chamador consegue vazar (FR-017)', async () => {

@@ -51,6 +51,8 @@ function seed() {
       inst(U_OFF, `pm-${U_OFF}`, '2026-11-06T12:00:00Z', 'pending', 'i-d1'),
       inst(U_STOCK, `pm-${U_STOCK}`, '2026-11-07T15:00:00Z', 'taken', 'i-taken'),
     ],
+    // a dose de D-1 (`i-d1`) já teve o aviso no D-2 de ontem ⇒ a recuperação da FR-018 não repete
+    notification_outbox: [{ id: 'o1', user_id: U_OFF, kind: 'supply_reminder', subject_id: 'i-d1' }],
   });
 }
 
@@ -71,6 +73,31 @@ describe('enqueueMonthlyHeadsUp (PO-105-1)', () => {
       expect(e.periodKey).toBe('2026-11-05');
       expect(e.subjectId).toMatch(/^i-pm-/);
     }
+  });
+
+  it('FR-018: D-2 perdido ⇒ aviso sai no D-1; já avisado ⇒ não repete (INV-3)', async () => {
+    seed();
+    fake.db.tables.notification_outbox = [];
+    const repo = makeUniqueRepo();
+    const r = await enqueueMonthlyHeadsUp({ repo, kinds: KINDS, now: NOW_SP });
+    expect(r.attempted).toBe(4);
+    expect(r.recoveredD1).toBe(1);
+    expect(repo.inserted.map((e) => e.subjectId)).toContain('i-d1');
+
+    seed(); // com a linha do D-2 na fila
+    const repo2 = makeUniqueRepo();
+    const r2 = await enqueueMonthlyHeadsUp({ repo: repo2, kinds: KINDS, now: NOW_SP });
+    expect(r2.recoveredD1).toBe(0);
+    expect(repo2.inserted.map((e) => e.subjectId)).not.toContain('i-d1');
+  });
+
+  it('settings pré-lidos no tick ⇒ não relê user_settings (perf b)', async () => {
+    seed();
+    const repo = makeUniqueRepo();
+    const settings = fake.db.tables.user_settings;
+    await enqueueMonthlyHeadsUp({ repo, kinds: KINDS, now: NOW_SP, settings });
+    expect(fake.db.calls).not.toContain('user_settings');
+    expect(repo.inserted).toHaveLength(3);
   });
 
   it('reexecução no mesmo dia (outro minuto da janela) ⇒ 0 novos pela UNIQUE', async () => {
@@ -94,7 +121,7 @@ describe('enqueueMonthlyHeadsUp (PO-105-1)', () => {
     seed();
     const repo = makeUniqueRepo();
     await enqueueMonthlyHeadsUp({ repo, kinds: KINDS, now: new Date('2026-11-05T13:10:00Z') });
-    expect(fake.db.calls).toEqual(['user_settings']);
+    expect(fake.db.calls).toEqual(['user_settings']); // nenhuma leitura de protocolo/dose
     expect(repo.inserted).toHaveLength(0);
   });
 
