@@ -10,7 +10,19 @@ import { getPushPermissionStatus } from './pushPermission'
 import { registerPushToken } from './registerPushToken'
 import { ensurePushChannel } from './ensurePushChannel'
 import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrationAction } from './titrationNotificationActions'
-import { navigateToDose, navigateToHistory, navigateToPrivacyData } from '@navigation/navigateToDose'
+import {
+  navigateToDose,
+  navigateToHistory,
+  navigateToPrivacyData,
+  navigateToStock,
+  navigateToStockDetail,
+  navigateToTreatmentDetail,
+  buildSupplyTarget,
+} from '@navigation/navigateToDose'
+import { createSupplyRunwayRepository } from '@dosiq/core'
+import { supabase as nativeSupabaseClient } from '@platform/supabase/nativeSupabaseClient'
+import { readStockTrackingCache } from '@platform/storage/stockTrackingCache'
+import { resolveSupplyTarget } from './resolveSupplyTarget'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
 import { logEvent } from '@platform/analytics/productAnalytics'
@@ -55,10 +67,58 @@ function navigateFromPush(data) {
     navigateToHistory()
   } else if (screen === 'privacy-data') {
     navigateToPrivacyData()
+  } else if (screen === 'stock') {
+    // 105 FR-019: `stock_alert`/`stock_expiry_alert`/`prescription_alert` — antes caíam no Hoje (C-12).
+    void _navigateToStockTab()
+  } else if (screen === 'treatment-detail') {
+    void _navigateToSupplyTarget(navigationData?.params)
   } else {
     void _navigateToDoseUnlessResolved(data, screen ? { screen, ...(navigationData?.params ?? {}) } : null)
   }
   debugLog('[usePushNotifications] Navegando para:', screen ?? ROUTES.TODAY)
+}
+
+// 105 FR-019: avisos de compra. Payload inválido ⇒ Hoje; o resto decide `resolveSupplyTarget`.
+async function _getUserId() {
+  const { data, error } = await nativeSupabaseClient.auth.getUser()
+  if (error || !data?.user) throw new Error('Sessão expirada')
+  return data.user.id
+}
+
+let _supplyRepo: ReturnType<typeof createSupplyRunwayRepository> | null = null
+function _supplyRepository() {
+  // TODO(040-strict): versão do supabase-js do mobile ≠ do core (ver stockService.ts).
+  if (!_supplyRepo) _supplyRepo = createSupplyRunwayRepository({ client: nativeSupabaseClient as any, getUserId: _getUserId })
+  return _supplyRepo
+}
+
+// A aba Estoque só existe com o controle ligado (`RootTabs.tsx`); aviso antigo tocado depois de
+// desligar ⇒ Hoje, não rota inexistente. Sem cache ⇒ ligado (degrau 3 do AP-277).
+async function _isStockTrackingEnabled() {
+  return (await readStockTrackingCache().catch(() => null))?.enabled ?? true
+}
+
+async function _navigateToStockTab() {
+  if (await _isStockTrackingEnabled()) navigateToStock()
+  else navigateToDose(null)
+}
+
+async function _navigateToSupplyTarget(rawParams) {
+  const target = buildSupplyTarget(rawParams)
+  if (!target) {
+    navigateToDose(null)
+    return
+  }
+  const repo = _supplyRepository()
+  const dest = await resolveSupplyTarget(target, {
+    getProtocolOrigin: (id) => repo.getProtocolOrigin(id),
+    getSteps: () => repo.getSteps(),
+    getMedicineName: (id) => repo.getMedicineName(id),
+    isStockTrackingEnabled: _isStockTrackingEnabled,
+  })
+  if (dest.kind === 'stock') navigateToStockDetail(dest.medicineId, dest.medicineName)
+  else if (dest.kind === 'treatment') navigateToTreatmentDetail(dest.protocolId)
+  else navigateToDose(null)
 }
 
 // 082 D2 (smoke T101 · C-40): push que ficou na bandeja de dose JÁ registrada neste aparelho abre

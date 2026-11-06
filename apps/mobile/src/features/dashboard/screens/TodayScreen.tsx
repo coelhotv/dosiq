@@ -22,7 +22,7 @@ import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import EmptyState from '@shared/components/states/EmptyState'
 import ErrorState from '@shared/components/states/ErrorState'
-import { getPeriodFromTime, getNow, getUserTime, parseISO } from '@dosiq/core'
+import { getPeriodFromTime, getNow, getUserTime, parseISO, getTodayLocal } from '@dosiq/core'
 import { useTodayMeasures } from '@measures/hooks/useTodayMeasures'
 import AdherenceDayCard from '@dashboard/components/AdherenceDayCard'
 import TimeBlockSeparator from '@dashboard/components/TimeBlockSeparator'
@@ -30,6 +30,7 @@ import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
 import EvolutionSwitchSection from '@dashboard/components/EvolutionSwitchSection'
 import HeroDoseCard from '@dashboard/components/HeroDoseCard'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
+import SupplyNoticeInline from '@dashboard/components/SupplyNoticeInline'
 import { ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import DoseRegisterModal from '@dose/components/DoseRegisterModal'
 import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
@@ -44,7 +45,7 @@ import { useAlarmScreenActive } from '@platform/versionGate/useAlarmScreenActive
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useStock } from '@stock/hooks/useStock'
 import { subscribePendingDose } from '@navigation/navigateToDose'
-import { deriveStockAlerts } from '@dashboard/hooks/_useTodayDerived'
+import { deriveStockAlerts, deriveSupplyNotices } from '@dashboard/hooks/_useTodayDerived'
 import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
 import StockUpsellCard from '@dashboard/components/StockUpsellCard'
@@ -347,11 +348,21 @@ function TodayStockAlert({ refreshKey }) {
   const { data: stockData, refresh } = useStock()
   const firstKey = useRef(refreshKey)
   const alerts = useMemo(() => deriveStockAlerts(stockData?.active), [stockData])
+  // 105 G-B5: próxima compra (mensal / etapa de passagem), neutra, ≤ 7 dias.
+  const supplyNotices = useMemo(
+    () => deriveSupplyNotices(stockData?.active, stockData?.localDay ?? getTodayLocal()),
+    [stockData],
+  )
   useEffect(() => {
     if (refreshKey === firstKey.current) return
     refresh(true)
   }, [refreshKey, refresh])
-  return <StockAlertInline alerts={alerts} />
+  return (
+    <>
+      <StockAlertInline alerts={alerts} />
+      <SupplyNoticeInline notices={supplyNotices} />
+    </>
+  )
 }
 
 function TodayBannersSection({

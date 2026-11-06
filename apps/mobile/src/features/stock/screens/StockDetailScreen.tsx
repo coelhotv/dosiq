@@ -25,13 +25,14 @@ const { ChevronLeft, Plus, SlidersHorizontal } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { stockService } from '@stock/services/stockService'
+import { supplyRunwayService } from '@stock/services/supplyRunwayService'
 import { medicineService } from '@medications/services/medicineService'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl, frequencyDailyFactor, stockDoseMetrics } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl, frequencyDailyFactor, stockDoseMetrics, isStockRunwayAlertExpected } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -205,6 +206,8 @@ function useStockDetailState(route, navigation) {
   const [loading, setLoading] = useState(true)
   // Mapa purchase_id → stock entry (com opened_at) para eixo TTL (012 Fase A)
   const [stockEntryMap, setStockEntryMap] = useState({})
+  // 105 Fatia B: etapas de escada do usuário p/ o predicado do core. `null` = não leu ⇒ alerta como hoje.
+  const [runwaySteps, setRunwaySteps] = useState(null)
 
   // — Memos (R-010) —
   const today = useMemo(() => getTodayLocal(), [])
@@ -235,7 +238,19 @@ function useStockDetailState(route, navigation) {
     return stockDoseMetrics(saldo, active, medicine)
   }, [medicine, saldo, today])
 
-  const badgeStatus = useMemo(() => calculateBadgeStatus(saldo, dailyConsumption), [saldo, dailyConsumption])
+  // 105 G4 (C-B2): esta tela calcula o tier por conta própria — passa pelo MESMO predicado do core que
+  // lista, Hoje e servidor. Zerar é o plano (mensal / etapa de passagem) ⇒ `PLANNED`, sem vermelho;
+  // saldo e doses seguem visíveis (FR-G5). Etapas não lidas ⇒ alerta como hoje (INV-2).
+  const runwayAlertExpected = useMemo(() => {
+    if (!Array.isArray(runwaySteps) || !medicineId) return true
+    const active = (medicine?.protocols || []).filter((p) => p.active && isProtocolInPeriod(p, today))
+    return isStockRunwayAlertExpected(medicineId, active, runwaySteps)
+  }, [runwaySteps, medicine, medicineId, today])
+
+  const badgeStatus = useMemo(
+    () => (runwayAlertExpected ? calculateBadgeStatus(saldo, dailyConsumption) : 'PLANNED'),
+    [runwayAlertExpected, saldo, dailyConsumption],
+  )
 
   const isSupplement = useMemo(
     () => SUPPLEMENT_TYPES.has(medicine?.type),
@@ -254,7 +269,9 @@ function useStockDetailState(route, navigation) {
 
       const run = async () => {
         try {
-          const [qty, purchaseList, med, stockRows] = await Promise.all([
+          // 105 smoke (2026-11-06): etapas no MESMO lote — lidas depois, o selo nascia com o tier de
+          // volume e piscava para "Planejado". Falha das etapas ⇒ null (alerta como hoje), sem derrubar a tela.
+          const [qty, purchaseList, med, stockRows, steps] = await Promise.all([
             stockService.getTotalQuantity(medicineId),
             stockService.getPurchasesByMedicine(medicineId),
             medicineService.getById(medicineId),
@@ -264,6 +281,7 @@ function useStockDetailState(route, navigation) {
               .eq('medicine_id', medicineId)
               .gt('quantity', 0)
               .then(({ data }) => data ?? []),
+            supplyRunwayService.getSteps().catch(() => null),
           ])
           if (cancelled) return
           setSaldo(qty ?? 0)
@@ -276,6 +294,7 @@ function useStockDetailState(route, navigation) {
             }
           }
           setStockEntryMap(entryMap)
+          setRunwaySteps(steps)
         } catch {
           if (!cancelled) {
             setSaldo(0)
@@ -354,6 +373,7 @@ function useStockDetailState(route, navigation) {
     daysRemaining,
     doseMetrics,
     badgeStatus,
+    runwayAlertExpected,
     isSupplement,
     latestPurchase,
     handleBack,
@@ -425,6 +445,7 @@ export default function StockDetailScreen({ navigation }) {
               avgUnitPrice={state.avgUnitPrice}
               costPerDose={state.costPerDose}
               medicine={state.medicine}
+              runwayAlertExpected={state.runwayAlertExpected}
             />
           </View>
 

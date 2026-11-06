@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
-const { AlertCircle, AlertTriangle, CheckCircle, TrendingUp } = LucideIcons as any
+const { AlertCircle, AlertTriangle, CheckCircle, TrendingUp, CalendarClock } = LucideIcons as any
 
 /**
  * Badge visual para nível de estoque conforme ADR-018.
@@ -36,6 +36,15 @@ export default function StockLevelBadge({ status, daysRemaining, dosesRemaining,
           bg: '#dcfce7',
           icon: CheckCircle,
           label: 'Normal'
+        }
+      // 105 Fatia B: remédio que zera de propósito (mensal / etapa de passagem) — sem tier de falta,
+      // tom neutro; o saldo continua no badge (FR-G5) e a data de compra vai no item (FR-009).
+      case 'PLANNED':
+        return {
+          color: '#475569',
+          bg: '#f1f5f9',
+          icon: CalendarClock,
+          label: 'Planejado'
         }
       case 'HIGH':
       default:

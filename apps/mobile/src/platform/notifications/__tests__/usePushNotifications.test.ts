@@ -19,6 +19,23 @@ jest.mock('@navigation/navigateToDose', () => ({
   navigateToDose: jest.fn(),
   navigateToHistory: jest.fn(),
   navigateToPrivacyData: jest.fn(),
+  navigateToStock: jest.fn(),
+  navigateToStockDetail: jest.fn(),
+  navigateToTreatmentDetail: jest.fn(),
+  // Allowlist REAL (a forma dos params é a prova do PO-SEC-3; não se mocka o validador).
+  buildSupplyTarget: jest.requireActual('@navigation/navigateToDose').buildSupplyTarget,
+}))
+
+// 105 FR-019: a decisão do destino é provada em resolveSupplyTarget.test.ts; aqui, só QUEM recebe O QUÊ.
+const mockResolveSupplyTarget = jest.fn()
+jest.mock('../resolveSupplyTarget', () => ({
+  resolveSupplyTarget: (...args) => mockResolveSupplyTarget(...args),
+}))
+jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
+  supabase: { auth: { getUser: jest.fn(async () => ({ data: { user: { id: 'user-abc' } }, error: null })) }, from: jest.fn() },
+}))
+jest.mock('@platform/storage/stockTrackingCache', () => ({
+  readStockTrackingCache: jest.fn(async () => null),
 }))
 
 const mockLogEvent = jest.fn()
@@ -64,7 +81,7 @@ jest.mock('@platform/doseActivity/resolvedDoseStore', () => ({
 
 // Acesso às funções mock via require (após as declarações de mock)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { navigateToDose, navigateToHistory, navigateToPrivacyData } = require('@navigation/navigateToDose')
+const { navigateToDose, navigateToHistory, navigateToPrivacyData, navigateToStock, navigateToStockDetail, navigateToTreatmentDetail } = require('@navigation/navigateToDose')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Notifications = require('expo-notifications')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -549,5 +566,84 @@ describe('usePushNotifications — destinos não-dose (090 G-2)', () => {
   it('screen desconhecido → helper de dose, que o recusa (Hoje sem modal)', async () => {
     await tap('DeleteAccount')
     expect(navigateToDose).toHaveBeenCalledWith({ screen: 'DeleteAccount' })
+  })
+
+  // 105 FR-019 (C-12): `stock` caía no Hoje — também o `stock_alert` de hoje.
+  it('stock → aba Estoque (não o Hoje)', async () => {
+    await tap('stock')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(navigateToStock).toHaveBeenCalledTimes(1)
+    expect(navigateToDose).not.toHaveBeenCalled()
+  })
+
+  it('stock com controle de estoque DESLIGADO (aba não existe) → Hoje', async () => {
+    const { readStockTrackingCache } = require('@platform/storage/stockTrackingCache')
+    readStockTrackingCache.mockResolvedValueOnce({ enabled: false, pausedAt: null })
+    await tap('stock')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(navigateToStock).not.toHaveBeenCalled()
+    expect(navigateToDose).toHaveBeenCalledWith(null)
+  })
+})
+
+describe('usePushNotifications — avisos de compra (105 FR-019 · PO-105-7)', () => {
+  const PROTO = '2b1c3f5e-8a4d-4e6b-9c7a-1d2e3f4a5b6c'
+  const NEXT_MED = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d'
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  async function tapSupply(params: Record<string, unknown>) {
+    const captured = { fn: null }
+    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
+      captured.fn = fn
+      return { remove: jest.fn() }
+    })
+    const { unmount } = renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    await act(async () => {
+      captured.fn(makeResponse('treatment-detail', params))
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    unmount()
+  }
+
+  it('destino "treatment" ⇒ detalhe do tratamento com o protocolId', async () => {
+    mockResolveSupplyTarget.mockResolvedValueOnce({ kind: 'treatment', protocolId: PROTO })
+    await tapSupply({ protocolId: PROTO, supply: 'monthly_dose' })
+    expect(mockResolveSupplyTarget).toHaveBeenCalledWith({ protocolId: PROTO, supply: 'monthly_dose' }, expect.any(Object))
+    expect(navigateToTreatmentDetail).toHaveBeenCalledWith(PROTO)
+    expect(navigateToStockDetail).not.toHaveBeenCalled()
+  })
+
+  it('destino "stock" ⇒ estoque do medicamento resolvido no app', async () => {
+    mockResolveSupplyTarget.mockResolvedValueOnce({ kind: 'stock', medicineId: NEXT_MED, medicineName: 'Próximo' })
+    await tapSupply({ protocolId: PROTO, supply: 'step_switch' })
+    expect(navigateToStockDetail).toHaveBeenCalledWith(NEXT_MED, 'Próximo')
+  })
+
+  it('destino "today" ⇒ Hoje sem modal', async () => {
+    mockResolveSupplyTarget.mockResolvedValueOnce({ kind: 'today' })
+    await tapSupply({ protocolId: PROTO, supply: 'monthly_purchase' })
+    expect(navigateToDose).toHaveBeenCalledWith(null)
+  })
+
+  it.each([
+    ['protocolId malformado', { protocolId: 'x', supply: 'monthly_dose' }],
+    ['protocolId ausente', { supply: 'step_switch' }],
+    ['supply fora do enum', { protocolId: PROTO, supply: 'stock_alert' }],
+    ['medicine_id no lugar do protocolo', { medicineId: NEXT_MED, supply: 'step_switch' }],
+  ])('%s ⇒ Hoje, sem consultar o banco', async (_label, params) => {
+    await tapSupply(params)
+    expect(mockResolveSupplyTarget).not.toHaveBeenCalled()
+    expect(navigateToDose).toHaveBeenCalledWith(null)
   })
 })

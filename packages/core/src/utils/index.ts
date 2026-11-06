@@ -98,6 +98,8 @@ export {
   isStockRunwayAlertExpected,
   isSparseProtocol,
   computeSupplyDate,
+  nextStepSwitchMedicineId,
+  nextStepStockCovers,
   SPARSE_INTERVAL_DAYS_MIN,
 } from './stockRunway'
 export type {

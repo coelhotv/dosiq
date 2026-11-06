@@ -31,11 +31,13 @@ import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
  *   avgUnitPrice: number,
  *   costPerDose: number|null,
  *   medicine: object|null,
+ *   runwayAlertExpected?: boolean,   // 105: false ⇒ cor neutra (zerar é o plano)
  * }} props
  */
 // Helpers e sub-componentes para simplificar a complexidade de StockIndicators
-function getDaysColor(daysRemaining) {
-  if (daysRemaining == null) return colors.text.primary
+function getDaysColor(daysRemaining, runwayAlertExpected = true) {
+  // 105 G4: zerar é o plano (mensal / etapa de passagem) ⇒ número neutro, nunca vermelho.
+  if (daysRemaining == null || runwayAlertExpected === false) return colors.text.primary
   if (daysRemaining < 7) return colors.status.error
   if (daysRemaining < 14) return colors.status.warning
   return colors.text.primary
@@ -93,8 +95,9 @@ export default function StockIndicators({
   avgUnitPrice = 0,
   costPerDose = null,
   medicine = null,
+  runwayAlertExpected = true,
 }) {
-  const daysColor = getDaysColor(daysRemaining)
+  const daysColor = getDaysColor(daysRemaining, runwayAlertExpected)
   const isLiquid = isLiquidMedicine(medicine)
   const countSuffix = isLiquid ? 'ml' : 'un.'
   const fmtCount = isLiquid ? formatNumberPtBR(saldo) : String(saldo)

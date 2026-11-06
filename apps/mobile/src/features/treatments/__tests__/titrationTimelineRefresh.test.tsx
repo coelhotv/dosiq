@@ -52,7 +52,14 @@ jest.mock('@treatments/hooks/useTitrationTimeline', () => ({
 // caminho de FOCUS desligado, o único refresh possível é o disparado pela ação. Era justamente
 // o focus que mascarava o defeito em produção (sair da tela e voltar corrigia a tela sozinho,
 // escondendo que a confirmação não invalidava nada).
+const mockGetTotalQuantity = jest.fn(async (_id: string) => 0 as number)
+jest.mock('@stock/services/stockService', () => ({
+  stockService: { getTotalQuantity: (id: string) => mockGetTotalQuantity(id) },
+}))
+
 jest.mock('@react-navigation/native', () => ({ useFocusEffect: () => {} }))
+// 105 B: o aviso da próxima etapa navega pelo helper cross-tab (fora do escopo deste teste).
+jest.mock('@navigation/navigateCrossTab', () => ({ navigateCrossTab: jest.fn() }))
 
 jest.mock('@shared/hooks/useStockTracking', () => ({
   useStockTracking: () => ({ enabled: false, ready: true }),

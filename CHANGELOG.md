@@ -7,6 +7,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Estoque: próxima compra no app, toque dos avisos e fim do "estoque baixo" onde zerar é o plano (spec 105, Fatia B)
+
+- **Mobile** (`Added` + `Changed` + `Fixed`, **patch** `APP_VERSION` 0.34.5 → **0.34.6**; canal: **build de loja** — R-314: feature nova e destino novo do toque da notificação, não elegível a OTA).
+  - **Próxima compra no lugar de "dias de estoque":** remédio mensal (a cada 28 dias ou mais) e etapa de escada cuja seguinte usa outro remédio mostram na aba Estoque "Próxima compra até DD/MM" ou "Próxima etapa: comprar até DD/MM" — a mesma data que o servidor usa para os avisos. Sem data previsível, segue o saldo em doses.
+  - **Sem "Crítico" onde zerar é o plano:** nesses remédios o selo da aba Estoque, o detalhe do estoque e o banner "Estoque baixo" do Hoje deixam de alarmar; o saldo continua visível. No Hoje, quando faltam até 7 dias para a compra, aparece um aviso em tom de atenção (não vermelho), como o da evolução do tratamento: "A próxima etapa usa Mounjaro 5 mg / 0,5 mL — garanta até DD/MM" ou "Dose mensal de Mesigyna em DD/MM"; tocar abre o estoque do remédio a comprar. O aviso "A próxima etapa usa …" no detalhe do tratamento também passa a abrir esse estoque. Contínuo, mensal junto de diário e escada que segue no mesmo remédio continuam como hoje.
+  - **Tocar no aviso abre a tela certa:** "Dose mensal chegando"/"Dose mensal amanhã" abre o tratamento; "Troca de etapa chegando" abre o estoque do remédio da próxima etapa (ou o tratamento, com o controle de estoque desligado); avisos de estoque baixo, validade e receita abrem a aba Estoque — antes todos caíam no Hoje. Tratamento apagado ou sem conexão para conferir abre o Hoje.
+- **Shared/Core** (`Added`, `no-user-impact`, sem bump): repositório de leitura `createSupplyRunwayRepository` (etapas da escada e doses pendentes, paginado) e `nextStepSwitchMedicineId`, a mesma regra de troca de etapa do servidor.
+- **Web/PWA:** sem mudança. O banner de estoque do Hoje da web já não aparecia para ninguém (lê um formato de dados que o painel não produz — defeito anterior, registrado na spec), então não há alerta errado a calar; página Estoque e tratamentos da web seguem mostrando dias (legado).
+
 ### Servidor: aviso de dose mensal, lembrete de compra e fim do "estoque baixo" onde zerar é o plano (spec 105, Fatia A)
 
 - **Backend/Infra + Shared/Core** (`Added` + `Changed`, `no-user-impact` nos version sources — servidor não tem version source e nenhuma tela de web ou mobile muda nesta fatia; canal mobile: nenhum; deploy normal do servidor, **depois** da migração e com `supply_reminder` acrescentado a `OUTBOX_KINDS`).
