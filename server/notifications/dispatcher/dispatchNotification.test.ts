@@ -590,3 +590,78 @@ describe('dispatchNotification — status da entrega (082/ADR-100)', () => {
     expect(logged.status).toBe('falhou')
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 105 PO-105-6 — `supply_reminder` pelo dispatcher REAL: gate central (sem mock) e payload final
+// por canal sem nome de remédio, com e sem a caixa B (FR-017 · INV-7 · ADR-120).
+describe('dispatchNotification — supply_reminder (105)', () => {
+  const MONTHLY = { reason: 'monthly_dose', daysUntil: 2, withPurchaseLine: true }
+  const run = (settings: Record<string, unknown>, data: Record<string, unknown> = MONTHLY) => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      notification_mode: 'realtime', quiet_hours_enabled: false,
+      channel_mobile_push_enabled: true, channel_telegram_enabled: true, ...settings,
+    })
+    mockBot.sendMessage.mockResolvedValue({ message_id: 1 })
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[abc]' }])
+    return dispatchNotification({
+      userId: 'user-105', kind: 'supply_reminder', data, channels: ['telegram', 'mobile_push'],
+      context: makeContext(), repositories: mockRepositories, bot: mockBot, expoClient: mockExpoClient,
+    })
+  }
+  const sent = () => JSON.stringify({
+    telegram: mockBot.sendMessage.mock.calls,
+    expo: mockExpoClient.sendPushNotificationsAsync.mock.calls,
+  })
+
+  it.each([
+    ['silent', { notification_mode: 'silent' }],
+    ['digest_morning', { notification_mode: 'digest_morning' }],
+    ['quiet hours (12:00 dentro de 11:00–13:00)', { quiet_hours_enabled: true, quiet_hours_start: '11:00', quiet_hours_end: '13:00' }],
+  ])('gate central: %s ⇒ suprimido (AC-6)', async (_l, settings) => {
+    const result = await run({ international_transfer_granted_at: '2026-10-21T10:00:00Z', ...settings })
+    expect(result.totalDelivered).toBe(0)
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+  })
+
+  it('estoque desligado não cala: realtime ⇒ entregue nos 2 canais (INV-6)', async () => {
+    const result = await run({ stock_tracking_enabled: false, international_transfer_granted_at: '2026-10-21T10:00:00Z' })
+    expect(result.totalDelivered).toBe(2)
+    expect(sent()).toContain('Dose mensal chegando')
+  })
+
+  it.each([
+    ['com B', '2026-10-21T10:00:00Z'],
+    ['sem B', null],
+  ])('🔴 %s: texto neutro passa intacto (TRANSFER_NEUTRAL_KINDS) e sem medicamento em título, corpo ou data', async (_l, b) => {
+    await run({ international_transfer_granted_at: b })
+    const out = sent()
+    expect(out).toContain('A dose mensal é daqui a 2 dias')
+    expect(out).not.toMatch(/medicineName|medicine_id|protocolId|Medicamento Teste/)
+  })
+
+  it('destino = detalhe do tratamento de origem com id opaco, também sem B (FR-013 reescrito, C-12)', async () => {
+    const PROTO = '10500000-0000-4000-8000-000000000002'
+    await run({ international_transfer_granted_at: null }, { reason: 'step_switch', daysUntil: 2, withPurchaseLine: false, protocolId: PROTO })
+    expect(sent()).toContain('"screen":"treatment-detail"')
+    expect(sent()).toContain(PROTO)
+    expect(sent()).toContain('"supply":"step_switch"')
+  })
+
+  it.each([
+    ['monthly_purchase', 1, '🗓️ Dose mensal amanhã', 'O estoque cadastrado não cobre a dose de amanhã'],
+    ['step_switch', 2, '📈 Troca de etapa chegando', 'Em 2 dias o tratamento passa para a próxima etapa, com outro medicamento'],
+    ['step_switch', 1, '📈 Troca de etapa chegando', 'Amanhã o tratamento passa para a próxima etapa'],
+    ['monthly_dose', 1, '🗓️ Dose mensal chegando', 'A dose mensal é amanhã'],
+  ])('copy: %s D-%s (C-13)', async (reason, daysUntil, title, body) => {
+    await run({ international_transfer_granted_at: null }, { reason, daysUntil, withPurchaseLine: false })
+    expect(sent()).toContain(title)
+    expect(sent()).toContain(body)
+  })
+
+  it('🔴 schema rejeita nome de remédio no payload — nenhum chamador consegue vazar (FR-017)', async () => {
+    await expect(run({}, { ...MONTHLY, medicineName: 'Medicamento Teste' })).rejects.toThrow()
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+  })
+})

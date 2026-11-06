@@ -60,6 +60,10 @@ vi.mock('../../server/notifications/outbox/outboxRepository.js', () => ({ create
 vi.mock('../../server/bot/outbox/enqueueStockAlerts.js', () => ({ enqueueStockAlerts: jobs.enqueueStockAlerts }));
 vi.mock('../../server/bot/outbox/stockExpiryContent.js', () => ({ buildStockExpiryContent: vi.fn() }));
 vi.mock('../../server/bot/outbox/stockAlertContent.js', () => ({ buildStockAlertContent: vi.fn() }));
+// 105: imports novos do notify — todos tocam `server/services/supabase.js`, que lança sem env (CI).
+vi.mock('../../server/bot/outbox/enqueueMonthlyHeadsUp.js', () => ({ enqueueMonthlyHeadsUp: vi.fn(async () => ({ usersInWindow: 0, attempted: 0 })) }));
+vi.mock('../../server/bot/outbox/supplyReminderContent.js', () => ({ buildSupplyReminderContent: vi.fn() }));
+vi.mock('../../server/bot/reminders/stockAlerts.js', () => ({ _fetchEnqueueSettings: vi.fn(async () => []) }));
 vi.mock('../../server/bot/_adherenceHelpers.js', () => ({
   buildDailyAdherenceData: vi.fn(), buildWeeklyAdherenceData: vi.fn(), buildMonthlyReportData: vi.fn(),
 }));

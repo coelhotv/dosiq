@@ -7,6 +7,7 @@ import {
   isLiquidMedicine,
   doseToMl,
   cleanFloat,
+  isStockRunwayAlertExpected,
 } from '@dosiq/core';
 
 const logger = createLogger('StockAlerts');
@@ -19,7 +20,12 @@ const logger = createLogger('StockAlerts');
  * builder do drain chamam esta mesma função. Sem isso o SC-003 compararia duas implementações do
  * alerta em vez de dois caminhos de entrega do MESMO alerta.
  */
-export function _computeStockAlertPayload(medicineId, stock, protocols) {
+export function _computeStockAlertPayload(medicineId, stock, protocols, steps: any[] = []) {
+  // 105 (ex-103-G2, FR-G1..G3): onde zerar o estoque É o plano (mensal, etapa de passagem da
+  // escada) não há alarme de falta — quem cobre é o `supply_reminder`. Predicado ÚNICO do core
+  // (INV-1). `steps` ausente ⇒ [] ⇒ só a regra do esparso vale: erra para o lado AUDÍVEL (INV-2).
+  if (!isStockRunwayAlertExpected(medicineId, protocols, steps)) return null;
+
   // 012 B4 / ADR-067: consumo diário via core (líquido → ml + cadência da frequência).
   // Antes somava a dose na unidade de tomada CRUA (UI/gotas) contra o saldo em ml →
   // `floor(ml ÷ UI)` = "0 dias" falso p/ insulina/GLP-1 (FR-013c). `calculateDailyIntake`
@@ -58,8 +64,8 @@ export function _computeStockAlertPayload(medicineId, stock, protocols) {
   };
 }
 
-async function _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId) {
-  const data = _computeStockAlertPayload(medicineId, stock, protocols);
+async function _processUserStockAlert(userId, medicineId, stock, protocols, steps, dispatcher, correlationId) {
+  const data = _computeStockAlertPayload(medicineId, stock, protocols, steps);
   if (!data) return;
 
   logger.info(`Disparando alerta de estoque baixo: ${data.medicineName} (${data.daysRemaining} dias / ${data.remaining} doses)`, {
@@ -136,16 +142,24 @@ export function _biologicalExpiryDaysLeft(stockRow) {
  * ausente/NULL → tratado como TRACKING LIGADO (paridade com o COALESCE das RPCs atômicas).
  * A ausência de dado nunca silencia alerta por omissão.
  */
-export async function _fetchStockTrackingUsers(correlationId) {
+/** Colunas de `user_settings` que os enqueues de estoque e de dose mensal precisam (105 perf b). */
+export const ENQUEUE_SETTINGS_COLUMNS = 'user_id, timezone, notification_mode, stock_tracking_enabled';
+
+/** Todas as linhas de `user_settings`, paginado (AP-186). Uma leitura por tick, compartilhada. */
+export async function _fetchEnqueueSettings(): Promise<any[]> {
+  return _fetchAllPages('user_settings', ENQUEUE_SETTINGS_COLUMNS);
+}
+
+/**
+ * @param preloaded linhas já lidas no tick (105 perf b) — evita reler a tabela inteira por enqueue.
+ */
+export async function _fetchStockTrackingUsers(correlationId, preloaded?: any[]) {
   // Paginado (AP-186): acima de ~1000 linhas o PostgREST TRUNCA sem erro e os usuários do fim da
   // lista perderiam alerta de estoque em silêncio — a falha mais cara possível aqui.
   let users: any[] = [];
   let usersErr: any = null;
   try {
-    users = await _fetchAllPages(
-      'user_settings',
-      'user_id, timezone, notification_mode, stock_tracking_enabled'
-    );
+    users = preloaded ?? await _fetchEnqueueSettings();
   } catch (err) {
     usersErr = err;
   }
@@ -176,10 +190,35 @@ export async function _fetchStockTrackingUsers(correlationId) {
  * chamem a MESMA função — sem isso o SC-003 (nenhum alerta a menos pós-cutover) compararia duas
  * implementações de varredura em vez de dois caminhos de entrega.
  */
-export async function _scanStockAlertCandidates(users, correlationId) {
+/**
+ * Etapas de escada dos usuários (105). O vínculo etapa↔protocolo é `titration_steps.protocol_id`
+ * e a escada é a `titration_id` — `protocols` não tem coluna de titulação (analysis-A C-4). Tabela
+ * pequena (16 etapas vigentes em prod, 2026-11-05), mas paginada mesmo assim (AP-186).
+ * Colunas verificadas no banco de prod (R-295, analysis-A).
+ */
+export const TITRATION_STEP_SCAN_COLUMNS =
+  'id, titration_id, user_id, position, medicine_id, status, protocol_id, dose, intake_unit, started_at, duration_days';
+
+export async function _fetchTitrationSteps(userIds: string[]): Promise<any[]> {
+  if (userIds.length === 0) return [];
+  return _fetchAllPagesByUsers('titration_steps', TITRATION_STEP_SCAN_COLUMNS, userIds);
+}
+
+/** Etapas agrupadas por usuário (o predicado olha só as do dono). */
+export function _groupByUser(rows: any[]): Record<string, any[]> {
+  const out: Record<string, any[]> = {};
+  for (const r of rows || []) (out[r.user_id] ||= []).push(r);
+  return out;
+}
+
+/**
+ * @param opts.quiet sem a linha de log de varredura — o builder do envio (105) chama esta função por
+ *        linha da fila; o log é do JOB, não de cada envio (smoke 105: 2 linhas extras por aviso).
+ */
+export async function _scanStockAlertCandidates(users, correlationId, opts: { quiet?: boolean } = {}) {
   const userIds = (users || []).map(u => u.user_id);
   if (userIds.length === 0) {
-    return { protocolsByMedicine: {}, stockByMedicine: {}, allStock: [], allProtocols: [] };
+    return { protocolsByMedicine: {}, stockByMedicine: {}, allStock: [], allProtocols: [], stepsByUser: {} };
   }
 
   // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
@@ -197,7 +236,10 @@ export async function _scanStockAlertCandidates(users, correlationId) {
   const todayLocal = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
     .format(Date.now());
 
-  const allProtocols = await _fetchAllPagesByUsers(
+  // 105 smoke (perf a): as três leituras são independentes — em paralelo, não em sequência (~1,4 s
+  // a menos por minuto da janela, para TODO o eixo de estoque). Falha de protocolos ou estoque rejeita
+  // a varredura inteira, como já acontecia em sequência; a de etapas degrada (abaixo).
+  const [allProtocols, rawStock, rawSteps] = await Promise.all([_fetchAllPagesByUsers(
     'protocols',
     'id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, interval_days, weekdays, active, end_date, paused_at',
     userIds,
@@ -207,7 +249,7 @@ export async function _scanStockAlertCandidates(users, correlationId) {
       // O `.or` é obrigatório: `end_date IS NULL` é a MAIORIA dos protocolos — um `.gte` sozinho
       // excluiria todos eles e a correção viraria omissão TOTAL dos alertas.
       .or(`end_date.is.null,end_date.gte.${todayLocal}`)
-  );
+  ),
 
   // 🔴 050 PR 2: o `id` do LOTE é OBRIGATÓRIO no select. Ele é o `subject_id` do alerta de
   // validade (1 alerta por lote). Sem ele o `subject_id` viria `undefined`, todas as linhas do
@@ -216,17 +258,26 @@ export async function _scanStockAlertCandidates(users, correlationId) {
   // 094: medicamento excluído é ARQUIVADO e seus lotes ficam (antes o CASCADE os apagava). O eixo
   // de validade não passa por protocolo — sem este filtro, lote aberto de remédio excluído ainda
   // geraria "vence em 3 dias". Filtra na origem: vale para volume e validade, legado e outbox.
-  const allStock = (await _fetchAllPagesByUsers(
+  _fetchAllPagesByUsers(
     'stock',
     'id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill, archived_at)',
     userIds
-  )).filter((lot) => lot?.medicine?.archived_at == null);
+  ),
+  // 105: a escada decide o silêncio do volume e a data de compra — mesma varredura, uma query a mais.
+  // Leitura NOVA: falhar não pode derrubar volume e validade (que já existiam) — sem etapas ⇒ [] ⇒ só
+  // a regra do esparso vale, erra para o lado AUDÍVEL (INV-2, igual ao builder do envio).
+  _fetchTitrationSteps(userIds).catch((err) => {
+    logger.error('Falha ao ler etapas de titulação — varredura segue sem escada (INV-2)', err, { correlationId });
+    return [];
+  })]);
+  const allStock = rawStock.filter((lot) => lot?.medicine?.archived_at == null);
+  const stepsByUser = _groupByUser(rawSteps);
 
   const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);
-  logger.info('Varredura de candidatos a alerta de estoque concluída', {
+  if (!opts.quiet) logger.info('Varredura de candidatos a alerta de estoque concluída', {
     correlationId, users: userIds.length, protocols: allProtocols.length, stockRows: allStock.length
   });
-  return { protocolsByMedicine, stockByMedicine, allStock, allProtocols };
+  return { protocolsByMedicine, stockByMedicine, allStock, allProtocols, stepsByUser };
 }
 
 export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
@@ -234,7 +285,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
     const trackingUsers = await _fetchStockTrackingUsers(correlationId);
     if (trackingUsers.length === 0) return;
 
-    const { protocolsByMedicine, stockByMedicine } =
+    const { protocolsByMedicine, stockByMedicine, stepsByUser } =
       await _scanStockAlertCandidates(trackingUsers, correlationId);
 
     for (const key in stockByMedicine) {
@@ -244,7 +295,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
 
       if (protocols.length === 0) continue;
 
-      await _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId);
+      await _processUserStockAlert(userId, medicineId, stock, protocols, stepsByUser[userId] || [], dispatcher, correlationId);
     }
 
     // 012 Fase A / eixo de validade biológica (ADR-059): o produtor legado

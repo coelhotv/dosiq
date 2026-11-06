@@ -7,6 +7,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Servidor: aviso de dose mensal, lembrete de compra e fim do "estoque baixo" onde zerar é o plano (spec 105, Fatia A)
+
+- **Backend/Infra + Shared/Core** (`Added` + `Changed`, `no-user-impact` nos version sources — servidor não tem version source e nenhuma tela de web ou mobile muda nesta fatia; canal mobile: nenhum; deploy normal do servidor, **depois** da migração e com `supply_reminder` acrescentado a `OUTBOX_KINDS`).
+  - **Aviso de dose mensal:** quem tem remédio de cadência mensal (a cada 28 dias ou mais, ex.: anticoncepcional injetável) recebe um aviso 2 dias antes da dose, às 10:00 locais, para comprar, buscar ou agendar a aplicação — inclusive quem não usa o controle de estoque. Se o estoque cadastrado não cobre a dose, o aviso diz isso e sai também um lembrete na véspera ("Dose mensal amanhã"). Se o aviso de 2 dias não sair (servidor fora durante a janela inteira), ele sai na véspera, uma vez só.
+  - **Aviso de troca de etapa:** na escada de titulação em que a etapa seguinte usa outro medicamento, sai "Troca de etapa chegando" 2 dias e 1 dia antes da troca (a data é a que vier primeiro: fim do saldo da etapa atual ou fim da duração prevista), quando ainda não há saldo do próximo medicamento.
+  - **"Estoque baixo" sai de onde zerar é o plano:** remédio mensal e etapa de passagem da escada não recebem mais o alerta de estoque baixo; contínuo, mensal junto de diário e escada que segue no mesmo medicamento continuam como hoje. O alerta de validade do lote não muda.
+  - **Privacidade:** nenhum desses avisos nomeia o remédio na notificação nem no Telegram, com ou sem a autorização de transferência internacional; o nome aparece só dentro do app. Obedecem ao modo de notificação e ao horário de silêncio como qualquer aviso. O push já leva o tratamento de origem (id opaco); o app atual abre o Hoje ao tocar, e o build de loja da Fatia B passa a abrir o detalhe do tratamento ou o estoque do próximo medicamento.
+  - **Reenvio automático de falhas (DLQ) e resumo de falhas ao admin** passam das 10:00 para as **11:00** de São Paulo, fora da janela dos avisos de estoque — o minuto das 10:00 concentrava os dois e um tick longo podia cortar o reenvio do dia.
+  - **Desempenho do tick da janela das 10:00:** as leituras da varredura de estoque rodam em paralelo e `user_settings` é lido uma vez por tick para os dois enfileiramentos.
+  - Migração `20261105_outbox_supply_reminder_kind.sql` (kind novo na fila) aplicada no QA; em produção **antes** do deploy.
+
 ### Admin: painel de crescimento e do wedge GLP-1 (spec 115)
 
 - **Web/PWA** (`Added`, **minor** 4.36.0 → 4.37.0 — tela nova no bundle web, só para a conta admin; sem mudança para usuários comuns; canal mobile: nenhum). Nova tela "Crescimento & Wedge" na área de administração: novos usuários, push ativo, distribuição das classes terapêuticas dos tratamentos ativos (GLP-1/antiobesidade × outros antidiabéticos × demais classes × sem código, pelo código EphMRA da classe, não pelo nome) e adoção de titulação, biomarcador, alarme crítico, estoque e data de término — sempre em usuários distintos, com o número absoluto ao lado do percentual e a coorte dos últimos 30 dias. Tabela de contas com as plataformas em que cada conta já entrou (app iOS, app Android, web — vale também para quem saiu da conta no app), busca, filtros de plataforma e push e detalhe dos tratamentos de cada conta, sem nome comercial de medicamento.

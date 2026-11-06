@@ -93,6 +93,21 @@ export {
 // chamador (cron/generator/UI). O legado N1 (jsonb em `protocols`) morreu no F6 com o DROP
 // das colunas — não há mais "fonte N1" a adaptar.
 export { attachFullLadders } from './titrationLadder'
+// 105 (INV-1): predicado do alerta de estoque + data de compra — servidor e apps consomem daqui.
+export {
+  isStockRunwayAlertExpected,
+  isSparseProtocol,
+  computeSupplyDate,
+  SPARSE_INTERVAL_DAYS_MIN,
+} from './stockRunway'
+export type {
+  RunwayProtocol,
+  RunwayStep,
+  RunwayInstance,
+  RunwayStock,
+  SupplyDateResult,
+  SupplyReason,
+} from './stockRunway'
 export type {
   LadderStepRow,
   ProtocolWithLadder,

@@ -8,7 +8,7 @@
 
 import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
-import { _buildProtocolsAndStockMaps, _computeStockAlertPayload } from '../reminders/stockAlerts.js';
+import { _buildProtocolsAndStockMaps, _computeStockAlertPayload, TITRATION_STEP_SCAN_COLUMNS } from '../reminders/stockAlerts.js';
 
 const logger = createLogger('StockAlertContent');
 
@@ -70,7 +70,16 @@ export async function buildStockAlertContent(
   const stock = stockByMedicine[`${userId}_${subjectId}`];
   if (!stock) return null;
 
-  const payload = _computeStockAlertPayload(subjectId, stock, protocols);
+  // 105 (FR-G4, PO-105-G3): o predicado da escada revalida NO ENVIO — a etapa pode ter virado de
+  // passagem (ou deixado de ser) entre o enqueue e o drain. Erro de leitura ⇒ [] ⇒ só a regra do
+  // esparso vale, erra para o lado audível (INV-2).
+  const { data: steps, error: stepsErr } = await supabase
+    .from('titration_steps')
+    .select(TITRATION_STEP_SCAN_COLUMNS)
+    .eq('user_id', userId);
+  if (stepsErr) logger.error('Falha ao ler etapas no envio — predicado sem escada (INV-2)', stepsErr, { userId });
+
+  const payload = _computeStockAlertPayload(subjectId, stock, protocols, steps || []);
   if (!payload) {
     logger.info('Alerta de estoque descartado no envio (deixou de estar baixo)', { userId, medicineId: subjectId });
     return null;

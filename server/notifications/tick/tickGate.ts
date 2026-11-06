@@ -45,6 +45,8 @@ export interface TickPlan {
   outboxCycle: boolean;
   reportEnqueue: boolean;
   stockEnqueue: boolean;
+  /** 105: aviso de dose mensal (`supply_reminder`), gate próprio na janela das 10:00. */
+  supplyEnqueue: boolean;
   /** Digest LEGADO (`runDailyDigest`), só relevante quando `daily_digest` não está em OUTBOX_KINDS. */
   legacyDigest: boolean;
   failOpen: boolean;
@@ -57,6 +59,7 @@ export const FAIL_OPEN_PLAN: Readonly<TickPlan> = Object.freeze({
   outboxCycle: true,
   reportEnqueue: true,
   stockEnqueue: true,
+  supplyEnqueue: true,
   legacyDigest: true,
   failOpen: true,
 });
@@ -152,6 +155,11 @@ export function planTick(
   const stockEnqueue = outboxKinds.has('stock_alert') && outboxKinds.has('stock_expiry_alert') &&
     anyProfile(work.profiles, (_p, tz) => isInStockAlertWindow(now, tz));
 
+  // 105 FR-012: `supply_reminder` (aviso mensal + compra) tem gate próprio — mesma janela das 10:00,
+  // sem exigir os kinds antigos. O eixo de compra roda dentro do `stockEnqueue`; o mensal, aqui.
+  const supplyEnqueue = outboxKinds.has('supply_reminder') &&
+    anyProfile(work.profiles, (_p, tz) => isInStockAlertWindow(now, tz));
+
   const legacyDigest = !outboxKinds.has('daily_digest') &&
     anyProfile(work.profiles, (p, tz) =>
       p.notification_mode === 'digest_morning' && isLegacyDigestMinute(hhmmInTimezone(now, tz), p.digest_time));
@@ -160,9 +168,10 @@ export function planTick(
     reminders: instances ? work.remindersDue : true,
     laStart: instances ? work.laStartDue : true,
     laLifecycle: instances ? work.laActive : true,
-    outboxCycle: work.outboxPending || reportEnqueue || stockEnqueue,
+    outboxCycle: work.outboxPending || reportEnqueue || stockEnqueue || supplyEnqueue,
     reportEnqueue,
     stockEnqueue,
+    supplyEnqueue,
     legacyDigest,
     failOpen: false,
   };

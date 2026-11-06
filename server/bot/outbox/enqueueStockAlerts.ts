@@ -25,6 +25,11 @@ import {
   _computeStockAlertPayload,
   _biologicalExpiryDaysLeft,
 } from '../reminders/stockAlerts.js';
+import {
+  eligiblePurchaseMedicines,
+  _fetchPendingInstances,
+  planPurchasesForUser,
+} from '../reminders/supplyPlan.js';
 import { isInStockAlertWindow as isInAlertWindow } from '../../notifications/windows.js';
 
 // Janela do alerta (10:00–10:09 na TZ do usuário) vive em fonte única (109/E-2): o gate do tick
@@ -32,8 +37,8 @@ import { isInStockAlertWindow as isInAlertWindow } from '../../notifications/win
 
 /** Eixo VOLUME: 1 linha por MEDICAMENTO com saldo baixo (assunto = `medicine_id`). */
 function buildVolumeEntries(
-  { protocolsByMedicine, stockByMedicine, now, tzOf }:
-  { protocolsByMedicine: any; stockByMedicine: any; now: Date; tzOf: (u: string) => string }
+  { protocolsByMedicine, stockByMedicine, stepsByUser, now, tzOf }:
+  { protocolsByMedicine: any; stockByMedicine: any; stepsByUser: Record<string, any[]>; now: Date; tzOf: (u: string) => string }
 ): any[] {
   const entries: any[] = [];
   for (const key in stockByMedicine) {
@@ -44,7 +49,9 @@ function buildVolumeEntries(
     if (protocols.length === 0) continue;
 
     // Mesmo predicado do legado (daysRemaining < 7, consumo diário > 0) — uma implementação só.
-    const payload = _computeStockAlertPayload(medicineId, stockByMedicine[key], protocols);
+    // 105 (E-7): o predicado da escada/esparso cala o volume onde o eixo de COMPRA atua — os dois
+    // consultam o MESMO predicado, então o mesmo medicamento nunca gera os dois no mesmo dia.
+    const payload = _computeStockAlertPayload(medicineId, stockByMedicine[key], protocols, stepsByUser[userId] || []);
     if (!payload) continue;
 
     entries.push({
@@ -94,6 +101,53 @@ function buildExpiryEntries(
   return entries;
 }
 
+/**
+ * Eixo COMPRA (105, `supply_reminder` reason=purchase): 1 linha por MEDICAMENTO A COMPRAR em D-2/D-1
+ * (escada) ou D-1 (mensal com estoque — o D-2 vai dentro do aviso de dose mensal, AC-2).
+ * Só lê `dose_instances` dos medicamentos elegíveis (C-7). Sem data (AC-4) ⇒ log, nada enfileirado.
+ */
+async function buildPurchaseEntries(
+  { protocolsByMedicine, stockByMedicine, stepsByUser, now, tzOf, correlationId, logger }:
+  {
+    protocolsByMedicine: any; stockByMedicine: any; stepsByUser: Record<string, any[]>; now: Date;
+    tzOf: (u: string) => string; correlationId?: string;
+    logger?: { info: (...a: any[]) => void; error: (...a: any[]) => void };
+  }
+): Promise<any[]> {
+  const eligible = eligiblePurchaseMedicines(protocolsByMedicine, stepsByUser);
+  if (eligible.length === 0) return [];
+  const userIds = [...new Set(eligible.map((e) => e.userId))];
+  const medicineIds = [...new Set(eligible.map((e) => e.medicineId))];
+  // eslint-disable-next-line no-restricted-syntax -- instante absoluto (ms), não date-only
+  const fromIso = new Date(now.getTime() - 86400000).toISOString();
+  const instances = await _fetchPendingInstances(userIds, medicineIds, fromIso);
+
+  const entries: any[] = [];
+  for (const userId of userIds) {
+    const planned = planPurchasesForUser({
+      userId,
+      protocolsByMedicine,
+      stockByMedicine,
+      steps: stepsByUser[userId] || [],
+      instances: instances.filter((i: any) => i.user_id === userId),
+      tz: tzOf(userId),
+      now,
+      onNoDate: (medicineId) => logger?.info('[enqueueStockAlerts] compra sem data (AC-4) — sem lembrete', {
+        correlationId, userId, medicineId,
+      }),
+    });
+    for (const p of planned) {
+      entries.push({
+        userId,
+        kind: 'supply_reminder',
+        periodKey: periodKey('supply_reminder', now, tzOf(userId)),
+        subjectId: p.medicineId,
+      });
+    }
+  }
+  return entries;
+}
+
 export interface EnqueueStockAlertsResult {
   usersInWindow: number;
   // Linhas TENTADAS, não inseridas: o upsert com ignoreDuplicates não expõe quantas de fato
@@ -101,6 +155,7 @@ export interface EnqueueStockAlertsResult {
   // UNIQUE) — ler este número como "envios" superestimaria em ~10×.
   attempted: number;        // eixo VOLUME (stock_alert)
   attemptedExpiry: number;  // eixo VALIDADE (stock_expiry_alert)
+  attemptedPurchase: number; // eixo COMPRA (supply_reminder reason=purchase, 105)
 }
 
 /**
@@ -112,16 +167,18 @@ export interface EnqueueStockAlertsResult {
  */
 export async function enqueueStockAlerts(
   // eslint-disable-next-line no-restricted-syntax -- instante absoluto do tick, tz aplicada via Intl
-  { repo, kinds, now = new Date(), correlationId, logger }:
+  { repo, kinds, now = new Date(), correlationId, logger, settings }:
   {
     repo: { enqueue(entries: any[]): Promise<number> };
     kinds: Set<string>;
     now?: Date;
+    /** `user_settings` já lido no tick (105 perf b); ausente ⇒ lê aqui. */
+    settings?: any[];
     correlationId?: string;
     logger?: { info: (...a: any[]) => void; error: (...a: any[]) => void };
   }
 ): Promise<EnqueueStockAlertsResult> {
-  const empty: EnqueueStockAlertsResult = { usersInWindow: 0, attempted: 0, attemptedExpiry: 0 };
+  const empty: EnqueueStockAlertsResult = { usersInWindow: 0, attempted: 0, attemptedExpiry: 0, attemptedPurchase: 0 };
   // 🔴 Gate TUDO-OU-NADA, espelhando o guard do legado (`api/notify.ts`): o job legado
   // `checkStockAlerts` produz VOLUME e VALIDADE na MESMA chamada, então ele só é desligado quando
   // a outbox atende os DOIS kinds. Enfileirar um eixo com o outro ainda fora do env deixaria o
@@ -130,6 +187,9 @@ export async function enqueueStockAlerts(
   const wantVolume = kinds.has('stock_alert');
   const wantExpiry = kinds.has('stock_expiry_alert');
   if (!wantVolume || !wantExpiry) return empty;
+  // 105 FR-012: o eixo COMPRA tem gate PRÓPRIO, aninhado no de estoque. Ele não tem legado — não há
+  // risco de dobra —, então entra e sai do env sozinho; tirar `supply_reminder` não mexe no volume.
+  const wantPurchase = kinds.has('supply_reminder');
 
   // ⚠️ ROLLBACK: tirar os kinds do env para o enqueue imediatamente, mas NÃO esvazia a fila — o
   // claim não filtra kind e os builders seguem registrados, então linhas já enfileiradas hoje
@@ -138,7 +198,7 @@ export async function enqueueStockAlerts(
   //   delete from public.notification_outbox
   //    where kind in ('stock_alert','stock_expiry_alert') and status = 'pending';
 
-  const users = await _fetchStockTrackingUsers(correlationId);
+  const users = await _fetchStockTrackingUsers(correlationId, settings);
   if (users.length === 0) return empty;
 
   // Filtra ANTES da varredura: fora da janela, nenhuma das duas queries pesadas roda.
@@ -157,7 +217,7 @@ export async function enqueueStockAlerts(
   });
   if (usersInWindow.length === 0) return empty;
 
-  const { protocolsByMedicine, stockByMedicine, allStock } =
+  const { protocolsByMedicine, stockByMedicine, allStock, stepsByUser = {} } =
     await _scanStockAlertCandidates(usersInWindow, correlationId);
 
   const tzByUser = new Map<string, string>(
@@ -167,15 +227,27 @@ export async function enqueueStockAlerts(
   const tzOf = (userId: string) => tzByUser.get(userId) || 'America/Sao_Paulo';
 
   const volumeEntries = wantVolume
-    ? buildVolumeEntries({ protocolsByMedicine, stockByMedicine, now, tzOf })
+    ? buildVolumeEntries({ protocolsByMedicine, stockByMedicine, stepsByUser, now, tzOf })
     : [];
   const expiryEntries = wantExpiry ? buildExpiryEntries({ allStock, now, tzOf }) : [];
+  // Isolado (R-245): a leitura de doses do eixo novo falhar não pode derrubar volume e validade do dia.
+  let purchaseEntries: any[] = [];
+  if (wantPurchase) {
+    try {
+      purchaseEntries = await buildPurchaseEntries({
+        protocolsByMedicine, stockByMedicine, stepsByUser, now, tzOf, correlationId, logger,
+      });
+    } catch (err: any) {
+      logger?.error('[enqueueStockAlerts] eixo de compra falhou (isolado — volume e validade seguem)', err, { correlationId });
+    }
+  }
 
-  const entries = [...volumeEntries, ...expiryEntries];
+  const entries = [...volumeEntries, ...expiryEntries, ...purchaseEntries];
   const result: EnqueueStockAlertsResult = {
     usersInWindow: usersInWindow.length,
     attempted: volumeEntries.length,
     attemptedExpiry: expiryEntries.length,
+    attemptedPurchase: purchaseEntries.length,
   };
   if (entries.length === 0) return result;
 
