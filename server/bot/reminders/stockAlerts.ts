@@ -237,8 +237,8 @@ export async function _scanStockAlertCandidates(users, correlationId, opts: { qu
     .format(Date.now());
 
   // 105 smoke (perf a): as três leituras são independentes — em paralelo, não em sequência (~1,4 s
-  // a menos por minuto da janela, para TODO o eixo de estoque). Falha de qualquer uma rejeita a
-  // varredura inteira, como já acontecia em sequência.
+  // a menos por minuto da janela, para TODO o eixo de estoque). Falha de protocolos ou estoque rejeita
+  // a varredura inteira, como já acontecia em sequência; a de etapas degrada (abaixo).
   const [allProtocols, rawStock, rawSteps] = await Promise.all([_fetchAllPagesByUsers(
     'protocols',
     'id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, interval_days, weekdays, active, end_date, paused_at',
@@ -264,7 +264,12 @@ export async function _scanStockAlertCandidates(users, correlationId, opts: { qu
     userIds
   ),
   // 105: a escada decide o silêncio do volume e a data de compra — mesma varredura, uma query a mais.
-  _fetchTitrationSteps(userIds)]);
+  // Leitura NOVA: falhar não pode derrubar volume e validade (que já existiam) — sem etapas ⇒ [] ⇒ só
+  // a regra do esparso vale, erra para o lado AUDÍVEL (INV-2, igual ao builder do envio).
+  _fetchTitrationSteps(userIds).catch((err) => {
+    logger.error('Falha ao ler etapas de titulação — varredura segue sem escada (INV-2)', err, { correlationId });
+    return [];
+  })]);
   const allStock = rawStock.filter((lot) => lot?.medicine?.archived_at == null);
   const stepsByUser = _groupByUser(rawSteps);
 

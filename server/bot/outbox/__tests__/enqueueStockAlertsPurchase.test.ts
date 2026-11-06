@@ -82,6 +82,22 @@ describe('enqueueStockAlerts — 105 Fatia A', () => {
     for (const e of byKind(repo, 'supply_reminder')) expect(vol.has(e.subjectId)).toBe(false);
   });
 
+  it('leitura de etapas falha ⇒ volume e validade seguem, erra para o lado audível (INV-2)', async () => {
+    seed();
+    const realFrom = fake.db.from;
+    const failing: any = new Proxy({}, {
+      get: (_t, k) => (k === 'then'
+        ? (ok: any, ko?: any) => Promise.resolve({ data: null, error: { message: 'boom' } }).then(ok, ko)
+        : () => failing),
+    });
+    fake.db.from = (t: string) => (t === 'titration_steps' ? failing : realFrom(t));
+    const repo = makeUniqueRepo();
+    await enqueueStockAlerts({ repo, kinds: ALL, now: NOW });
+    // sem escada, o contínuo segue alertando e a etapa atual da escada volta a alertar (audível)
+    expect(byKind(repo, 'stock_alert').map((e) => e.subjectId)).toContain('Y');
+    expect(byKind(repo, 'stock_alert').map((e) => e.subjectId)).toContain('A');
+  });
+
   it.each([
     ['estoque + supply ⇒ volume, validade e compra', ALL, 1, 2],
     ['estoque sem supply ⇒ volume sem compra (o silêncio vale igual)', new Set(STOCK), 1, 0],
