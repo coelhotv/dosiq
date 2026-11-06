@@ -7,10 +7,10 @@
 // ordem visual é cronológica, mas cada etapa carrega rótulo composto legível isolado).
 
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
-import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch, resolveManualNextStep, resolveCurrentStep } from '@dosiq/core'
+import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch, resolveManualNextStep, resolveCurrentStep, nextStepStockCovers } from '@dosiq/core'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from '@treatments/components/EvolutionBadge'
 import EvolutionPendingBanner from '@treatments/components/EvolutionPendingBanner'
@@ -19,6 +19,9 @@ import EvolutionBrokenStepCard from '@treatments/components/EvolutionBrokenStepC
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useTitrationTimeline } from '@treatments/hooks/useTitrationTimeline'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { navigateCrossTab } from '@navigation/navigateCrossTab'
+import { ROUTES } from '@navigation/routes'
+import { stockService } from '@stock/services/stockService'
 import type { LadderStepWithMedicine } from '@treatments/services/titrationService'
 
 const { Check, ArrowDownNarrowWide, Box } = LucideIcons as any
@@ -202,7 +205,30 @@ export default function TitrationTimeline({
   // meia-noite ao voltar da navegação, sem projetar com "hoje" velho (AP-W15).
   // Dia local NO FUSO DO DONO — não o do device (R-253/R-254).
   const [todayLocal, setTodayLocal] = useState(() => getTodayLocal(timezone))
+  // 105 smoke (2026-11-06): saldo do remédio da PRÓXIMA etapa, guardado COM o id de quem foi lido (RC5:
+  // a etapa pode avançar na mesma tela e o saldo antigo não pode valer para o remédio novo).
+  // qty `null` = leitura falhou (mostra, como antes); número = saldo.
+  const [nextStock, setNextStock] = useState<{ medicineId: string; qty: number | null } | null>(null)
   const timeline = useMemo(() => buildTimeline(steps, todayLocal), [steps, todayLocal])
+  // Etapa seguinte que troca de remédio, com a linha crua (dose/unidade/cadastro) para a regra do core.
+  const prepNext = useMemo(() => {
+    const i = timeline.findIndex((t) => t.kind === 'current')
+    const cur = i >= 0 ? timeline[i] : null
+    const nxt = i >= 0 ? timeline[i + 1] : null
+    if (!cur?.medicineId || !nxt?.medicineId || nxt.medicineId === cur.medicineId) return null
+    const raw = steps.find((s) => s.id === nxt.key) ?? null
+    return { medicineId: nxt.medicineId, raw }
+  }, [timeline, steps])
+  // `undefined` = saldo deste remédio ainda não lido ⇒ não mostra o aviso (evita piscar).
+  const nextStockQty = nextStock && prepNext && nextStock.medicineId === prepNext.medicineId ? nextStock.qty : undefined
+  const prepCovered = useMemo(() => {
+    if (!prepNext || typeof nextStockQty !== 'number') return false
+    const m = prepNext.raw?.medicine ?? {}
+    return nextStepStockCovers(
+      { dose: prepNext.raw?.dose ?? null, intake_unit: prepNext.raw?.intake_unit ?? null },
+      { qty: nextStockQty, dosage_unit: m.dosage_unit ?? null, units_per_ml: m.units_per_ml ?? null, dosage_per_pill: m.dosage_per_pill ?? null },
+    )
+  }, [prepNext, nextStockQty])
 
   // §7.2 (T026): QUALQUER dia de espera, inclusive o dia 0. Esta tela é a fonte canônica de
   // controle do tratamento (ativar/pausar/editar) — o controle de iniciar a etapa não pode faltar
@@ -242,6 +268,17 @@ export default function TitrationTimeline({
   // Refresh on focus: ao voltar do cadastro/edição da escada, a timeline reflete as mudanças
   // sem recarregar o app (o hook só carregava no mount). `void` — rejeição já tratada no hook.
   useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal(timezone)); void refresh() }, [refresh, timezone]))
+  // Relê o saldo do próximo remédio a cada foco: a compra é feita na aba Estoque (o próprio aviso leva
+  // lá) e, ao voltar, o aviso some se o saldo passou a cobrir a 1ª dose (era fixo — smoke 2026-11-06).
+  const prepMedicineId = prepNext?.medicineId ?? null
+  useFocusEffect(useCallback(() => {
+    if (!prepMedicineId || !stockEnabled) return
+    let cancelled = false
+    stockService.getTotalQuantity(prepMedicineId)
+      .then((qty) => { if (!cancelled) setNextStock({ medicineId: prepMedicineId, qty: Number(qty ?? 0) }) })
+      .catch(() => { if (!cancelled) setNextStock({ medicineId: prepMedicineId, qty: null }) })
+    return () => { cancelled = true }
+  }, [prepMedicineId, stockEnabled]))
 
   // Handlers
   /**
@@ -339,7 +376,9 @@ export default function TitrationTimeline({
             next != null &&
             next.medicineId != null &&
             step.medicineId != null &&
-            next.medicineId !== step.medicineId
+            next.medicineId !== step.medicineId &&
+            nextStockQty !== undefined &&
+            !prepCovered
 
           // §7.3 (T026): etapa órfã vira card corrigível NO LUGAR da linha normal — mostrar
           // "Medicamento · " genérico seria esconder que a escada está quebrada. Nunca beco:
@@ -365,7 +404,7 @@ export default function TitrationTimeline({
           return (
             <View key={step.key}>
               <StepRow step={step} index={index} total={timeline.length} />
-              {showPrep ? <PrepStockBanner medName={next!.medFullName} /> : null}
+              {showPrep ? <PrepStockBanner medName={next!.medFullName} medicineId={next!.medicineId!} /> : null}
             </View>
           )
         })}
@@ -406,15 +445,27 @@ function StepRow({ step, index, total }: { step: TimelineStep; index: number; to
 
 /** `medName` DEVE vir de `formatMedicineFullName` — "A próxima etapa usa Mounjaro" é verdade para
  *  todas as etapas de uma escada de Mounjaro e não ajuda ninguém a comprar a caneta certa. */
-function PrepStockBanner({ medName }: { medName: string }) {
+function PrepStockBanner({ medName, medicineId }: { medName: string; medicineId: string }) {
+  // 105 Fatia B (smoke 2026-11-06): o toque leva ao estoque do remédio da PRÓXIMA etapa, onde se
+  // registra a compra — mesmo destino do aviso do Hoje e do push `step_switch`.
+  const openStock = useCallback(
+    () => navigateCrossTab(ROUTES.STOCK, ROUTES.STOCK_DETAIL, { medicineId, medicineName: medName }),
+    [medicineId, medName],
+  )
   return (
-    <View style={styles.prep} accessibilityRole="text">
+    <Pressable
+      onPress={openStock}
+      style={({ pressed }) => [styles.prep, pressed && styles.prepPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`A próxima etapa usa ${medName}. Você ainda não tem estoque cadastrado dela. Abrir estoque`}
+      testID="titration-prep-stock"
+    >
       <Box size={17} color={colors.status.warning} strokeWidth={1.9} />
       <View style={styles.prepBody}>
         <Text style={styles.prepTitle}>A próxima etapa usa {medName}</Text>
         <Text style={styles.prepHint}>Você ainda não tem estoque cadastrado dela.</Text>
       </View>
-    </View>
+    </Pressable>
   )
 }
 
@@ -466,6 +517,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.status.warningLight,
   },
+  prepPressed: { opacity: 0.7 },
   prepBody: { flex: 1 },
   prepTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warning },
   prepHint: { fontSize: 12, color: colors.text.secondary, marginTop: 2 },

@@ -8,6 +8,7 @@ import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
 import { formatStockQuantity, formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { supplyLabelOf } from '@stock/hooks/_stockDataTransformer'
 
 /**
  * Item de lista para exibição de estoque.
@@ -32,6 +33,8 @@ export default function StockItem({ medicine }) {
   } = medicine
 
   const showInitialStockHint = !hasPurchases && totalQuantity === 0
+  // 105 FR-009: mensal / etapa de passagem mostram a data de compra do core; sem data ⇒ null (FR-010).
+  const supplyLabel = supplyLabelOf(medicine)
 
   // Líquido → "X ml"; sólido → hint princípio ativo / "X un." (formatStockQuantity)
   const saldoText = formatStockQuantity(totalQuantity, { dosage_unit, dosage_per_pill })
@@ -76,6 +79,11 @@ export default function StockItem({ medicine }) {
             />
           ) : null}
         </View>
+
+        {/* 105 FR-009: largura total, abaixo do saldo+selo — ao lado do selo quebrava cedo (smoke 2026-11-06) */}
+        {supplyLabel ? (
+          <Text style={styles.supply} testID="stock-item-supply">{supplyLabel}</Text>
+        ) : null}
 
         {/* Alerta TTL pós-abertura (012 Fase A) — eixo paralelo, não substitui badge volume */}
         {ttlAlertActive && (
@@ -149,6 +157,12 @@ const styles = StyleSheet.create({
   quantity: {
     fontSize: 14,
     color: colors.text.primary
+  },
+  supply: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: 4,
   },
   bold: {
     fontWeight: '700',

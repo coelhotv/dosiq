@@ -2,6 +2,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
   isStockRunwayAlertExpected,
   computeSupplyDate,
+  nextStepSwitchMedicineId,
+  nextStepStockCovers,
   type RunwayProtocol,
   type RunwayStep,
   type RunwayInstance,
@@ -251,5 +253,48 @@ describe('computeSupplyDate — escada com troca (FR-003, PO-105-3/4)', () => {
       instances: [], stocks: { [MED_A]: solid(0) }, tz: TZ, now: NOW,
     })
     expect(r).toEqual({ status: 'no_date' })
+  })
+})
+
+// 105 Fatia B (FR-019): o app abre o estoque do PRÓXIMO medicamento a partir do protocolId do push,
+// pela mesma regra de troca do predicado — nunca com id de remédio no payload.
+describe('nextStepSwitchMedicineId (FR-019)', () => {
+  const TIT = 'tit-x'
+  const cur = { titration_id: TIT, position: 1, medicine_id: MED_A, status: 'current', protocol_id: P1 } as RunwayStep
+  it('etapa de passagem ⇒ medicamento da próxima etapa', () => {
+    const next = { titration_id: TIT, position: 3, medicine_id: MED_B, status: 'pending' } as RunwayStep
+    expect(nextStepSwitchMedicineId({ id: P1, medicine_id: MED_A }, [cur, next])).toBe(MED_B)
+  })
+  it('próxima etapa com o mesmo medicamento ⇒ null', () => {
+    const next = { titration_id: TIT, position: 2, medicine_id: MED_A, status: 'pending' } as RunwayStep
+    expect(nextStepSwitchMedicineId({ id: P1, medicine_id: MED_A }, [cur, next])).toBeNull()
+  })
+  it('última etapa / sem etapas / protocolo ausente ⇒ null', () => {
+    expect(nextStepSwitchMedicineId({ id: P1, medicine_id: MED_A }, [cur])).toBeNull()
+    expect(nextStepSwitchMedicineId({ id: P1, medicine_id: MED_A }, null)).toBeNull()
+    expect(nextStepSwitchMedicineId(null, [cur])).toBeNull()
+  })
+  it('etapa vigente de OUTRO protocolo não conta', () => {
+    const next = { titration_id: TIT, position: 2, medicine_id: MED_B, status: 'pending' } as RunwayStep
+    expect(nextStepSwitchMedicineId({ id: P2, medicine_id: MED_A }, [cur, next])).toBeNull()
+  })
+})
+
+describe('nextStepStockCovers (105 smoke: aviso da próxima etapa)', () => {
+  it('saldo ≥ 1ª dose ⇒ coberto; menor ⇒ não', () => {
+    expect(nextStepStockCovers({ dose: 2, intake_unit: null }, { qty: 2 })).toBe(true)
+    expect(nextStepStockCovers({ dose: 2, intake_unit: null }, { qty: 1 })).toBe(false)
+  })
+  it('sem linha de estoque ⇒ não coberto', () => {
+    expect(nextStepStockCovers({ dose: 1, intake_unit: null }, undefined)).toBe(false)
+  })
+  it('dose ausente/0 ⇒ não afirma cobertura (INV-2)', () => {
+    expect(nextStepStockCovers({ dose: null, intake_unit: null }, { qty: 10 })).toBe(false)
+    expect(nextStepStockCovers({ dose: 0, intake_unit: null }, { qty: 10 })).toBe(false)
+  })
+  it('líquido: dose em mg convertida para ml pela concentração', () => {
+    const pen = { qty: 0.5, dosage_unit: 'mg/ml', dosage_per_pill: 10 } // 5 mg em 0,5 ml
+    expect(nextStepStockCovers({ dose: 5, intake_unit: 'mg' }, pen)).toBe(true)
+    expect(nextStepStockCovers({ dose: 10, intake_unit: 'mg' }, pen)).toBe(false)
   })
 })

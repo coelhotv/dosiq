@@ -10,7 +10,7 @@
 // alguém voltar a esconder a decisão atrás de uma prop, ele quebra.
 
 import React from 'react'
-import { render } from '@testing-library/react-native'
+import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import TitrationTimeline from '../TitrationTimeline'
 
 const mockUseStockTracking = jest.fn()
@@ -53,7 +53,20 @@ jest.mock('@treatments/hooks/useTitrationTimeline', () => ({
   }),
 }))
 
-jest.mock('@react-navigation/native', () => ({ useFocusEffect: () => {} }))
+const mockNavigateCrossTab = jest.fn()
+jest.mock('@navigation/navigateCrossTab', () => ({
+  navigateCrossTab: (...a: unknown[]) => mockNavigateCrossTab(...a),
+}))
+
+const mockGetTotalQuantity = jest.fn(async (_id: string) => 0 as number)
+jest.mock('@stock/services/stockService', () => ({
+  stockService: { getTotalQuantity: (id: string) => mockGetTotalQuantity(id) },
+}))
+
+// Foco = efeito (o aviso relê o saldo do próximo remédio a cada foco).
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: (cb: () => void) => jest.requireActual('react').useEffect(cb, [cb]),
+}))
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }))
 jest.mock('@treatments/components/EvolutionBadge', () => 'EvolutionBadge')
 
@@ -63,10 +76,38 @@ afterEach(() => {
 })
 
 describe('TitrationTimeline — aviso de preparação de estoque', () => {
-  it('mostra o aviso quando o usuário CONTROLA estoque', () => {
+  it('mostra o aviso quando o usuário CONTROLA estoque e o próximo remédio está sem saldo', async () => {
     mockUseStockTracking.mockReturnValue({ enabled: true, ready: true })
+    const { findByText } = render(<TitrationTimeline protocolId="proto-1" />)
+    expect(await findByText(/A próxima etapa usa/)).toBeTruthy()
+    expect(mockGetTotalQuantity).toHaveBeenCalledWith('med-b')
+  })
+
+  // 105 smoke (2026-11-06): comprou o remédio da próxima etapa ⇒ o aviso some (era fixo).
+  it('saldo do próximo remédio cobre a 1ª dose ⇒ SEM aviso', async () => {
+    mockUseStockTracking.mockReturnValue({ enabled: true, ready: true })
+    mockGetTotalQuantity.mockResolvedValueOnce(1)
     const { queryByText } = render(<TitrationTimeline protocolId="proto-1" />)
-    expect(queryByText(/A próxima etapa usa/)).toBeTruthy()
+    await waitFor(() => expect(mockGetTotalQuantity).toHaveBeenCalled())
+    await waitFor(() => expect(queryByText(/A próxima etapa usa/)).toBeNull())
+  })
+
+  it('leitura do saldo falhou ⇒ aviso aparece (fail-safe)', async () => {
+    mockUseStockTracking.mockReturnValue({ enabled: true, ready: true })
+    mockGetTotalQuantity.mockRejectedValueOnce(new Error('offline'))
+    const { findByText } = render(<TitrationTimeline protocolId="proto-1" />)
+    expect(await findByText(/A próxima etapa usa/)).toBeTruthy()
+  })
+
+  // 105 Fatia B (smoke 2026-11-06): o aviso abre o estoque do remédio da PRÓXIMA etapa.
+  it('toque no aviso ⇒ estoque do medicamento da próxima etapa (aba Estoque → detalhe)', async () => {
+    mockUseStockTracking.mockReturnValue({ enabled: true, ready: true })
+    const { findByTestId } = render(<TitrationTimeline protocolId="proto-1" />)
+    fireEvent.press(await findByTestId('titration-prep-stock'))
+    expect(mockNavigateCrossTab).toHaveBeenCalledWith('Estoque', 'StockDetail', {
+      medicineId: 'med-b',
+      medicineName: expect.stringContaining('Mounjaro'),
+    })
   })
 
   it('OMITE o aviso em dose-only — não há cadastro de estoque a faltar', () => {

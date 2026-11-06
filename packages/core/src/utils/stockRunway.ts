@@ -110,6 +110,20 @@ function switchingStepOf(protocol: RunwayProtocol, steps: RunwayStep[]): { step:
 }
 
 /**
+ * Medicamento da PRÓXIMA etapa quando o protocolo executa uma etapa de passagem (a seguinte usa outro
+ * medicamento); senão null. Usado pelo app para abrir o estoque certo a partir do `protocolId` do push
+ * (105 FR-019) — mesma regra de `computeSupplyDate`, sem `medicine_id` no payload.
+ */
+export function nextStepSwitchMedicineId(
+  protocol: Pick<RunwayProtocol, 'id' | 'medicine_id'> | null | undefined,
+  steps: RunwayStep[] | null | undefined,
+): string | null {
+  if (!protocol?.id || !protocol.medicine_id) return null
+  const switching = switchingStepOf(protocol as RunwayProtocol, steps ?? [])
+  return switching ? switching.next.medicine_id : null
+}
+
+/**
  * O `stock_alert` faz sentido para este medicamento? (FR-G1..G3)
  *
  * false só quando TODO protocolo ativo do medicamento zera o estoque de propósito — esparso ou
@@ -182,6 +196,21 @@ function firstUncoveredDate(
 }
 
 /**
+ * O saldo do medicamento da etapa cobre a 1ª dose dela? (dose convertida para a unidade do saldo)
+ * Dose ausente/0 ⇒ false: sem saber quanto a etapa consome, não se afirma que está coberta (INV-2).
+ * Mesma regra do `computeSupplyDate` e do aviso "A próxima etapa usa …" do app (105 smoke, INV-1).
+ */
+export function nextStepStockCovers(
+  step: Pick<RunwayStep, 'dose' | 'intake_unit'> | null | undefined,
+  stock: RunwayStock | undefined,
+): boolean {
+  const firstDose = Number(step?.dose)
+  if (!Number.isFinite(firstDose) || firstDose <= 0) return false
+  const need = doseInStockUnits(firstDose, step?.intake_unit, stock)
+  return need > 0 && cleanFloat((stock?.qty ?? 0) - need) >= 0
+}
+
+/**
  * Data de compra D do medicamento (FR-003, emenda E-1).
  *
  * - Esparso: D = data local da 1ª `dose_instance` pendente que o saldo não cobre.
@@ -227,10 +256,7 @@ export function computeSupplyDate(params: {
   if (candidates.length === 0) return own.hasFuture ? { status: 'covered' } : { status: 'no_date' }
   const date = candidates.sort()[0]
 
-  const nextStock = stocks[next.medicine_id]
-  const firstDose = Number(next.dose)
-  const need = Number.isFinite(firstDose) && firstDose > 0 ? doseInStockUnits(firstDose, next.intake_unit, nextStock) : 0
-  if (need > 0 && cleanFloat((nextStock?.qty ?? 0) - need) >= 0) return { status: 'covered' }
+  if (nextStepStockCovers(next, stocks[next.medicine_id])) return { status: 'covered' }
 
   return { status: 'due', date, medicineId: next.medicine_id, reason: 'step_switch', protocolId: switchingProtocol.id }
 }

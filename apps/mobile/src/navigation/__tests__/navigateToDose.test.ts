@@ -25,7 +25,7 @@ jest.mock('@navigation/navigationRef', () => ({
   },
 }))
 
-import { buildDoseParams, navigateToDose, navigateToHistory, navigateToPrivacyData, subscribePendingDose } from '../navigateToDose'
+import { buildDoseParams, navigateToDose, navigateToHistory, navigateToPrivacyData, subscribePendingDose, buildSupplyTarget, navigateToTreatmentDetail, navigateToStockDetail, navigateToStock } from '../navigateToDose'
 import { ROUTES } from '../routes'
 
 const PROTO = '2b1c3f5e-8a4d-4e6b-9c7a-1d2e3f4a5b6c'
@@ -287,5 +287,66 @@ describe('entrega da dose ao Hoje (PO-5)', () => {
     const next = jest.fn()
     subscribePendingDose(next)()
     expect(next).toHaveBeenCalledWith(DOSE)
+  })
+})
+
+// 105 FR-019 (PO-105-7): avisos de compra/estoque pelo MESMO helper aninhado (090 D-3).
+describe('avisos de compra e estoque (105 FR-019)', () => {
+  const MED = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d'
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  it.each([
+    [{ protocolId: PROTO, supply: 'monthly_dose' }, { protocolId: PROTO, supply: 'monthly_dose' }],
+    [{ protocolId: PROTO, supply: 'step_switch', extra: 'x' }, { protocolId: PROTO, supply: 'step_switch' }],
+    [{ protocolId: 'nao-uuid', supply: 'monthly_dose' }, null],
+    [{ protocolId: PROTO, supply: 'stock_alert' }, null],
+    [{ protocolId: PROTO }, null],
+    [null, null],
+  ])('buildSupplyTarget(%j) ⇒ %j', (raw, expected) => {
+    expect(buildSupplyTarget(raw)).toEqual(expected)
+  })
+
+  it('detalhe do tratamento: TABS → Tratamentos → ProtocolDetail { id }, lista embaixo', () => {
+    mockReady = true
+    mockRouteNames = ['Tabs']
+    mockStack = ['Tabs']
+    navigateToTreatmentDetail(PROTO)
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TABS, {
+      screen: ROUTES.TREATMENTS,
+      params: { screen: ROUTES.PROTOCOL_DETAIL, params: { id: PROTO }, initial: false },
+    })
+  })
+
+  it('detalhe do tratamento com id inválido ⇒ Hoje', () => {
+    mockReady = true
+    mockRouteNames = ['Tabs']
+    mockStack = ['Tabs']
+    mockFocusedTab = 'Estoque'
+    navigateToTreatmentDetail('x')
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TABS, { screen: ROUTES.TODAY })
+  })
+
+  it('detalhe do estoque: TABS → Estoque → StockDetail { medicineId, medicineName }, hub embaixo', () => {
+    mockReady = true
+    mockRouteNames = ['Tabs']
+    mockStack = ['Tabs']
+    navigateToStockDetail(MED, 'Remédio')
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TABS, {
+      screen: ROUTES.STOCK,
+      params: { screen: ROUTES.STOCK_DETAIL, params: { medicineId: MED, medicineName: 'Remédio' }, initial: false },
+    })
+  })
+
+  it('aba Estoque (stock_alert) a partir de outra aba', () => {
+    mockReady = true
+    mockRouteNames = ['Tabs']
+    mockStack = ['Tabs']
+    mockFocusedTab = 'Tratamentos'
+    navigateToStock()
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TABS, { screen: ROUTES.STOCK })
   })
 })

@@ -56,7 +56,9 @@ export const STOCK_ALERT_MAX_DAYS = 7
 export function deriveStockAlerts(stockItems) {
   if (!Array.isArray(stockItems)) return []
   return stockItems
-    .filter((it) => it && Number.isFinite(it.daysRemaining))
+    // 105 G4: zerar é o plano (mensal / etapa de passagem) ⇒ não é falta. Só `false` explícito cala:
+    // ausente (cache antigo, leitura falhou) segue alertando (INV-2).
+    .filter((it) => it && it.runwayAlertExpected !== false && Number.isFinite(it.daysRemaining))
     .map((it) => ({
       medicineId: it.id,
       medicineName: it.name,
@@ -65,6 +67,43 @@ export function deriveStockAlerts(stockItems) {
       isDailyStock: it.isDailyStock,
     }))
     .filter((a) => a.daysRemaining <= STOCK_ALERT_MAX_DAYS)
+}
+
+/** Janela do aviso neutro de próxima compra no Hoje (105 G-B5: mesmo limite do banner de falta). */
+export const SUPPLY_NOTICE_MAX_DAYS = STOCK_ALERT_MAX_DAYS
+
+/** Dias de calendário entre duas datas YYYY-MM-DD (aritmética UTC numérica, R-020). */
+function calendarDaysBetween(from: string, to: string): number | null {
+  const re = /^(\d{4})-(\d{2})-(\d{2})$/
+  const a = re.exec(from)
+  const b = re.exec(to)
+  if (!a || !b) return null
+   
+  const ms = Date.UTC(+b[1], +b[2] - 1, +b[3]) - Date.UTC(+a[1], +a[2] - 1, +a[3])
+  return Math.round(ms / 86_400_000)
+}
+
+/**
+ * Avisos neutros de próxima compra do Hoje (105 FR-009 / G-B5): itens elegíveis com data `due` do
+ * core faltando 0..7 dias. A data vem pronta do item (`attachSupplyRunway` → `computeSupplyDate`);
+ * aqui só se filtra a janela. Mais próximo primeiro.
+ */
+export function deriveSupplyNotices(stockItems, today: string) {
+  if (!Array.isArray(stockItems)) return []
+  const nameById = new Map(stockItems.filter(Boolean).map((it) => [it.id, it.name]))
+  return stockItems
+    .filter((it) => it?.runwayAlertExpected === false && it.supply?.status === 'due')
+    .map((it) => ({
+      medicineId: it.id,
+      medicineName: it.name,
+      reason: it.supply.reason,
+      date: it.supply.date,
+      buyMedicineId: it.supply.medicineId,
+      buyMedicineName: it.supplyBuyName ?? nameById.get(it.supply.medicineId) ?? null,
+      daysUntil: calendarDaysBetween(today, it.supply.date),
+    }))
+    .filter((n) => n.daysUntil !== null && n.daysUntil >= 0 && n.daysUntil <= SUPPLY_NOTICE_MAX_DAYS)
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 /**

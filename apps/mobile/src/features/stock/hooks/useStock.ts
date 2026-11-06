@@ -5,7 +5,8 @@ import { getTodayLocal, getNow, parseISO, addDays, isProtocolInPeriod, describeL
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { stockService } from '../services/stockService'
 import { debugLog } from '@shared/utils/debugLog'
-import { transformStockData, splitStockItems } from './_stockDataTransformer'
+import { supplyRunwayService } from '../services/supplyRunwayService'
+import { transformStockData, splitStockItems, attachSupplyRunway, supplyEligibleMedicineIds, supplyBuyIdsMissing, attachSupplyBuyNames } from './_stockDataTransformer'
 
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
@@ -45,6 +46,43 @@ async function _fetchOpenedAtMap() {
   }
 }
 
+/**
+ * 105 Fatia B: anota predicado e data de compra (core). Etapas falharam ⇒ `steps = null` ⇒ fail-safe
+ * no `attachSupplyRunway` (alerta como hoje). Doses só dos elegíveis (lista curta, quase sempre vazia).
+ * Falha nas doses ⇒ sem data (FR-010), mas o silêncio do alerta continua valendo (predicado não usa doses).
+ */
+async function _withSupplyRunway(items) {
+  const now = getNow()
+  let steps = null
+  try {
+    steps = await supplyRunwayService.getSteps()
+  } catch (err) {
+    debugLog('useStock', `Etapas indisponíveis (alerta segue como hoje): ${err?.message}`)
+  }
+  let instances = []
+  const eligible = supplyEligibleMedicineIds(items, steps)
+  if (eligible.length > 0) {
+    try {
+      // Recua 1 dia: o core descarta o que é de antes de hoje local (mesma regra do servidor).
+      instances = await supplyRunwayService.getPendingInstances(eligible, addDays(now, -1).toISOString())
+    } catch (err) {
+      debugLog('useStock', `Doses pendentes indisponíveis (sem data de compra): ${err?.message}`)
+    }
+  }
+  const annotated = attachSupplyRunway(items, { steps, instances, now })
+  // Escada: o remédio da próxima etapa costuma não estar na lista (sem saldo, sem tratamento ativo).
+  let summaries = []
+  const missing = supplyBuyIdsMissing(annotated)
+  if (missing.length > 0) {
+    try {
+      summaries = await supplyRunwayService.getMedicineSummaries(missing)
+    } catch (err) {
+      debugLog('useStock', `Cadastro do remédio a comprar indisponível (texto genérico): ${err?.message}`)
+    }
+  }
+  return attachSupplyBuyNames(annotated, summaries)
+}
+
 async function _fetchAndPersistStock(setState, dataRef) {
   // PO-9 §0.7: lista meds com protocolo ativo OU saldo positivo (corrige bug de
   // estoque órfão invisível). Split em active (com previsão) + inactive (só-estoque).
@@ -59,7 +97,8 @@ async function _fetchAndPersistStock(setState, dataRef) {
     _latestOpenedAt: openedAtMap[item.id] ?? null,
   }))
   const today = getTodayLocal()
-  const { active, inactive } = splitStockItems(transformStockData(rawWithTtl))
+  const transformed = transformStockData(rawWithTtl)
+  const { active, inactive } = splitStockItems(await _withSupplyRunway(transformed))
   const newData = { active, inactive, localDay: today }
   const snapshot = { data: newData, capturedAt: getNow().toISOString(), rawData }
   await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))

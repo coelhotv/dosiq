@@ -186,3 +186,52 @@ export function navigateToPrivacyData(): void {
   }
   navigateWhenTabsReady(ROUTES.PROFILE, { screen: ROUTES.PRIVACY_DATA, initial: false })
 }
+
+// ═══ 105 FR-019: avisos de compra / estoque ═══
+// Mesma disciplina das doses (PO-SEC-3): payload é entrada externa ⇒ allowlist + forma. O push leva
+// só o tratamento de ORIGEM (`protocolId`, opaco) e o motivo; nunca id de remédio (boundary PO-105-7).
+
+export const SUPPLY_REASONS = ['monthly_dose', 'monthly_purchase', 'step_switch'] as const
+export type SupplyPushReason = (typeof SUPPLY_REASONS)[number]
+export type SupplyTarget = { protocolId: string; supply: SupplyPushReason }
+
+/** Params validados de `screen: 'treatment-detail'`, ou null (chamador abre o Hoje). */
+export function buildSupplyTarget(raw: unknown): SupplyTarget | null {
+  if (!raw || typeof raw !== 'object') return null
+  const p = raw as Record<string, unknown>
+  if (!isUuid(p.protocolId)) return null
+  const supply = p.supply
+  if (typeof supply !== 'string' || !(SUPPLY_REASONS as readonly string[]).includes(supply)) return null
+  return { protocolId: p.protocolId, supply: supply as SupplyPushReason }
+}
+
+/** Detalhe do tratamento (aba Tratamentos, `ProtocolDetail { id }`), com a lista embaixo. */
+export function navigateToTreatmentDetail(protocolId: string): void {
+  if (!isUuid(protocolId)) {
+    navigateToDose(null)
+    return
+  }
+  navigateWhenTabsReady(ROUTES.TREATMENTS, {
+    screen: ROUTES.PROTOCOL_DETAIL,
+    params: { id: protocolId },
+    initial: false,
+  })
+}
+
+/** Detalhe do estoque de um medicamento (aba Estoque), com o hub embaixo. */
+export function navigateToStockDetail(medicineId: string, medicineName = ''): void {
+  if (!isUuid(medicineId)) {
+    navigateToStock()
+    return
+  }
+  navigateWhenTabsReady(ROUTES.STOCK, {
+    screen: ROUTES.STOCK_DETAIL,
+    params: { medicineId, medicineName: String(medicineName).slice(0, MAX_NAME_LENGTH) },
+    initial: false,
+  })
+}
+
+/** Raiz da aba Estoque (`stock_alert`, `stock_expiry_alert`, `prescription_alert`). */
+export function navigateToStock(): void {
+  navigateWhenTabsReady(ROUTES.STOCK)
+}
